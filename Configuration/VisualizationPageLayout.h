@@ -1,5 +1,5 @@
 
-/** $VER: VisualizationPageLayout.h (2026.09.02) P. Stuer - Defines the layout of a configuration dialog page. **/
+/** $VER: VisualizationPageLayout.h (2026.09.08) P. Stuer - Defines the layout of a configuration dialog page. **/
 
 #pragma once
 
@@ -452,6 +452,12 @@
     #define H_A40    H_CHB
     #define X_A40    X_C64
     #define Y_A40    Y_C72 + H_C72 + IY
+
+    // Checkbox: Zero-crossing trigger
+    #define W_A42    80
+    #define H_A42    H_CHB
+    #define X_A42    X_A40 + W_A40 + IX
+    #define Y_A42    Y_A40
 
 #define W_B18  W_B14
 #define H_B18  11 + H_C56 + IY + H_C79 + IY + H_C68 + IY + H_A40 + IY + 7

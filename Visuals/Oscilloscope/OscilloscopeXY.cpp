@@ -92,21 +92,30 @@ void oscilloscope_xy_t::Render(ID2D1DeviceContext * deviceContext) noexcept
         const auto Scale     = D2D1::Matrix3x2F::Scale(D2D1::SizeF(_ScaleFactor, _ScaleFactor));
         const auto Rotate    = D2D1::Matrix3x2F::Rotation(_State->_Rotation, D2D1::Point2F(0.f, 0.f));
 
-        const size_t FrameCount     = _Analysis->_Chunk.get_sample_count();                                 // get_sample_count() actually returns the number of frames.
-        const uint32_t ChannelCount = _Analysis->_Chunk.get_channel_count();
+        size_t FrameCount = _Analysis->_Chunk.get_sample_count();                                           // get_sample_count() actually returns the number of frames.
 
+        const uint32_t ChannelCount      = _Analysis->_Chunk.get_channel_count();
         const uint32_t AvailableChannels = _Analysis->_Chunk.get_channel_config();                          // Mask containing the channels in the audio chunk.
         const uint32_t SelectedChannels  = _GraphOptions->_SelectedChannels;                                // Mask containing the channels selected by the user.
         const uint32_t BalanceChannels   = analysis_t::ChannelPairs[(size_t) _GraphOptions->_ChannelPair];  // Mask containing the channels selected by the user as a channel pair.
 
         const uint32_t ChannelMask = AvailableChannels & SelectedChannels & BalanceChannels;
 
+        const audio_sample * Frames = _Analysis->_Chunk.get_data();
+
+        if (_State->_ZeroCrossingTrigger && (FrameCount >= 4))
+        {
+            FrameCount /= 2;
+
+            const size_t CrossIndex = FindZeroCrossing(Frames, FrameCount, ChannelCount);
+        
+            Frames += CrossIndex * ChannelCount;
+        }
+
         CComPtr<ID2D1TransformedGeometry> TransformedGeometry;
 
         if ((FrameCount >= 2) && (ChannelCount >= 2) && (ChannelMask != 0))
         {
-            const audio_sample * Samples = _Analysis->_Chunk.get_data();
-
             size_t Channel1 = (size_t) std::countr_zero(ChannelMask);         // Index of the channel 1 sample in the audio chunk.
             size_t Channel2 = (size_t) (31 - std::countl_zero(ChannelMask));  // Index of the channel 2 sample in the audio chunk.
 
@@ -125,15 +134,15 @@ void oscilloscope_xy_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 
                     hr = Geometry->Open(&Sink);
 
-                    FLOAT x = (FLOAT) std::clamp(Samples[Channel1] * _State->_XGain, -1., 1.);
-                    FLOAT y = (FLOAT) std::clamp(Samples[Channel2] * _State->_YGain, -1., 1.);
+                    FLOAT x = (FLOAT) std::clamp(Frames[Channel1] * _State->_XGain, -1., 1.);
+                    FLOAT y = (FLOAT) std::clamp(Frames[Channel2] * _State->_YGain, -1., 1.);
 
                     Sink->BeginFigure(D2D1::Point2F(x, y), D2D1_FIGURE_BEGIN_HOLLOW);
 
                     for (size_t i = ChannelCount; i < FrameCount; i += ChannelCount)
                     {
-                        x = (FLOAT) std::clamp(Samples[Channel1 + i] * _State->_XGain, -1., 1.);
-                        y = (FLOAT) std::clamp(Samples[Channel2 + i] * _State->_YGain, -1., 1.);
+                        x = (FLOAT) std::clamp(Frames[Channel1 + i] * _State->_XGain, -1., 1.);
+                        y = (FLOAT) std::clamp(Frames[Channel2 + i] * _State->_YGain, -1., 1.);
 
                         Sink->AddLine(D2D1::Point2F(x, y));
                     }

@@ -1,0 +1,3360 @@
+{
+    "schemaVersion": 1,
+    "refreshRateLimit": 60,
+    "configurationDialog": {
+        "bounds": {
+            "left": 1930,
+            "top": 14,
+            "right": 2609,
+            "bottom": 609
+        },
+        "page": 7
+    },
+    "visualizationType": 7,
+    "peakIndicators": {
+        "mode": 3,
+        "holdTime": 20.0,
+        "acceleration": 1.5
+    },
+    "leds": {
+        "enabled": false,
+        "lightSize": 2.0,
+        "gapSize": 2.0,
+        "integralSize": false
+    },
+    "radial": {
+        "innerRadius": 0.20000000298023224,
+        "outerRadius": 1.0,
+        "angularVelocity": 0.0
+    },
+    "spectrogram": {
+        "scrolling": true,
+        "horizontally": true,
+        "useBarMetrics": false
+    },
+    "peakMeter": {
+        "rmsWindow": 0.3,
+        "horizontally": false,
+        "hasCenterScale": false,
+        "hasRMSPlus3": false,
+        "hasScaleLines": true,
+        "barGap": 1.0,
+        "maxBarSize": 0.0
+    },
+    "levelMeter": {
+        "horizontally": false
+    },
+    "oscilloscope": {
+        "xyMode": false,
+        "xGain": 1.0,
+        "yGain": 1.0,
+        "rotation": 0.0,
+        "frameCount": 4096,
+        "phosphorDecay": {
+            "enabled": true,
+            "blurSigma": 3.0,
+            "decayFactor": 0.949999988079071
+        }
+    },
+    "bitMeter": {
+        "mode": 0,
+        "bitsPerInteger": 32,
+        "opacityMode": false
+    },
+    "transform": {
+        "method": 0,
+        "windowFunction": 1,
+        "windowParameter": 1.0,
+        "windowSkew": 0.0,
+        "reactionAlignment": 0.25,
+        "mode": 7,
+        "custom": 4096,
+        "duration": 100.0,
+        "aggregationMethod": 1,
+        "mapping": 0,
+        "smoothLowerFrequencies": true,
+        "smoothGainTransition": true,
+        "kernelSize": 32,
+        "cqt": {
+            "bandwidthOffset": 1.0,
+            "bandwidthCap": 1.0,
+            "bandwidthAmount": 6.0,
+            "useGranularBandwidth": true,
+            "kernelShape": 4,
+            "kernelShapeParameter": 1.0,
+            "kernelAsymmetry": 0.0
+        },
+        "iir": {
+            "filterBankOrder": 4,
+            "timeResolution": 600.0,
+            "bandwidth": 1.0,
+            "constantQ": true,
+            "compensateBandwidth": true,
+            "usePrewarpedQ": false
+        }
+    },
+    "frequencies": {
+        "distribution": 1,
+        "bandCount": 320,
+        "loFrequency": 20.0,
+        "hiFrequency": 20000.0,
+        "loNote": 0,
+        "hiNote": 126,
+        "bandsPerOctave": 12,
+        "tuningPitch": 440.0,
+        "transpose": 0,
+        "scalingFunction": 1,
+        "skewFactor": 0.0,
+        "bandwidth": 0.5
+    },
+    "acousticFilters": {
+        "weightingType": 0,
+        "slopeFunctionOffset": 1.0,
+        "slope": 0.0,
+        "slopeOffset": 1000.0,
+        "equalizeAmount": 0.0,
+        "equalizeOffset": 44100.0,
+        "equalizeDepth": 1024.0,
+        "weightingAmount": 0.0
+    },
+    "smoothingMethod": 1,
+    "smoothingFactor": 0.5,
+    "showToolTipsAlways": true,
+    "suppressMirrorImage": true,
+    "visualizeDuringPause": true,
+    "artwork": {
+        "type": 0,
+        "colorCount": 10,
+        "lightnessThreshold": 0.9800000190734863,
+        "transparencyThreshold": 0.4901960790157318,
+        "colorOrder": 3,
+        "showArtworkOnBackground": false,
+        "fitMode": 1,
+        "fitWindow": false,
+        "opacity": 1.0,
+        "blurSigma": 0.0,
+        "filePath": ""
+    },
+    "grid": {
+        "rows": 1,
+        "columns": 1,
+        "verticalLayout": false,
+        "overlapGraphs": false,
+        "graphs": [
+            {
+                "description": {
+                    "text": "",
+                    "horizontalAlignment": 1,
+                    "verticalAlignment": 1
+                },
+                "channels": 262143,
+                "channelPair": 0,
+                "swapChannels": false,
+                "layout": {
+                    "horizontalAlignment": 3,
+                    "horizontalRatio": 1.0,
+                    "verticalAlignment": 1,
+                    "verticalRatio": 1.0,
+                    "flipHorizontally": false,
+                    "flipVertically": false,
+                    "leftPadding": 0.0,
+                    "rightPadding": 0.0,
+                    "topPadding": 0.0,
+                    "bottomPadding": 0.0
+                },
+                "xAxis": {
+                    "mode": 1,
+                    "top": false,
+                    "bottom": true,
+                    "decimals": 3
+                },
+                "yAxis": {
+                    "mode": 1,
+                    "left": true,
+                    "right": true,
+                    "amplitudeLo": -90.0,
+                    "amplitudeHi": 0.0,
+                    "amplitudeStep": -10.0,
+                    "useAbsolute": false,
+                    "gamma": 1.0
+                },
+                "styles": [
+                    {
+                        "id": 0,
+                        "flags": 1,
+                        "colorSource": 1,
+                        "customColor": {
+                            "red": 0.0,
+                            "green": 0.0,
+                            "blue": 0.0,
+                            "alpha": 1.0
+                        },
+                        "colorIndex": 0,
+                        "colorScheme": 0,
+                        "customGradientStops": [
+                            {
+                                "position": 0.0,
+                                "color": {
+                                    "red": 0.7411764860153198,
+                                    "green": 0.7647058963775635,
+                                    "blue": 0.7803921699523926,
+                                    "alpha": 1.0
+                                }
+                            },
+                            {
+                                "position": 1.0,
+                                "color": {
+                                    "red": 0.1725490242242813,
+                                    "green": 0.24313725531101227,
+                                    "blue": 0.3137255012989044,
+                                    "alpha": 1.0
+                                }
+                            }
+                        ],
+                        "opacity": 1.0,
+                        "thickness": 0.0,
+                        "font": {
+                            "name": "",
+                            "size": 0.0
+                        }
+                    },
+                    {
+                        "id": 33,
+                        "flags": 3,
+                        "colorSource": 1,
+                        "customColor": {
+                            "red": 0.25,
+                            "green": 0.25,
+                            "blue": 0.25,
+                            "alpha": 1.0
+                        },
+                        "colorIndex": 0,
+                        "colorScheme": 0,
+                        "customGradientStops": [
+                            {
+                                "position": 0.0,
+                                "color": {
+                                    "red": 0.7411764860153198,
+                                    "green": 0.7647058963775635,
+                                    "blue": 0.7803921699523926,
+                                    "alpha": 1.0
+                                }
+                            },
+                            {
+                                "position": 1.0,
+                                "color": {
+                                    "red": 0.1725490242242813,
+                                    "green": 0.24313725531101227,
+                                    "blue": 0.3137255012989044,
+                                    "alpha": 1.0
+                                }
+                            }
+                        ],
+                        "opacity": 1.0,
+                        "thickness": 1.0,
+                        "font": {
+                            "name": "",
+                            "size": 0.0
+                        }
+                    },
+                    {
+                        "id": 1,
+                        "flags": 5,
+                        "colorSource": 1,
+                        "customColor": {
+                            "red": 1.0,
+                            "green": 1.0,
+                            "blue": 1.0,
+                            "alpha": 1.0
+                        },
+                        "colorIndex": 0,
+                        "colorScheme": 0,
+                        "customGradientStops": [
+                            {
+                                "position": 0.0,
+                                "color": {
+                                    "red": 0.7411764860153198,
+                                    "green": 0.7647058963775635,
+                                    "blue": 0.7803921699523926,
+                                    "alpha": 1.0
+                                }
+                            },
+                            {
+                                "position": 1.0,
+                                "color": {
+                                    "red": 0.1725490242242813,
+                                    "green": 0.24313725531101227,
+                                    "blue": 0.3137255012989044,
+                                    "alpha": 1.0
+                                }
+                            }
+                        ],
+                        "opacity": 1.0,
+                        "thickness": 0.0,
+                        "font": {
+                            "name": "Segoe UI",
+                            "size": 14.0
+                        }
+                    },
+                    {
+                        "id": 14,
+                        "flags": 1,
+                        "colorSource": 1,
+                        "customColor": {
+                            "red": 1.0,
+                            "green": 1.0,
+                            "blue": 1.0,
+                            "alpha": 0.25
+                        },
+                        "colorIndex": 0,
+                        "colorScheme": 0,
+                        "customGradientStops": [
+                            {
+                                "position": 0.0,
+                                "color": {
+                                    "red": 0.7411764860153198,
+                                    "green": 0.7647058963775635,
+                                    "blue": 0.7803921699523926,
+                                    "alpha": 1.0
+                                }
+                            },
+                            {
+                                "position": 1.0,
+                                "color": {
+                                    "red": 0.1725490242242813,
+                                    "green": 0.24313725531101227,
+                                    "blue": 0.3137255012989044,
+                                    "alpha": 1.0
+                                }
+                            }
+                        ],
+                        "opacity": 1.0,
+                        "thickness": 0.0,
+                        "font": {
+                            "name": "",
+                            "size": 0.0
+                        }
+                    },
+                    {
+                        "id": 34,
+                        "flags": 3,
+                        "colorSource": 1,
+                        "customColor": {
+                            "red": 0.25,
+                            "green": 0.25,
+                            "blue": 0.25,
+                            "alpha": 1.0
+                        },
+                        "colorIndex": 0,
+                        "colorScheme": 0,
+                        "customGradientStops": [
+                            {
+                                "position": 0.0,
+                                "color": {
+                                    "red": 0.7411764860153198,
+                                    "green": 0.7647058963775635,
+                                    "blue": 0.7803921699523926,
+                                    "alpha": 1.0
+                                }
+                            },
+                            {
+                                "position": 1.0,
+                                "color": {
+                                    "red": 0.1725490242242813,
+                                    "green": 0.24313725531101227,
+                                    "blue": 0.3137255012989044,
+                                    "alpha": 1.0
+                                }
+                            }
+                        ],
+                        "opacity": 1.0,
+                        "thickness": 1.0,
+                        "font": {
+                            "name": "",
+                            "size": 0.0
+                        }
+                    },
+                    {
+                        "id": 2,
+                        "flags": 5,
+                        "colorSource": 1,
+                        "customColor": {
+                            "red": 1.0,
+                            "green": 1.0,
+                            "blue": 1.0,
+                            "alpha": 1.0
+                        },
+                        "colorIndex": 0,
+                        "colorScheme": 0,
+                        "customGradientStops": [
+                            {
+                                "position": 0.0,
+                                "color": {
+                                    "red": 0.7411764860153198,
+                                    "green": 0.7647058963775635,
+                                    "blue": 0.7803921699523926,
+                                    "alpha": 1.0
+                                }
+                            },
+                            {
+                                "position": 1.0,
+                                "color": {
+                                    "red": 0.1725490242242813,
+                                    "green": 0.24313725531101227,
+                                    "blue": 0.3137255012989044,
+                                    "alpha": 1.0
+                                }
+                            }
+                        ],
+                        "opacity": 1.0,
+                        "thickness": 0.0,
+                        "font": {
+                            "name": "Segoe UI",
+                            "size": 6.0
+                        }
+                    },
+                    {
+                        "id": 4,
+                        "flags": 5,
+                        "colorSource": 1,
+                        "customColor": {
+                            "red": 1.0,
+                            "green": 1.0,
+                            "blue": 1.0,
+                            "alpha": 1.0
+                        },
+                        "colorIndex": 0,
+                        "colorScheme": 0,
+                        "customGradientStops": [
+                            {
+                                "position": 0.0,
+                                "color": {
+                                    "red": 0.7411764860153198,
+                                    "green": 0.7647058963775635,
+                                    "blue": 0.7803921699523926,
+                                    "alpha": 1.0
+                                }
+                            },
+                            {
+                                "position": 1.0,
+                                "color": {
+                                    "red": 0.1725490242242813,
+                                    "green": 0.24313725531101227,
+                                    "blue": 0.3137255012989044,
+                                    "alpha": 1.0
+                                }
+                            }
+                        ],
+                        "opacity": 1.0,
+                        "thickness": 0.0,
+                        "font": {
+                            "name": "Segoe UI",
+                            "size": 6.0
+                        }
+                    },
+                    {
+                        "id": 5,
+                        "flags": 3,
+                        "colorSource": 1,
+                        "customColor": {
+                            "red": 0.25,
+                            "green": 0.25,
+                            "blue": 0.25,
+                            "alpha": 1.0
+                        },
+                        "colorIndex": 0,
+                        "colorScheme": 0,
+                        "customGradientStops": [
+                            {
+                                "position": 0.0,
+                                "color": {
+                                    "red": 0.7411764860153198,
+                                    "green": 0.7647058963775635,
+                                    "blue": 0.7803921699523926,
+                                    "alpha": 1.0
+                                }
+                            },
+                            {
+                                "position": 1.0,
+                                "color": {
+                                    "red": 0.1725490242242813,
+                                    "green": 0.24313725531101227,
+                                    "blue": 0.3137255012989044,
+                                    "alpha": 1.0
+                                }
+                            }
+                        ],
+                        "opacity": 1.0,
+                        "thickness": 1.0,
+                        "font": {
+                            "name": "",
+                            "size": 0.0
+                        }
+                    },
+                    {
+                        "id": 3,
+                        "flags": 3,
+                        "colorSource": 1,
+                        "customColor": {
+                            "red": 0.25,
+                            "green": 0.25,
+                            "blue": 0.25,
+                            "alpha": 1.0
+                        },
+                        "colorIndex": 0,
+                        "colorScheme": 0,
+                        "customGradientStops": [
+                            {
+                                "position": 0.0,
+                                "color": {
+                                    "red": 0.7411764860153198,
+                                    "green": 0.7647058963775635,
+                                    "blue": 0.7803921699523926,
+                                    "alpha": 1.0
+                                }
+                            },
+                            {
+                                "position": 1.0,
+                                "color": {
+                                    "red": 0.1725490242242813,
+                                    "green": 0.24313725531101227,
+                                    "blue": 0.3137255012989044,
+                                    "alpha": 1.0
+                                }
+                            }
+                        ],
+                        "opacity": 1.0,
+                        "thickness": 1.0,
+                        "font": {
+                            "name": "",
+                            "size": 0.0
+                        }
+                    },
+                    {
+                        "id": 15,
+                        "flags": 3,
+                        "colorSource": 1,
+                        "customColor": {
+                            "red": 1.0,
+                            "green": 0.0,
+                            "blue": 0.0,
+                            "alpha": 1.0
+                        },
+                        "colorIndex": 0,
+                        "colorScheme": 0,
+                        "customGradientStops": [
+                            {
+                                "position": 0.0,
+                                "color": {
+                                    "red": 0.7411764860153198,
+                                    "green": 0.7647058963775635,
+                                    "blue": 0.7803921699523926,
+                                    "alpha": 1.0
+                                }
+                            },
+                            {
+                                "position": 1.0,
+                                "color": {
+                                    "red": 0.1725490242242813,
+                                    "green": 0.24313725531101227,
+                                    "blue": 0.3137255012989044,
+                                    "alpha": 1.0
+                                }
+                            }
+                        ],
+                        "opacity": 1.0,
+                        "thickness": 1.0,
+                        "font": {
+                            "name": "",
+                            "size": 0.0
+                        }
+                    },
+                    {
+                        "id": 6,
+                        "flags": 33,
+                        "colorSource": 3,
+                        "customColor": {
+                            "red": 0.0,
+                            "green": 0.0,
+                            "blue": 0.0,
+                            "alpha": 1.0
+                        },
+                        "colorIndex": 0,
+                        "colorScheme": 3,
+                        "customGradientStops": [
+                            {
+                                "position": 0.0,
+                                "color": {
+                                    "red": 0.7411764860153198,
+                                    "green": 0.7647058963775635,
+                                    "blue": 0.7803921699523926,
+                                    "alpha": 1.0
+                                }
+                            },
+                            {
+                                "position": 1.0,
+                                "color": {
+                                    "red": 0.1725490242242813,
+                                    "green": 0.24313725531101227,
+                                    "blue": 0.3137255012989044,
+                                    "alpha": 1.0
+                                }
+                            }
+                        ],
+                        "opacity": 1.0,
+                        "thickness": 0.0,
+                        "font": {
+                            "name": "",
+                            "size": 0.0
+                        }
+                    },
+                    {
+                        "id": 16,
+                        "flags": 3,
+                        "colorSource": 0,
+                        "customColor": {
+                            "red": 1.0,
+                            "green": 1.0,
+                            "blue": 1.0,
+                            "alpha": 1.0
+                        },
+                        "colorIndex": 0,
+                        "colorScheme": 3,
+                        "customGradientStops": [
+                            {
+                                "position": 0.0,
+                                "color": {
+                                    "red": 0.7411764860153198,
+                                    "green": 0.7647058963775635,
+                                    "blue": 0.7803921699523926,
+                                    "alpha": 1.0
+                                }
+                            },
+                            {
+                                "position": 1.0,
+                                "color": {
+                                    "red": 0.1725490242242813,
+                                    "green": 0.24313725531101227,
+                                    "blue": 0.3137255012989044,
+                                    "alpha": 1.0
+                                }
+                            }
+                        ],
+                        "opacity": 1.0,
+                        "thickness": 5.0,
+                        "font": {
+                            "name": "",
+                            "size": 0.0
+                        }
+                    },
+                    {
+                        "id": 17,
+                        "flags": 33,
+                        "colorSource": 0,
+                        "customColor": {
+                            "red": 0.0,
+                            "green": 0.0,
+                            "blue": 0.0,
+                            "alpha": 1.0
+                        },
+                        "colorIndex": 0,
+                        "colorScheme": 3,
+                        "customGradientStops": [
+                            {
+                                "position": 0.0,
+                                "color": {
+                                    "red": 0.7411764860153198,
+                                    "green": 0.7647058963775635,
+                                    "blue": 0.7803921699523926,
+                                    "alpha": 1.0
+                                }
+                            },
+                            {
+                                "position": 1.0,
+                                "color": {
+                                    "red": 0.1725490242242813,
+                                    "green": 0.24313725531101227,
+                                    "blue": 0.3137255012989044,
+                                    "alpha": 1.0
+                                }
+                            }
+                        ],
+                        "opacity": 0.25,
+                        "thickness": 0.0,
+                        "font": {
+                            "name": "",
+                            "size": 0.0
+                        }
+                    },
+                    {
+                        "id": 7,
+                        "flags": 3,
+                        "colorSource": 1,
+                        "customColor": {
+                            "red": 1.0,
+                            "green": 1.0,
+                            "blue": 1.0,
+                            "alpha": 1.0
+                        },
+                        "colorIndex": 0,
+                        "colorScheme": 0,
+                        "customGradientStops": [
+                            {
+                                "position": 0.0,
+                                "color": {
+                                    "red": 0.7411764860153198,
+                                    "green": 0.7647058963775635,
+                                    "blue": 0.7803921699523926,
+                                    "alpha": 1.0
+                                }
+                            },
+                            {
+                                "position": 1.0,
+                                "color": {
+                                    "red": 0.1725490242242813,
+                                    "green": 0.24313725531101227,
+                                    "blue": 0.3137255012989044,
+                                    "alpha": 1.0
+                                }
+                            }
+                        ],
+                        "opacity": 1.0,
+                        "thickness": 1.0,
+                        "font": {
+                            "name": "",
+                            "size": 0.0
+                        }
+                    },
+                    {
+                        "id": 8,
+                        "flags": 1,
+                        "colorSource": 1,
+                        "customColor": {
+                            "red": 0.20000000298023224,
+                            "green": 0.20000000298023224,
+                            "blue": 0.20000000298023224,
+                            "alpha": 0.699999988079071
+                        },
+                        "colorIndex": 0,
+                        "colorScheme": 0,
+                        "customGradientStops": [
+                            {
+                                "position": 0.0,
+                                "color": {
+                                    "red": 0.7411764860153198,
+                                    "green": 0.7647058963775635,
+                                    "blue": 0.7803921699523926,
+                                    "alpha": 1.0
+                                }
+                            },
+                            {
+                                "position": 1.0,
+                                "color": {
+                                    "red": 0.1725490242242813,
+                                    "green": 0.24313725531101227,
+                                    "blue": 0.3137255012989044,
+                                    "alpha": 1.0
+                                }
+                            }
+                        ],
+                        "opacity": 1.0,
+                        "thickness": 0.0,
+                        "font": {
+                            "name": "",
+                            "size": 0.0
+                        }
+                    },
+                    {
+                        "id": 9,
+                        "flags": 1,
+                        "colorSource": 1,
+                        "customColor": {
+                            "red": 0.20000000298023224,
+                            "green": 0.20000000298023224,
+                            "blue": 0.20000000298023224,
+                            "alpha": 0.699999988079071
+                        },
+                        "colorIndex": 0,
+                        "colorScheme": 0,
+                        "customGradientStops": [
+                            {
+                                "position": 0.0,
+                                "color": {
+                                    "red": 0.7411764860153198,
+                                    "green": 0.7647058963775635,
+                                    "blue": 0.7803921699523926,
+                                    "alpha": 1.0
+                                }
+                            },
+                            {
+                                "position": 1.0,
+                                "color": {
+                                    "red": 0.1725490242242813,
+                                    "green": 0.24313725531101227,
+                                    "blue": 0.3137255012989044,
+                                    "alpha": 1.0
+                                }
+                            }
+                        ],
+                        "opacity": 1.0,
+                        "thickness": 0.0,
+                        "font": {
+                            "name": "",
+                            "size": 0.0
+                        }
+                    },
+                    {
+                        "id": 10,
+                        "flags": 3,
+                        "colorSource": 3,
+                        "customColor": {
+                            "red": 0.0,
+                            "green": 0.0,
+                            "blue": 0.0,
+                            "alpha": 1.0
+                        },
+                        "colorIndex": 0,
+                        "colorScheme": 2,
+                        "customGradientStops": [
+                            {
+                                "position": 0.0,
+                                "color": {
+                                    "red": 0.7411764860153198,
+                                    "green": 0.7647058963775635,
+                                    "blue": 0.7803921699523926,
+                                    "alpha": 1.0
+                                }
+                            },
+                            {
+                                "position": 1.0,
+                                "color": {
+                                    "red": 0.1725490242242813,
+                                    "green": 0.24313725531101227,
+                                    "blue": 0.3137255012989044,
+                                    "alpha": 1.0
+                                }
+                            }
+                        ],
+                        "opacity": 1.0,
+                        "thickness": 2.0,
+                        "font": {
+                            "name": "",
+                            "size": 0.0
+                        }
+                    },
+                    {
+                        "id": 11,
+                        "flags": 1,
+                        "colorSource": 3,
+                        "customColor": {
+                            "red": 0.0,
+                            "green": 0.0,
+                            "blue": 0.0,
+                            "alpha": 1.0
+                        },
+                        "colorIndex": 0,
+                        "colorScheme": 2,
+                        "customGradientStops": [
+                            {
+                                "position": 0.0,
+                                "color": {
+                                    "red": 0.7411764860153198,
+                                    "green": 0.7647058963775635,
+                                    "blue": 0.7803921699523926,
+                                    "alpha": 1.0
+                                }
+                            },
+                            {
+                                "position": 1.0,
+                                "color": {
+                                    "red": 0.1725490242242813,
+                                    "green": 0.24313725531101227,
+                                    "blue": 0.3137255012989044,
+                                    "alpha": 1.0
+                                }
+                            }
+                        ],
+                        "opacity": 0.5,
+                        "thickness": 0.0,
+                        "font": {
+                            "name": "",
+                            "size": 0.0
+                        }
+                    },
+                    {
+                        "id": 12,
+                        "flags": 3,
+                        "colorSource": 1,
+                        "customColor": {
+                            "red": 1.0,
+                            "green": 1.0,
+                            "blue": 1.0,
+                            "alpha": 1.0
+                        },
+                        "colorIndex": 0,
+                        "colorScheme": 2,
+                        "customGradientStops": [
+                            {
+                                "position": 0.0,
+                                "color": {
+                                    "red": 0.7411764860153198,
+                                    "green": 0.7647058963775635,
+                                    "blue": 0.7803921699523926,
+                                    "alpha": 1.0
+                                }
+                            },
+                            {
+                                "position": 1.0,
+                                "color": {
+                                    "red": 0.1725490242242813,
+                                    "green": 0.24313725531101227,
+                                    "blue": 0.3137255012989044,
+                                    "alpha": 1.0
+                                }
+                            }
+                        ],
+                        "opacity": 1.0,
+                        "thickness": 2.0,
+                        "font": {
+                            "name": "",
+                            "size": 0.0
+                        }
+                    },
+                    {
+                        "id": 13,
+                        "flags": 1,
+                        "colorSource": 1,
+                        "customColor": {
+                            "red": 1.0,
+                            "green": 1.0,
+                            "blue": 1.0,
+                            "alpha": 1.0
+                        },
+                        "colorIndex": 0,
+                        "colorScheme": 2,
+                        "customGradientStops": [
+                            {
+                                "position": 0.0,
+                                "color": {
+                                    "red": 0.7411764860153198,
+                                    "green": 0.7647058963775635,
+                                    "blue": 0.7803921699523926,
+                                    "alpha": 1.0
+                                }
+                            },
+                            {
+                                "position": 1.0,
+                                "color": {
+                                    "red": 0.1725490242242813,
+                                    "green": 0.24313725531101227,
+                                    "blue": 0.3137255012989044,
+                                    "alpha": 1.0
+                                }
+                            }
+                        ],
+                        "opacity": 0.25,
+                        "thickness": 0.0,
+                        "font": {
+                            "name": "",
+                            "size": 0.0
+                        }
+                    },
+                    {
+                        "id": 18,
+                        "flags": 57,
+                        "colorSource": 3,
+                        "customColor": {
+                            "red": 0.0,
+                            "green": 0.0,
+                            "blue": 0.0,
+                            "alpha": 1.0
+                        },
+                        "colorIndex": 0,
+                        "colorScheme": 10,
+                        "customGradientStops": [
+                            {
+                                "position": 0.0,
+                                "color": {
+                                    "red": 0.7411764860153198,
+                                    "green": 0.7647058963775635,
+                                    "blue": 0.7803921699523926,
+                                    "alpha": 1.0
+                                }
+                            },
+                            {
+                                "position": 1.0,
+                                "color": {
+                                    "red": 0.1725490242242813,
+                                    "green": 0.24313725531101227,
+                                    "blue": 0.3137255012989044,
+                                    "alpha": 1.0
+                                }
+                            }
+                        ],
+                        "opacity": 1.0,
+                        "thickness": 0.0,
+                        "font": {
+                            "name": "",
+                            "size": 0.0
+                        }
+                    },
+                    {
+                        "id": 19,
+                        "flags": 1,
+                        "colorSource": 1,
+                        "customColor": {
+                            "red": 0.20000000298023224,
+                            "green": 0.20000000298023224,
+                            "blue": 0.20000000298023224,
+                            "alpha": 1.0
+                        },
+                        "colorIndex": 0,
+                        "colorScheme": 0,
+                        "customGradientStops": [
+                            {
+                                "position": 0.0,
+                                "color": {
+                                    "red": 0.7411764860153198,
+                                    "green": 0.7647058963775635,
+                                    "blue": 0.7803921699523926,
+                                    "alpha": 1.0
+                                }
+                            },
+                            {
+                                "position": 1.0,
+                                "color": {
+                                    "red": 0.1725490242242813,
+                                    "green": 0.24313725531101227,
+                                    "blue": 0.3137255012989044,
+                                    "alpha": 1.0
+                                }
+                            }
+                        ],
+                        "opacity": 1.0,
+                        "thickness": 0.0,
+                        "font": {
+                            "name": "",
+                            "size": 0.0
+                        }
+                    },
+                    {
+                        "id": 20,
+                        "flags": 1,
+                        "colorSource": 3,
+                        "customColor": {
+                            "red": 0.0,
+                            "green": 0.0,
+                            "blue": 0.0,
+                            "alpha": 1.0
+                        },
+                        "colorIndex": 0,
+                        "colorScheme": 3,
+                        "customGradientStops": [
+                            {
+                                "position": 0.0,
+                                "color": {
+                                    "red": 0.7411764860153198,
+                                    "green": 0.7647058963775635,
+                                    "blue": 0.7803921699523926,
+                                    "alpha": 1.0
+                                }
+                            },
+                            {
+                                "position": 1.0,
+                                "color": {
+                                    "red": 0.1725490242242813,
+                                    "green": 0.24313725531101227,
+                                    "blue": 0.3137255012989044,
+                                    "alpha": 1.0
+                                }
+                            }
+                        ],
+                        "opacity": 1.0,
+                        "thickness": 0.0,
+                        "font": {
+                            "name": "",
+                            "size": 0.0
+                        }
+                    },
+                    {
+                        "id": 23,
+                        "flags": 1,
+                        "colorSource": 1,
+                        "customColor": {
+                            "red": 1.0,
+                            "green": 0.0,
+                            "blue": 0.0,
+                            "alpha": 1.0
+                        },
+                        "colorIndex": 0,
+                        "colorScheme": 3,
+                        "customGradientStops": [
+                            {
+                                "position": 0.0,
+                                "color": {
+                                    "red": 0.7411764860153198,
+                                    "green": 0.7647058963775635,
+                                    "blue": 0.7803921699523926,
+                                    "alpha": 1.0
+                                }
+                            },
+                            {
+                                "position": 1.0,
+                                "color": {
+                                    "red": 0.1725490242242813,
+                                    "green": 0.24313725531101227,
+                                    "blue": 0.3137255012989044,
+                                    "alpha": 1.0
+                                }
+                            }
+                        ],
+                        "opacity": 1.0,
+                        "thickness": 0.0,
+                        "font": {
+                            "name": "",
+                            "size": 0.0
+                        }
+                    },
+                    {
+                        "id": 25,
+                        "flags": 3,
+                        "colorSource": 1,
+                        "customColor": {
+                            "red": 1.0,
+                            "green": 1.0,
+                            "blue": 1.0,
+                            "alpha": 1.0
+                        },
+                        "colorIndex": 0,
+                        "colorScheme": 0,
+                        "customGradientStops": [
+                            {
+                                "position": 0.0,
+                                "color": {
+                                    "red": 0.7411764860153198,
+                                    "green": 0.7647058963775635,
+                                    "blue": 0.7803921699523926,
+                                    "alpha": 1.0
+                                }
+                            },
+                            {
+                                "position": 1.0,
+                                "color": {
+                                    "red": 0.1725490242242813,
+                                    "green": 0.24313725531101227,
+                                    "blue": 0.3137255012989044,
+                                    "alpha": 1.0
+                                }
+                            }
+                        ],
+                        "opacity": 1.0,
+                        "thickness": 1.0,
+                        "font": {
+                            "name": "",
+                            "size": 0.0
+                        }
+                    },
+                    {
+                        "id": 26,
+                        "flags": 5,
+                        "colorSource": 1,
+                        "customColor": {
+                            "red": 1.0,
+                            "green": 1.0,
+                            "blue": 1.0,
+                            "alpha": 1.0
+                        },
+                        "colorIndex": 0,
+                        "colorScheme": 0,
+                        "customGradientStops": [
+                            {
+                                "position": 0.0,
+                                "color": {
+                                    "red": 0.7411764860153198,
+                                    "green": 0.7647058963775635,
+                                    "blue": 0.7803921699523926,
+                                    "alpha": 1.0
+                                }
+                            },
+                            {
+                                "position": 1.0,
+                                "color": {
+                                    "red": 0.1725490242242813,
+                                    "green": 0.24313725531101227,
+                                    "blue": 0.3137255012989044,
+                                    "alpha": 1.0
+                                }
+                            }
+                        ],
+                        "opacity": 1.0,
+                        "thickness": 0.0,
+                        "font": {
+                            "name": "Segoe UI",
+                            "size": 10.0
+                        }
+                    },
+                    {
+                        "id": 21,
+                        "flags": 1,
+                        "colorSource": 3,
+                        "customColor": {
+                            "red": 0.0,
+                            "green": 0.0,
+                            "blue": 0.0,
+                            "alpha": 1.0
+                        },
+                        "colorIndex": 0,
+                        "colorScheme": 3,
+                        "customGradientStops": [
+                            {
+                                "position": 0.0,
+                                "color": {
+                                    "red": 0.7411764860153198,
+                                    "green": 0.7647058963775635,
+                                    "blue": 0.7803921699523926,
+                                    "alpha": 1.0
+                                }
+                            },
+                            {
+                                "position": 1.0,
+                                "color": {
+                                    "red": 0.1725490242242813,
+                                    "green": 0.24313725531101227,
+                                    "blue": 0.3137255012989044,
+                                    "alpha": 1.0
+                                }
+                            }
+                        ],
+                        "opacity": 1.0,
+                        "thickness": 0.0,
+                        "font": {
+                            "name": "",
+                            "size": 0.0
+                        }
+                    },
+                    {
+                        "id": 24,
+                        "flags": 1,
+                        "colorSource": 1,
+                        "customColor": {
+                            "red": 1.0,
+                            "green": 0.0,
+                            "blue": 0.0,
+                            "alpha": 1.0
+                        },
+                        "colorIndex": 0,
+                        "colorScheme": 3,
+                        "customGradientStops": [
+                            {
+                                "position": 0.0,
+                                "color": {
+                                    "red": 0.7411764860153198,
+                                    "green": 0.7647058963775635,
+                                    "blue": 0.7803921699523926,
+                                    "alpha": 1.0
+                                }
+                            },
+                            {
+                                "position": 1.0,
+                                "color": {
+                                    "red": 0.1725490242242813,
+                                    "green": 0.24313725531101227,
+                                    "blue": 0.3137255012989044,
+                                    "alpha": 1.0
+                                }
+                            }
+                        ],
+                        "opacity": 1.0,
+                        "thickness": 0.0,
+                        "font": {
+                            "name": "",
+                            "size": 0.0
+                        }
+                    },
+                    {
+                        "id": 22,
+                        "flags": 5,
+                        "colorSource": 1,
+                        "customColor": {
+                            "red": 1.0,
+                            "green": 1.0,
+                            "blue": 1.0,
+                            "alpha": 1.0
+                        },
+                        "colorIndex": 0,
+                        "colorScheme": 0,
+                        "customGradientStops": [
+                            {
+                                "position": 0.0,
+                                "color": {
+                                    "red": 0.7411764860153198,
+                                    "green": 0.7647058963775635,
+                                    "blue": 0.7803921699523926,
+                                    "alpha": 1.0
+                                }
+                            },
+                            {
+                                "position": 1.0,
+                                "color": {
+                                    "red": 0.1725490242242813,
+                                    "green": 0.24313725531101227,
+                                    "blue": 0.3137255012989044,
+                                    "alpha": 1.0
+                                }
+                            }
+                        ],
+                        "opacity": 1.0,
+                        "thickness": 0.0,
+                        "font": {
+                            "name": "Segoe UI",
+                            "size": 10.0
+                        }
+                    },
+                    {
+                        "id": 27,
+                        "flags": 3,
+                        "colorSource": 3,
+                        "customColor": {
+                            "red": 0.0,
+                            "green": 0.0,
+                            "blue": 0.0,
+                            "alpha": 1.0
+                        },
+                        "colorIndex": 0,
+                        "colorScheme": 3,
+                        "customGradientStops": [
+                            {
+                                "position": 0.0,
+                                "color": {
+                                    "red": 0.7411764860153198,
+                                    "green": 0.7647058963775635,
+                                    "blue": 0.7803921699523926,
+                                    "alpha": 1.0
+                                }
+                            },
+                            {
+                                "position": 1.0,
+                                "color": {
+                                    "red": 0.1725490242242813,
+                                    "green": 0.24313725531101227,
+                                    "blue": 0.3137255012989044,
+                                    "alpha": 1.0
+                                }
+                            }
+                        ],
+                        "opacity": 1.0,
+                        "thickness": 1.0,
+                        "font": {
+                            "name": "",
+                            "size": 0.0
+                        }
+                    },
+                    {
+                        "id": 30,
+                        "flags": 3,
+                        "colorSource": 1,
+                        "customColor": {
+                            "red": 1.0,
+                            "green": 1.0,
+                            "blue": 1.0,
+                            "alpha": 1.0
+                        },
+                        "colorIndex": 0,
+                        "colorScheme": 3,
+                        "customGradientStops": [
+                            {
+                                "position": 0.0,
+                                "color": {
+                                    "red": 0.7411764860153198,
+                                    "green": 0.7647058963775635,
+                                    "blue": 0.7803921699523926,
+                                    "alpha": 1.0
+                                }
+                            },
+                            {
+                                "position": 1.0,
+                                "color": {
+                                    "red": 0.1725490242242813,
+                                    "green": 0.24313725531101227,
+                                    "blue": 0.3137255012989044,
+                                    "alpha": 1.0
+                                }
+                            }
+                        ],
+                        "opacity": 1.0,
+                        "thickness": 1.0,
+                        "font": {
+                            "name": "",
+                            "size": 0.0
+                        }
+                    },
+                    {
+                        "id": 28,
+                        "flags": 3,
+                        "colorSource": 3,
+                        "customColor": {
+                            "red": 0.0,
+                            "green": 0.0,
+                            "blue": 0.0,
+                            "alpha": 1.0
+                        },
+                        "colorIndex": 0,
+                        "colorScheme": 3,
+                        "customGradientStops": [
+                            {
+                                "position": 0.0,
+                                "color": {
+                                    "red": 0.7411764860153198,
+                                    "green": 0.7647058963775635,
+                                    "blue": 0.7803921699523926,
+                                    "alpha": 1.0
+                                }
+                            },
+                            {
+                                "position": 1.0,
+                                "color": {
+                                    "red": 0.1725490242242813,
+                                    "green": 0.24313725531101227,
+                                    "blue": 0.3137255012989044,
+                                    "alpha": 1.0
+                                }
+                            }
+                        ],
+                        "opacity": 1.0,
+                        "thickness": 1.0,
+                        "font": {
+                            "name": "",
+                            "size": 0.0
+                        }
+                    },
+                    {
+                        "id": 31,
+                        "flags": 3,
+                        "colorSource": 1,
+                        "customColor": {
+                            "red": 1.0,
+                            "green": 1.0,
+                            "blue": 1.0,
+                            "alpha": 1.0
+                        },
+                        "colorIndex": 0,
+                        "colorScheme": 3,
+                        "customGradientStops": [
+                            {
+                                "position": 0.0,
+                                "color": {
+                                    "red": 0.7411764860153198,
+                                    "green": 0.7647058963775635,
+                                    "blue": 0.7803921699523926,
+                                    "alpha": 1.0
+                                }
+                            },
+                            {
+                                "position": 1.0,
+                                "color": {
+                                    "red": 0.1725490242242813,
+                                    "green": 0.24313725531101227,
+                                    "blue": 0.3137255012989044,
+                                    "alpha": 1.0
+                                }
+                            }
+                        ],
+                        "opacity": 1.0,
+                        "thickness": 1.0,
+                        "font": {
+                            "name": "",
+                            "size": 0.0
+                        }
+                    },
+                    {
+                        "id": 29,
+                        "flags": 7,
+                        "colorSource": 1,
+                        "customColor": {
+                            "red": 1.0,
+                            "green": 1.0,
+                            "blue": 1.0,
+                            "alpha": 1.0
+                        },
+                        "colorIndex": 0,
+                        "colorScheme": 3,
+                        "customGradientStops": [
+                            {
+                                "position": 0.0,
+                                "color": {
+                                    "red": 0.7411764860153198,
+                                    "green": 0.7647058963775635,
+                                    "blue": 0.7803921699523926,
+                                    "alpha": 1.0
+                                }
+                            },
+                            {
+                                "position": 1.0,
+                                "color": {
+                                    "red": 0.1725490242242813,
+                                    "green": 0.24313725531101227,
+                                    "blue": 0.3137255012989044,
+                                    "alpha": 1.0
+                                }
+                            }
+                        ],
+                        "opacity": 0.5,
+                        "thickness": 1.0,
+                        "font": {
+                            "name": "Segoe UI",
+                            "size": 10.0
+                        }
+                    },
+                    {
+                        "id": 32,
+                        "flags": 3,
+                        "colorSource": 1,
+                        "customColor": {
+                            "red": 0.5647059082984924,
+                            "green": 0.9333333373069763,
+                            "blue": 0.5647059082984924,
+                            "alpha": 1.0
+                        },
+                        "colorIndex": 0,
+                        "colorScheme": 0,
+                        "customGradientStops": [
+                            {
+                                "position": 1.0,
+                                "color": {
+                                    "red": 0.11764705926179886,
+                                    "green": 0.5647059082984924,
+                                    "blue": 1.0,
+                                    "alpha": 1.0
+                                }
+                            }
+                        ],
+                        "opacity": 1.0,
+                        "thickness": 1.0,
+                        "font": {
+                            "name": "",
+                            "size": 0.0
+                        }
+                    },
+                    {
+                        "id": 35,
+                        "flags": 1,
+                        "colorSource": 1,
+                        "customColor": {
+                            "red": 0.7529411911964417,
+                            "green": 0.7529411911964417,
+                            "blue": 0.7529411911964417,
+                            "alpha": 1.0
+                        },
+                        "colorIndex": 0,
+                        "colorScheme": 3,
+                        "customGradientStops": [
+                            {
+                                "position": 0.0,
+                                "color": {
+                                    "red": 0.9921568632125854,
+                                    "green": 0.0,
+                                    "blue": 0.0,
+                                    "alpha": 1.0
+                                }
+                            },
+                            {
+                                "position": 0.20000000298023224,
+                                "color": {
+                                    "red": 1.0,
+                                    "green": 0.501960813999176,
+                                    "blue": 0.0,
+                                    "alpha": 1.0
+                                }
+                            },
+                            {
+                                "position": 0.4000000059604645,
+                                "color": {
+                                    "red": 1.0,
+                                    "green": 1.0,
+                                    "blue": 0.003921568859368563,
+                                    "alpha": 1.0
+                                }
+                            },
+                            {
+                                "position": 0.6000000238418579,
+                                "color": {
+                                    "red": 0.4941176474094391,
+                                    "green": 1.0,
+                                    "blue": 0.46666666865348816,
+                                    "alpha": 1.0
+                                }
+                            },
+                            {
+                                "position": 0.800000011920929,
+                                "color": {
+                                    "red": 0.003921568859368563,
+                                    "green": 0.5764706134796143,
+                                    "blue": 0.6352941393852234,
+                                    "alpha": 1.0
+                                }
+                            },
+                            {
+                                "position": 1.0,
+                                "color": {
+                                    "red": 0.0,
+                                    "green": 0.12941177189350128,
+                                    "blue": 0.3803921639919281,
+                                    "alpha": 1.0
+                                }
+                            }
+                        ],
+                        "opacity": 1.0,
+                        "thickness": 0.0,
+                        "font": {
+                            "name": "",
+                            "size": 0.0
+                        }
+                    },
+                    {
+                        "id": 36,
+                        "flags": 1,
+                        "colorSource": 1,
+                        "customColor": {
+                            "red": 0.8392156958580017,
+                            "green": 0.6117647290229797,
+                            "blue": 0.33725491166114807,
+                            "alpha": 1.0
+                        },
+                        "colorIndex": 0,
+                        "colorScheme": 3,
+                        "customGradientStops": [
+                            {
+                                "position": 0.0,
+                                "color": {
+                                    "red": 0.9921568632125854,
+                                    "green": 0.0,
+                                    "blue": 0.0,
+                                    "alpha": 1.0
+                                }
+                            },
+                            {
+                                "position": 0.20000000298023224,
+                                "color": {
+                                    "red": 1.0,
+                                    "green": 0.501960813999176,
+                                    "blue": 0.0,
+                                    "alpha": 1.0
+                                }
+                            },
+                            {
+                                "position": 0.4000000059604645,
+                                "color": {
+                                    "red": 1.0,
+                                    "green": 1.0,
+                                    "blue": 0.003921568859368563,
+                                    "alpha": 1.0
+                                }
+                            },
+                            {
+                                "position": 0.6000000238418579,
+                                "color": {
+                                    "red": 0.4941176474094391,
+                                    "green": 1.0,
+                                    "blue": 0.46666666865348816,
+                                    "alpha": 1.0
+                                }
+                            },
+                            {
+                                "position": 0.800000011920929,
+                                "color": {
+                                    "red": 0.003921568859368563,
+                                    "green": 0.5764706134796143,
+                                    "blue": 0.6352941393852234,
+                                    "alpha": 1.0
+                                }
+                            },
+                            {
+                                "position": 1.0,
+                                "color": {
+                                    "red": 0.0,
+                                    "green": 0.12941177189350128,
+                                    "blue": 0.3803921639919281,
+                                    "alpha": 1.0
+                                }
+                            }
+                        ],
+                        "opacity": 1.0,
+                        "thickness": 0.0,
+                        "font": {
+                            "name": "",
+                            "size": 0.0
+                        }
+                    },
+                    {
+                        "id": 37,
+                        "flags": 1,
+                        "colorSource": 1,
+                        "customColor": {
+                            "red": 0.33725491166114807,
+                            "green": 0.6117647290229797,
+                            "blue": 0.8392156958580017,
+                            "alpha": 1.0
+                        },
+                        "colorIndex": 0,
+                        "colorScheme": 3,
+                        "customGradientStops": [
+                            {
+                                "position": 0.0,
+                                "color": {
+                                    "red": 0.9921568632125854,
+                                    "green": 0.0,
+                                    "blue": 0.0,
+                                    "alpha": 1.0
+                                }
+                            },
+                            {
+                                "position": 0.20000000298023224,
+                                "color": {
+                                    "red": 1.0,
+                                    "green": 0.501960813999176,
+                                    "blue": 0.0,
+                                    "alpha": 1.0
+                                }
+                            },
+                            {
+                                "position": 0.4000000059604645,
+                                "color": {
+                                    "red": 1.0,
+                                    "green": 1.0,
+                                    "blue": 0.003921568859368563,
+                                    "alpha": 1.0
+                                }
+                            },
+                            {
+                                "position": 0.6000000238418579,
+                                "color": {
+                                    "red": 0.4941176474094391,
+                                    "green": 1.0,
+                                    "blue": 0.46666666865348816,
+                                    "alpha": 1.0
+                                }
+                            },
+                            {
+                                "position": 0.800000011920929,
+                                "color": {
+                                    "red": 0.003921568859368563,
+                                    "green": 0.5764706134796143,
+                                    "blue": 0.6352941393852234,
+                                    "alpha": 1.0
+                                }
+                            },
+                            {
+                                "position": 1.0,
+                                "color": {
+                                    "red": 0.0,
+                                    "green": 0.12941177189350128,
+                                    "blue": 0.3803921639919281,
+                                    "alpha": 1.0
+                                }
+                            }
+                        ],
+                        "opacity": 1.0,
+                        "thickness": 0.0,
+                        "font": {
+                            "name": "",
+                            "size": 0.0
+                        }
+                    }
+                ]
+            }
+        ]
+    },
+    "styles": [
+        {
+            "id": 0,
+            "flags": 1,
+            "colorSource": 1,
+            "customColor": {
+                "red": 0.0,
+                "green": 0.0,
+                "blue": 0.0,
+                "alpha": 1.0
+            },
+            "colorIndex": 0,
+            "colorScheme": 0,
+            "customGradientStops": [
+                {
+                    "position": 0.0,
+                    "color": {
+                        "red": 0.7411764860153198,
+                        "green": 0.7647058963775635,
+                        "blue": 0.7803921699523926,
+                        "alpha": 1.0
+                    }
+                },
+                {
+                    "position": 1.0,
+                    "color": {
+                        "red": 0.1725490242242813,
+                        "green": 0.24313725531101227,
+                        "blue": 0.3137255012989044,
+                        "alpha": 1.0
+                    }
+                }
+            ],
+            "opacity": 1.0,
+            "thickness": 0.0,
+            "font": {
+                "name": "",
+                "size": 1.0
+            }
+        },
+        {
+            "id": 33,
+            "flags": 3,
+            "colorSource": 1,
+            "customColor": {
+                "red": 1.0,
+                "green": 1.0,
+                "blue": 1.0,
+                "alpha": 1.0
+            },
+            "colorIndex": 0,
+            "colorScheme": 0,
+            "customGradientStops": [
+                {
+                    "position": 0.0,
+                    "color": {
+                        "red": 0.7411764860153198,
+                        "green": 0.7647058963775635,
+                        "blue": 0.7803921699523926,
+                        "alpha": 1.0
+                    }
+                },
+                {
+                    "position": 1.0,
+                    "color": {
+                        "red": 0.1725490242242813,
+                        "green": 0.24313725531101227,
+                        "blue": 0.3137255012989044,
+                        "alpha": 1.0
+                    }
+                }
+            ],
+            "opacity": 0.75,
+            "thickness": 1.0,
+            "font": {
+                "name": "",
+                "size": 1.0
+            }
+        },
+        {
+            "id": 1,
+            "flags": 5,
+            "colorSource": 1,
+            "customColor": {
+                "red": 1.0,
+                "green": 1.0,
+                "blue": 1.0,
+                "alpha": 1.0
+            },
+            "colorIndex": 0,
+            "colorScheme": 0,
+            "customGradientStops": [
+                {
+                    "position": 0.0,
+                    "color": {
+                        "red": 0.7411764860153198,
+                        "green": 0.7647058963775635,
+                        "blue": 0.7803921699523926,
+                        "alpha": 1.0
+                    }
+                },
+                {
+                    "position": 1.0,
+                    "color": {
+                        "red": 0.1725490242242813,
+                        "green": 0.24313725531101227,
+                        "blue": 0.3137255012989044,
+                        "alpha": 1.0
+                    }
+                }
+            ],
+            "opacity": 1.0,
+            "thickness": 0.0,
+            "font": {
+                "name": "Segoe UI",
+                "size": 14.0
+            }
+        },
+        {
+            "id": 14,
+            "flags": 1,
+            "colorSource": 1,
+            "customColor": {
+                "red": 1.0,
+                "green": 1.0,
+                "blue": 1.0,
+                "alpha": 0.25
+            },
+            "colorIndex": 0,
+            "colorScheme": 0,
+            "customGradientStops": [
+                {
+                    "position": 0.0,
+                    "color": {
+                        "red": 0.7411764860153198,
+                        "green": 0.7647058963775635,
+                        "blue": 0.7803921699523926,
+                        "alpha": 1.0
+                    }
+                },
+                {
+                    "position": 1.0,
+                    "color": {
+                        "red": 0.1725490242242813,
+                        "green": 0.24313725531101227,
+                        "blue": 0.3137255012989044,
+                        "alpha": 1.0
+                    }
+                }
+            ],
+            "opacity": 1.0,
+            "thickness": 0.0,
+            "font": {
+                "name": "",
+                "size": 1.0
+            }
+        },
+        {
+            "id": 34,
+            "flags": 3,
+            "colorSource": 1,
+            "customColor": {
+                "red": 1.0,
+                "green": 1.0,
+                "blue": 1.0,
+                "alpha": 1.0
+            },
+            "colorIndex": 0,
+            "colorScheme": 0,
+            "customGradientStops": [
+                {
+                    "position": 0.0,
+                    "color": {
+                        "red": 0.7411764860153198,
+                        "green": 0.7647058963775635,
+                        "blue": 0.7803921699523926,
+                        "alpha": 1.0
+                    }
+                },
+                {
+                    "position": 1.0,
+                    "color": {
+                        "red": 0.1725490242242813,
+                        "green": 0.24313725531101227,
+                        "blue": 0.3137255012989044,
+                        "alpha": 1.0
+                    }
+                }
+            ],
+            "opacity": 0.75,
+            "thickness": 1.0,
+            "font": {
+                "name": "",
+                "size": 1.0
+            }
+        },
+        {
+            "id": 2,
+            "flags": 5,
+            "colorSource": 1,
+            "customColor": {
+                "red": 1.0,
+                "green": 1.0,
+                "blue": 1.0,
+                "alpha": 1.0
+            },
+            "colorIndex": 0,
+            "colorScheme": 0,
+            "customGradientStops": [
+                {
+                    "position": 0.0,
+                    "color": {
+                        "red": 0.7411764860153198,
+                        "green": 0.7647058963775635,
+                        "blue": 0.7803921699523926,
+                        "alpha": 1.0
+                    }
+                },
+                {
+                    "position": 1.0,
+                    "color": {
+                        "red": 0.1725490242242813,
+                        "green": 0.24313725531101227,
+                        "blue": 0.3137255012989044,
+                        "alpha": 1.0
+                    }
+                }
+            ],
+            "opacity": 0.75,
+            "thickness": 0.0,
+            "font": {
+                "name": "Segoe UI",
+                "size": 6.0
+            }
+        },
+        {
+            "id": 4,
+            "flags": 5,
+            "colorSource": 1,
+            "customColor": {
+                "red": 1.0,
+                "green": 1.0,
+                "blue": 1.0,
+                "alpha": 1.0
+            },
+            "colorIndex": 0,
+            "colorScheme": 0,
+            "customGradientStops": [
+                {
+                    "position": 0.0,
+                    "color": {
+                        "red": 0.7411764860153198,
+                        "green": 0.7647058963775635,
+                        "blue": 0.7803921699523926,
+                        "alpha": 1.0
+                    }
+                },
+                {
+                    "position": 1.0,
+                    "color": {
+                        "red": 0.1725490242242813,
+                        "green": 0.24313725531101227,
+                        "blue": 0.3137255012989044,
+                        "alpha": 1.0
+                    }
+                }
+            ],
+            "opacity": 0.75,
+            "thickness": 0.0,
+            "font": {
+                "name": "Segoe UI",
+                "size": 6.0
+            }
+        },
+        {
+            "id": 5,
+            "flags": 3,
+            "colorSource": 1,
+            "customColor": {
+                "red": 1.0,
+                "green": 1.0,
+                "blue": 1.0,
+                "alpha": 1.0
+            },
+            "colorIndex": 0,
+            "colorScheme": 0,
+            "customGradientStops": [
+                {
+                    "position": 0.0,
+                    "color": {
+                        "red": 0.7411764860153198,
+                        "green": 0.7647058963775635,
+                        "blue": 0.7803921699523926,
+                        "alpha": 1.0
+                    }
+                },
+                {
+                    "position": 1.0,
+                    "color": {
+                        "red": 0.1725490242242813,
+                        "green": 0.24313725531101227,
+                        "blue": 0.3137255012989044,
+                        "alpha": 1.0
+                    }
+                }
+            ],
+            "opacity": 0.25,
+            "thickness": 1.0,
+            "font": {
+                "name": "",
+                "size": 1.0
+            }
+        },
+        {
+            "id": 3,
+            "flags": 3,
+            "colorSource": 1,
+            "customColor": {
+                "red": 1.0,
+                "green": 1.0,
+                "blue": 1.0,
+                "alpha": 1.0
+            },
+            "colorIndex": 0,
+            "colorScheme": 0,
+            "customGradientStops": [
+                {
+                    "position": 0.0,
+                    "color": {
+                        "red": 0.7411764860153198,
+                        "green": 0.7647058963775635,
+                        "blue": 0.7803921699523926,
+                        "alpha": 1.0
+                    }
+                },
+                {
+                    "position": 1.0,
+                    "color": {
+                        "red": 0.1725490242242813,
+                        "green": 0.24313725531101227,
+                        "blue": 0.3137255012989044,
+                        "alpha": 1.0
+                    }
+                }
+            ],
+            "opacity": 0.25,
+            "thickness": 1.0,
+            "font": {
+                "name": "",
+                "size": 1.0
+            }
+        },
+        {
+            "id": 15,
+            "flags": 3,
+            "colorSource": 1,
+            "customColor": {
+                "red": 1.0,
+                "green": 0.0,
+                "blue": 0.0,
+                "alpha": 1.0
+            },
+            "colorIndex": 0,
+            "colorScheme": 2,
+            "customGradientStops": [
+                {
+                    "position": 0.0,
+                    "color": {
+                        "red": 0.7411764860153198,
+                        "green": 0.7647058963775635,
+                        "blue": 0.7803921699523926,
+                        "alpha": 1.0
+                    }
+                },
+                {
+                    "position": 1.0,
+                    "color": {
+                        "red": 0.1725490242242813,
+                        "green": 0.24313725531101227,
+                        "blue": 0.3137255012989044,
+                        "alpha": 1.0
+                    }
+                }
+            ],
+            "opacity": 1.0,
+            "thickness": 1.0,
+            "font": {
+                "name": "",
+                "size": 0.0
+            }
+        },
+        {
+            "id": 6,
+            "flags": 33,
+            "colorSource": 3,
+            "customColor": {
+                "red": 0.0,
+                "green": 0.0,
+                "blue": 0.0,
+                "alpha": 1.0
+            },
+            "colorIndex": 0,
+            "colorScheme": 4,
+            "customGradientStops": [
+                {
+                    "position": 0.0,
+                    "color": {
+                        "red": 0.7411764860153198,
+                        "green": 0.7647058963775635,
+                        "blue": 0.7803921699523926,
+                        "alpha": 1.0
+                    }
+                },
+                {
+                    "position": 1.0,
+                    "color": {
+                        "red": 0.1725490242242813,
+                        "green": 0.24313725531101227,
+                        "blue": 0.3137255012989044,
+                        "alpha": 1.0
+                    }
+                }
+            ],
+            "opacity": 1.0,
+            "thickness": 0.0,
+            "font": {
+                "name": "",
+                "size": 1.0
+            }
+        },
+        {
+            "id": 16,
+            "flags": 3,
+            "colorSource": 1,
+            "customColor": {
+                "red": 1.0,
+                "green": 1.0,
+                "blue": 1.0,
+                "alpha": 1.0
+            },
+            "colorIndex": 0,
+            "colorScheme": 3,
+            "customGradientStops": [
+                {
+                    "position": 0.0,
+                    "color": {
+                        "red": 0.7411764860153198,
+                        "green": 0.7647058963775635,
+                        "blue": 0.7803921699523926,
+                        "alpha": 1.0
+                    }
+                },
+                {
+                    "position": 1.0,
+                    "color": {
+                        "red": 0.1725490242242813,
+                        "green": 0.24313725531101227,
+                        "blue": 0.3137255012989044,
+                        "alpha": 1.0
+                    }
+                }
+            ],
+            "opacity": 1.0,
+            "thickness": 2.0,
+            "font": {
+                "name": "",
+                "size": 1.0
+            }
+        },
+        {
+            "id": 17,
+            "flags": 33,
+            "colorSource": 3,
+            "customColor": {
+                "red": 0.0,
+                "green": 0.0,
+                "blue": 0.0,
+                "alpha": 1.0
+            },
+            "colorIndex": 0,
+            "colorScheme": 4,
+            "customGradientStops": [
+                {
+                    "position": 0.0,
+                    "color": {
+                        "red": 0.7411764860153198,
+                        "green": 0.7647058963775635,
+                        "blue": 0.7803921699523926,
+                        "alpha": 1.0
+                    }
+                },
+                {
+                    "position": 1.0,
+                    "color": {
+                        "red": 0.1725490242242813,
+                        "green": 0.24313725531101227,
+                        "blue": 0.3137255012989044,
+                        "alpha": 1.0
+                    }
+                }
+            ],
+            "opacity": 0.25,
+            "thickness": 0.0,
+            "font": {
+                "name": "",
+                "size": 1.0
+            }
+        },
+        {
+            "id": 7,
+            "flags": 3,
+            "colorSource": 1,
+            "customColor": {
+                "red": 1.0,
+                "green": 1.0,
+                "blue": 1.0,
+                "alpha": 1.0
+            },
+            "colorIndex": 0,
+            "colorScheme": 0,
+            "customGradientStops": [
+                {
+                    "position": 0.0,
+                    "color": {
+                        "red": 0.7411764860153198,
+                        "green": 0.7647058963775635,
+                        "blue": 0.7803921699523926,
+                        "alpha": 1.0
+                    }
+                },
+                {
+                    "position": 1.0,
+                    "color": {
+                        "red": 0.1725490242242813,
+                        "green": 0.24313725531101227,
+                        "blue": 0.3137255012989044,
+                        "alpha": 1.0
+                    }
+                }
+            ],
+            "opacity": 1.0,
+            "thickness": 2.0,
+            "font": {
+                "name": "",
+                "size": 1.0
+            }
+        },
+        {
+            "id": 8,
+            "flags": 1,
+            "colorSource": 1,
+            "customColor": {
+                "red": 0.20000000298023224,
+                "green": 0.20000000298023224,
+                "blue": 0.20000000298023224,
+                "alpha": 0.699999988079071
+            },
+            "colorIndex": 0,
+            "colorScheme": 0,
+            "customGradientStops": [
+                {
+                    "position": 0.0,
+                    "color": {
+                        "red": 0.7411764860153198,
+                        "green": 0.7647058963775635,
+                        "blue": 0.7803921699523926,
+                        "alpha": 1.0
+                    }
+                },
+                {
+                    "position": 1.0,
+                    "color": {
+                        "red": 0.1725490242242813,
+                        "green": 0.24313725531101227,
+                        "blue": 0.3137255012989044,
+                        "alpha": 1.0
+                    }
+                }
+            ],
+            "opacity": 1.0,
+            "thickness": 0.0,
+            "font": {
+                "name": "",
+                "size": 0.0
+            }
+        },
+        {
+            "id": 9,
+            "flags": 1,
+            "colorSource": 1,
+            "customColor": {
+                "red": 0.20000000298023224,
+                "green": 0.20000000298023224,
+                "blue": 0.20000000298023224,
+                "alpha": 0.699999988079071
+            },
+            "colorIndex": 0,
+            "colorScheme": 0,
+            "customGradientStops": [
+                {
+                    "position": 0.0,
+                    "color": {
+                        "red": 0.7411764860153198,
+                        "green": 0.7647058963775635,
+                        "blue": 0.7803921699523926,
+                        "alpha": 1.0
+                    }
+                },
+                {
+                    "position": 1.0,
+                    "color": {
+                        "red": 0.1725490242242813,
+                        "green": 0.24313725531101227,
+                        "blue": 0.3137255012989044,
+                        "alpha": 1.0
+                    }
+                }
+            ],
+            "opacity": 1.0,
+            "thickness": 0.0,
+            "font": {
+                "name": "",
+                "size": 0.0
+            }
+        },
+        {
+            "id": 10,
+            "flags": 3,
+            "colorSource": 3,
+            "customColor": {
+                "red": 0.0,
+                "green": 0.0,
+                "blue": 0.0,
+                "alpha": 1.0
+            },
+            "colorIndex": 0,
+            "colorScheme": 2,
+            "customGradientStops": [
+                {
+                    "position": 0.0,
+                    "color": {
+                        "red": 0.7411764860153198,
+                        "green": 0.7647058963775635,
+                        "blue": 0.7803921699523926,
+                        "alpha": 1.0
+                    }
+                },
+                {
+                    "position": 1.0,
+                    "color": {
+                        "red": 0.1725490242242813,
+                        "green": 0.24313725531101227,
+                        "blue": 0.3137255012989044,
+                        "alpha": 1.0
+                    }
+                }
+            ],
+            "opacity": 1.0,
+            "thickness": 2.0,
+            "font": {
+                "name": "",
+                "size": 0.0
+            }
+        },
+        {
+            "id": 11,
+            "flags": 1,
+            "colorSource": 3,
+            "customColor": {
+                "red": 0.0,
+                "green": 0.0,
+                "blue": 0.0,
+                "alpha": 1.0
+            },
+            "colorIndex": 0,
+            "colorScheme": 8,
+            "customGradientStops": [
+                {
+                    "position": 0.0,
+                    "color": {
+                        "red": 0.7411764860153198,
+                        "green": 0.7647058963775635,
+                        "blue": 0.7803921699523926,
+                        "alpha": 1.0
+                    }
+                },
+                {
+                    "position": 1.0,
+                    "color": {
+                        "red": 0.1725490242242813,
+                        "green": 0.24313725531101227,
+                        "blue": 0.3137255012989044,
+                        "alpha": 1.0
+                    }
+                }
+            ],
+            "opacity": 0.5,
+            "thickness": 0.0,
+            "font": {
+                "name": "",
+                "size": 1.0
+            }
+        },
+        {
+            "id": 12,
+            "flags": 3,
+            "colorSource": 1,
+            "customColor": {
+                "red": 1.0,
+                "green": 1.0,
+                "blue": 1.0,
+                "alpha": 1.0
+            },
+            "colorIndex": 0,
+            "colorScheme": 2,
+            "customGradientStops": [
+                {
+                    "position": 0.0,
+                    "color": {
+                        "red": 0.7411764860153198,
+                        "green": 0.7647058963775635,
+                        "blue": 0.7803921699523926,
+                        "alpha": 1.0
+                    }
+                },
+                {
+                    "position": 1.0,
+                    "color": {
+                        "red": 0.1725490242242813,
+                        "green": 0.24313725531101227,
+                        "blue": 0.3137255012989044,
+                        "alpha": 1.0
+                    }
+                }
+            ],
+            "opacity": 1.0,
+            "thickness": 2.0,
+            "font": {
+                "name": "",
+                "size": 0.0
+            }
+        },
+        {
+            "id": 13,
+            "flags": 1,
+            "colorSource": 1,
+            "customColor": {
+                "red": 1.0,
+                "green": 1.0,
+                "blue": 1.0,
+                "alpha": 1.0
+            },
+            "colorIndex": 0,
+            "colorScheme": 2,
+            "customGradientStops": [
+                {
+                    "position": 0.0,
+                    "color": {
+                        "red": 0.7411764860153198,
+                        "green": 0.7647058963775635,
+                        "blue": 0.7803921699523926,
+                        "alpha": 1.0
+                    }
+                },
+                {
+                    "position": 1.0,
+                    "color": {
+                        "red": 0.1725490242242813,
+                        "green": 0.24313725531101227,
+                        "blue": 0.3137255012989044,
+                        "alpha": 1.0
+                    }
+                }
+            ],
+            "opacity": 0.25,
+            "thickness": 0.0,
+            "font": {
+                "name": "",
+                "size": 0.0
+            }
+        },
+        {
+            "id": 18,
+            "flags": 49,
+            "colorSource": 3,
+            "customColor": {
+                "red": 0.0,
+                "green": 0.0,
+                "blue": 0.0,
+                "alpha": 1.0
+            },
+            "colorIndex": 0,
+            "colorScheme": 10,
+            "customGradientStops": [
+                {
+                    "position": 0.0,
+                    "color": {
+                        "red": 0.7411764860153198,
+                        "green": 0.7647058963775635,
+                        "blue": 0.7803921699523926,
+                        "alpha": 1.0
+                    }
+                },
+                {
+                    "position": 1.0,
+                    "color": {
+                        "red": 0.1725490242242813,
+                        "green": 0.24313725531101227,
+                        "blue": 0.3137255012989044,
+                        "alpha": 1.0
+                    }
+                }
+            ],
+            "opacity": 1.0,
+            "thickness": 0.0,
+            "font": {
+                "name": "",
+                "size": 0.0
+            }
+        },
+        {
+            "id": 19,
+            "flags": 1,
+            "colorSource": 1,
+            "customColor": {
+                "red": 0.20000000298023224,
+                "green": 0.20000000298023224,
+                "blue": 0.20000000298023224,
+                "alpha": 1.0
+            },
+            "colorIndex": 0,
+            "colorScheme": 0,
+            "customGradientStops": [
+                {
+                    "position": 0.0,
+                    "color": {
+                        "red": 0.7411764860153198,
+                        "green": 0.7647058963775635,
+                        "blue": 0.7803921699523926,
+                        "alpha": 1.0
+                    }
+                },
+                {
+                    "position": 1.0,
+                    "color": {
+                        "red": 0.1725490242242813,
+                        "green": 0.24313725531101227,
+                        "blue": 0.3137255012989044,
+                        "alpha": 1.0
+                    }
+                }
+            ],
+            "opacity": 1.0,
+            "thickness": 0.0,
+            "font": {
+                "name": "",
+                "size": 0.0
+            }
+        },
+        {
+            "id": 20,
+            "flags": 1,
+            "colorSource": 3,
+            "customColor": {
+                "red": 0.0,
+                "green": 0.0,
+                "blue": 0.0,
+                "alpha": 1.0
+            },
+            "colorIndex": 0,
+            "colorScheme": 3,
+            "customGradientStops": [
+                {
+                    "position": 0.0,
+                    "color": {
+                        "red": 0.7411764860153198,
+                        "green": 0.7647058963775635,
+                        "blue": 0.7803921699523926,
+                        "alpha": 1.0
+                    }
+                },
+                {
+                    "position": 1.0,
+                    "color": {
+                        "red": 0.1725490242242813,
+                        "green": 0.24313725531101227,
+                        "blue": 0.3137255012989044,
+                        "alpha": 1.0
+                    }
+                }
+            ],
+            "opacity": 1.0,
+            "thickness": 0.0,
+            "font": {
+                "name": "",
+                "size": 0.0
+            }
+        },
+        {
+            "id": 23,
+            "flags": 1,
+            "colorSource": 1,
+            "customColor": {
+                "red": 1.0,
+                "green": 0.0,
+                "blue": 0.0,
+                "alpha": 1.0
+            },
+            "colorIndex": 0,
+            "colorScheme": 3,
+            "customGradientStops": [
+                {
+                    "position": 0.0,
+                    "color": {
+                        "red": 0.7411764860153198,
+                        "green": 0.7647058963775635,
+                        "blue": 0.7803921699523926,
+                        "alpha": 1.0
+                    }
+                },
+                {
+                    "position": 1.0,
+                    "color": {
+                        "red": 0.1725490242242813,
+                        "green": 0.24313725531101227,
+                        "blue": 0.3137255012989044,
+                        "alpha": 1.0
+                    }
+                }
+            ],
+            "opacity": 1.0,
+            "thickness": 0.0,
+            "font": {
+                "name": "",
+                "size": 0.0
+            }
+        },
+        {
+            "id": 25,
+            "flags": 3,
+            "colorSource": 1,
+            "customColor": {
+                "red": 1.0,
+                "green": 1.0,
+                "blue": 1.0,
+                "alpha": 1.0
+            },
+            "colorIndex": 0,
+            "colorScheme": 0,
+            "customGradientStops": [
+                {
+                    "position": 0.0,
+                    "color": {
+                        "red": 0.7411764860153198,
+                        "green": 0.7647058963775635,
+                        "blue": 0.7803921699523926,
+                        "alpha": 1.0
+                    }
+                },
+                {
+                    "position": 1.0,
+                    "color": {
+                        "red": 0.1725490242242813,
+                        "green": 0.24313725531101227,
+                        "blue": 0.3137255012989044,
+                        "alpha": 1.0
+                    }
+                }
+            ],
+            "opacity": 1.0,
+            "thickness": 1.0,
+            "font": {
+                "name": "",
+                "size": 0.0
+            }
+        },
+        {
+            "id": 26,
+            "flags": 5,
+            "colorSource": 1,
+            "customColor": {
+                "red": 1.0,
+                "green": 1.0,
+                "blue": 1.0,
+                "alpha": 1.0
+            },
+            "colorIndex": 0,
+            "colorScheme": 0,
+            "customGradientStops": [
+                {
+                    "position": 0.0,
+                    "color": {
+                        "red": 0.7411764860153198,
+                        "green": 0.7647058963775635,
+                        "blue": 0.7803921699523926,
+                        "alpha": 1.0
+                    }
+                },
+                {
+                    "position": 1.0,
+                    "color": {
+                        "red": 0.1725490242242813,
+                        "green": 0.24313725531101227,
+                        "blue": 0.3137255012989044,
+                        "alpha": 1.0
+                    }
+                }
+            ],
+            "opacity": 1.0,
+            "thickness": 0.0,
+            "font": {
+                "name": "Segoe UI",
+                "size": 10.0
+            }
+        },
+        {
+            "id": 21,
+            "flags": 1,
+            "colorSource": 3,
+            "customColor": {
+                "red": 0.0,
+                "green": 0.0,
+                "blue": 0.0,
+                "alpha": 1.0
+            },
+            "colorIndex": 0,
+            "colorScheme": 3,
+            "customGradientStops": [
+                {
+                    "position": 0.0,
+                    "color": {
+                        "red": 0.7411764860153198,
+                        "green": 0.7647058963775635,
+                        "blue": 0.7803921699523926,
+                        "alpha": 1.0
+                    }
+                },
+                {
+                    "position": 1.0,
+                    "color": {
+                        "red": 0.1725490242242813,
+                        "green": 0.24313725531101227,
+                        "blue": 0.3137255012989044,
+                        "alpha": 1.0
+                    }
+                }
+            ],
+            "opacity": 1.0,
+            "thickness": 0.0,
+            "font": {
+                "name": "",
+                "size": 0.0
+            }
+        },
+        {
+            "id": 24,
+            "flags": 1,
+            "colorSource": 1,
+            "customColor": {
+                "red": 1.0,
+                "green": 0.0,
+                "blue": 0.0,
+                "alpha": 1.0
+            },
+            "colorIndex": 0,
+            "colorScheme": 3,
+            "customGradientStops": [
+                {
+                    "position": 0.0,
+                    "color": {
+                        "red": 0.7411764860153198,
+                        "green": 0.7647058963775635,
+                        "blue": 0.7803921699523926,
+                        "alpha": 1.0
+                    }
+                },
+                {
+                    "position": 1.0,
+                    "color": {
+                        "red": 0.1725490242242813,
+                        "green": 0.24313725531101227,
+                        "blue": 0.3137255012989044,
+                        "alpha": 1.0
+                    }
+                }
+            ],
+            "opacity": 1.0,
+            "thickness": 0.0,
+            "font": {
+                "name": "",
+                "size": 0.0
+            }
+        },
+        {
+            "id": 22,
+            "flags": 5,
+            "colorSource": 1,
+            "customColor": {
+                "red": 1.0,
+                "green": 1.0,
+                "blue": 1.0,
+                "alpha": 1.0
+            },
+            "colorIndex": 0,
+            "colorScheme": 0,
+            "customGradientStops": [
+                {
+                    "position": 0.0,
+                    "color": {
+                        "red": 0.7411764860153198,
+                        "green": 0.7647058963775635,
+                        "blue": 0.7803921699523926,
+                        "alpha": 1.0
+                    }
+                },
+                {
+                    "position": 1.0,
+                    "color": {
+                        "red": 0.1725490242242813,
+                        "green": 0.24313725531101227,
+                        "blue": 0.3137255012989044,
+                        "alpha": 1.0
+                    }
+                }
+            ],
+            "opacity": 1.0,
+            "thickness": 0.0,
+            "font": {
+                "name": "Segoe UI",
+                "size": 10.0
+            }
+        },
+        {
+            "id": 27,
+            "flags": 3,
+            "colorSource": 3,
+            "customColor": {
+                "red": 0.0,
+                "green": 0.0,
+                "blue": 0.0,
+                "alpha": 1.0
+            },
+            "colorIndex": 0,
+            "colorScheme": 3,
+            "customGradientStops": [
+                {
+                    "position": 0.0,
+                    "color": {
+                        "red": 0.7411764860153198,
+                        "green": 0.7647058963775635,
+                        "blue": 0.7803921699523926,
+                        "alpha": 1.0
+                    }
+                },
+                {
+                    "position": 1.0,
+                    "color": {
+                        "red": 0.1725490242242813,
+                        "green": 0.24313725531101227,
+                        "blue": 0.3137255012989044,
+                        "alpha": 1.0
+                    }
+                }
+            ],
+            "opacity": 1.0,
+            "thickness": 1.0,
+            "font": {
+                "name": "",
+                "size": 0.0
+            }
+        },
+        {
+            "id": 30,
+            "flags": 3,
+            "colorSource": 1,
+            "customColor": {
+                "red": 1.0,
+                "green": 1.0,
+                "blue": 1.0,
+                "alpha": 1.0
+            },
+            "colorIndex": 0,
+            "colorScheme": 3,
+            "customGradientStops": [
+                {
+                    "position": 0.0,
+                    "color": {
+                        "red": 0.7411764860153198,
+                        "green": 0.7647058963775635,
+                        "blue": 0.7803921699523926,
+                        "alpha": 1.0
+                    }
+                },
+                {
+                    "position": 1.0,
+                    "color": {
+                        "red": 0.1725490242242813,
+                        "green": 0.24313725531101227,
+                        "blue": 0.3137255012989044,
+                        "alpha": 1.0
+                    }
+                }
+            ],
+            "opacity": 1.0,
+            "thickness": 1.0,
+            "font": {
+                "name": "",
+                "size": 0.0
+            }
+        },
+        {
+            "id": 28,
+            "flags": 3,
+            "colorSource": 3,
+            "customColor": {
+                "red": 0.0,
+                "green": 0.0,
+                "blue": 0.0,
+                "alpha": 1.0
+            },
+            "colorIndex": 0,
+            "colorScheme": 3,
+            "customGradientStops": [
+                {
+                    "position": 0.0,
+                    "color": {
+                        "red": 0.7411764860153198,
+                        "green": 0.7647058963775635,
+                        "blue": 0.7803921699523926,
+                        "alpha": 1.0
+                    }
+                },
+                {
+                    "position": 1.0,
+                    "color": {
+                        "red": 0.1725490242242813,
+                        "green": 0.24313725531101227,
+                        "blue": 0.3137255012989044,
+                        "alpha": 1.0
+                    }
+                }
+            ],
+            "opacity": 1.0,
+            "thickness": 1.0,
+            "font": {
+                "name": "",
+                "size": 0.0
+            }
+        },
+        {
+            "id": 31,
+            "flags": 3,
+            "colorSource": 1,
+            "customColor": {
+                "red": 1.0,
+                "green": 1.0,
+                "blue": 1.0,
+                "alpha": 1.0
+            },
+            "colorIndex": 0,
+            "colorScheme": 3,
+            "customGradientStops": [
+                {
+                    "position": 0.0,
+                    "color": {
+                        "red": 0.7411764860153198,
+                        "green": 0.7647058963775635,
+                        "blue": 0.7803921699523926,
+                        "alpha": 1.0
+                    }
+                },
+                {
+                    "position": 1.0,
+                    "color": {
+                        "red": 0.1725490242242813,
+                        "green": 0.24313725531101227,
+                        "blue": 0.3137255012989044,
+                        "alpha": 1.0
+                    }
+                }
+            ],
+            "opacity": 1.0,
+            "thickness": 1.0,
+            "font": {
+                "name": "",
+                "size": 0.0
+            }
+        },
+        {
+            "id": 29,
+            "flags": 7,
+            "colorSource": 1,
+            "customColor": {
+                "red": 1.0,
+                "green": 1.0,
+                "blue": 1.0,
+                "alpha": 1.0
+            },
+            "colorIndex": 0,
+            "colorScheme": 3,
+            "customGradientStops": [
+                {
+                    "position": 0.0,
+                    "color": {
+                        "red": 0.7411764860153198,
+                        "green": 0.7647058963775635,
+                        "blue": 0.7803921699523926,
+                        "alpha": 1.0
+                    }
+                },
+                {
+                    "position": 1.0,
+                    "color": {
+                        "red": 0.1725490242242813,
+                        "green": 0.24313725531101227,
+                        "blue": 0.3137255012989044,
+                        "alpha": 1.0
+                    }
+                }
+            ],
+            "opacity": 0.5,
+            "thickness": 1.0,
+            "font": {
+                "name": "Segoe UI",
+                "size": 10.0
+            }
+        },
+        {
+            "id": 32,
+            "flags": 3,
+            "colorSource": 1,
+            "customColor": {
+                "red": 0.5647059082984924,
+                "green": 0.9333333373069763,
+                "blue": 0.5647059082984924,
+                "alpha": 1.0
+            },
+            "colorIndex": 0,
+            "colorScheme": 3,
+            "customGradientStops": [
+                {
+                    "position": 0.0,
+                    "color": {
+                        "red": 0.7411764860153198,
+                        "green": 0.7647058963775635,
+                        "blue": 0.7803921699523926,
+                        "alpha": 1.0
+                    }
+                },
+                {
+                    "position": 1.0,
+                    "color": {
+                        "red": 0.1725490242242813,
+                        "green": 0.24313725531101227,
+                        "blue": 0.3137255012989044,
+                        "alpha": 1.0
+                    }
+                }
+            ],
+            "opacity": 0.800000011920929,
+            "thickness": 1.0,
+            "font": {
+                "name": "",
+                "size": 1.0
+            }
+        },
+        {
+            "id": 35,
+            "flags": 1,
+            "colorSource": 1,
+            "customColor": {
+                "red": 0.7529411911964417,
+                "green": 0.7529411911964417,
+                "blue": 0.7529411911964417,
+                "alpha": 1.0
+            },
+            "colorIndex": 0,
+            "colorScheme": 3,
+            "customGradientStops": [
+                {
+                    "position": 0.0,
+                    "color": {
+                        "red": 0.9921568632125854,
+                        "green": 0.0,
+                        "blue": 0.0,
+                        "alpha": 1.0
+                    }
+                },
+                {
+                    "position": 0.20000000298023224,
+                    "color": {
+                        "red": 1.0,
+                        "green": 0.501960813999176,
+                        "blue": 0.0,
+                        "alpha": 1.0
+                    }
+                },
+                {
+                    "position": 0.4000000059604645,
+                    "color": {
+                        "red": 1.0,
+                        "green": 1.0,
+                        "blue": 0.003921568859368563,
+                        "alpha": 1.0
+                    }
+                },
+                {
+                    "position": 0.6000000238418579,
+                    "color": {
+                        "red": 0.4941176474094391,
+                        "green": 1.0,
+                        "blue": 0.46666666865348816,
+                        "alpha": 1.0
+                    }
+                },
+                {
+                    "position": 0.800000011920929,
+                    "color": {
+                        "red": 0.003921568859368563,
+                        "green": 0.5764706134796143,
+                        "blue": 0.6352941393852234,
+                        "alpha": 1.0
+                    }
+                },
+                {
+                    "position": 1.0,
+                    "color": {
+                        "red": 0.0,
+                        "green": 0.12941177189350128,
+                        "blue": 0.3803921639919281,
+                        "alpha": 1.0
+                    }
+                }
+            ],
+            "opacity": 1.0,
+            "thickness": 0.0,
+            "font": {
+                "name": "",
+                "size": 0.0
+            }
+        },
+        {
+            "id": 36,
+            "flags": 1,
+            "colorSource": 1,
+            "customColor": {
+                "red": 0.8392156958580017,
+                "green": 0.6117647290229797,
+                "blue": 0.33725491166114807,
+                "alpha": 1.0
+            },
+            "colorIndex": 0,
+            "colorScheme": 3,
+            "customGradientStops": [
+                {
+                    "position": 0.0,
+                    "color": {
+                        "red": 0.9921568632125854,
+                        "green": 0.0,
+                        "blue": 0.0,
+                        "alpha": 1.0
+                    }
+                },
+                {
+                    "position": 0.20000000298023224,
+                    "color": {
+                        "red": 1.0,
+                        "green": 0.501960813999176,
+                        "blue": 0.0,
+                        "alpha": 1.0
+                    }
+                },
+                {
+                    "position": 0.4000000059604645,
+                    "color": {
+                        "red": 1.0,
+                        "green": 1.0,
+                        "blue": 0.003921568859368563,
+                        "alpha": 1.0
+                    }
+                },
+                {
+                    "position": 0.6000000238418579,
+                    "color": {
+                        "red": 0.4941176474094391,
+                        "green": 1.0,
+                        "blue": 0.46666666865348816,
+                        "alpha": 1.0
+                    }
+                },
+                {
+                    "position": 0.800000011920929,
+                    "color": {
+                        "red": 0.003921568859368563,
+                        "green": 0.5764706134796143,
+                        "blue": 0.6352941393852234,
+                        "alpha": 1.0
+                    }
+                },
+                {
+                    "position": 1.0,
+                    "color": {
+                        "red": 0.0,
+                        "green": 0.12941177189350128,
+                        "blue": 0.3803921639919281,
+                        "alpha": 1.0
+                    }
+                }
+            ],
+            "opacity": 1.0,
+            "thickness": 0.0,
+            "font": {
+                "name": "",
+                "size": 0.0
+            }
+        },
+        {
+            "id": 37,
+            "flags": 1,
+            "colorSource": 1,
+            "customColor": {
+                "red": 0.33725491166114807,
+                "green": 0.6117647290229797,
+                "blue": 0.8392156958580017,
+                "alpha": 1.0
+            },
+            "colorIndex": 0,
+            "colorScheme": 3,
+            "customGradientStops": [
+                {
+                    "position": 0.0,
+                    "color": {
+                        "red": 0.9921568632125854,
+                        "green": 0.0,
+                        "blue": 0.0,
+                        "alpha": 1.0
+                    }
+                },
+                {
+                    "position": 0.20000000298023224,
+                    "color": {
+                        "red": 1.0,
+                        "green": 0.501960813999176,
+                        "blue": 0.0,
+                        "alpha": 1.0
+                    }
+                },
+                {
+                    "position": 0.4000000059604645,
+                    "color": {
+                        "red": 1.0,
+                        "green": 1.0,
+                        "blue": 0.003921568859368563,
+                        "alpha": 1.0
+                    }
+                },
+                {
+                    "position": 0.6000000238418579,
+                    "color": {
+                        "red": 0.4941176474094391,
+                        "green": 1.0,
+                        "blue": 0.46666666865348816,
+                        "alpha": 1.0
+                    }
+                },
+                {
+                    "position": 0.800000011920929,
+                    "color": {
+                        "red": 0.003921568859368563,
+                        "green": 0.5764706134796143,
+                        "blue": 0.6352941393852234,
+                        "alpha": 1.0
+                    }
+                },
+                {
+                    "position": 1.0,
+                    "color": {
+                        "red": 0.0,
+                        "green": 0.12941177189350128,
+                        "blue": 0.3803921639919281,
+                        "alpha": 1.0
+                    }
+                }
+            ],
+            "opacity": 1.0,
+            "thickness": 0.0,
+            "font": {
+                "name": "",
+                "size": 0.0
+            }
+        }
+    ],
+    "presetsDirectory": ""
+}

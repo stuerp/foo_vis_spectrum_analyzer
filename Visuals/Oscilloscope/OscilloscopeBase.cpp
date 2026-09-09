@@ -296,3 +296,35 @@ void oscilloscope_base_t::DeleteDeviceSpecificResources() noexcept
     _YAxisLineStyle.DeleteDeviceSpecificResources();
     _HorizontalGridLineStyle.DeleteDeviceSpecificResources();
 }
+
+/// <summary>
+/// Finds the zero-crossing in the chunk.
+/// </summary>
+size_t oscilloscope_base_t::FindZeroCrossing(const audio_sample * frames, size_t frameCount, uint32_t channelCount) noexcept
+{
+    size_t CrossIndex = frameCount;
+
+    // Return the earliest zero-crossing across all channels.
+    for (size_t i = 0; i < channelCount; ++i)
+    {
+        audio_sample Sample0 = frames[i];
+        audio_sample Sample1 = frames[i + channelCount];
+
+        for (size_t j = 2; j < frameCount; ++j)
+        {
+            const audio_sample Sample2 = frames[i + (j * channelCount)];
+
+            // Is this a rising zero crossing? Confirm with the next sample.
+            if ((Sample0 < 0.) && (Sample1 >= 0.) && (Sample2 >= 0.))
+            {
+                CrossIndex = std::min(CrossIndex, j - 1);
+                break;
+            }
+
+            Sample0 = Sample1;
+            Sample1 = Sample2;
+        }
+    }
+
+    return CrossIndex;
+}

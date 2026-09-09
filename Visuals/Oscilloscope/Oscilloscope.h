@@ -1,5 +1,5 @@
 
-/** $VER: Oscilloscope.h (2026.08.22) P. Stuer - Implements an oscilloscope. **/
+/** $VER: Oscilloscope.h (2026.09.09) P. Stuer - Implements an oscilloscope. **/
 
 #pragma once
 

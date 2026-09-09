@@ -117,5 +117,6 @@ style DS_SETFONT | DS_CONTROL | WS_CHILD | WS_CLIPCHILDREN
         rtext       "Decay factor:"                 IDC_DECAY_FACTOR_LBL,           X_C70, Y_C70 + 2, W_C70, H_C70
         edittext                                    IDC_DECAY_FACTOR,               X_C72, Y_C72, W_C72, H_C72, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
 
-        control     "Downmix to mono"               IDC_DOWNMIX, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_A40, Y_A40 + 1, W_A40, H_A40
+        control     "Downmix to mono"               IDC_DOWNMIX,                    "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_A40, Y_A40 + 1, W_A40, H_A40
+        control     "Zero-crossing trigger"         IDC_ZERO_CROSSING,              "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_A42, Y_A42 + 1, W_A42, H_A42
 }

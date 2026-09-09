@@ -1,6 +1,15 @@
 
 # foo_vis_spectrum_analyzer History
 
+v0.12.0.0-rc1, 2026-09-07
+
+- New: Lanczos and 4-term Blackman-Harris window function.
+  - The latter produces very clean peaks with minimal leakage from strong tones into neighboring bins.
+- Improved: Cleaned up the rough edges of the spectrogram.
+- Improved: Minor redesign of the Graphs page to make the spectrogram easier to configure.
+  - Left/Right and Top/Bottom axis should be more consistent for a horizontal or vertical spectrogram.
+- Changed: Made the CPU/GPU use optimization logic less invasive when the visualization is hidden or minimized to react more predictable to track changes and the end of a playlist.
+
 v0.12.0.0-alpha3, 2026-09-04
 
 - New: Mel scale frequency distribution.

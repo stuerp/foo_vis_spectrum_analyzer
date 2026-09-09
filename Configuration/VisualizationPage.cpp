@@ -1,5 +1,5 @@
 
-/** $VER: VisualizationPage.cpp (2026.09.02) P. Stuer - Implements a configuration dialog page. **/
+/** $VER: VisualizationPage.cpp (2026.09.08) P. Stuer - Implements a configuration dialog page. **/
 
 #include "pch.h"
 
@@ -57,6 +57,7 @@ BOOL visualization_page_t::OnInitDialog(CWindow w, LPARAM lParam) noexcept
         { IDC_BLUR_SIGMA, "Specifies the number of pixels used for the Gaussian blur. A higher value increases the blurring." },
         { IDC_DECAY_FACTOR, "Specifies the color fade speed. Lower values cause a faster decay." },
         { IDC_DOWNMIX, "Enable this setting to downmix the input audio of the oscilloscope to mono." },
+        { IDC_ZERO_CROSSING, "Enables a zero trigger to synchronize the oscilloscope display to the signal's zero crossings, creating a stable and readable waveform display." },
     };
 
     for (const auto & [ID, Text] : Tips)
@@ -214,7 +215,8 @@ void visualization_page_t::InitializeControls() noexcept
             auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_DECAY_FACTOR)); _NumericEdits.push_back(ne); SetDouble(IDC_DECAY_FACTOR, _State->_DecayFactor);
         }
 
-        SendDlgItemMessageW(IDC_DOWNMIX, BM_SETCHECK, _State->_Downmix);
+        SendDlgItemMessageW(IDC_DOWNMIX,       BM_SETCHECK, _State->_Downmix);
+        SendDlgItemMessageW(IDC_ZERO_CROSSING, BM_SETCHECK, _State->_ZeroCrossingTrigger);
     }
 
     UpdateControls();
@@ -286,19 +288,20 @@ void visualization_page_t::UpdateControls() noexcept
     GetDlgItem(IDC_HORIZONTAL_LEVEL_METER).EnableWindow(IsLevelMeter);
 
     // Oscilloscope
-    GetDlgItem(IDC_XY_MODE).EnableWindow(IsOscilloscope);
+    GetDlgItem(IDC_XY_MODE)       .EnableWindow(IsOscilloscope);
 
-    GetDlgItem(IDC_X_GAIN).EnableWindow(IsOscilloscope && _State->_XYMode);
-    GetDlgItem(IDC_Y_GAIN).EnableWindow(IsOscilloscope);    // Available in both modes.
-    GetDlgItem(IDC_ROTATION).EnableWindow(IsOscilloscope && _State->_XYMode);
-    GetDlgItem(IDC_FRAME_COUNT).EnableWindow(IsOscilloscope);    // Available in both modes.
+    GetDlgItem(IDC_X_GAIN)        .EnableWindow(IsOscilloscope && _State->_XYMode);
+    GetDlgItem(IDC_Y_GAIN)        .EnableWindow(IsOscilloscope);    // Available in both modes.
+    GetDlgItem(IDC_ROTATION)      .EnableWindow(IsOscilloscope && _State->_XYMode);
+    GetDlgItem(IDC_FRAME_COUNT)   .EnableWindow(IsOscilloscope);    // Available in both modes.
 
     GetDlgItem(IDC_PHOSPHOR_DECAY).EnableWindow(IsOscilloscope);
 
-    GetDlgItem(IDC_BLUR_SIGMA).EnableWindow(IsOscilloscope & _State->_HasPhosphorDecay);
-    GetDlgItem(IDC_DECAY_FACTOR).EnableWindow(IsOscilloscope & _State->_HasPhosphorDecay);
+    GetDlgItem(IDC_BLUR_SIGMA)    .EnableWindow(IsOscilloscope & _State->_HasPhosphorDecay);
+    GetDlgItem(IDC_DECAY_FACTOR)  .EnableWindow(IsOscilloscope & _State->_HasPhosphorDecay);
 
-    GetDlgItem(IDC_DOWNMIX).EnableWindow(IsOscilloscope && !_State->_XYMode);
+    GetDlgItem(IDC_DOWNMIX)       .EnableWindow(IsOscilloscope && !_State->_XYMode);
+    GetDlgItem(IDC_ZERO_CROSSING) .EnableWindow(IsOscilloscope && !_State->_XYMode);
 }
 
 /// <summary>
@@ -788,6 +791,16 @@ void visualization_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
         case IDC_DOWNMIX:
         {
             _State->_Downmix = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+
+            UpdateControls();
+
+            ChangedSettings = ConfigurationChanges::Oscilloscope;
+            break;
+        }
+
+        case IDC_ZERO_CROSSING:
+        {
+            _State->_ZeroCrossingTrigger = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
 
             UpdateControls();
 

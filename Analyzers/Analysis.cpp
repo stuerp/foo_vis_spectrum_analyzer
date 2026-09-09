@@ -1,5 +1,5 @@
 
-/** $VER: Analysis.cpp (2026.09.06) P. Stuer **/
+/** $VER: Analysis.cpp (2026.09.07) P. Stuer **/
 
 #include "pch.h"
 
@@ -690,8 +690,8 @@ static inline double CalcBlendedLogLinearFrequency(double minFreq, double maxFre
     // Calculate the frequency on a linear scale. Even numerical distance between frequencies.
     const double f2 = minFreq + ((maxFreq - minFreq) * (bandIndex / maxBandIndex));
 
-    // Blend the two results using interpolation.
-    return (f1 * (1. - skewFactor)) + (f2 * skewFactor);
+    // Blend the two results using linear interpolation.
+    return std::lerp(f1, f2, skewFactor);
 }
 
 /// <summary>

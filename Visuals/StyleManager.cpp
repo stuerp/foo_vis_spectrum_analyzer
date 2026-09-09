@@ -267,7 +267,7 @@ void style_manager_t::FromJSON(const json & array) noexcept
             if (Id < (uint32_t) VisualElement::Count)
                 Style = _Styles[(VisualElement) Id];    
 
-            Style._Flags       = Iter.value("flags", Style._Flags);
+            Style._Flags       = std::clamp(Iter.value("flags", Style._Flags), style_t::Features::Min, style_t::Features::Max);
             Style._ColorSource = std::clamp(Iter.value("colorSource", ColorSource::None), ColorSource::Min, ColorSource::Max);
 
             const auto & Color = Iter.value("customColor", json::object());

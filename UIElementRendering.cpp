@@ -98,6 +98,10 @@ void uielement_t::RenderThreadProc() noexcept
                 HaveArtworkColorsChanged = true;
             }
 
+            // Continue to animate the peak values unless the parent window is minized.
+            if (!_IsFrozen)
+                Animate(Chrono.Now());
+
             _CriticalSection.Leave();
         }
 
@@ -110,10 +114,6 @@ void uielement_t::RenderThreadProc() noexcept
 
             HaveArtworkColorsChanged = false;
         }
-
-        // Continue to animate the peak values unless the parent window is minized.
-        if (!_IsFrozen)
-            Animate(Chrono.Now());
 
         // Determine the presentation time of the next frame.
         {

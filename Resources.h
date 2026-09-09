@@ -16,7 +16,7 @@
 #define NUM_PRODUCT_PATCH       0
 #define NUM_PRODUCT_PRERELEASE  0
 
-#define STR_RELEASE_TAG         "-rc1"
+#define STR_RELEASE_TAG         ""
 
 /** Component specific **/
 
@@ -476,6 +476,7 @@
 #define IDC_DECAY_FACTOR                7226
 
 #define IDC_DOWNMIX                     7228
+#define IDC_ZERO_CROSSING               7229
 
 // Bit Meter
 

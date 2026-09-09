@@ -460,7 +460,11 @@ Specifies the color fade speed. Lower values cause a faster decay.
 
 `Downmix to mono`
 
-When enable the input signals to the oscilloscope will be downmix to a mono signal.
+When enabled the input signals to the oscilloscope will be downmix to a mono signal.
+
+`Zero-crossing trigger`
+
+Enables a zero trigger to synchronize the oscilloscope display to the signal's zero crossings, creating a stable and readable waveform display.
 
 ---
 
@@ -534,6 +538,31 @@ Allows you to select the Time to Frequency domain transform. The following trans
 `Window function`
 
 Selects the window function that will be applied to the samples (Time domain).
+
+| Name                   | Description |
+| ---------------------- | |
+| Box Car                | Bin-centered tones. Sharpest time edges, highest sidelobes (~13 dB). Use when you need perfect time localization and don’t care about leakage. (Rectangular, Dirichlet) |
+| Hann                   | General FFT and STFT work. Sidelobes ~31 dB, good compromise. Use with speech, audio, general-purpose. (Hanning, cosine squared, raised cosine) |
+| Hamming,               | Lower first sidelobe than Hann, but unlike Hann its endpoints do not reach zero. Suitable when reduced spectral leakage is preferred over exact endpoint continuity. (Raised cosine) |
+| Blackman               | High-dynamic-range measurements. Provides stronger sidelobe suppression (~58 dB) than Hann and Hamming at the cost of a wider main lobe. Use when a high dynamic range is needed. |
+| Nuttall                | Provides strong sidelobe suppression at the cost of a wider main lobe. |
+| Flat Top               | Tone-level measurement. Provides high amplitude accuracy and low scalloping loss at the cost of a significantly wider main lobe. |
+| Bartlett               | Basic leakage reduction. Reaches its maximum at the center and decreases linearly to zero at both endpoints. (Triangular) |
+| Parzen                 | Suppressing distant leakage. Useful for detecting weak frequency components near stronger ones. |
+| Welch                  | Smooth, parabolic taper. Useful for general spectral analysis. |
+| Power-Of-Sine          | The power controls the shape of the window. A power of 1 produces a sine window, while a power of 2 produces a Hann window. |
+| Power-Of-Circle        | The power controls the curvature of the window. A power of 1 produces the standard Welch window. |
+| Gaussian               | No sidelobes at all (theoretically), but infinite support. Use when you can afford a longer window. |
+| Tukey                  | Alpha controls the proportion of the window occupied by the cosine tapers. An alpha of 0 produces a BoxCar window, while an alpha of 1 produces a Hann window. (Tapered cosine) |
+| Kaiser                 | Beta controls the shape of the window. A beta of zero produces a BoxCar window, while larger values increase sidelobe suppression at the cost of a wider main lobe. |
+| Poisson                | Exponential, Decaying transients, impulse responses, reverberation, and modal analysis. |
+| Hyperbolic Secant      | Beta controls the concentration of the window. A beta of zero produces a BoxCar window, while larger values increase attenuation toward the endpoints. |
+| Quadratic Spline       | General spectral analysis, Smooth polynomial taper and faster distant roll-off. (Quadratic B-spline window) |
+| Ogg Vorbis             | Supports transitions between short and long blocks. Helps control leakage and transient coding artifacts. |
+| Cascaded Sine          | Sine taper. |
+| Galss                  | [Discussion](https://hydrogenaud.io/index.php/topic,125031.msg1036200.html#msg1036200) |
+| Lanczos                | Smooth taper. Balanced resolution and leakage. Only moderate sidelobe suppression. |
+| 4-term Blackman-Harris | Produces very clean peaks with minimal leakage from strong tones into neighboring bins. w(x) = a0​ + a1 ​cos(πt) + a2 ​cos(2πt) + a3​ cos(3πt) |
 
 `Window parameter`
 
@@ -903,7 +932,7 @@ Allow you to edit the description of the selected graph.
 
 `Horizontal alignment`
 
-Determines the horizontal alignment of a graph within its bounds (taking into account any space used by the X-axis).
+Determines the horizontal alignment of a graph within its bounds (taking into account any space used by the left and/or right axis).
 
 - *Near* aligns the visualization with the near side of the graph (aka the *left* edge when using normal orientation).
 - *Center* centers the visualization in the graph area.
@@ -918,9 +947,29 @@ Flips the current graph horizontally. Any axes will be rendered accordingly.
 
 Flips the current graph vertically. Any axes will be rendered accordingly.
 
+#### Axes group
+
+This group of settings determines which axes to show. Depending on the visualization the axes can have a different meaning.
+
+`Left`
+
+Displays an axis on the left of the graph.
+
+`Right`
+
+Displays an axis on the bottom of the graph.
+
+`Top`
+
+Displays an axis on top of the graph.
+
+`Bottom`
+
+Displays an axis at the bottom of the graph.
+
 #### Frequency axis group
 
-Groups the parameters that determine the way the X-axis is displayed.
+Groups the parameters that determine the way the frequency axis is displayed.
 
 `Mode`
 
@@ -931,14 +980,6 @@ Determines which frequency axis to display.
 - Decades: Fixed frequency range
 - Octaves: Frequency of the C note of each octave
 - Notes: C note of each octave
-
-`Top`
-
-Displays an axis on top of the graph.
-
-`Bottom`
-
-Displays an axis at the bottom of the graph.
 
 `Decimals`
 
@@ -955,14 +996,6 @@ Determines which amplitude axis to display.
 - None: Hides the axis (reserve no screen area for it).
 - Decibel: Uses decibel values to render the scale.
 - Linear/n-th root: Uses logarithmic values to render the scale.
-
-`Left`
-
-Displays an axis on the left of the graph.
-
-`Right`
-
-Displays an axis on the bottom of the graph.
 
 `Amplitude range`
 

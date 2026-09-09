@@ -1,5 +1,5 @@
 
-/** $VER: WindowFunctions.h (2026.09.06) P. Stuer **/
+/** $VER: WindowFunctions.h (2026.09.07) P. Stuer **/
 
 #pragma once
 
@@ -42,7 +42,10 @@ enum class WindowFunction
     Lanczos,
     BlackmanHarris4,    // 4-term Blackman-Harris
 
-    Count
+    Count,
+
+    Min = BoxCar,
+    Max = BlackmanHarris4,
 };
 
 #pragma warning(push)
@@ -649,8 +652,8 @@ public:
 
 /// <summary>
 /// Implements a 4-term Blackman-Harris window function.
-/// </summary>
 /// Produces very clean peaks with minimal leakage from strong tones into neighboring bins. w(x) = a0​ + a1 ​cos(πt) + a2 ​cos(2πt) + a3​ cos(3πt)
+/// </summary>
 class BlackmanHarris4 final : public window_function_t
 {
 public:

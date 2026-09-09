@@ -1,5 +1,5 @@
 
-/** $VER: Oscilloscope.cpp (2026.08.26) P. Stuer - Implements an oscilloscope. **/
+/** $VER: Oscilloscope.cpp (2026.09.08) P. Stuer - Implements an oscilloscope. **/
 
 #include <pch.h>
 
@@ -374,69 +374,81 @@ HRESULT oscilloscope_t::CreateSignalGeometry(const audio_chunk_impl & chunk, con
             break;
     }
 
-    const size_t FrameCount     = chunk.get_sample_count();         // get_sample_count() actually returns the number of frames.
-    const uint32_t ChannelCount = chunk.get_channel_count();
-    const audio_sample * Frames = chunk.get_data();
-    uint32_t AvailableChannels  = chunk.get_channel_config();       // Mask containing the channels in the audio chunk.
+    size_t FrameCount = chunk.get_sample_count();                   // get_sample_count() actually returns the number of frames.
 
-    uint32_t SelectedChannels = _GraphOptions->_SelectedChannels;   // Mask containing the channels selected by the user.
+    const uint32_t ChannelCount = chunk.get_channel_count();
+
+    uint32_t AvailableChannels  = chunk.get_channel_config();       // Mask containing the channels in the audio chunk.
+    uint32_t SelectedChannels   = _GraphOptions->_SelectedChannels;   // Mask containing the channels selected by the user.
+
     const size_t SelectedChannelCount = (size_t) std::popcount(AvailableChannels & SelectedChannels);
 
     const FLOAT ChannelHeight = clientSize.height / (FLOAT) SelectedChannelCount; // Height available to one channel.
-    const FLOAT ChannelMax = ChannelHeight * (_GraphOptions->HasYAxis() ? 1.0f : 0.5f);
+    const FLOAT ChannelMax    = ChannelHeight * (_GraphOptions->HasYAxis() ? 1.0f : 0.5f);
+
+    const audio_sample * Frames = chunk.get_data();
+
+    if (_State->_ZeroCrossingTrigger && (FrameCount >= 4))
+    {
+        FrameCount /= 2;
+
+        const size_t CrossIndex = FindZeroCrossing(Frames, FrameCount, ChannelCount);
+        
+        Frames += CrossIndex * ChannelCount;
+    }
 
     HRESULT hr = _Direct2D.Factory->CreatePathGeometry(&Geometry);
 
-    if (SUCCEEDED(hr))
-    {
-        CComPtr<ID2D1GeometrySink> Sink;
+    if (!SUCCEEDED(hr))
+        return hr;
 
-        hr = Geometry->Open(&Sink);
+    CComPtr<ID2D1GeometrySink> Sink;
 
-        if (FAILED(hr))
-            return hr;
+    hr = Geometry->Open(&Sink);
 
-        FLOAT ChannelBaseline = ChannelMax;
-        size_t ChannelOffset = 0;
+    if (FAILED(hr))
+        return hr;
+
+    FLOAT ChannelBaseline = ChannelMax;
+    size_t ChannelOffset = 0;
             
-        while ((AvailableChannels != 0) && (SelectedChannels != 0))
+    while ((AvailableChannels != 0) && (SelectedChannels != 0))
+    {
+        // Render the signal if the channel is in the chunk and if it has been selected.
+        if (AvailableChannels & 1)
         {
-            // Render the signal if the channel is in the chunk and if it has been selected.
-            if (AvailableChannels & 1)
+            if (SelectedChannels & 1)
             {
-                if (SelectedChannels & 1)
+                const size_t SampleCount = FrameCount * ChannelCount;
+                const FLOAT dx = clientSize.width / (FLOAT) FrameCount;
+
+                FLOAT x = 0.f;
+                FLOAT y = ChannelBaseline - (std::clamp((FLOAT) (Scaler(Frames[ChannelOffset]) * _State->_YGain), -1.f, 1.f) * ChannelMax);
+
+                Sink->BeginFigure(D2D1::Point2F(x, y), D2D1_FIGURE_BEGIN_HOLLOW);
+
+                for (size_t i = ChannelCount + ChannelOffset; i < SampleCount; i += ChannelCount)
                 {
-                    const size_t SampleCount = FrameCount * ChannelCount;
-                    const FLOAT dx = clientSize.width / (FLOAT) FrameCount;
+                    x += dx;
+                    y = ChannelBaseline - (std::clamp((FLOAT) (Scaler(Frames[i]) * _State->_YGain), -1.f, 1.f) * ChannelMax);
 
-                    FLOAT x = 0.f;
-                    FLOAT y = ChannelBaseline - (std::clamp((FLOAT) (Scaler(Frames[ChannelOffset]) * _State->_YGain), -1.f, 1.f) * ChannelMax);
-
-                    Sink->BeginFigure(D2D1::Point2F(x, y), D2D1_FIGURE_BEGIN_HOLLOW);
-
-                    for (size_t i = ChannelCount + ChannelOffset; i < SampleCount; i += ChannelCount)
-                    {
-                        x += dx;
-                        y = ChannelBaseline - (std::clamp((FLOAT) (Scaler(Frames[i]) * _State->_YGain), -1.f, 1.f) * ChannelMax);
-
-                        Sink->AddLine(D2D1::Point2F(x, y));
-                    }
-
-                    Sink->EndFigure(D2D1_FIGURE_END_OPEN);
-
-
-                    ChannelBaseline += ChannelHeight;
+                    Sink->AddLine(D2D1::Point2F(x, y));
                 }
 
-                ChannelOffset++;
+                Sink->EndFigure(D2D1_FIGURE_END_OPEN);
+
+
+                ChannelBaseline += ChannelHeight;
             }
 
-            AvailableChannels >>= 1;
-            SelectedChannels >>= 1;
+            ChannelOffset++;
         }
 
-        hr = Sink->Close();
+        AvailableChannels >>= 1;
+        SelectedChannels >>= 1;
     }
+
+    hr = Sink->Close();
 
     return hr;
 }

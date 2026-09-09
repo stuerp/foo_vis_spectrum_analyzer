@@ -1,5 +1,5 @@
 
-/** $VER: OscilloscopeBase.h (2026.06.21) P. Stuer - Implements a base class for an oscilloscope. **/
+/** $VER: OscilloscopeBase.h (2026.09.09) P. Stuer - Implements a base class for an oscilloscope. **/
 
 #pragma once
 
@@ -32,6 +32,8 @@ protected:
 
     HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept;
     void DeleteDeviceSpecificResources() noexcept;
+
+    static size_t FindZeroCrossing(const audio_sample * frames, size_t frameCount, uint32_t channelCount) noexcept;
 
 protected:
     CComPtr<ID2D1StrokeStyle> _SignalStrokeStyle;

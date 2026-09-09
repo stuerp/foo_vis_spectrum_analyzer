@@ -1,5 +1,5 @@
 
-/** $VER: State.cpp (2026.09.06) P. Stuer **/
+/** $VER: State.cpp (2026.09.08) P. Stuer **/
 
 #include "pch.h"
 #include "State.h"
@@ -269,6 +269,7 @@ void state_t::Reset() noexcept
     _DecayFactor = 0.95f;
     _FrameCount = 1024;
     _Downmix = false;
+    _ZeroCrossingTrigger = false;
 
     // Bit Meter
     _BitMeterMode = BitMeterMode::FloatingPoint;
@@ -552,6 +553,7 @@ state_t & state_t::operator=(const state_t & other) noexcept
     _DecayFactor          = other._DecayFactor;
     _FrameCount           = other._FrameCount;
     _Downmix              = other._Downmix;
+    _ZeroCrossingTrigger  = other._ZeroCrossingTrigger;
 
     // Bit Meter
     _BitMeterMode         = other._BitMeterMode;
@@ -1453,7 +1455,8 @@ void state_t::FromJSON(const char * data, size_t size, bool isPreset)
             _DecayFactor      = std::clamp(PhosporDecay.value("decayFactor", _DecayFactor), MinDecayFactor, MaxDecayFactor);
         }
 
-        _Downmix = Oscilloscope.value("downmix", _Downmix);
+        _Downmix             = Oscilloscope.value("downmix", _Downmix);
+        _ZeroCrossingTrigger = Oscilloscope.value("zeroCrossingTrigger", _ZeroCrossingTrigger);
     }
 
     const auto & BitMeter = Object.value("bitMeter", json::object());
@@ -1466,130 +1469,137 @@ void state_t::FromJSON(const char * data, size_t size, bool isPreset)
     // Transform
     const auto & Transform = Object.value("transform", json::object());
     {
-        _TransformMethod        = std::clamp(Transform.value("method", _TransformMethod), TransformMethod::Min, TransformMethod::Max);
+        _TransformMethod        = std::clamp(Transform.value("method",            _TransformMethod),        TransformMethod::Min,       TransformMethod::Max);
+
+        // FFT
+        _WindowFunction         = std::clamp(Transform.value("windowFunction",    _WindowFunction),         WindowFunction::Min,        WindowFunction::Max);
+        _WindowParameter        = std::clamp(Transform.value("windowParameter",   _WindowParameter),        MinWindowParameter,         MaxWindowParameter);
+        _WindowSkew             = std::clamp(Transform.value("windowSkew",        _WindowSkew),             MinWindowSkew,              MaxWindowSkew);
+        _ReactionAlignment      = std::clamp(Transform.value("reactionAlignment", _ReactionAlignment),      MinReactionAlignment,       MaxReactionAlignment);
+
+        _FFTMode                = std::clamp(Transform.value("mode",              _FFTMode),                FFTMode::Min,               FFTMode::Max);
+        _FFTCustom              = std::clamp(Transform.value("custom",            _FFTCustom),              (size_t) MinFFTSize,        (size_t) MaxFFTSize);
+        _FFTDuration            = std::clamp(Transform.value("duration",          _FFTDuration),            MinFFTDuration,             MaxFFTDuration);
+
+        _AggregationMethod      = std::clamp(Transform.value("aggregationMethod", _AggregationMethod),      AggregationMethod::Min,     AggregationMethod::Max);
+        _MappingMethod          = std::clamp(Transform.value("mapping",           _MappingMethod),          CoefficientMapping::Min,    CoefficientMapping::Max);
+        _SmoothLowerFrequencies = Transform.value("smoothLowerFrequencies",       _SmoothLowerFrequencies);
+        _SmoothGainTransition   = Transform.value("smoothGainTransition",         _SmoothGainTransition);
+
+        _KernelSize             = std::clamp(Transform.value("kernelSize",        _KernelSize),             MinKernelSize,              MaxKernelSize);
     }
-
-    // FFT
-    _WindowFunction         = Transform.value("windowFunction", _WindowFunction);
-    _WindowParameter        = Transform.value("windowParameter", _WindowParameter);
-    _WindowSkew             = Transform.value("windowSkew", _WindowSkew);
-    _ReactionAlignment      = Transform.value("reactionAlignment", _ReactionAlignment);
-
-    _FFTMode                = Transform.value("mode", _FFTMode);
-    _FFTCustom              = Transform.value("custom", _FFTCustom);
-    _FFTDuration            = Transform.value("duration", _FFTDuration);
-
-    _AggregationMethod      = Transform.value("aggregationMethod", _AggregationMethod);
-    _MappingMethod          = Transform.value("mapping", _MappingMethod);
-    _SmoothLowerFrequencies = Transform.value("smoothLowerFrequencies", _SmoothLowerFrequencies);
-    _SmoothGainTransition   = Transform.value("smoothGainTransition", _SmoothGainTransition);
-
-    _KernelSize             = Transform.value("kernelSize", _KernelSize);
 
     // CQT
     const auto & CQT = Transform.value("cqt", json::object());
+    {
+        _BandwidthOffset        = std::clamp(CQT.value("bandwidthOffset",       _BandwidthOffset),          MinBandwidthOffset,         MaxBandwidthOffset);
+        _BandwidthCap           = std::clamp(CQT.value("bandwidthCap",          _BandwidthCap),             MinBandwidthCap,            MaxBandwidthCap);
+        _BandwidthAmount        = std::clamp(CQT.value("bandwidthAmount",       _BandwidthAmount),          MinBandwidthAmount,         MaxBandwidthAmount);
+        _UseGranularBandwidth   = CQT.value("useGranularBandwidth",             _UseGranularBandwidth);
 
-    _BandwidthOffset        = CQT.value("bandwidthOffset", _BandwidthOffset);
-    _BandwidthCap           = CQT.value("bandwidthCap", _BandwidthCap);
-    _BandwidthAmount        = CQT.value("bandwidthAmount", _BandwidthAmount);
-    _UseGranularBandwidth   = CQT.value("useGranularBandwidth", _UseGranularBandwidth);
-
-    _KernelShape            = CQT.value("kernelShape", _KernelShape);
-    _KernelShapeParameter   = CQT.value("kernelShapeParameter", _KernelShapeParameter);
-    _KernelAsymmetry        = CQT.value("kernelAsymmetry", _KernelAsymmetry); 
+        _KernelShape            = std::clamp(CQT.value("kernelShape",           _KernelShape),              WindowFunction::Min,        WindowFunction::Max);
+        _KernelShapeParameter   = std::clamp(CQT.value("kernelShapeParameter",  _KernelShapeParameter),     MinWindowParameter,         MaxWindowParameter);
+        _KernelAsymmetry        = std::clamp(CQT.value("kernelAsymmetry",       _KernelAsymmetry),          MinWindowSkew,              MaxWindowSkew);
+    }
 
     // IIR (SWIFT / Analog-style)
     const auto & IIR = Transform.value("iir", json::object());
+    {
+        _FilterBankOrder        = std::clamp(IIR.value("filterBankOrder",           _FilterBankOrder),          MinFilterBankOrder,         MaxFilterBankOrder);
+        _TimeResolution         = std::clamp(IIR.value("timeResolution",            _TimeResolution),           MinTimeResolution,          MaxTimeResolution);
+        _IIRBandwidth           = std::clamp(IIR.value("bandwidth",                 _IIRBandwidth),             MinIIRBandwidth,            MaxIIRBandwidth);
 
-    _FilterBankOrder        = IIR.value("filterBankOrder", _FilterBankOrder);
-    _TimeResolution         = IIR.value("timeResolution", _TimeResolution);
-    _IIRBandwidth           = IIR.value("bandwidth", _IIRBandwidth);
-    _ConstantQ              = IIR.value("constantQ", _ConstantQ);
-    _CompensateBandwidth    = IIR.value("compensateBandwidth", _CompensateBandwidth);
-    _UsePreWarpedQ          = IIR.value("usePreWarpedQ", _UsePreWarpedQ);
+        _ConstantQ              = IIR.value("constantQ",                            _ConstantQ);
+        _CompensateBandwidth    = IIR.value("compensateBandwidth",                  _CompensateBandwidth);
+        _UsePreWarpedQ          = IIR.value("usePreWarpedQ",                        _UsePreWarpedQ);
+    }
 
     // Frequencies
     const auto & Frequencies = Object.value("frequencies", json::object());
     {
-        _FrequencyDistribution  = std::clamp(Frequencies.value("distribution",    _FrequencyDistribution), FrequencyDistribution::Min, FrequencyDistribution::Max);
+        _FrequencyDistribution  = std::clamp(Frequencies.value("distribution",      _FrequencyDistribution),    FrequencyDistribution::Min, FrequencyDistribution::Max);
 
-        _BandCount              = std::clamp(Frequencies.value("bandCount",       _BandCount), (size_t) MinBands, (size_t) MaxBands);
-        _MelBandCount           = std::clamp(Frequencies.value("melBandCount",    _MelBandCount), (size_t) MinMelBands, (size_t) MaxMelBands);
+        _BandCount              = std::clamp(Frequencies.value("bandCount",         _BandCount),                (size_t) MinBands,          (size_t) MaxBands);
+        _MelBandCount           = std::clamp(Frequencies.value("melBandCount",      _MelBandCount),             (size_t) MinMelBands,       (size_t) MaxMelBands);
 
-        _LoFrequency            = std::clamp(Frequencies.value("loFrequency",     _LoFrequency), MinFrequency, MaxFrequency);
-        _HiFrequency            = std::clamp(Frequencies.value("hiFrequency",     _HiFrequency), MinFrequency, MaxFrequency);
+        _LoFrequency            = std::clamp(Frequencies.value("loFrequency",       _LoFrequency),              MinFrequency,               MaxFrequency);
+        _HiFrequency            = std::clamp(Frequencies.value("hiFrequency",       _HiFrequency),              MinFrequency,               MaxFrequency);
 
-        _LoNote                 = std::clamp(Frequencies.value("loNote",          _LoNote), (uint32_t) MinNote, (uint32_t) MaxNote);
-        _HiNote                 = std::clamp(Frequencies.value("hiNote",          _HiNote), (uint32_t) MinNote, (uint32_t) MaxNote);
+        _LoNote                 = std::clamp(Frequencies.value("loNote",            _LoNote),                   (uint32_t) MinNote,         (uint32_t) MaxNote);
+        _HiNote                 = std::clamp(Frequencies.value("hiNote",            _HiNote),                   (uint32_t) MinNote,         (uint32_t) MaxNote);
 
-        _BandsPerOctave         = std::clamp(Frequencies.value("bandsPerOctave",  _BandsPerOctave), (uint32_t) MinBandsPerOctave, (uint32_t) MaxBandsPerOctave);
-        _TuningPitch            = std::clamp(Frequencies.value("tuningPitch",     _TuningPitch), MinPitch, MaxPitch);
-        _Transpose              = std::clamp(Frequencies.value("transpose",       _Transpose), MinTranspose, MaxTranspose);
+        _BandsPerOctave         = std::clamp(Frequencies.value("bandsPerOctave",    _BandsPerOctave),           (uint32_t) MinBandsPerOctave, (uint32_t) MaxBandsPerOctave);
+        _TuningPitch            = std::clamp(Frequencies.value("tuningPitch",       _TuningPitch),              MinPitch,                   MaxPitch);
+        _Transpose              = std::clamp(Frequencies.value("transpose",         _Transpose),                MinTranspose,               MaxTranspose);
 
-        _ScalingFunction        = std::clamp(Frequencies.value("scalingFunction", _ScalingFunction), ScalingFunction::Min, ScalingFunction::Max);
-        _SkewFactor             = std::clamp(Frequencies.value("skewFactor",      _SkewFactor), MinSkewFactor, MaxSkewFactor);
-        _Bandwidth              = std::clamp(Frequencies.value("bandwidth",       _Bandwidth), MinBandwidth, MaxBandwidth);
+        _ScalingFunction        = std::clamp(Frequencies.value("scalingFunction",   _ScalingFunction),          ScalingFunction::Min,       ScalingFunction::Max);
+        _SkewFactor             = std::clamp(Frequencies.value("skewFactor",        _SkewFactor),               MinSkewFactor,              MaxSkewFactor);
+        _Bandwidth              = std::clamp(Frequencies.value("bandwidth",         _Bandwidth),                MinBandwidth,               MaxBandwidth);
     }
 
     // Acoustic Filters
     const auto & Filters = Object.value("acousticFilters", json::object());
+    {
+        _WeightingType          = std::clamp(Filters.value("weightingType",         _WeightingType),            WeightingType::Min,         WeightingType::Max);
 
-    _WeightingType          = Filters.value("weightingType", _WeightingType);
+        _SlopeFunctionOffset    = std::clamp(Filters.value("slopeFunctionOffset",   _SlopeFunctionOffset),      MinSlopeFunctionOffset,     MaxSlopeFunctionOffset);
+        _Slope                  = std::clamp(Filters.value("slope",                 _Slope),                    MinSlope,                   MaxSlope);
+        _SlopeOffset            = std::clamp(Filters.value("slopeOffset",           _SlopeOffset),              MinSlopeOffset,             MaxSlopeOffset);
 
-    _SlopeFunctionOffset    = Filters.value("slopeFunctionOffset", _SlopeFunctionOffset);
-    _Slope                  = Filters.value("slope", _Slope);
-    _SlopeOffset            = Filters.value("slopeOffset", _SlopeOffset);
+        _EqualizeAmount         = std::clamp(Filters.value("equalizeAmount",        _EqualizeAmount),           MinEqualizeAmount,          MaxEqualizeAmount);
+        _EqualizeOffset         = std::clamp(Filters.value("equalizeOffset",        _EqualizeOffset),           MinEqualizeOffset,          MaxEqualizeOffset);
+        _EqualizeDepth          = std::clamp(Filters.value("equalizeDepth",         _EqualizeDepth),            MinEqualizeDepth,           MaxEqualizeDepth);
 
-    _EqualizeAmount         = Filters.value("equalizeAmount", _EqualizeAmount);
-    _EqualizeOffset         = Filters.value("equalizeOffset", _EqualizeOffset);
-    _EqualizeDepth          = Filters.value("equalizeDepth", _EqualizeDepth);
-
-    _WeightingAmount        = Filters.value("weightingAmount", _WeightingAmount);
+        _WeightingAmount        = std::clamp(Filters.value("weightingAmount",       _WeightingAmount),          MinWeightingAmount,         MaxWeightingAmount);
+    }
 
     // Common
-    _SmoothingMethod        = Object.value("smoothingMethod", _SmoothingMethod);
-    _SmoothingFactor        = Object.value("smoothingFactor", _SmoothingFactor);
+    _SmoothingMethod        = std::clamp(Object.value("smoothingMethod",            _SmoothingMethod),          SmoothingMethod::Min,       SmoothingMethod::Max);
+    _SmoothingFactor        = std::clamp(Object.value("smoothingFactor",            _SmoothingFactor),          MinSmoothingFactor,         MaxSmoothingFactor);
 
-    _ShowToolTipsAlways     = Object.value("showToolTipsAlways", _ShowToolTipsAlways);
-    _SuppressMirrorImage    = Object.value("suppressMirrorImage", _SuppressMirrorImage);
-    _VisualizeDuringPause   = Object.value("visualizeDuringPause", _VisualizeDuringPause);
+    _ShowToolTipsAlways     = Object.value("showToolTipsAlways",                    _ShowToolTipsAlways);
+    _SuppressMirrorImage    = Object.value("suppressMirrorImage",                   _SuppressMirrorImage);
+    _VisualizeDuringPause   = Object.value("visualizeDuringPause",                  _VisualizeDuringPause);
 
     // Artwork
     const auto & Artwork = Object.value("artwork", json::object());
+    {
+        _ArtworkType             = std::clamp(Artwork.value("type",                 _ArtworkType),              ArtworkType::Min,           ArtworkType::Max);
 
-    _ArtworkType             = Artwork.value("type", _ArtworkType);
+        _NumArtworkColors        = std::clamp(Artwork.value("colorCount",           _NumArtworkColors),         MinArtworkColors,           MaxArtworkColors);
+        _LightnessThreshold      = std::clamp(Artwork.value("lightnessThreshold",   _LightnessThreshold),       (FLOAT) MinLightnessThreshold, (FLOAT) MaxLightnessThreshold);
+        _TransparencyThreshold   = std::clamp(Artwork.value("transparencyThreshold",_TransparencyThreshold),    0.f, 1.f);
 
-    _NumArtworkColors        = Artwork.value("colorCount", _NumArtworkColors);
-    _LightnessThreshold      = Artwork.value("lightnessThreshold", _LightnessThreshold);
-    _TransparencyThreshold   = Artwork.value("transparencyThreshold", _TransparencyThreshold);
+        _ColorOrder              = std::clamp(Artwork.value("colorOrder",           _ColorOrder),               ColorOrder::Min,            ColorOrder::Max);
 
-    _ColorOrder              = Artwork.value("colorOrder", _ColorOrder);
+        _ShowArtworkOnBackground = Artwork.value("showArtworkOnBackground",         _ShowArtworkOnBackground);
 
-    _ShowArtworkOnBackground = Artwork.value("showArtworkOnBackground", _ShowArtworkOnBackground);
+        _FitMode                 = std::clamp(Artwork.value("fitMode",              _FitMode),                  FitMode::Min,               FitMode::Max);
+        _FitWindow               = Artwork.value("fitWindow",                       _FitWindow);
+        _ArtworkOpacity          = std::clamp(Artwork.value("opacity",              _ArtworkOpacity),           (FLOAT) MinArtworkOpacity,  (FLOAT) MaxArtworkOpacity);
+        _ArtworkBlurSigma        = std::clamp(Artwork.value("blurSigma",            _ArtworkBlurSigma),         (FLOAT) MinArtworkBlurSigma,(FLOAT) MaxArtworkBlurSigma);
 
-    _FitMode                 = Artwork.value("fitMode", _FitMode);
-    _FitWindow               = Artwork.value("fitWindow", _FitWindow);
-    _ArtworkOpacity          = Artwork.value("opacity", _ArtworkOpacity);
-    _ArtworkBlurSigma        = Artwork.value("blurSigma", _ArtworkBlurSigma);
-    _ArtworkFilePath         = msc::UTF8ToWide(Artwork.value("filePath", msc::WideToUTF8(_ArtworkFilePath)));
+        _ArtworkFilePath         = msc::UTF8ToWide(Artwork.value("filePath", msc::WideToUTF8(_ArtworkFilePath)));
+    }
 
     const auto & Grid = Object.value("grid", json::object());
-
-    _GridRowCount           = Grid.value("rows", _GridRowCount);
-    _GridColumnCount        = Grid.value("columns", _GridColumnCount);
-
-    _VerticalLayout         = Grid.value("verticalLayout", _VerticalLayout);
-    _OverlapGraphs          = Grid.value("overlapGraphs", _OverlapGraphs);
-
     {
-        std::vector<graph_options_t> Options;
+        _GridRowCount           = Grid.value("rows",            _GridRowCount);
+        _GridColumnCount        = Grid.value("columns",         _GridColumnCount);
 
-        const auto & Graphs = Grid.value("graphs", json::array_t());
+        _VerticalLayout         = Grid.value("verticalLayout",  _VerticalLayout);
+        _OverlapGraphs          = Grid.value("overlapGraphs",   _OverlapGraphs);
 
-        for (auto & Graph : Graphs)
-            Options.push_back(graph_options_t::FromJSON(Graph));
+        {
+            std::vector<graph_options_t> Options;
 
-        _GraphOptions = std::move(Options);
+            const auto & Graphs = Grid.value("graphs", json::array_t());
+
+            for (auto & Graph : Graphs)
+                Options.push_back(graph_options_t::FromJSON(Graph));
+
+            _GraphOptions = std::move(Options);
+        }
     }
 
     {
@@ -1718,6 +1728,7 @@ json state_t::ToJSON(bool isPreset) const
                 },
 
                 { "downmix", _Downmix },
+                { "zeroCrossingTrigger", _ZeroCrossingTrigger },
             })
         ),
 
