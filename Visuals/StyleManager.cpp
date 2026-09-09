@@ -668,8 +668,17 @@ std::unordered_map<VisualElement, style_t> style_manager_t::_DefaultStyles
         (
             /* Name                */ L"Curve Line",
             /* UsedBy              */ VisualizationTypes::Curve | VisualizationTypes::RadialCurve,
-            style_t::Features::SupportsOpacity | style_t::Features::SupportsThickness,
-            ColorSource::Gradient, D2D1::ColorF(D2D1::ColorF::Black), 0, ColorScheme::Artwork, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 2.f, L"", 0.f
+            /* Flags               */ style_t::Features::SupportsOpacity | style_t::Features::SupportsThickness,
+            /* ColorSource         */ ColorSource::Gradient,
+            /* CustomColor         */ D2D1::ColorF(D2D1::ColorF::Black),
+            /* ColorIndex          */ 0,
+            /* ColorScheme         */ ColorScheme::Artwork,
+            /* CustomGradientStops */ GetBuiltInGradientStops(ColorScheme::Custom),
+            /* Opacity             */ 1.f,
+            /* Thickness           */ 2.f,
+            /* FontName            */ L"",
+            /* FontSize            */ 0.f
+
         )
     },
 
@@ -962,6 +971,45 @@ std::unordered_map<VisualElement, style_t> style_manager_t::_DefaultStyles
             /* ColorIndex          */ 0,
             /* ColorScheme         */ ColorScheme::Prism1,
             /* CustomGradientStops */ GetBuiltInGradientStops(ColorScheme::Prism1),
+            /* Opacity             */ 1.f,
+            /* Thickness           */ 0.f,
+            /* FontName            */ L"",
+            /* FontSize            */ 0.f
+        )
+    },
+    #pragma endregion
+
+    #pragma region Diagnostics
+    {
+        VisualElement::WindowFunction,
+        style_t
+        (
+            /* Name                */ L"Window Function",
+            /* UsedBy              */ VisualizationTypes::Bars | VisualizationTypes::Curve,
+            /* Flags               */ style_t::Features::SupportsOpacity | style_t::Features::SupportsThickness,
+            /* CustomColor         */ ColorSource::Solid,
+            /* CustomColor         */ D2D1::ColorF((UINT32) RGB(0, 255, 0)),
+            /* ColorIndex          */ 0,
+            /* ColorScheme         */ ColorScheme::Solid,
+            /* CustomGradientStops */ GetBuiltInGradientStops(ColorScheme::Solid),
+            /* Opacity             */ 1.f,
+            /* Thickness           */ 0.f,
+            /* FontName            */ L"",
+            /* FontSize            */ 0.f
+        )
+    },
+    {
+        VisualElement::WeighingFunction,
+        style_t
+        (
+            /* Name                */ L"Weighing Function",
+            /* UsedBy              */ VisualizationTypes::Bars | VisualizationTypes::Curve,
+            /* Flags               */ style_t::Features::SupportsOpacity | style_t::Features::SupportsThickness,
+            /* CustomColor         */ ColorSource::Solid,
+            /* CustomColor         */ D2D1::ColorF((UINT32) RGB(0, 255, 255)),
+            /* ColorIndex          */ 0,
+            /* ColorScheme         */ ColorScheme::Solid,
+            /* CustomGradientStops */ GetBuiltInGradientStops(ColorScheme::Solid),
             /* Opacity             */ 1.f,
             /* Thickness           */ 0.f,
             /* FontName            */ L"",

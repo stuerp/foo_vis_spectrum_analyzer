@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.cpp (2026.09.06) P. Stuer - Implements a spectrum analyzer visualization **/
+/** $VER: Spectrum.cpp (2026.09.09) P. Stuer - Implements a spectrum analyzer visualization **/
 
 #include "pch.h"
 
@@ -107,6 +107,10 @@ void spectrum_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 
             if (_IsLast && _NyquistMarkerStyle.IsEnabled())
                 RenderNyquistFrequencyMarker(deviceContext);
+
+            ResetTransform(deviceContext);
+
+            RenderDiagnostics(deviceContext);
             break;
         }
 
@@ -145,10 +149,6 @@ void spectrum_t::Render(ID2D1DeviceContext * deviceContext) noexcept
     }
 
     ResetTransform(deviceContext);
-
-#ifdef _DEBUG
-    RenderDebug(deviceContext);
-#endif
 }
 
 /// <summary>
@@ -609,54 +609,103 @@ void spectrum_t::RenderNyquistFrequencyMarker(ID2D1DeviceContext * deviceContext
 }
 
 /// <summary>
-/// Renders debug information.
+/// Renders diagnostics information.
 /// </summary>
-void spectrum_t::RenderDebug(ID2D1DeviceContext * deviceContext) const noexcept
+void spectrum_t::RenderDiagnostics(ID2D1DeviceContext * deviceContext) const noexcept
 {
     if (_Analysis->_WindowFunction == nullptr)
         return;
-
+/*
     // Render the client rectangle.
-    auto r = _ClientRect;
-
-    r.top++;
-
-    _DebugBrush->SetColor(D2D1::ColorF(0.0f, 0.0f, 1.0f));
-
-    deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
-
-    deviceContext->DrawRectangle(r, _DebugBrush);
-
-    // Render the window function.
-    _DebugBrush->SetColor(D2D1::ColorF(0.0f, 1.0f, 0.0f));
-
-    deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
-
-    const FLOAT y1 = _ClientRect.bottom;
-    const FLOAT y2 = _ClientRect.top + 1.f;
-
-    constexpr double dx = 0.05;
-
-    double y = _Analysis->_WindowFunction->operator()(-1.);
-
-    auto p1 = D2D1_POINT_2F(_ClientRect.left, msc::Map(y, 0., 1., y1, y2));
-
-    for (double x = -1. + dx; x < 1.; x += dx)
     {
-        y = _Analysis->_WindowFunction->operator()(x);
+        auto r = _ClientRect;
 
-        auto p2 = D2D1_POINT_2F(msc::Map(x, -1., 1., _ClientRect.left, _ClientRect.right), msc::Map(y, 0., 1., y1, y2));
+        r.top++;
 
-        deviceContext->DrawLine(p1, p2, _DebugBrush);
+        _DebugBrush->SetColor(D2D1::ColorF(0.0f, 0.0f, 1.0f));
 
-        p1 = p2;
+        deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
+
+        deviceContext->DrawRectangle(r, _DebugBrush);
+    }
+*/
+    // Render the window function.
+    if (_State->_ShowWindowFunction)
+    {
+        deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+
+        const FLOAT y1 = _ClientRect.bottom;
+        const FLOAT y2 = _ClientRect.top + 1.f;
+
+        constexpr double dx = 0.05;
+
+        double y = _Analysis->_WindowFunction->operator()(-1.);
+
+        auto p1 = D2D1_POINT_2F(_ClientRect.left, msc::Map(y, 0., 1., y1, y2));
+
+        for (double x = -1. + dx; x < 1.; x += dx)
+        {
+            y = _Analysis->_WindowFunction->operator()(x);
+
+            auto p2 = D2D1_POINT_2F(msc::Map(x, -1., 1., _ClientRect.left, _ClientRect.right), msc::Map(y, 0., 1., y1, y2));
+
+            deviceContext->DrawLine(p1, p2, _WindowFunctionStyle._Brush, _WindowFunctionStyle._Thickness);
+
+            p1 = p2;
+        }
+
+        y = _Analysis->_WindowFunction->operator()(1.);
+
+        auto p2 = D2D1_POINT_2F(_ClientRect.right, msc::Map(y, 0., 1., y1, y2));
+
+        deviceContext->DrawLine(p1, p2, _WindowFunctionStyle._Brush, _WindowFunctionStyle._Thickness);
+
     }
 
-    y = _Analysis->_WindowFunction->operator()(1.);
+    // Render the weighing function.
+    if (_State->_ShowWeighingFunction && (_State->_WeightingType != WeightingType::None))
+    {
+        const double BinWidth = (double) _State->_SampleRate / (double) _State->_BinCount;
+        const double Offset   = _State->_FrequencyShift * BinWidth;
 
-    auto p2 = D2D1_POINT_2F(_ClientRect.right, msc::Map(y, 0., 1., y1, y2));
+        deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
-    deviceContext->DrawLine(p1, p2, _DebugBrush);
+        const FLOAT x1 = _ClientRect.left;
+        const FLOAT x2 = _ClientRect.right;
+
+        const FLOAT y1 = _ClientRect.bottom;
+        const FLOAT y2 = _ClientRect.top + 1.f;
+
+        double f = _Analysis->_FrequencyBands.front().Lo + Offset;
+
+        FLOAT x = msc::Map(f, _State->_LoFrequency, _State->_HiFrequency, x1, x2);
+        double y = ToDecibel(_Analysis->GetAcousticWeight(f, _State->_WeightingType, _State->_WeightingAmount));
+
+        auto p1 = D2D1_POINT_2F(x, msc::Map(y, _GraphOptions->_AmplitudeLo, _GraphOptions->_AmplitudeHi, y1, y2));
+
+        for (size_t i = 1; i < _Analysis->_FrequencyBands.size(); ++i)
+        {
+            f = _Analysis->_FrequencyBands[i].Mid + Offset;
+
+            x = msc::Map(f, _State->_LoFrequency, _State->_HiFrequency, x1, x2);
+            y = ToDecibel(_Analysis->GetAcousticWeight(f, _State->_WeightingType, _State->_WeightingAmount));
+
+            auto p2 = D2D1_POINT_2F(x, msc::Map(y, _GraphOptions->_AmplitudeLo, _GraphOptions->_AmplitudeHi, y1, y2));
+
+            deviceContext->DrawLine(p1, p2, _WeighingFunctionStyle._Brush, _WeighingFunctionStyle._Thickness);
+
+            p1 = p2;
+        }
+
+        f = _Analysis->_FrequencyBands.back().Hi;
+
+        x = msc::Map(f, _State->_LoFrequency, _State->_HiFrequency, x1, x2);
+        y = ToDecibel(_Analysis->GetAcousticWeight(f, _State->_WeightingType, _State->_WeightingAmount));
+
+        auto p2 = D2D1_POINT_2F(x, msc::Map(y, _GraphOptions->_AmplitudeLo, _GraphOptions->_AmplitudeHi, y1, y2));
+
+        deviceContext->DrawLine(p1, p2, _WeighingFunctionStyle._Brush, _WeighingFunctionStyle._Thickness);
+    }
 }
 
 /// <summary>
@@ -952,6 +1001,30 @@ HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCon
         _NyquistMarkerStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
 
         hr = _NyquistMarkerStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, L"", 1.f);
+    }
+
+    if (_WindowFunctionStyle._Brush == nullptr)
+    {
+        _WindowFunctionStyle = *StyleManager.GetStyle(VisualElement::WindowFunction);
+
+        _WindowFunctionStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+
+        hr = _WindowFunctionStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, L"", 1.f);
+
+        if (!SUCCEEDED(hr))
+            return hr;
+    }
+
+    if (_WeighingFunctionStyle._Brush == nullptr)
+    {
+        _WeighingFunctionStyle = *StyleManager.GetStyle(VisualElement::WeighingFunction);
+
+        _WeighingFunctionStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+
+        hr = _WeighingFunctionStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, L"", 1.f);
+
+        if (!SUCCEEDED(hr))
+            return hr;
     }
 
     return hr;

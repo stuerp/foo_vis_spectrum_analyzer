@@ -224,14 +224,14 @@ public:
 
         WeightingType _WeightingType;
 
-        double _SlopeFunctionOffset;                                    // [0, 8], Slope function offset expressed in sample rate / FFT size in samples.
+        double _FrequencyShift;                                         // [0, 8], Slope function offset expressed in sample rate / FFT size in samples.
 
-        double _Slope;                                                  // [-12, 12], Frequency slope (dB per octave)
-        double _SlopeOffset;                                            // Hz, [0, 96000], Frequency slope offset (Hz = 0dB)
+        double _FrequencyTilt;                                          // [-12, 12], Adjusts the spectrum by the specified number of decibels per octave.
+        double _FrequencyTiltPivot;                                     // Hz, [0, 96000], Frequency at which the tilt adjustment is 0 dB.
 
-        double _EqualizeAmount;                                         // [-12, 12], Equalize amount
-        double _EqualizeOffset;                                         // Hz, [0, 96000], Equalize offset
-        double _EqualizeDepth;                                          // Hz, [0, 96000], Equalize depth
+        double _EqualizationAmount;                                         // [-12, 12], Equalize amount
+        double _EqualizationFreqScale;                                         // Hz, [0, 96000], Equalize offset
+        double _EqualizationDepth;                                          // Hz, [0, 96000], Equalize depth
 
         double _WeightingAmount;                                        // [-1, 1], Weighting amount
 
@@ -264,6 +264,13 @@ public:
         std::wstring _ArtworkFilePath;                                  // Script that generates a valid file path to load artwork from.
         FitMode _FitMode;                                               // Determines how over- or undersized artwork is rendered.
         bool _FitWindow;                                                // True when the component window instead of the client area of the graph is used to fit artwork.
+
+    #pragma endregion
+
+    #pragma region Diagnostics
+
+        bool _ShowWindowFunction;
+        bool _ShowWeighingFunction;
 
     #pragma endregion
 

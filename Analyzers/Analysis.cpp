@@ -1,5 +1,5 @@
 
-/** $VER: Analysis.cpp (2026.09.07) P. Stuer **/
+/** $VER: Analysis.cpp (2026.09.09) P. Stuer **/
 
 #include "pch.h"
 
@@ -10,10 +10,6 @@
 #include "Support.h"
 
 #pragma hdrstop
-
-static inline double GetFrequencyTilt(double x, double amount, double offset) noexcept;
-static inline double Equalize(double x, double amount, double depth, double offset) noexcept;
-static inline double GetAcousticWeight(double x, WeightingType weightingType, double weightAmount) noexcept;
 
 /// <summary>
 /// Initializes this instance.
@@ -52,6 +48,9 @@ void analysis_t::Initialize(const state_t * state, const graph_options_t * graph
 /// </summary>
 void analysis_t::Reset() noexcept
 {
+    if (_State == nullptr)
+        return;
+
     _SampleRate    = 0;
     _ChannelCount  = 0;
     _ChannelConfig = 0;
@@ -798,24 +797,42 @@ void analysis_t::GenerateMelFrequencyBands()
 #pragma region Acoustic Weighting
 
 /// <summary>
-/// Applies acoustic weighting to the spectrum.
+/// Applies acoustic weighting to the frequencies of the spectrum.
 /// </summary>
-void analysis_t::ApplyAcousticWeighting()
+void analysis_t::ApplyAcousticWeighting() noexcept
 {
-    const double Offset = ((_State->_SlopeFunctionOffset * (double) _SampleRate) / (double) _State->_BinCount);
+    assert((_SampleRate != 0) && (_State->_BinCount != 0));
+
+    const double BinWidth = (double) _SampleRate / (double) _State->_BinCount;
+    const double Offset   = _State->_FrequencyShift * BinWidth;
 
     for (frequency_band_t & fb : _FrequencyBands)
-        fb.RawValue *= GetWeight(fb.Mid + Offset);
+    {
+        const double Frequency = fb.Mid + Offset;
+
+        if (Frequency <= 0.)
+            continue;
+
+        const double Weight = GetWeight(Frequency);
+
+        if (!std::isfinite(Weight) || Weight < 0.)
+            continue;
+
+        fb.RawValue *= Weight;
+    }
 }
 
 /// <summary>
-/// Gets the total weight.
+/// Gets the weight that needs to be applied to the specified frequency.
 /// </summary>
-double analysis_t::GetWeight(double x) const noexcept
+double analysis_t::GetWeight(double f) const noexcept
 {
-    const double a = GetFrequencyTilt(x, _State->_Slope, _State->_SlopeOffset);
-    const double b = Equalize(x, _State->_EqualizeAmount, _State->_EqualizeDepth, _State->_EqualizeOffset);
-    const double c = GetAcousticWeight(x, _State->_WeightingType, _State->_WeightingAmount);
+    const double a = GetFrequencyTilt (f, _State->_FrequencyTilt, _State->_FrequencyTiltPivot);
+    const double b = Equalize         (f, _State->_EqualizationAmount, _State->_EqualizationDepth, _State->_EqualizationFreqScale);
+    const double c = GetAcousticWeight(f, _State->_WeightingType, _State->_WeightingAmount);
+
+    if (!std::isfinite(a) || !std::isfinite(b) || !std::isfinite(c) || a < 0. || b < 0. || c < 0.)
+        return 1.; // Neutral
 
     return a * b * c;
 }
@@ -823,17 +840,19 @@ double analysis_t::GetWeight(double x) const noexcept
 /// <summary>
 /// Gets the frequency tilt.
 /// </summary>
-static inline double GetFrequencyTilt(double x, double amount, double offset) noexcept
+inline double analysis_t::GetFrequencyTilt(double f, double amount, double offset) noexcept
 {
-    return std::pow(x / offset, amount / 6.);
+    assert((f > 0.) && (offset > 0.));
+
+    return std::pow(f / offset, amount / 6.020599913);
 }
 
 /// <summary>
 /// Equalizes the weight.
 /// </summary>
-static inline double Equalize(double x, double amount, double depth, double offset) noexcept
+inline double analysis_t::Equalize(double f, double amount, double depth, double offset) noexcept
 {
-    const double pos = x * depth / offset;
+    const double pos = f * depth / offset;
     const double bias = std::pow(1.0025, -pos) * 0.04;
 
     return std::pow((10. * std::log10(1. + bias + (pos + 1.) * (9. - bias) / depth)), amount / 6.);
@@ -842,9 +861,20 @@ static inline double Equalize(double x, double amount, double depth, double offs
 /// <summary>
 /// Gets the weight for the specified frequency.
 /// </summary>
-static inline double GetAcousticWeight(double x, WeightingType weightType, double weightAmount) noexcept
+inline double analysis_t::GetAcousticWeight(double f, WeightingType weightType, double weightAmount) noexcept
 {
-    const double f2 = x * x;
+    constexpr double F1 =     20.6;
+    constexpr double F2 =    107.7;
+    constexpr double F3 =    737.9;
+    constexpr double F4 = 12'194.0;
+
+    constexpr double F5 =    158.5;
+
+    const double f2 = f * f;
+    const double f3 = f2 * f;
+    const double f4 = f3 * f;
+    const double f5 = f4 * f;
+    const double f6 = f5 * f;
 
     switch (weightType)
     {
@@ -854,23 +884,35 @@ static inline double GetAcousticWeight(double x, WeightingType weightType, doubl
             return 1.;
 
         case WeightingType::AWeighting:
-            return std::pow(1.2588966          * 148'840'000. * (f2 * f2)       / ((f2 + 424.36) * std::sqrt((f2 + 11'599.29) * (f2 + 544'496.41)) * (f2 + 148'840'000.)), weightAmount);
+        {
+            constexpr double Normalization = 1.2588966; // std::pow(10., 2.0 / 20.);
+
+            return std::pow(Normalization * (F4 * F4) * f4 / ((f2 + (F1 * F1)) * std::sqrt((f2 + (F2 * F2)) * (f2 + (F3 * F3))) * (f2 + (F4 * F4))), weightAmount);
+        }
 
         case WeightingType::BWeighting:
-            return std::pow(1.019764760044717  * 148'840'000. * std::pow(x, 3.) / ((f2 + 424.36) * std::sqrt( f2 + 25'122.25)                      * (f2 + 148'840'000.)), weightAmount);
+        {
+            constexpr double Normalization = 1.019764760044717; // std::pow(10., 0.17 / 20.);
+
+            return std::pow(Normalization * (F4 * F4) * f3 / ((f2 + (F1 * F1)) * std::sqrt( f2 + (F5 * F5))                     * (f2 + (F4 * F4))), weightAmount);
+        }
 
         case WeightingType::CWeighting:
-            return std::pow(1.0069316688518042 * 148'840'000. * f2              / ((f2 + 424.36)                                                   * (f2 + 148'840'000.)), weightAmount);
+        {
+            constexpr double Normalization = 1.0069316688518042; // std::pow(10., 0.06 / 20.);
+
+            return std::pow(Normalization * (F4 * F4) * f2 / ((f2 + (F1 * F1))                                                  * (f2 + (F4 * F4))), weightAmount);
+        }
 
         case WeightingType::DWeighting:
-            return std::pow(x / 6.8966888496476e-5 * std::sqrt(((1'037'918.48 - f2) * (1'037'918.48 - f2) + 1'080'768.16 * f2) / ((9'837'328. - f2) * (9'837'328. - f2) + 11'723'776. * f2) / ((f2 + 79'919.29) * (f2 + 1'345'600.))), weightAmount);
+            return std::pow(f / 6.8966888496476e-5 * std::sqrt(((1'037'918.48 - f2) * (1'037'918.48 - f2) + 1'080'768.16 * f2) / ((9'837'328. - f2) * (9'837'328. - f2) + (11'723'776. * f2)) / ((f2 + 79'919.29) * (f2 + 1'345'600.))), weightAmount);
 
         case WeightingType::MWeighting:
         {
-            const double h1 = -4.737338981378384e-24 * std::pow(f2, 3.) + 2.043828333606125e-15 * (f2 * f2)       - 1.363894795463638e-7 * f2 + 1;
-            const double h2 =  1.306612257412824e-19 * std::pow( x, 5.) - 2.118150887518656e-11 * std::pow(x, 3.) + 5.559488023498642e-4 * x;
+            const double h1 = (-4.737338981378384e-24 * f6) + (2.043828333606125e-15 * f4) - (1.363894795463638e-7 * f2) + 1.;
+            const double h2 = ( 1.306612257412824e-19 * f5) - (2.118150887518656e-11 * f3) + (5.559488023498642e-4 * f);
 
-            return std::pow(8.128305161640991 * 1.246332637532143e-4 * x / std::hypot(h1, h2), weightAmount);
+            return std::pow(8.128305161640991 * 1.246332637532143e-4 * f / std::hypot(h1, h2), weightAmount);
         }
     }
 }

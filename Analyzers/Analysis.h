@@ -1,5 +1,5 @@
 
-/** $VER: Analysis.h (2026.08.18) P. Stuer **/
+/** $VER: Analysis.h (2026.09.09) P. Stuer **/
 
 #pragma once
 
@@ -107,6 +107,8 @@ public:
 
     void UpdatePeakValues(bool isStopped) noexcept;
 
+    static double GetAcousticWeight(double x, WeightingType weightingType, double weightAmount) noexcept;
+
 private:
     // Spectrum
     void SpectrumProcessing(const audio_chunk & chunk) noexcept;
@@ -116,8 +118,12 @@ private:
     void GenerateAveePlayerFrequencyBands();
     void GenerateMelFrequencyBands();
 
-    void ApplyAcousticWeighting();
-    double GetWeight(double x) const noexcept;
+    void ApplyAcousticWeighting() noexcept;
+
+    double GetWeight(double frequency) const noexcept;
+
+    static inline double GetFrequencyTilt(double x, double amount, double offset) noexcept;
+    static inline double Equalize(double x, double amount, double depth, double offset) noexcept;
 
     void Normalize() noexcept;
     void NormalizeWithAverageSmoothing(double factor) noexcept;

@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2026.09.07) P. Stuer **/
+/** $VER: Resources.h (2026.09.09) P. Stuer **/
 
 #pragma once
 
@@ -205,38 +205,26 @@
 
 #define IDC_FILTERS_GROUP               2500
 
-#define IDC_ACOUSTIC_FILTER_LBL         2510
-#define IDC_ACOUSTIC_FILTER             2512
+#define IDC_ACOUSTIC_FILTER             2502
 
-#define IDC_SLOPE_FN_OFFS_LBL           2520
-#define IDC_SLOPE_FN_OFFS               2522
-#define IDC_SLOPE_FN_OFFS_SPIN          2524
+#define IDC_FREQ_SHIFT                  2510
+#define IDC_FREQ_SHIFT_SPIN             2512
 
-#define IDC_SLOPE_LBL                   2530
-#define IDC_SLOPE                       2532
-#define IDC_SLOPE_SPIN                  2534
-#define IDC_SLOPE_UNIT                  2536
+#define IDC_FREQ_TILT                   2520
+#define IDC_FREQ_TILT_SPIN              2522
 
-#define IDC_SLOPE_OFFS_LBL              2540
-#define IDC_SLOPE_OFFS                  2542
-#define IDC_SLOPE_OFFS_SPIN             2544
-#define IDC_SLOPE_OFFS_UNIT             2546
+#define IDC_FREQ_TILT_PIVOT             2530
+#define IDC_FREQ_TILT_PIVOT_SPIN        2532
 
-#define IDC_EQ_AMT_LBL                  2550
 #define IDC_EQ_AMT                      2552
 #define IDC_EQ_AMT_SPIN                 2554
 
-#define IDC_EQ_OFFS_LBL                 2560
 #define IDC_EQ_OFFS                     2562
 #define IDC_EQ_OFFS_SPIN                2564
-#define IDC_EQ_OFFS_UNIT                2566
 
-#define IDC_EQ_DEPTH_LBL                2570
 #define IDC_EQ_DEPTH                    2572
 #define IDC_EQ_DEPTH_SPIN               2574
-#define IDC_EQ_DEPTH_UNIT               2576
 
-#define IDC_WT_AMT_LBL                  2580
 #define IDC_WT_AMT                      2582
 #define IDC_WT_AMT_SPIN                 2584
 
@@ -296,10 +284,13 @@
 
 #pragma endregion
 
-#define IDC_COMPONENT                   6200
+#define IDC_DIAGNOSTICS                 6200
 
 #define IDC_LOG_LEVEL_LBL               6202
 #define IDC_LOG_LEVEL                   6204
+
+#define IDC_SHOW_WINDOW_FUNCTION        6206
+#define IDC_SHOW_WEIGHING_FUNCTION      6208
 
 /** Graphs **/
 

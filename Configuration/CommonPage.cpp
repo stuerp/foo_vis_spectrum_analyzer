@@ -1,5 +1,5 @@
 
-/** $VER: CommonPage.cpp (2026.06.24) P. Stuer - Implements a configuration dialog page. **/
+/** $VER: CommonPage.cpp (2026.09.09) P. Stuer - Implements a configuration dialog page. **/
 
 #include "pch.h"
 
@@ -41,6 +41,8 @@ BOOL common_page_t::OnInitDialog(CWindow w, LPARAM lParam) noexcept
 
         // Component
         { IDC_LOG_LEVEL, "Sets the verbosity of the log information that gets written to the console." },
+        { IDC_SHOW_WINDOW_FUNCTION, "Renders the window function over the spectrum." },
+        { IDC_SHOW_WEIGHING_FUNCTION, "Renders the weighing function over the spectrum." },
     };
 
     for (const auto & [ID, Text] : Tips)
@@ -188,6 +190,9 @@ void common_page_t::InitializeControls() noexcept
             if (++i == CfgLogLevel)
                 w.SetCurSel((int) i);
         }
+
+        SendDlgItemMessageW(IDC_SHOW_WINDOW_FUNCTION, BM_SETCHECK, _State->_ShowWindowFunction);
+        SendDlgItemMessageW(IDC_SHOW_WEIGHING_FUNCTION, BM_SETCHECK, _State->_ShowWeighingFunction);
     }
 
     UpdateControls();
@@ -198,6 +203,7 @@ void common_page_t::InitializeControls() noexcept
 /// </summary>
 void common_page_t::UpdateControls() noexcept
 {
+    const bool IsSpectrum     = (_State->_VisualizationType == VisualizationType::Bars) || (_State->_VisualizationType == VisualizationType::Curve);
     const bool IsPeakMeter    = (_State->_VisualizationType == VisualizationType::PeakMeter);
     const bool IsLevelMeter   = (_State->_VisualizationType == VisualizationType::LevelMeter);
     const bool IsOscilloscope = (_State->_VisualizationType == VisualizationType::Oscilloscope);
@@ -207,8 +213,8 @@ void common_page_t::UpdateControls() noexcept
     // Common
     const bool SupportsFFT = !(IsPeakMeter || IsLevelMeter || IsOscilloscope || IsBitMeter || IsTester);
 
-    for (const auto ID : { IDC_SMOOTHING_METHOD, IDC_SHOW_TOOLTIPS, IDC_SUPPRESS_MIRROR_IMAGE })
-        GetDlgItem(ID).EnableWindow(SupportsFFT);
+    for (const auto Id : { IDC_SMOOTHING_METHOD, IDC_SHOW_TOOLTIPS, IDC_SUPPRESS_MIRROR_IMAGE })
+        GetDlgItem(Id).EnableWindow(SupportsFFT);
 
     // Smoothing
     GetDlgItem(IDC_SMOOTHING_FACTOR).EnableWindow(SupportsFFT && (_State->_SmoothingMethod != SmoothingMethod::None));
@@ -218,14 +224,18 @@ void common_page_t::UpdateControls() noexcept
 
     GetDlgItem(IDC_ARTWORK_BACKGROUND).EnableWindow(SupportsArtworkOnBackground);
 
-    for (const auto ID :
+    for (const auto Id :
     {
         IDC_FIT_MODE, IDC_FIT_WINDOW,
         IDC_ARTWORK_OPACITY, IDC_ARTWORK_OPACITY_SPIN,
         IDC_ARTWORK_BLUR_SIGMA, IDC_ARTWORK_BLUR_SIGMA_SLIDER,
         IDC_ARTWORK_FILE_PATH
     })
-        GetDlgItem(ID).EnableWindow(SupportsArtworkOnBackground && _State->_ShowArtworkOnBackground);
+        GetDlgItem(Id).EnableWindow(SupportsArtworkOnBackground && _State->_ShowArtworkOnBackground);
+
+    // Diagnostics
+    GetDlgItem(IDC_SHOW_WINDOW_FUNCTION).EnableWindow(IsSpectrum);
+    GetDlgItem(IDC_SHOW_WEIGHING_FUNCTION).EnableWindow(IsSpectrum);
 }
 
 /// <summary>
@@ -461,6 +471,18 @@ void common_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
         case IDC_FIT_WINDOW:
         {
             _State->_FitWindow = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            break;
+        }
+
+        case IDC_SHOW_WINDOW_FUNCTION:
+        {
+            _State->_ShowWindowFunction = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            break;
+        }
+
+        case IDC_SHOW_WEIGHING_FUNCTION:
+        {
+            _State->_ShowWeighingFunction = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
             break;
         }
     }

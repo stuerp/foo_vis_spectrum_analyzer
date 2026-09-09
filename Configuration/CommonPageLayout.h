@@ -208,4 +208,16 @@
     #define W_K02    48
     #define H_K02    H_CBX
 
+    // Checkbox: Show window function
+    #define W_K03    88
+    #define H_K03    H_CHB
+    #define X_K03    X_K02 + W_K02 + IX
+    #define Y_K03    Y_K02
+
+    // Checkbox: Show weighing function
+    #define W_K04    88
+    #define H_K04    H_CHB
+    #define X_K04    X_K03 + W_K03 + IX
+    #define Y_K04    Y_K03
+
 #define H_K00   11 + H_K02 + 7

@@ -1,5 +1,5 @@
 
-/** $VER: FiltersPage.cpp (2026.03.08) P. Stuer - Implements a configuration dialog page. **/
+/** $VER: FiltersPage.cpp (2026.09.09) P. Stuer - Implements a configuration dialog page. **/
 
 #include "pch.h"
 
@@ -16,17 +16,18 @@ BOOL filters_page_t::OnInitDialog(CWindow w, LPARAM lParam) noexcept
 
     static const std::unordered_map<int, const char *> Tips =
     {
-        { IDC_ACOUSTIC_FILTER, "Selects the Weighting filter type that will be applied." },
+        { IDC_ACOUSTIC_FILTER,  "Selects the Weighting function that will be applied." },
 
-        { IDC_SLOPE_FN_OFFS, "Slope function offset expressed in sample rate / FFT size in samples" },
-        { IDC_SLOPE, "Frequency slope offset" },
-        { IDC_SLOPE_OFFS, "Frequency slope in dB per octave" },
+        { IDC_FREQ_SHIFT,       "Shifts the frequency at which the complete weighting curve is evaluated. Expressed in spectrum-bin units that are converted to Hz using the current sample rate and bin count." },
 
-        { IDC_EQ_AMT, "Equalization amount" },
-        { IDC_EQ_DEPTH, "Equalization offset" },
-        { IDC_EQ_OFFS, "Equalization depth" },
+        { IDC_FREQ_TILT,        "Adjusts the spectrum by the specified number of dB per octave. Positive values emphasize higher frequencies; negative values emphasize lower frequencies." },
+        { IDC_FREQ_TILT_PIVOT,  "Frequency at which the tilt adjustment is 0 dB." },
 
-        { IDC_WT_AMT, "Weighting amount" },
+        { IDC_EQ_AMT,           "Controls the strength of the equalization curve. Zero disables equalization; positive values increase the effect." },
+        { IDC_EQ_DEPTH,         "Adjusts the scale and shape of the equalization curve." },
+        { IDC_EQ_OFFS,          "Moves the equalization curve along the frequency axis. Higher values shift its features toward higher frequencies." },
+
+        { IDC_WT_AMT,           "Sets how strongly the selected acoustic weighting curve is applied. Zero disables weighting; one applies the full curve." },
     };
 
     for (const auto & [ID, Text] : Tips)
@@ -57,14 +58,14 @@ void filters_page_t::InitializeControls() noexcept
             { 1,     100 }, //     1.0
         };
 
-        auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_SLOPE_FN_OFFS)); _NumericEdits.push_back(ne); SetDouble(IDC_SLOPE_FN_OFFS, _State->_SlopeFunctionOffset);
+        auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_FREQ_SHIFT)); _NumericEdits.push_back(ne); SetDouble(IDC_FREQ_SHIFT, _State->_FrequencyShift);
 
-        auto w = CUpDownCtrl(GetDlgItem(IDC_SLOPE_FN_OFFS_SPIN));
+        auto w = CUpDownCtrl(GetDlgItem(IDC_FREQ_SHIFT_SPIN));
 
         w.SetAccel(_countof(Accel), Accel);
 
-        w.SetRange32((int) (MinSlopeFunctionOffset * 100.), (int) (MaxSlopeFunctionOffset * 100.));
-        w.SetPos32((int)(_State->_SlopeFunctionOffset * 100.));
+        w.SetRange32((int) (MinFrequencyShift * 100.), (int) (MaxFrequencyShift * 100.));
+        w.SetPos32((int)(_State->_FrequencyShift * 100.));
     }
 
     {
@@ -73,14 +74,14 @@ void filters_page_t::InitializeControls() noexcept
             { 1,     100 }, //     1.0
         };
 
-        auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_SLOPE)); _NumericEdits.push_back(ne); SetDouble(IDC_SLOPE, _State->_Slope);
+        auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_FREQ_TILT)); _NumericEdits.push_back(ne); SetDouble(IDC_FREQ_TILT, _State->_FrequencyTilt);
 
-        auto w = CUpDownCtrl(GetDlgItem(IDC_SLOPE_SPIN));
+        auto w = CUpDownCtrl(GetDlgItem(IDC_FREQ_TILT_SPIN));
 
         w.SetAccel(_countof(Accel), Accel);
 
-        w.SetRange32((int) (MinSlope * 100.), (int) (MaxSlope * 100.));
-        w.SetPos32((int)(_State->_Slope* 100.));
+        w.SetRange32((int) (MinFrequencyTilt * 100.), (int) (MaxFrequencyTilt * 100.));
+        w.SetPos32((int)(_State->_FrequencyTilt* 100.));
     }
 
     {
@@ -95,14 +96,14 @@ void filters_page_t::InitializeControls() noexcept
             { 7, 1000000 }, // 10000.0
         };
 
-        auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_SLOPE_OFFS)); _NumericEdits.push_back(ne); SetDouble(IDC_SLOPE_OFFS, _State->_SlopeOffset);
+        auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_FREQ_TILT_PIVOT)); _NumericEdits.push_back(ne); SetDouble(IDC_FREQ_TILT_PIVOT, _State->_FrequencyTiltPivot);
 
-        auto w = CUpDownCtrl(GetDlgItem(IDC_SLOPE_OFFS_SPIN));
+        auto w = CUpDownCtrl(GetDlgItem(IDC_FREQ_TILT_PIVOT_SPIN));
 
         w.SetAccel(_countof(Accel), Accel);
 
-        w.SetRange32((int) (MinSlopeOffset * 100.), (int) (MaxSlopeOffset * 100.));
-        w.SetPos32((int)(_State->_SlopeOffset * 100.));
+        w.SetRange32((int) (MinFrequencyTiltPivot * 100.), (int) (MaxFrequencyTiltPivot * 100.));
+        w.SetPos32((int)(_State->_FrequencyTiltPivot * 100.));
     }
 
     {
@@ -111,14 +112,14 @@ void filters_page_t::InitializeControls() noexcept
             { 1,     100 }, //     1.0
         };
 
-        auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_EQ_AMT)); _NumericEdits.push_back(ne); SetDouble(IDC_EQ_AMT, _State->_EqualizeAmount);
+        auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_EQ_AMT)); _NumericEdits.push_back(ne); SetDouble(IDC_EQ_AMT, _State->_EqualizationAmount);
 
         auto w = CUpDownCtrl(GetDlgItem(IDC_EQ_AMT_SPIN));
 
         w.SetAccel(_countof(Accel), Accel);
 
-        w.SetRange32((int) (MinEqualizeAmount * 100.), (int) (MaxEqualizeAmount * 100.));
-        w.SetPos32((int)(_State->_EqualizeAmount * 100.));
+        w.SetRange32((int) (MinEqualizationAmount * 100.), (int) (MaxEqualizationAmount * 100.));
+        w.SetPos32((int)(_State->_EqualizationAmount * 100.));
     }
 
     {
@@ -133,14 +134,14 @@ void filters_page_t::InitializeControls() noexcept
             { 7, 1000000 }, // 10000.0
         };
 
-        auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_EQ_OFFS)); _NumericEdits.push_back(ne); SetDouble(IDC_EQ_OFFS, _State->_EqualizeOffset);
+        auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_EQ_OFFS)); _NumericEdits.push_back(ne); SetDouble(IDC_EQ_OFFS, _State->_EqualizationFreqScale);
 
         auto w = CUpDownCtrl(GetDlgItem(IDC_EQ_OFFS_SPIN));
 
         w.SetAccel(_countof(Accel), Accel);
 
-        w.SetRange32((int) (MinEqualizeOffset * 100.), (int) (MaxEqualizeOffset * 100.));
-        w.SetPos32((int)(_State->_EqualizeOffset * 100.));
+        w.SetRange32((int) (MinEqualizationFreqScale * 100.), (int) (MaxEqualizationFreqScale * 100.));
+        w.SetPos32((int)(_State->_EqualizationFreqScale * 100.));
     }
 
     {
@@ -155,14 +156,14 @@ void filters_page_t::InitializeControls() noexcept
             { 7, 1000000 }, // 10000.0
         };
 
-        auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_EQ_DEPTH)); _NumericEdits.push_back(ne); SetDouble(IDC_EQ_DEPTH, _State->_EqualizeDepth);
+        auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_EQ_DEPTH)); _NumericEdits.push_back(ne); SetDouble(IDC_EQ_DEPTH, _State->_EqualizationDepth);
 
         auto w = CUpDownCtrl(GetDlgItem(IDC_EQ_DEPTH_SPIN));
 
         w.SetAccel(_countof(Accel), Accel);
 
-        w.SetRange32((int) (MinEqualizeDepth * 100.), (int) (MaxEqualizeDepth * 100.));
-        w.SetPos32((int)(_State->_EqualizeDepth * 100.));
+        w.SetRange32((int) (MinEqualizationDepth * 100.), (int) (MaxEqualizationDepth * 100.));
+        w.SetPos32((int)(_State->_EqualizationDepth * 100.));
     }
 
     {
@@ -203,7 +204,7 @@ void filters_page_t::UpdateControls() noexcept
 
     const bool HasFilter = (_State->_WeightingType != WeightingType::None) && SupportsFilter;
 
-    for (const auto & Iter : { IDC_SLOPE_FN_OFFS, IDC_SLOPE_FN_OFFS, IDC_SLOPE, IDC_SLOPE_OFFS, IDC_EQ_AMT, IDC_EQ_OFFS, IDC_EQ_DEPTH, IDC_WT_AMT })
+    for (const auto & Iter : { IDC_FREQ_SHIFT, IDC_FREQ_SHIFT, IDC_FREQ_TILT, IDC_FREQ_TILT_PIVOT, IDC_EQ_AMT, IDC_EQ_OFFS, IDC_EQ_DEPTH, IDC_WT_AMT })
         GetDlgItem(Iter).EnableWindow(HasFilter);
 }
 
@@ -271,13 +272,18 @@ void filters_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
 
         #define ON_EDIT_CHANGE_DOUBLE(x,y) _State->_##x = std::clamp(::_wtof(Text), Min##x, Max##x); CUpDownCtrl(GetDlgItem(y)).SetPos32((int)(_State->_##x * 100.));
 
-        case IDC_SLOPE_FN_OFFS: { ON_EDIT_CHANGE_DOUBLE(SlopeFunctionOffset, IDC_SLOPE_FN_OFFS); break; }
-        case IDC_SLOPE:         { ON_EDIT_CHANGE_DOUBLE(Slope, IDC_SLOPE); break; }
-        case IDC_SLOPE_OFFS:    { ON_EDIT_CHANGE_DOUBLE(SlopeOffset, IDC_SLOPE_OFFS); break; }
-        case IDC_EQ_AMT:        { ON_EDIT_CHANGE_DOUBLE(EqualizeAmount, IDC_EQ_AMT); break; }
-        case IDC_EQ_OFFS:       { ON_EDIT_CHANGE_DOUBLE(EqualizeOffset, IDC_EQ_OFFS); break; }
-        case IDC_EQ_DEPTH:      { ON_EDIT_CHANGE_DOUBLE(EqualizeDepth, IDC_EQ_DEPTH); break; }
-        case IDC_WT_AMT:        { ON_EDIT_CHANGE_DOUBLE(WeightingAmount, IDC_WT_AMT); break; }
+        case IDC_FREQ_SHIFT:        { ON_EDIT_CHANGE_DOUBLE(FrequencyShift,         IDC_FREQ_SHIFT); break; }
+
+        case IDC_FREQ_TILT:         { ON_EDIT_CHANGE_DOUBLE(FrequencyTilt,          IDC_FREQ_TILT); break; }
+        case IDC_FREQ_TILT_PIVOT:   { ON_EDIT_CHANGE_DOUBLE(FrequencyTiltPivot,     IDC_FREQ_TILT_PIVOT); break; }
+
+        case IDC_EQ_AMT:            { ON_EDIT_CHANGE_DOUBLE(EqualizationAmount,     IDC_EQ_AMT); break; }
+        case IDC_EQ_OFFS:           { ON_EDIT_CHANGE_DOUBLE(EqualizationFreqScale,  IDC_EQ_OFFS); break; }
+        case IDC_EQ_DEPTH:          { ON_EDIT_CHANGE_DOUBLE(EqualizationDepth,      IDC_EQ_DEPTH); break; }
+
+        case IDC_WT_AMT:            { ON_EDIT_CHANGE_DOUBLE(WeightingAmount,        IDC_WT_AMT); break; }
+
+        #undef ON_EDIT_CHANGE_DOUBLE
     }
 
     ConfigurationChanged(ChangedSettings);
@@ -298,12 +304,12 @@ void filters_page_t::OnEditLostFocus(UINT code, int id, CWindow) noexcept
         default:
             return;
 
-        case IDC_SLOPE_FN_OFFS: { SetDouble(id, _State->_SlopeFunctionOffset); break; }
-        case IDC_SLOPE:         { SetDouble(id, _State->_Slope); break; }
-        case IDC_SLOPE_OFFS:    { SetDouble(id, _State->_SlopeOffset); break; }
-        case IDC_EQ_AMT:        { SetDouble(id, _State->_EqualizeAmount); break; }
-        case IDC_EQ_OFFS:       { SetDouble(id, _State->_EqualizeOffset); break; }
-        case IDC_EQ_DEPTH:      { SetDouble(id, _State->_EqualizeDepth); break; }
+        case IDC_FREQ_SHIFT: { SetDouble(id, _State->_FrequencyShift); break; }
+        case IDC_FREQ_TILT:         { SetDouble(id, _State->_FrequencyTilt); break; }
+        case IDC_FREQ_TILT_PIVOT:    { SetDouble(id, _State->_FrequencyTiltPivot); break; }
+        case IDC_EQ_AMT:        { SetDouble(id, _State->_EqualizationAmount); break; }
+        case IDC_EQ_OFFS:       { SetDouble(id, _State->_EqualizationFreqScale); break; }
+        case IDC_EQ_DEPTH:      { SetDouble(id, _State->_EqualizationDepth); break; }
         case IDC_WT_AMT:        { SetDouble(id, _State->_WeightingAmount); break; }
     }
 
@@ -327,57 +333,57 @@ LRESULT filters_page_t::OnDeltaPos(LPNMHDR nmhd) noexcept
         default:
             return -1;
 
-        case IDC_SLOPE_FN_OFFS_SPIN:
+        case IDC_FREQ_SHIFT_SPIN:
         {
-            if (!SetProperty(_State->_SlopeFunctionOffset, ClampNewSpinPosition(nmud, MinSlopeFunctionOffset, MaxSlopeFunctionOffset, 100.)))
+            if (!SetProperty(_State->_FrequencyShift, ClampNewSpinPosition(nmud, MinFrequencyShift, MaxFrequencyShift, 100.)))
                 return -1;
 
-            SetDouble(IDC_SLOPE_FN_OFFS, _State->_SlopeFunctionOffset);
+            SetDouble(IDC_FREQ_SHIFT, _State->_FrequencyShift);
             break;
         }
 
-        case IDC_SLOPE_SPIN:
+        case IDC_FREQ_TILT_SPIN:
         {
-            if (!SetProperty(_State->_Slope, ClampNewSpinPosition(nmud, MinSlope, MaxSlope, 100.)))
+            if (!SetProperty(_State->_FrequencyTilt, ClampNewSpinPosition(nmud, MinFrequencyTilt, MaxFrequencyTilt, 100.)))
                 return -1;
 
-            SetDouble(IDC_SLOPE, _State->_Slope);
+            SetDouble(IDC_FREQ_TILT, _State->_FrequencyTilt);
             break;
         }
 
-        case IDC_SLOPE_OFFS_SPIN:
+        case IDC_FREQ_TILT_PIVOT_SPIN:
         {
-            if (!SetProperty(_State->_SlopeOffset, ClampNewSpinPosition(nmud, MinSlopeOffset, MaxSlopeOffset, 100.)))
+            if (!SetProperty(_State->_FrequencyTiltPivot, ClampNewSpinPosition(nmud, MinFrequencyTiltPivot, MaxFrequencyTiltPivot, 100.)))
                 return -1;
 
-            SetDouble(IDC_SLOPE_OFFS, _State->_SlopeOffset);
+            SetDouble(IDC_FREQ_TILT_PIVOT, _State->_FrequencyTiltPivot);
             break;
         }
 
         case IDC_EQ_AMT_SPIN:
         {
-            if (!SetProperty(_State->_EqualizeAmount, ClampNewSpinPosition(nmud, MinEqualizeAmount, MaxEqualizeAmount, 100.)))
+            if (!SetProperty(_State->_EqualizationAmount, ClampNewSpinPosition(nmud, MinEqualizationAmount, MaxEqualizationAmount, 100.)))
                 return -1;
 
-            SetDouble(IDC_EQ_AMT, _State->_EqualizeAmount);
+            SetDouble(IDC_EQ_AMT, _State->_EqualizationAmount);
             break;
         }
 
         case IDC_EQ_OFFS_SPIN:
         {
-            if (!SetProperty(_State->_EqualizeOffset, ClampNewSpinPosition(nmud, MinEqualizeOffset, MaxEqualizeOffset, 100.)))
+            if (!SetProperty(_State->_EqualizationFreqScale, ClampNewSpinPosition(nmud, MinEqualizationFreqScale, MaxEqualizationFreqScale, 100.)))
                 return -1;
 
-            SetDouble(IDC_EQ_OFFS, _State->_EqualizeOffset);
+            SetDouble(IDC_EQ_OFFS, _State->_EqualizationFreqScale);
             break;
         }
 
         case IDC_EQ_DEPTH_SPIN:
         {
-            if (!SetProperty(_State->_EqualizeDepth, ClampNewSpinPosition(nmud, MinEqualizeDepth, MaxEqualizeDepth, 100.)))
+            if (!SetProperty(_State->_EqualizationDepth, ClampNewSpinPosition(nmud, MinEqualizationDepth, MaxEqualizationDepth, 100.)))
                 return -1;
 
-            SetDouble(IDC_EQ_DEPTH, _State->_EqualizeDepth);
+            SetDouble(IDC_EQ_DEPTH, _State->_EqualizationDepth);
             break;
         }
 

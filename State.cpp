@@ -1,5 +1,5 @@
 
-/** $VER: State.cpp (2026.09.08) P. Stuer **/
+/** $VER: State.cpp (2026.09.09) P. Stuer **/
 
 #include "pch.h"
 #include "State.h"
@@ -119,14 +119,14 @@ void state_t::Reset() noexcept
     // Filters
     _WeightingType = WeightingType::None;
 
-    _SlopeFunctionOffset = 1.;
+    _FrequencyShift = 1.;
 
-    _Slope = 0.;
-    _SlopeOffset = 1000.;
+    _FrequencyTilt = 0.;
+    _FrequencyTiltPivot = 1000.;
 
-    _EqualizeAmount = 0.;
-    _EqualizeOffset = 44100.;
-    _EqualizeDepth = 1024.;
+    _EqualizationAmount = 0.;
+    _EqualizationFreqScale = 44100.;
+    _EqualizationDepth = 1024.;
 
     _WeightingAmount = 0.;
 
@@ -196,6 +196,9 @@ void state_t::Reset() noexcept
     _ArtworkFilePath.clear();
     _FitMode = FitMode::FitBig;
     _FitWindow = false;
+
+    _ShowWindowFunction   = false;
+    _ShowWeighingFunction = false;
 
     /** Graphs **/
 
@@ -396,14 +399,14 @@ state_t & state_t::operator=(const state_t & other) noexcept
 
         _WeightingType = other._WeightingType;
 
-        _SlopeFunctionOffset = other._SlopeFunctionOffset;
+        _FrequencyShift = other._FrequencyShift;
 
-        _Slope = other._Slope;
-        _SlopeOffset = other._SlopeOffset;
+        _FrequencyTilt = other._FrequencyTilt;
+        _FrequencyTiltPivot = other._FrequencyTiltPivot;
 
-        _EqualizeAmount = other._EqualizeAmount;
-        _EqualizeOffset = other._EqualizeOffset;
-        _EqualizeDepth = other._EqualizeDepth;
+        _EqualizationAmount = other._EqualizationAmount;
+        _EqualizationFreqScale = other._EqualizationFreqScale;
+        _EqualizationDepth = other._EqualizationDepth;
 
         _WeightingAmount = other._WeightingAmount;
 
@@ -478,6 +481,9 @@ state_t & state_t::operator=(const state_t & other) noexcept
         _ArtworkFilePath = other._ArtworkFilePath;
         _FitMode = other._FitMode;
         _FitWindow = other._FitWindow;
+
+        _ShowWindowFunction   = other._ShowWindowFunction;
+        _ShowWeighingFunction = other._ShowWeighingFunction;
 
     #pragma endregion
 
@@ -754,14 +760,14 @@ void state_t::Read(stream_reader * stream, size_t size, abort_callback & abortHa
         {
             stream->read(&_WeightingType, sizeof(_WeightingType), abortHandler);
 
-            stream->read(&_SlopeFunctionOffset, sizeof(_SlopeFunctionOffset), abortHandler);
+            stream->read(&_FrequencyShift, sizeof(_FrequencyShift), abortHandler);
 
-            stream->read(&_Slope, sizeof(_Slope), abortHandler);
-            stream->read(&_SlopeOffset, sizeof(_SlopeOffset), abortHandler);
+            stream->read(&_FrequencyTilt, sizeof(_FrequencyTilt), abortHandler);
+            stream->read(&_FrequencyTiltPivot, sizeof(_FrequencyTiltPivot), abortHandler);
 
-            stream->read(&_EqualizeAmount, sizeof(_EqualizeAmount), abortHandler);
-            stream->read(&_EqualizeOffset, sizeof(_EqualizeOffset), abortHandler);
-            stream->read(&_EqualizeDepth, sizeof(_EqualizeDepth), abortHandler);
+            stream->read(&_EqualizationAmount, sizeof(_EqualizationAmount), abortHandler);
+            stream->read(&_EqualizationFreqScale, sizeof(_EqualizationFreqScale), abortHandler);
+            stream->read(&_EqualizationDepth, sizeof(_EqualizationDepth), abortHandler);
 
             stream->read(&_WeightingAmount, sizeof(_WeightingAmount), abortHandler);
 
@@ -1151,14 +1157,14 @@ void state_t::Write(stream_writer * stream, abort_callback & abortHandler, bool 
         // Version 11
         stream->write(&_WeightingType, sizeof(_WeightingType), abortHandler);
 
-        stream->write(&_SlopeFunctionOffset, sizeof(_SlopeFunctionOffset), abortHandler);
+        stream->write(&_FrequencyShift, sizeof(_FrequencyShift), abortHandler);
 
-        stream->write(&_Slope, sizeof(_Slope), abortHandler);
-        stream->write(&_SlopeOffset, sizeof(_SlopeOffset), abortHandler);
+        stream->write(&_FrequencyTilt, sizeof(_FrequencyTilt), abortHandler);
+        stream->write(&_FrequencyTiltPivot, sizeof(_FrequencyTiltPivot), abortHandler);
 
-        stream->write(&_EqualizeAmount, sizeof(_EqualizeAmount), abortHandler);
-        stream->write(&_EqualizeOffset, sizeof(_EqualizeOffset), abortHandler);
-        stream->write(&_EqualizeDepth, sizeof(_EqualizeDepth), abortHandler);
+        stream->write(&_EqualizationAmount, sizeof(_EqualizationAmount), abortHandler);
+        stream->write(&_EqualizationFreqScale, sizeof(_EqualizationFreqScale), abortHandler);
+        stream->write(&_EqualizationDepth, sizeof(_EqualizationDepth), abortHandler);
 
         stream->write(&_WeightingAmount, sizeof(_WeightingAmount), abortHandler);
 
@@ -1542,13 +1548,13 @@ void state_t::FromJSON(const char * data, size_t size, bool isPreset)
     {
         _WeightingType          = std::clamp(Filters.value("weightingType",         _WeightingType),            WeightingType::Min,         WeightingType::Max);
 
-        _SlopeFunctionOffset    = std::clamp(Filters.value("slopeFunctionOffset",   _SlopeFunctionOffset),      MinSlopeFunctionOffset,     MaxSlopeFunctionOffset);
-        _Slope                  = std::clamp(Filters.value("slope",                 _Slope),                    MinSlope,                   MaxSlope);
-        _SlopeOffset            = std::clamp(Filters.value("slopeOffset",           _SlopeOffset),              MinSlopeOffset,             MaxSlopeOffset);
+        _FrequencyShift         = std::clamp(Filters.value("slopeFunctionOffset",   _FrequencyShift),           MinFrequencyShift,          MaxFrequencyShift);
+        _FrequencyTilt          = std::clamp(Filters.value("slope",                 _FrequencyTilt),            MinFrequencyTilt,           MaxFrequencyTilt);
+        _FrequencyTiltPivot     = std::clamp(Filters.value("slopeOffset",           _FrequencyTiltPivot),       MinFrequencyTiltPivot,      MaxFrequencyTiltPivot);
 
-        _EqualizeAmount         = std::clamp(Filters.value("equalizeAmount",        _EqualizeAmount),           MinEqualizeAmount,          MaxEqualizeAmount);
-        _EqualizeOffset         = std::clamp(Filters.value("equalizeOffset",        _EqualizeOffset),           MinEqualizeOffset,          MaxEqualizeOffset);
-        _EqualizeDepth          = std::clamp(Filters.value("equalizeDepth",         _EqualizeDepth),            MinEqualizeDepth,           MaxEqualizeDepth);
+        _EqualizationAmount     = std::clamp(Filters.value("equalizeAmount",        _EqualizationAmount),       MinEqualizationAmount,      MaxEqualizationAmount);
+        _EqualizationFreqScale  = std::clamp(Filters.value("equalizeOffset",        _EqualizationFreqScale),    MinEqualizationFreqScale,   MaxEqualizationFreqScale);
+        _EqualizationDepth      = std::clamp(Filters.value("equalizeDepth",         _EqualizationDepth),        MinEqualizationDepth,       MaxEqualizationDepth);
 
         _WeightingAmount        = std::clamp(Filters.value("weightingAmount",       _WeightingAmount),          MinWeightingAmount,         MaxWeightingAmount);
     }
@@ -1580,6 +1586,13 @@ void state_t::FromJSON(const char * data, size_t size, bool isPreset)
         _ArtworkBlurSigma        = std::clamp(Artwork.value("blurSigma",            _ArtworkBlurSigma),         (FLOAT) MinArtworkBlurSigma,(FLOAT) MaxArtworkBlurSigma);
 
         _ArtworkFilePath         = msc::UTF8ToWide(Artwork.value("filePath", msc::WideToUTF8(_ArtworkFilePath)));
+    }
+
+    // Diagnostics
+    const auto & Diagnostics = Object.value("diagnostics", json::object());
+    {
+        _ShowWindowFunction     = Diagnostics.value("showWindowFunction",           _ShowWindowFunction);
+        _ShowWeighingFunction   = Diagnostics.value("showWeighingFunction",         _ShowWeighingFunction);
     }
 
     const auto & Grid = Object.value("grid", json::object());
@@ -1832,13 +1845,13 @@ json state_t::ToJSON(bool isPreset) const
             ({
                 { "weightingType", _WeightingType },
 
-                { "slopeFunctionOffset", _SlopeFunctionOffset },
-                { "slope", _Slope },
-                { "slopeOffset", _SlopeOffset },
+                { "slopeFunctionOffset", _FrequencyShift },
+                { "slope", _FrequencyTilt },
+                { "slopeOffset", _FrequencyTiltPivot },
 
-                { "equalizeAmount", _EqualizeAmount},
-                { "equalizeOffset", _EqualizeOffset },
-                { "equalizeDepth", _EqualizeDepth },
+                { "equalizeAmount", _EqualizationAmount},
+                { "equalizeOffset", _EqualizationFreqScale },
+                { "equalizeDepth", _EqualizationDepth },
 
                 { "weightingAmount", _WeightingAmount },
             })
@@ -1871,6 +1884,15 @@ json state_t::ToJSON(bool isPreset) const
                 { "opacity", _ArtworkOpacity },
                 { "blurSigma", _ArtworkBlurSigma },
                 { "filePath", msc::WideToUTF8(_ArtworkFilePath) },
+            })
+        ), 
+
+        json::object_t::value_type
+        (
+            "diagnostics", json::object
+            ({
+                { "showWindowFunction", _ShowWindowFunction },
+                { "showWeighingFunction", _ShowWeighingFunction },
             })
         ), 
 

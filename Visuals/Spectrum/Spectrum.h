@@ -64,7 +64,7 @@ private:
 
     void RenderNyquistFrequencyMarker(ID2D1DeviceContext * deviceContext) const noexcept;
 
-    void RenderDebug(ID2D1DeviceContext * deviceContext) const noexcept;
+    void RenderDiagnostics(ID2D1DeviceContext * deviceContext) const noexcept;
 
     HRESULT CreateOpacityMask(ID2D1DeviceContext * deviceContext) noexcept;
 
@@ -121,4 +121,7 @@ private:
     style_t _CurvePeakAreaStyle;
 
     style_t _NyquistMarkerStyle;
+
+    style_t _WindowFunctionStyle;
+    style_t _WeighingFunctionStyle;
 };

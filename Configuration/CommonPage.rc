@@ -63,8 +63,11 @@ style DS_SETFONT | DS_CONTROL | WS_CHILD | WS_CLIPCHILDREN
         rtext           "Artwork file path:"        IDC_STATIC,                     X_G13, Y_G13 + 2, W_G13, H_G13
         edittext                                    IDC_ARTWORK_FILE_PATH,          X_G14, Y_G14,     W_G14, H_G14, ES_AUTOHSCROLL | WS_TABSTOP
 
-    groupbox "Component", IDC_COMPONENT, X_K00, Y_K00, W_K00, H_K00, BS_GROUPBOX, WS_EX_TRANSPARENT
+    groupbox "Diagnostics", IDC_DIAGNOSTICS, X_K00, Y_K00, W_K00, H_K00, BS_GROUPBOX, WS_EX_TRANSPARENT
 
         rtext           "Log level:"                IDC_STATIC,                     X_K01, Y_K01 + 2, W_K01, H_K01
         combobox                                    IDC_LOG_LEVEL,                  X_K02, Y_K02,     W_K02, H_K02, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+
+        control         "Show window function",     IDC_SHOW_WINDOW_FUNCTION,       "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_K03, Y_K03 + 2, W_K03, H_K03
+        control         "Show weighing function",   IDC_SHOW_WEIGHING_FUNCTION,     "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_K04, Y_K04 + 2, W_K04, H_K04
 }

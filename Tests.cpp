@@ -1,13 +1,149 @@
 
-/** $VER: Tests.cpp (2026.09.06) P. Stuer - Various unit tests **/
+/** $VER: Tests.cpp (2026.09.09) P. Stuer - Various unit tests **/
 
 #include "pch.h"
 
 #ifdef _DEBUG
 
+#include "Analyzers/Analysis.h"
 #include "Analyzers/FrequencyScaler.h"
 #include "Analyzers/WindowFunctions.h"
 #include "Log.h"
+
+static void TestWeighting()
+{
+    constexpr double WeightTolerance  = 1.e-9;
+    constexpr double DecibelTolerance = 1.e-6;
+
+    analysis_t Analysis;
+
+    struct weighting_test_t
+    {
+        double Frequency;
+        double ExpectedWeight;
+        double ExpectedDecibels;
+    };
+
+    constexpr weighting_test_t AWeightingTests[] =
+    {
+        {       20., 0.003021740854364, -50.394855673 },
+        {      100., 0.110342379727598, -19.145153079 },
+        {    1'000., 0.999993407716264,  -0.000057260 },
+        {    4'000., 1.117300404192550,   0.963399118 },
+        {    8'000., 0.876286444332179,  -1.147078131 },
+        {   10'000., 0.750605235629460,  -2.491768212 },
+        {   12'500., 0.612759671202555,  -4.254196511 },
+        {   16'000., 0.462044856449356,  -6.706317200 },
+        {   20'000., 0.340918345911634,  -9.346992547 },
+        {   22'050., 0.294666762978363, -10.613376955 }
+    };
+
+    for (auto & Test : AWeightingTests)
+    {
+        const double Weight = Analysis.GetAcousticWeight(Test.Frequency, WeightingType::AWeighting, 1.);
+
+        const double Decibels = 20. * std::log10(Weight);
+
+        assert(std::abs(Weight   - Test.ExpectedWeight)   < WeightTolerance);
+        assert(std::abs(Decibels - Test.ExpectedDecibels) < DecibelTolerance);
+    }
+
+    constexpr weighting_test_t BWeightingTests[] =
+    {
+        {       20., 0.061945880288931, -24.159751422 },
+        {      100., 0.521951593253106,  -5.647395448 },
+        {    1'000., 1.000039043321642,   0.000339119 },
+        {    4'000., 0.919948172289609,  -0.724732782 },
+        {    8'000., 0.712770611671976,  -2.941004301 },
+        {   10'000., 0.609637005298333,  -4.298573579 },
+        {   12'500., 0.497206407676075,  -6.069265662 },
+        {   16'000., 0.374665736290569,  -8.527120439 },
+        {   20'000., 0.276342931213370, -11.171032802 },
+        {   22'050., 0.238824071836831, -12.438438028 }
+    };
+
+    for (auto & Test : BWeightingTests)
+    {
+        const double Weight = Analysis.GetAcousticWeight(Test.Frequency, WeightingType::BWeighting, 1.);
+
+        const double Decibels = 20. * std::log10(Weight);
+
+        assert(std::abs(Weight   - Test.ExpectedWeight)   < WeightTolerance);
+        assert(std::abs(Decibels - Test.ExpectedDecibels) < DecibelTolerance);
+    }
+
+    constexpr weighting_test_t CWeightingTests[] =
+    {
+        {       20., 0.488587005734043,  -6.221161751 },
+        {      100., 0.965876039258696,  -0.301572149 },
+        {    1'000., 0.999780785464601,  -0.001904282 },
+        {    4'000., 0.909084064953623,  -0.827919096 },
+        {    8'000., 0.703938966400541,  -3.049299877 },
+        {   10'000., 0.602040720003176,  -4.407482671 },
+        {   12'500., 0.490988847556463,  -6.178567449 },
+        {   16'000., 0.369968958083791,  -8.636694270 },
+        {   20'000., 0.272873899712495, -11.280760049 },
+        {   22'050., 0.235824715060297, -12.548213633 }
+    };
+
+    for (auto & Test : CWeightingTests)
+    {
+        const double Weight = Analysis.GetAcousticWeight(Test.Frequency, WeightingType::CWeighting, 1.);
+
+        const double Decibels = 20. * std::log10(Weight);
+
+        assert(std::abs(Weight   - Test.ExpectedWeight)   < WeightTolerance);
+        assert(std::abs(Decibels - Test.ExpectedDecibels) < DecibelTolerance);
+    }
+
+    constexpr weighting_test_t DWeightingTests[] =
+    {
+        {       20., 0.093040046288330, -20.626601644 },
+        {      100., 0.436351784271307,  -7.203264877 },
+        {    1'000., 1.000000000000001,   0.000000000 },
+        {    4'000., 3.590888586341657,  11.104038612 },
+        {    8'000., 1.875687842405231,   5.463211269 },
+        {   10'000., 1.485438479750624,   3.437093399 },
+        {   12'500., 1.179055775054986,   1.430686996 },
+        {   16'000., 0.915612192737624,  -0.765768654 },
+        {   20'000., 0.729865992657882,  -2.735137427 },
+        {   22'050., 0.661242984785963,  -3.592778448 }
+    };
+
+    for (auto & Test : DWeightingTests)
+    {
+        const double Weight = Analysis.GetAcousticWeight(Test.Frequency, WeightingType::DWeighting, 1.);
+
+        const double Decibels = 20. * std::log10(Weight);
+
+        assert(std::abs(Weight   - Test.ExpectedWeight)   < WeightTolerance);
+        assert(std::abs(Decibels - Test.ExpectedDecibels) < DecibelTolerance);
+    }
+
+    constexpr weighting_test_t MWeightingTests[] =
+    {
+        {       20., 0.0202609969281888, -33.866783786 },
+        {      100., 0.1012873424294580, -19.888896474 },
+        {    1'000., 0.9955572537679230,  -0.038675179 },
+        {    4'000., 3.3488312656300400,  10.497865314 },
+        {    8'000., 3.6854119108895500,  11.329720702 },
+        {   10'000., 2.5399209406451300,   8.096403974 },
+        {   12'500., 0.9938189010351010,  -0.053854957 },
+        {   16'000., 0.2588781981336750, -11.738090457 },
+        {   20'000., 0.0774867544332273, -22.215450587 },
+        {   22'050., 0.0462349277052746, -26.700596342 }
+    };
+
+    for (auto & Test : MWeightingTests)
+    {
+        const double Weight = Analysis.GetAcousticWeight(Test.Frequency, WeightingType::MWeighting, 1.);
+
+        const double Decibels = 20. * std::log10(Weight);
+
+        assert(std::abs(Weight   - Test.ExpectedWeight)   < WeightTolerance);
+        assert(std::abs(Decibels - Test.ExpectedDecibels) < DecibelTolerance);
+    }
+}
 
 static void TestWindowFunctions()
 {
@@ -469,6 +605,10 @@ void RunTests()
     Log.Write("Testing window functions...");
 
     TestWindowFunctions();
+
+    Log.Write("Testing weighting functions...");
+
+    TestWeighting();
 
     Log.Write("Finished running tests.");
 }

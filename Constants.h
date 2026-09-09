@@ -1,5 +1,5 @@
 
-/** $VER: Constants.h (2026.09.02) P. Stuer **/
+/** $VER: Constants.h (2026.09.09) P. Stuer **/
 
 #pragma once
 
@@ -322,23 +322,23 @@ enum class ScalingFunction
 };
 
 // Filters
-inline constexpr double MinSlopeFunctionOffset = 0.;
-inline constexpr double MaxSlopeFunctionOffset = 8.;
+inline constexpr double MinFrequencyShift = 0.; // bins
+inline constexpr double MaxFrequencyShift = 8.; // bins
 
-inline constexpr double MinSlope = -12.;
-inline constexpr double MaxSlope =  12.;
+inline constexpr double MinFrequencyTilt = -12.; // dB / octave
+inline constexpr double MaxFrequencyTilt =  12.; // dB / octave
 
-inline constexpr double MinSlopeOffset =     0.; // Hz
-inline constexpr double MaxSlopeOffset = 96000.; // Hz
+inline constexpr double MinFrequencyTiltPivot =     0.; // Hz
+inline constexpr double MaxFrequencyTiltPivot = 96000.; // Hz
 
-inline constexpr double MinEqualizeAmount = -12.;
-inline constexpr double MaxEqualizeAmount =  12.;
+inline constexpr double MinEqualizationAmount = -12.;
+inline constexpr double MaxEqualizationAmount =  12.;
 
-inline constexpr double MinEqualizeOffset =     0.; // Hz
-inline constexpr double MaxEqualizeOffset = 96000.; // Hz
+inline constexpr double MinEqualizationFreqScale =     0.; // Hz
+inline constexpr double MaxEqualizationFreqScale = 96000.; // Hz
 
-inline constexpr double MinEqualizeDepth =     0.; // Hz
-inline constexpr double MaxEqualizeDepth = 96000.; // Hz
+inline constexpr double MinEqualizationDepth =     0.; // Hz
+inline constexpr double MaxEqualizationDepth = 96000.; // Hz
 
 inline constexpr double MinWeightingAmount = -1.; // %
 inline constexpr double MaxWeightingAmount =  1.; // %
@@ -421,7 +421,10 @@ enum class VisualElement : uint32_t
     BarMantissa                 = 36,
     BarExponent                 = 37,
 
-    Count                       = 38
+    WindowFunction              = 38,
+    WeighingFunction            = 39,
+
+    Count                       = 40
 };
 
 enum class ColorSource : uint32_t

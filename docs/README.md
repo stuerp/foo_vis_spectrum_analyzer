@@ -756,7 +756,7 @@ Affects any adjustable frequency scaling functions like hyperbolic sine and n-th
 
 `Bandwidth`
 
-Distance between the low and high frequency boundaries for each frequency band. Valid values are 0.0 to 64.0.
+Distance between the low and high frequency boundaries for each frequency band. Valid values are 0 to 64.
 
 ---
 
@@ -764,39 +764,57 @@ Distance between the low and high frequency boundaries for each frequency band. 
 
 #### Acoustic Filters group
 
-This group contains settings to allow you to apply acoustic weighting filters (A-, B-, C-, D- and M-weighting (ITU-R 468)) to the samples.
+This group contains settings to allow you to apply acoustic weighting filters (A-, B-, C-, D- and M-weighting (ITU-R 468)) to the frequencies.
 
 `Weighting type`
 
 Selects the weighting filter type that will be applied.
 
-`Slope function offset`
+##### Frequency Tilt
 
-Slope function offset expressed in sample rate / FFT size in samples
+`Frequency shift`
 
-`Slope`
+Horizontally shifts the complete weighting curve. The value is expressed in spectrum-bin units and is converted to Hz using the current sample rate and bin count.
 
-Frequency slope offset in dB per octave
+Positive values shift the weighting curve toward lower displayed frequencies by evaluating each band at a higher effective frequency. Negative values evaluate each band at a lower effective frequency.
 
-`Slope offset`
+A value of 0 disables the frequency shift.
 
-Frequency slope in Hz
+`Frequency tilt`
 
-`Equalize amount`
+Sets the frequency tilt in approximately decibels per octave.
 
-Equalization amount
+Positive values progressively amplify higher frequencies and attenuate lower frequencies relative to the slope reference frequency. Negative values amplify lower frequencies and attenuate higher frequencies.
 
-`Equalize offset`
+A value of 0 dB/octave disables the tilt.
 
-Equalization offset
+`Frequency tilt pivot`
 
-`Equalize depth`
+Sets the frequency, in Hz, at which the tilt adjustment is 0 dB. Frequencies above and below this reference are adjusted according to the configured tilt.
 
-Equalization depth
+##### Equalization
+
+`Equalization amount`
+
+Controls the strength of the custom equalization curve.
+
+Zero disables equalization. Positive values progressively increase the effect of the curve. This parameter is an intensity control and does not directly represent decibels.
+
+`Equalization frequency scale`
+
+Controls the frequency scale of the custom equalization curve.
+
+Higher values move the curve’s frequency-dependent features toward higher frequencies; lower values move them toward lower frequencies.
+
+`Equalization depth`
+
+Controls the scale and shape of the custom equalization curve.
+
+Increasing or decreasing this value changes both the curve’s frequency progression and gain profile. It is not equivalent to a conventional equalizer bandwidth or Q control.
 
 `Weighting amount`
 
-Weighting amount
+Controls how strongly the selected A, B, C, D, or M acoustic weighting curve is applied. Zero disables acoustic weighting, 0.5 applies half the normal dB response, and 1.0 applies the full response. Values greater than one exaggerate the curve, while negative values invert it.
 
 ---
 
@@ -815,7 +833,7 @@ Determines how the spectrum coefficients and the Peak / RMS values are smoothed.
 
 `Smoothing factor`
 
-Specifies the strength of the smoothing (0.0 to 1.0)
+Specifies the strength of the smoothing (0 to 1)
 
 `Tooltips`
 
@@ -1007,7 +1025,7 @@ Determine the step size between the min. and max. amplitude.
 
 `Use absolute`
 
-Sets the min. amplitude to -∞ dB (0.0 on the linear scale) when enabled.
+Sets the min. amplitude to -∞ dB (0 on the linear scale) when enabled.
 
 `Gamma`
 
