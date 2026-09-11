@@ -172,6 +172,8 @@ void analysis_t::Process(const audio_chunk & chunk) noexcept
 
         case VisualizationType::Tester:
         {
+            SpectrumProcessing(chunk);
+            _Chunk.copy(chunk, true);
             break;
         }
     }
