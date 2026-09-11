@@ -10,7 +10,7 @@ Over time other visualisations were added.
 
 [![Screenshot](assets/Gallery.png?raw=true "Gallery")](docs/Gallery.md)
 
-Click the image above to view [the gallery]((docs/Gallery.md)).
+Click the image above to view [the gallery](docs/Gallery.md).
 
 ## Features
 
