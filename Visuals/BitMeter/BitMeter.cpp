@@ -26,10 +26,10 @@ bit_meter_t::~bit_meter_t() noexcept
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void bit_meter_t::Initialize(state_t * state, graph_options_t * graphDescription, const analysis_t * analysis, bool isFirst, bool isLast) noexcept
+void bit_meter_t::Initialize(state_t * state, graph_options_t * graphOptions, const analysis_t * analysis, bool isFirst, bool isLast) noexcept
 {
     _State = state;
-    _GraphOptions = graphDescription;
+    _GraphOptions = graphOptions;
     _Analysis = analysis;
 
     _MeasurementCount = 0;
@@ -282,12 +282,7 @@ HRESULT bit_meter_t::CreateDeviceSpecificResources(_In_ ID2D1DeviceContext * dev
 
 #ifdef _DEBUG
     if (_DebugBrush == nullptr)
-    {
-        hr = deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), &_DebugBrush);
-
-        if (!SUCCEEDED(hr))
-            return hr;
-    }
+        (void) deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), &_DebugBrush);
 #endif
 
     if (_DeviceContext == nullptr)
@@ -362,7 +357,7 @@ HRESULT bit_meter_t::CreateStaticContentCommandList() noexcept
 
     _DeviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED); // Prevent line blurring
 
-    _DeviceContext->Clear(D2D1::ColorF(0, 0.f));
+    _DeviceContext->Clear(); // Transparent
 
     const FLOAT XAxisHeight = _GraphOptions->_XAxisBottom ? YPadding + _XAxisText._Height + YPadding : 1.f;
     const FLOAT YAxisWidth  = _GraphOptions->_YAxisLeft   ? XPadding + _YAxisText._Width  + XPadding : 0.f;

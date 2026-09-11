@@ -115,6 +115,9 @@ private:
         VisualElement::CurvePeakLine,
         VisualElement::CurvePeakArea,
 
+        VisualElement::WindowFunction,
+        VisualElement::WeighingFunction,
+
         // Spectrogram
         VisualElement::Spectrogram,
 

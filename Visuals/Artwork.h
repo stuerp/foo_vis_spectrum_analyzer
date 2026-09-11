@@ -22,7 +22,7 @@ class artwork_t
 public:
     artwork_t()
     {
-        SetStatus(Idle);
+//      SetStatus(Idle);
     }
 
     virtual ~artwork_t()
@@ -38,21 +38,22 @@ public:
 
     ID2D1Bitmap * Bitmap() const noexcept { return _Bitmap; }
 
-    bool HasBitmap() const noexcept { return _Status == GotBitmap; }
-
     HRESULT GetColors(std::vector<D2D1_COLOR_F> & colors, uint32_t colorCount, FLOAT lightnessThreshold, FLOAT transparencyThreshold) noexcept;
-
-    HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept;
-    void DeleteDeviceSpecificResources() noexcept;
 
     HRESULT CreateWICResources(const uint8_t * data, size_t size) noexcept;
     HRESULT CreateWICResources(const std::wstring & filePath) noexcept;
     HRESULT DeleteWICResources() noexcept;
 
+    HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept;
+
+private:
+    void DeleteDeviceSpecificResources() noexcept;
+
 private:
     void AdjustRect(_In_ const FitMode fitMode, _Out_ FLOAT & scalar, _Inout_ D2D1_RECT_F & rect) const noexcept;
 
 private:
+/*
     enum Status
     {
         Idle = 0,
@@ -69,7 +70,7 @@ private:
 
         _Status = status;
     }
-
+*/
 private:
     msc::critical_section_t _CriticalSection;
 
@@ -84,5 +85,5 @@ private:
     CComPtr<ID2D1Effect> _BlurEffect;
     CComPtr<ID2D1Effect> _OpacityEffect;
 
-    Status _Status;
+//  Status _Status;
 };

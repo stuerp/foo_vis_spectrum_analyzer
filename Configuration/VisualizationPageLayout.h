@@ -1,5 +1,5 @@
 
-/** $VER: VisualizationPageLayout.h (2026.08.22) P. Stuer - Defines the layout of a configuration dialog page. **/
+/** $VER: VisualizationPageLayout.h (2026.09.08) P. Stuer - Defines the layout of a configuration dialog page. **/
 
 #pragma once
 
@@ -238,33 +238,32 @@
 #define X_B08   X_B13 + W_B13 + IX
 #define Y_B08   Y_B13
 
-    #pragma region Scrolling
-    // Checkbox
+    // Checkbox: Scrolling
     #define W_C15    80
     #define H_C15    H_CHB
     #define X_C15    X_B08 + 5
     #define Y_C15    Y_B08 + 11
-    #pragma endregion
 
-    #pragma region Horizontal
-    // Checkbox
+    // Checkbox: Horizontal
     #define W_C27    80
     #define H_C27    H_CHB
     #define X_C27    X_C15
     #define Y_C27    Y_C15 + H_C15 + IY
-    #pragma endregion
 
-    #pragma region Spectrum Bar Metrics
-    // Checkbox
+    // Checkbox: Spectrum Bar Metrics
     #define W_C28    90
     #define H_C28    H_CHB
     #define X_C28    X_C27
     #define Y_C28    Y_C27 + H_C27 + IY
-    #pragma endregion
+
+    // Checkbox: Legend
+    #define W_C36    90
+    #define H_C36    H_CHB
+    #define X_C36    X_C28
+    #define Y_C36    Y_C28 + H_C28 + IY
 
 #define W_B08   232
-#define H_B08   11 + H_C15 + IY + H_C27 + IY + H_C28 + 7
-
+#define H_B08   11 + H_C15 + IY + H_C27 + IY + H_C28 + IY + H_C36 + 7
 
 /** Peak Meter **/
 
@@ -453,6 +452,12 @@
     #define H_A40    H_CHB
     #define X_A40    X_C64
     #define Y_A40    Y_C72 + H_C72 + IY
+
+    // Checkbox: Zero-crossing trigger
+    #define W_A42    80
+    #define H_A42    H_CHB
+    #define X_A42    X_A40 + W_A40 + IX
+    #define Y_A42    Y_A40
 
 #define W_B18  W_B14
 #define H_B18  11 + H_C56 + IY + H_C79 + IY + H_C68 + IY + H_A40 + IY + 7

@@ -1,5 +1,5 @@
 
-/** $VER: pch.h (2026.02.18) P. Stuer **/
+/** $VER: pch.h (2026.09.05) P. Stuer **/
 
 #pragma once
 
@@ -11,8 +11,8 @@
 
 #define NOMINMAX
 
-#include <helpers\foobar2000+atl.h>
-#include <helpers\helpers.h>
+#include <helpers/foobar2000+atl.h>
+#include <helpers/helpers.h>
 
 #include <dxgi1_3.h>
 #include <d3d11_2.h>
@@ -33,6 +33,7 @@
 #include <cassert>
 #include <cmath>
 #include <memory>
+#include <numbers>
 #include <ranges>
 #include <string>
 

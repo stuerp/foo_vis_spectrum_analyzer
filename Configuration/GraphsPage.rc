@@ -1,5 +1,5 @@
 
-/** $VER: GraphsPage.rc (2026.08.22) P. Stuer **/
+/** $VER: GraphsPage.rc (2026.09.06) P. Stuer **/
 
 #include "Resources.h"
 
@@ -21,10 +21,11 @@ style DS_SETFONT | DS_CONTROL | WS_CHILD | WS_CLIPCHILDREN
 
         control         "Vertical layout"           IDC_VERTICAL_LAYOUT,            "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_G23, Y_G23, W_G23, H_G23
         control         "Overlap graphs"            IDC_OVERLAP_GRAPHS,             "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_G60, Y_G60, W_G60, H_G60
-        control         "Use local styles"          IDC_USE_LOCAL_STYLES            "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_G62, Y_G62, W_G62, H_G62
 
     rtext               "Description:"              IDC_STATIC,                     X_G24, Y_G24 + 2, W_G24, H_G24
     edittext                                        IDC_GRAPH_DESCRIPTION           X_G25, Y_G25,     W_G25, H_G25, ES_AUTOHSCROLL | WS_TABSTOP
+
+    control             "Use local styles"          IDC_USE_LOCAL_STYLES            "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_G62, Y_G62, W_G62, H_G62
 
     groupbox "Layout", IDC_LAYOUT, X_B16, Y_B16, W_B16, H_B16, BS_GROUPBOX, WS_EX_TRANSPARENT
 
@@ -34,42 +35,47 @@ style DS_SETFONT | DS_CONTROL | WS_CHILD | WS_CLIPCHILDREN
         control         "Flip horizontally"         IDC_FLIP_HORIZONTALLY,          "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_G26, Y_G26, W_G26, H_G26
         control         "Flip vertically"           IDC_FLIP_VERTICALLY,            "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_G27, Y_G27, W_G27, H_G27
 
-    groupbox "X axis", IDC_X_AXIS, X_B02, Y_B02, W_B02, H_B02, BS_GROUPBOX, WS_EX_TRANSPARENT
+    /* Axes layout */
+
+    groupbox "Axes", IDC_STATIC, X_B09, Y_B09, W_B09, H_B09, BS_GROUPBOX, WS_EX_TRANSPARENT
+
+        control         "Left",                     IDC_Y_AXIS_LEFT,                "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_G17, Y_G17, W_G17, H_G17
+        control         "Right",                    IDC_Y_AXIS_RIGHT,               "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_G18, Y_G18, W_G18, H_G18
+        control         "Top",                      IDC_X_AXIS_TOP,                 "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_G15, Y_G15, W_G15, H_G15
+        control         "Bottom",                   IDC_X_AXIS_BOTTOM,              "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_G16, Y_G16, W_G16, H_G16
+
+    groupbox "Frequency axis", IDC_STATIC, X_B02, Y_B02, W_B02, H_B02, BS_GROUPBOX, WS_EX_TRANSPARENT
 
         rtext           "Mode:",                    IDC_STATIC,                     X_A05, Y_A05 + 2, W_A05, H_A05
         combobox                                    IDC_X_AXIS_MODE,                X_A06, Y_A06,     W_A06, H_A06, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
 
-        control         "Top",                      IDC_X_AXIS_TOP,                 "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_G15, Y_G15, W_G15, H_G15
-        control         "Bottom",                   IDC_X_AXIS_BOTTOM,              "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_G16, Y_G16, W_G16, H_G16
-
         rtext           "Decimals:"                 IDC_STATIC,                     X_A51, Y_A51 + 2, W_A51, H_A51
-        edittext                                    IDC_X_AXIS_DECIMALS,            X_A52, Y_A52, W_A52, H_A52, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+        edittext                                    IDC_X_AXIS_DECIMALS,            X_A52, Y_A52,     W_A52, H_A52, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
 
-    groupbox "Y axis", IDC_Y_AXIS, X_B03, Y_B03, W_B03, H_B03, BS_GROUPBOX, WS_EX_TRANSPARENT
+    groupbox "Amplitude axis", IDC_STATIC, X_B03, Y_B03, W_B03, H_B03, BS_GROUPBOX, WS_EX_TRANSPARENT
 
         rtext           "Mode:",                    IDC_STATIC,                     X_A07, Y_A07 + 2, W_A07, H_A07
         combobox                                    IDC_Y_AXIS_MODE,                X_A08, Y_A08,     W_A08, H_A08, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
 
-        control         "Left",                     IDC_Y_AXIS_LEFT,                "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_G17, Y_G17, W_G17, H_G17
-        control         "Right",                    IDC_Y_AXIS_RIGHT,               "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_G18, Y_G18, W_G18, H_G18
-
         rtext           "Amplitude range:"          IDC_STATIC,                     X_A45, Y_A45 + 2, W_A45, H_A45
-        edittext                                    IDC_AMPLITUDE_LO,               X_A46, Y_A46, W_A46, H_A46, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+        edittext                                    IDC_AMPLITUDE_LO,               X_A46, Y_A46,     W_A46, H_A46, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
         control         "",                         IDC_AMPLITUDE_LO_SPIN           "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_NOTHOUSANDS, 0, 0, 0, 0
         ctext           "-"                         IDC_STATIC,                     X_A47, Y_A47 + 2, W_A47, H_A47
-        edittext                                    IDC_AMPLITUDE_HI,               X_A48, Y_A48, W_A48, H_A48, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+        edittext                                    IDC_AMPLITUDE_HI,               X_A48, Y_A48,     W_A48, H_A48, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
         control         "",                         IDC_AMPLITUDE_HI_SPIN           "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_NOTHOUSANDS, 0, 0, 0, 0
-        ltext           "dB"                        IDC_STATIC,                         X_A49, Y_A49 + 2, W_A49, H_A49
+        ltext           "dB"                        IDC_STATIC,                     X_A49, Y_A49 + 2, W_A49, H_A49
 
         rtext           "Amplitude step:"           IDC_STATIC,                     X_A84, Y_A84 + 2, W_A84, H_A84
-        edittext                                    IDC_AMPLITUDE_STEP,             X_A85, Y_A85, W_A85, H_A85, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+        edittext                                    IDC_AMPLITUDE_STEP,             X_A85, Y_A85,     W_A85, H_A85, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
         control         "",                         IDC_AMPLITUDE_STEP_SPIN         "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_NOTHOUSANDS, 0, 0, 0, 0
         ltext           "dB"                        IDC_STATIC,                     X_A86, Y_A86 + 2, W_A86, H_A86
 
         control         "Use absolute",             IDC_USE_ABSOLUTE,               "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_A50, Y_A50, W_A50, H_A50
 
         rtext           "Gamma:"                    IDC_STATIC,                     X_A41, Y_A41 + 2, W_A41, H_A41
-        edittext                                    IDC_GAMMA                       X_A42, Y_A42, W_A42, H_A42, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+        edittext                                    IDC_GAMMA                       X_A42, Y_A42,     W_A42, H_A42, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+
+    /* Channels */
 
     ltext       "Channels:",                        IDC_STATIC,                     X_G28, Y_G28 + 2, W_G28, H_G28
     listbox IDC_CHANNELS, X_G29, Y_G29, W_G29, H_G29, LBS_HASSTRINGS | LBS_MULTIPLESEL | LBS_NOTIFY | LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP

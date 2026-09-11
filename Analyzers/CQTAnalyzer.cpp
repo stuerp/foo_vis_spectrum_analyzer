@@ -42,7 +42,7 @@ bool cqt_analyzer_t::AnalyzeSamples(const audio_sample * frames, size_t frameCou
             SamplingPeriod = std::pow(2., std::trunc(std::log2(SamplingPeriod)));
 
         const double KTerm = fb.Mid * SamplingPeriod;                // Frequency of interest
-        const double Omega = 2. * M_PI * KTerm / (double) _SampleRate;  // ω
+        const double Omega = 2. * std::numbers::pi * KTerm / (double) _SampleRate;  // ω
         const double Coeff = 2. * std::cos(Omega);
 
         double BandSampleCount = TimeLength * (double) _SampleRate * _ChannelCount;
@@ -60,7 +60,6 @@ bool cqt_analyzer_t::AnalyzeSamples(const audio_sample * frames, size_t frameCou
 
         double Norm = 0.;
 
-        #pragma loop(hint_parallel(2))
         for (double Idx = std::trunc(LoIdx / SamplingPeriod); Idx <= std::trunc(HiIdx / SamplingPeriod); Idx += _ChannelCount)
         {
             const double x = (((Idx * SamplingPeriod) - LoIdx) / (HiIdx - LoIdx) * 2.) - 1.;
@@ -131,7 +130,7 @@ bool cqt_analyzer_t::AnalyzeSamples(const audio_sample * frames, size_t frameCou
         size_t SamplingPeriod = (size_t) std::max(1., SamplingPeriodFloat);
 
         // Goertzel coefficient. Because the signal is effectively sampled every samplingPeriod frames, the effective sample rate is Fs / samplingPeriod.
-        const double Omega = 2. * M_PI * fb.Mid * (double) SamplingPeriod / (double) _SampleRate;
+        const double Omega = 2. * std::numbers::pi * fb.Mid * (double) SamplingPeriod / (double) _SampleRate;
 
         const double Cos   = std::cos(Omega);
         const double Sin   = std::sin(Omega);
@@ -228,12 +227,17 @@ bool cqt_analyzer_t::AnalyzeSamples(const audio_sample * frames, size_t frameCou
     // Precompute the selected-channel average once, one value per audio frame.
     if (_MonoSamples.size() != frameCount)
         _MonoSamples.resize(frameCount);
-
+/*
     for (size_t Frame = 0; Frame < frameCount; ++Frame)
         _MonoSamples[Frame] = Downmix(&frames[Frame * _ChannelCount], selectedChannels);
+*/
+    for (size_t SrcFrame = 0, DstFrame = 0; DstFrame < frameCount; SrcFrame += _ChannelCount, ++DstFrame)
+        _MonoSamples[DstFrame] = Downmix(&frames[SrcFrame], selectedChannels);
 
     for (frequency_band_t & fb : frequencyBands)
     {
+        assert(fb.Lo <= fb.Mid && fb.Mid <= fb.Hi);
+
         // Calculate the band width (in Hz).
         const double Bandwidth = std::abs(fb.Hi - fb.Lo) + (FrequencyResolution * _State->_CQTBandwidthOffset);
 
@@ -269,7 +273,7 @@ bool cqt_analyzer_t::AnalyzeSamples(const audio_sample * frames, size_t frameCou
         size_t SamplingPeriod = (size_t) std::max(1., SamplingPeriodFloat);
 
         // Goertzel coefficient. Effective sample rate is Fs / SamplingPeriod.
-        const double Omega = 2. * M_PI * fb.Mid * (double) SamplingPeriod / (double) _SampleRate;
+        const double Omega = 2. * std::numbers::pi * fb.Mid * (double) SamplingPeriod / (double) _SampleRate;
 
         const double Cos   = std::cos(Omega);
         const double Sin   = std::sin(Omega);

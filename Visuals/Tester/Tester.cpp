@@ -3,9 +3,10 @@
 
 #include <pch.h>
 
-#include <cmath>
-
 #include "Tester.h"
+
+#include <cmath>
+#include <random>
 
 #pragma hdrstop
 
@@ -31,10 +32,10 @@ tester_t::~tester_t()
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void tester_t::Initialize(state_t * state, graph_options_t * graphDescription, const analysis_t * analysis, bool isFirst, bool isLast) noexcept
+void tester_t::Initialize(state_t * state, graph_options_t * graphOptions, const analysis_t * analysis, bool isFirst, bool isLast) noexcept
 {
     _State = state;
-    _GraphOptions = graphDescription;
+    _GraphOptions = graphOptions;
     _Analysis = analysis;
 
     CreateDeviceIndependentResources();
@@ -75,8 +76,6 @@ void tester_t::Resize() noexcept
     if (!_IsResized || (GetWidth() == 0.f) || (GetHeight() == 0.f))
         return;
 
-    _Angle = 0.f;
-
     _IsResized = false;
 }
 
@@ -90,29 +89,76 @@ void tester_t::Render(ID2D1DeviceContext * deviceContext) noexcept
     if (!SUCCEEDED(hr))
         return;
 
-    deviceContext->PushAxisAlignedClip(_Rect, D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+    double Gain = 1.;
 
-    const D2D1_MATRIX_3X2_F Translate = D2D1::Matrix3x2F::Translation(_Rect.left + (_Size.width / 2.f), _Rect.top + (_Size.height / 2.f));
+    // Axes
+    {
+        deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
 
-    deviceContext->SetTransform(Translate);
+        _Brush->SetColor(D2D1::ColorF(RGB(87, 123, 197), 1.0f));
 
-    float Sin;
-    float Cos;
+        deviceContext->DrawLine({ 0, _Size.height / 2 }, { _Size.width, _Size.height / 2 }, _Brush);
 
-    ::D2D1SinCos(_Angle, &Sin, &Cos);
+        _Brush->SetColor(D2D1::ColorF(RGB(87, 123, 197), 0.5f));
 
-    const auto r = std::sqrt(_Size.width * _Size.width / 4.f + _Size.height * _Size.height / 4.f);
+        deviceContext->DrawLine({ 0, _Size.height * 0.25f }, { _Size.width, _Size.height * 0.25f }, _Brush);
+        deviceContext->DrawLine({ 0, _Size.height * 0.75f }, { _Size.width, _Size.height * 0.75f }, _Brush);
+    }
 
-    const auto p1 = D2D1::Point2F(Sin * r, Cos * r);
-    const auto p2 = D2D1::Point2F(-p1.x, -p1.y);
+    // Waveform
+    {
+        deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
-    deviceContext->DrawLine(p1, p2, _DebugBrush);
+        const audio_sample * Frames = _Analysis->_Chunk.get_data();
 
-    _Angle = msc::Wrap(_Angle - (FLOAT) (M_PI / 180.), 359.f);
+        const size_t FrameCount   = _Analysis->_Chunk.get_sample_count();     // get_sample_count() actually returns the number of frames.
+        const size_t ChannelCount = _Analysis->_Chunk.get_channel_count();
 
-    deviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
+        const auto dx = _Size.width / (FLOAT) FrameCount;
+        const auto h2 = _Size.height / 2.f;
+        const auto Scale = (h2 * 0.85) * (0.5 + Gain);
 
-    deviceContext->PopAxisAlignedClip();
+        D2D1_POINT_2F p1 = { };
+        D2D1_POINT_2F p2 = { };
+
+        _Brush->SetColor(D2D1::ColorF(RGB(134, 171, 241), .5f));
+
+        for (size_t i = 0; i < FrameCount * ChannelCount; i += ChannelCount)
+        {
+            const auto x = (FLOAT) ((FLOAT) i * dx);
+            const auto y = (FLOAT) h2 - (FLOAT) (Frames[i] * Scale); // FIX ME: Only the first channel is used.
+
+            if (i == 0)
+                p1 = { x, y };
+            else
+            {
+                p2 = { x, y };
+
+                deviceContext->DrawLine(p1, p2, _Brush, 3.f);
+
+                p1 = p2;
+            }
+        }
+
+        _Brush->SetColor(D2D1::ColorF(RGB(213, 238, 251), 1.f));
+
+        for (size_t i = 0; i < FrameCount * ChannelCount; i += ChannelCount)
+        {
+            const auto x = (FLOAT) ((FLOAT) i * dx);
+            const auto y = (FLOAT) h2 - (FLOAT) (Frames[i] * Scale); // FIX ME: Only the first channel is used.
+
+            if (i == 0)
+                p1 = { x, y };
+            else
+            {
+                p2 = { x, y };
+
+                deviceContext->DrawLine(p1, p2, _Brush, 1.f);
+
+                p1 = p2;
+            }
+        }
+    }
 }
 
 /// <summary>
@@ -145,8 +191,8 @@ HRESULT tester_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceConte
     HRESULT hr = S_OK;
 
 #ifdef _DEBUG
-    if (_DebugBrush == nullptr)
-        hr = deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), &_DebugBrush);
+    if (_Brush == nullptr)
+        (void) deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), &_Brush);
 #endif
 
     return hr;
@@ -158,6 +204,6 @@ HRESULT tester_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceConte
 void tester_t::DeleteDeviceSpecificResources() noexcept
 {
 #ifdef _DEBUG
-    _DebugBrush.Release();
+    _Brush.Release();
 #endif
 }

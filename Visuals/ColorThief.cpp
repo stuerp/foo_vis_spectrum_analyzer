@@ -9,7 +9,6 @@
 
 #include <optional>
 #include <tuple>
-#include <stdexcept>
 #include <unordered_map>
 
 #pragma hdrstop
@@ -72,8 +71,8 @@ HRESULT GetDominantColor(IWICBitmapSource * bitmapSource, color_t & color, uint3
 
 const int32_t SignificantBits = 5;
 const int32_t Shift = 8 - SignificantBits;
-const size_t MaxIterations = 1000;
-const double FractByPopulations = 0.75;
+constexpr size_t MaxIterations = 1000;
+constexpr double FractByPopulations = 0.75;
 
 inline size_t GetColorIndex(int32_t r, int32_t g, int32_t b) noexcept
 {
@@ -324,7 +323,6 @@ std::tuple<std::vector<int32_t>, color_t, color_t> GetHistogram(const uint8_t * 
         bool IsTransparent(uint8_t threshold) const { return Alpha < threshold; }
     };
 
-    #pragma loop(hint_parallel(4)) // Don't forget /Qpar compiler switch.
     for (uint32_t y = 0; y < height; ++y)
     {
         const Pixel * p = (const Pixel *) pixels;
@@ -336,22 +334,22 @@ std::tuple<std::vector<int32_t>, color_t, color_t> GetHistogram(const uint8_t * 
 
             uint8_t Channel = (uint8_t) (p->Red >> Shift);
 
-            MaxColor[0] = (std::max)(MaxColor[0], Channel);
-            MinColor[0] = (std::min)(MinColor[0], Channel);
+            MaxColor[0] = std::max(MaxColor[0], Channel);
+            MinColor[0] = std::min(MinColor[0], Channel);
 
             size_t Index = (size_t) Channel << (2 * SignificantBits);
 
             Channel = (uint8_t) (p->Green >> Shift);
 
-            MaxColor[1] = (std::max)(MaxColor[1], Channel);
-            MinColor[1] = (std::min)(MinColor[1], Channel);
+            MaxColor[1] = std::max(MaxColor[1], Channel);
+            MinColor[1] = std::min(MinColor[1], Channel);
 
             Index += (size_t) Channel << SignificantBits;
 
             Channel = (uint8_t) (p->Blue >> Shift);
 
-            MaxColor[2] = (std::max)(MaxColor[2], Channel);
-            MinColor[2] = (std::min)(MinColor[2], Channel);
+            MaxColor[2] = std::max(MaxColor[2], Channel);
+            MinColor[2] = std::min(MinColor[2], Channel);
 
             Index += (size_t) Channel;
 
@@ -450,7 +448,7 @@ std::tuple<std::optional<VBox>, std::optional<VBox>> MedianCut(const std::vector
     int32_t gw = box.g2 - box.g1 + 1;
     int32_t bw = box.b2 - box.b1 + 1;
 
-    int32_t Max = (std::max)(rw, (std::max)(gw, bw));
+    int32_t Max = std::max(rw, std::max(gw, bw));
 
     PrimaryColor CutColor = (rw == Max) ? PrimaryColor::Red : ((gw == Max) ? PrimaryColor::Green : PrimaryColor::Blue);
 
@@ -494,7 +492,7 @@ std::tuple<std::optional<VBox>, std::optional<VBox>> MedianCut(const std::vector
             int32_t Left = i - x1;
             int32_t Right = x2 - i;
 
-            int32_t d = (Left <= Right) ? (std::min)(x2 - 1, (int32_t) (i + Right / 2.0)) : (std::max)(x1, (int32_t) (i - 1 - Left / 2.0));
+            int32_t d = (Left <= Right) ? std::min(x2 - 1, (int32_t) (i + Right / 2.0)) : std::max(x1, (int32_t) (i - 1 - Left / 2.0));
 
             while (!(PartialCount.count(d) > 0 && PartialCount[d] > 0))
                 d += 1;

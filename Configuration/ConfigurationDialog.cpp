@@ -236,7 +236,7 @@ void configuration_dialog_t::InitializeControls() noexcept
     {
         _ToolTipControl.Create(m_hWnd, nullptr, nullptr, TTS_ALWAYSTIP | TTS_NOANIMATE);
 
-        const std::unordered_map<int, const char *> Tips =
+        static const std::unordered_map<int, const char *> Tips =
         {
             { IDC_RESET, "Resets the configuration to the default values." },
             { IDOK, "Closes the dialog box and makes the changes to the configuration final." },

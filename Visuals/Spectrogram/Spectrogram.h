@@ -1,5 +1,5 @@
 
-/** $VER: Spectrogram.h (2026.08.16) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
+/** $VER: Spectrogram.h (2026.09.06) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
 
 #pragma once
 
@@ -36,20 +36,21 @@ public:
     // element_t
     void Move(const D2D1_RECT_F & rect) noexcept override final;
     void Render(ID2D1DeviceContext * deviceContext) noexcept override final;
-    void Reset() noexcept override final;
+    void Reset() noexcept override final { };
 
     // visualization_t
-    void Initialize(state_t * state, graph_options_t * graphDescription, const analysis_t * analysis, bool isFirst, bool isLast) noexcept override final;
+    void Initialize(state_t * state, graph_options_t * graphOptions, const analysis_t * analysis, bool isFirst, bool isLast) noexcept override final;
 
     const D2D1_RECT_F & GetClientRect() const noexcept { return _BitmapRect; }
 
 private:
-    bool RenderSpectrum() noexcept;
-
-    void RenderNyquistFrequencyMarker(ID2D1BitmapRenderTarget * deviceContext) const noexcept;
+    bool RenderSpectrum(ID2D1BitmapRenderTarget * renderTarget) noexcept;
+    void RenderNyquistFrequencyMarker(ID2D1BitmapRenderTarget * renderTarget) const noexcept;
 
     void RenderTimeAxis(ID2D1DeviceContext * deviceContext, bool top) const noexcept;
     void RenderFreqAxis(ID2D1DeviceContext * deviceContext, bool left) const noexcept;
+
+    void CreateLegend(ID2D1BitmapRenderTarget * renderTarget) const noexcept;
 
     void InitFreqAxis() noexcept;
 
@@ -70,15 +71,21 @@ private:
         if (std::abs(x) >= a)
             return 0.;
 
-        const double PiX = M_PI * x;
+        const double PiX = std::numbers::pi * x;
 
         return (a * std::sin(PiX) * std::sin(PiX / a)) / (PiX * PiX);
     }
 
 private:
     D2D1_RECT_F _BitmapRect;
+    D2D1_SIZE_F _BitmapSize;
+
+    D2D1_RECT_F _LegendRect;
+    D2D1_SIZE_F _LegendSize;
+
     FLOAT _X;
     FLOAT _Y;
+
     double _PlaybackTime;
     double _TrackTime;
     bool _RequestErase;
@@ -86,9 +93,9 @@ private:
     double _LoFrequency;
     double _HiFrequency;
 
-    struct TimeLabel
+    struct time_label_t
     {
-        TimeLabel(const WCHAR * text, FLOAT x, FLOAT y = 0.f)
+        time_label_t(const WCHAR * text, FLOAT x, FLOAT y = 0.f)
         {
             Text = text;
             X = x;
@@ -100,11 +107,11 @@ private:
         FLOAT Y;
     };
 
-    std::deque<TimeLabel> _TimeLabels;
+    std::deque<time_label_t> _TimeLabels;
 
-    struct FreqLabel
+    struct freq_label_t
     {
-        FreqLabel(const WCHAR * text, double frequency, bool isDimmed = false)
+        freq_label_t(const WCHAR * text, double frequency, bool isDimmed = false)
         {
             Text = text;
             Frequency = frequency;
@@ -118,18 +125,24 @@ private:
 
         D2D1_RECT_F Rect1;
         D2D1_RECT_F Rect2;
+
+        FLOAT Tick;
     };
 
-    std::vector<FreqLabel> _FreqLabels;
+    std::vector<freq_label_t> _FreqLabels;
 
     CComPtr<ID2D1BitmapRenderTarget> _BitmapRenderTarget;
     CComPtr<ID2D1Bitmap> _Bitmap;
+
+    CComPtr<ID2D1BitmapRenderTarget> _LegendBitmapRenderTarget;
+    CComPtr<ID2D1Bitmap> _LegendBitmap;
 
 #ifdef _DEBUG
     CComPtr<ID2D1SolidColorBrush> _DebugBrush;
 #endif
 
     style_t _SpectrogramStyle;
+    style_t _GradientStyle;
 
     style_t _TimeLineStyle;
     style_t _TimeTextStyle;
@@ -139,7 +152,6 @@ private:
 
     style_t _NyquistMarkerStyle;
 
-    D2D1_SIZE_F _BitmapSize;
-
-    const FLOAT Offset = 4.f; // Distance between the tick and the text.
+    static constexpr FLOAT GradientSize = 24.f;
+    static constexpr FLOAT TickSize     =  4.f;
 };

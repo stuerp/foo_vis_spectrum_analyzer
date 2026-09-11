@@ -105,6 +105,10 @@ private:
     // Tool Tips
     void CreateToolTipControl() noexcept;
     void DeleteTrackingToolTip() noexcept;
+
+    void AddTools() noexcept;
+    void DeleteTools() noexcept;
+
     graph_t * GetGraph(const CPoint & pt) noexcept;
 
     bool GetArtwork(const metadb_handle_ptr & track) noexcept;

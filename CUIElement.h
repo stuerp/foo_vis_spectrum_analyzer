@@ -102,7 +102,7 @@ public:
     /// <summary>
     /// Sets an instance of the configuration data.
     /// </summary>
-    void set_config(stream_reader * stream, size_t size, abort_callback & abortHandler) final
+    void set_config(stream_reader * stream, size_t size, abort_callback & abortHandler) override final
     {
         std::vector<uint8_t> Config(size);
 

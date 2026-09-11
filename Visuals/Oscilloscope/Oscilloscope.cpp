@@ -1,12 +1,11 @@
 
-/** $VER: Oscilloscope.cpp (2026.08.22) P. Stuer - Implements an oscilloscope. **/
+/** $VER: Oscilloscope.cpp (2026.09.08) P. Stuer - Implements an oscilloscope. **/
 
 #include <pch.h>
 
 #include "Oscilloscope.h"
 
 #include <Analyzers/AmplitudeScaler.h>
-#include <Analyzers/Downmixer.h>
 
 #include "Support.h"
 
@@ -35,10 +34,10 @@ oscilloscope_t::~oscilloscope_t() noexcept
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void oscilloscope_t::Initialize(state_t * state, graph_options_t * graphDescription, const analysis_t * analysis, bool isFirst, bool isLast) noexcept
+void oscilloscope_t::Initialize(state_t * state, graph_options_t * graphOptions, const analysis_t * analysis, bool isFirst, bool isLast) noexcept
 {
     _State = state;
-    _GraphOptions = graphDescription;
+    _GraphOptions = graphOptions;
     _Analysis = analysis;
 
     DeleteDeviceSpecificResources();
@@ -116,7 +115,7 @@ void oscilloscope_t::Resize() noexcept
 void oscilloscope_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 {
     const size_t FrameCount     = _Analysis->_Chunk.get_sample_count();     // get_sample_count() actually returns the number of frames.
-    const uint32_t ChannelCount = _State->_Downmix ? 1 :  _Analysis->_Chunk.get_channel_count();
+    const uint32_t ChannelCount = _Analysis->_Chunk.get_channel_count();
 
     // Bail out if no audio is playing. We need the channel count and configuration to draw the axes.
     if ((FrameCount == 0) || (ChannelCount == 0))
@@ -150,39 +149,27 @@ void oscilloscope_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 
     if (!_State->_IsPaused || (_State->_IsPaused && _State->_VisualizeDuringPause))
     {
-        const D2D1_SIZE_F SignalSize = { _Size.width - (YAxisWidth * YAxisCount), _Size.height };
-
-        audio_chunk_impl DstChunk;
-
-        {
-            const audio_chunk * IntChunk;
-
-            audio_chunk_impl TmpChunk;
-
-            if (_State->_Downmix)
-            {
-                downmixer_t Downmixer;
-
-                Downmixer(_Analysis->_Chunk, _GraphOptions->_SelectedChannels, TmpChunk);
-
-                IntChunk = &TmpChunk;
-            }
-            else
-                IntChunk = &_Analysis->_Chunk;
-
-            const double Ratio = (double) IntChunk->get_sample_count() / (double) SignalSize.width;
-
-            _Downsampler.Process(*IntChunk, DstChunk, Ratio);
-        }
-
+        // Create the signal geometry.
         CComPtr<ID2D1PathGeometry> Geometry;
 
-        hr = CreateSignalGeometry(DstChunk, SignalSize, Geometry);
+        const D2D1_SIZE_F SignalSize = { _Size.width - (YAxisWidth * YAxisCount), _Size.height };
+
+        {
+            audio_chunk_impl DstChunk;
+
+            const double Ratio = (double) _Analysis->_Chunk.get_sample_count() / (double) SignalSize.width;
+
+            _Downsampler.Process(_Analysis->_Chunk, DstChunk, Ratio);
+
+            hr = CreateSignalGeometry(DstChunk, SignalSize, Geometry);
+        }
 
         // Draw the signal in the composite buffer.
         if (SUCCEEDED(hr))
         {
             _DeviceContext->BeginDraw();
+
+            _DeviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
             if (_State->_HasPhosphorDecay)
             {
@@ -190,7 +177,9 @@ void oscilloscope_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 
                 {
                     // Clear the buffer.
-                    _DeviceContext->Clear(D2D1::ColorF(D2D1::ColorF::Black, 0.f));
+                    _DeviceContext->Clear(); // Required for alpha transparency.
+
+                    _DeviceContext->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_SOURCE_OVER);
 
                     // Set a clip region to prevent the anti-aliasing from spilling into the axis rectangle.
                     _DeviceContext->PushAxisAlignedClip({ 0.f, 0.f, SignalSize.width, SignalSize.height }, D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
@@ -206,32 +195,33 @@ void oscilloscope_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 
                 {
                     // Clear the buffer.
-                    _DeviceContext->Clear(D2D1::ColorF(D2D1::ColorF::Black, 0.f));
+                    _DeviceContext->Clear(); // Required for alpha transparency.
+
+                    _DeviceContext->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_ADD);
+
+                    // Draw a color reduced version of the front buffer.
+                    _ColorMatrixEffect->SetInput(0, _FrontBuffer);
+
+                    _DeviceContext->DrawImage(_ColorMatrixEffect);
 
                     // Draw a color reduced version of the back buffer.
                     _ColorMatrixEffect->SetInput(0, _BackBuffer);
 
                     _DeviceContext->DrawImage(_ColorMatrixEffect);
 
-                    {
-                        _DeviceContext->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_ADD);
+                    // Draw a blurred version of the back buffer.
+                    _BlurEffect->SetInput(0, _BackBuffer);
 
-                        // Draw a blurred version of the back buffer.
-                        _BlurEffect->SetInput(0, _BackBuffer);
+                    _DeviceContext->DrawImage(_BlurEffect);
 
-                        _DeviceContext->DrawImage(_BlurEffect);
+                    // Set a clip region to prevent the anti-aliasing from spilling into the axis rectangle.
+                    _DeviceContext->PushAxisAlignedClip({ 0.f, 0.f, SignalSize.width, SignalSize.height }, D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
-                        // Set a clip region to prevent the anti-aliasing from spilling into the axis rectangle.
-                        _DeviceContext->PushAxisAlignedClip({ 0.f, 0.f, SignalSize.width, SignalSize.height }, D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+                    // Draw a normal version of the signal.
+                    _DeviceContext->DrawGeometry(Geometry, _SignalLineStyle._Brush, _SignalLineStyle._Thickness, _SignalStrokeStyle);
 
-                        // Draw a normal version of the signal.
-                        _DeviceContext->DrawGeometry(Geometry, _SignalLineStyle._Brush, _SignalLineStyle._Thickness, _SignalStrokeStyle);
-
-                        // Remove the clip region.
-                        _DeviceContext->PopAxisAlignedClip();
-
-                        _DeviceContext->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_SOURCE_OVER);
-                    }
+                    // Remove the clip region.
+                    _DeviceContext->PopAxisAlignedClip();
                 }
             }
             else
@@ -276,11 +266,7 @@ void oscilloscope_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 
             deviceContext->SetTransform(Translate);
 
-            deviceContext->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_ADD);
-
             deviceContext->DrawBitmap(_CompositeBuffer);
-
-            deviceContext->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_SOURCE_OVER);
         }
 
         deviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
@@ -388,69 +374,81 @@ HRESULT oscilloscope_t::CreateSignalGeometry(const audio_chunk_impl & chunk, con
             break;
     }
 
-    const size_t FrameCount     = chunk.get_sample_count();         // get_sample_count() actually returns the number of frames.
-    const uint32_t ChannelCount = chunk.get_channel_count();
-    const audio_sample * Frames = chunk.get_data();
-    uint32_t AvailableChannels  = chunk.get_channel_config();       // Mask containing the channels in the audio chunk.
+    size_t FrameCount = chunk.get_sample_count();                   // get_sample_count() actually returns the number of frames.
 
-    uint32_t SelectedChannels = _GraphOptions->_SelectedChannels;   // Mask containing the channels selected by the user.
+    const uint32_t ChannelCount = chunk.get_channel_count();
+
+    uint32_t AvailableChannels  = chunk.get_channel_config();       // Mask containing the channels in the audio chunk.
+    uint32_t SelectedChannels   = _GraphOptions->_SelectedChannels;   // Mask containing the channels selected by the user.
+
     const size_t SelectedChannelCount = (size_t) std::popcount(AvailableChannels & SelectedChannels);
 
     const FLOAT ChannelHeight = clientSize.height / (FLOAT) SelectedChannelCount; // Height available to one channel.
-    const FLOAT ChannelMax = ChannelHeight * (_GraphOptions->HasYAxis() ? 1.0f : 0.5f);
+    const FLOAT ChannelMax    = ChannelHeight * (_GraphOptions->HasYAxis() ? 1.0f : 0.5f);
+
+    const audio_sample * Frames = chunk.get_data();
+
+    if (_State->_ZeroCrossingTrigger && (FrameCount >= 4))
+    {
+        FrameCount /= 2;
+
+        const size_t CrossIndex = FindZeroCrossing(Frames, FrameCount, ChannelCount);
+        
+        Frames += CrossIndex * ChannelCount;
+    }
 
     HRESULT hr = _Direct2D.Factory->CreatePathGeometry(&Geometry);
 
-    if (SUCCEEDED(hr))
-    {
-        CComPtr<ID2D1GeometrySink> Sink;
+    if (!SUCCEEDED(hr))
+        return hr;
 
-        hr = Geometry->Open(&Sink);
+    CComPtr<ID2D1GeometrySink> Sink;
 
-        if (FAILED(hr))
-            return hr;
+    hr = Geometry->Open(&Sink);
 
-        FLOAT ChannelBaseline = ChannelMax;
-        size_t ChannelOffset = 0;
+    if (FAILED(hr))
+        return hr;
+
+    FLOAT ChannelBaseline = ChannelMax;
+    size_t ChannelOffset = 0;
             
-        while ((AvailableChannels != 0) && (SelectedChannels != 0))
+    while ((AvailableChannels != 0) && (SelectedChannels != 0))
+    {
+        // Render the signal if the channel is in the chunk and if it has been selected.
+        if (AvailableChannels & 1)
         {
-            // Render the signal if the channel is in the chunk and if it has been selected.
-            if (AvailableChannels & 1)
+            if (SelectedChannels & 1)
             {
-                if (SelectedChannels & 1)
+                const size_t SampleCount = FrameCount * ChannelCount;
+                const FLOAT dx = clientSize.width / (FLOAT) FrameCount;
+
+                FLOAT x = 0.f;
+                FLOAT y = ChannelBaseline - (std::clamp((FLOAT) (Scaler(Frames[ChannelOffset]) * _State->_YGain), -1.f, 1.f) * ChannelMax);
+
+                Sink->BeginFigure(D2D1::Point2F(x, y), D2D1_FIGURE_BEGIN_HOLLOW);
+
+                for (size_t i = ChannelCount + ChannelOffset; i < SampleCount; i += ChannelCount)
                 {
-                    const size_t SampleCount = FrameCount * ChannelCount;
-                    const FLOAT dx = clientSize.width / (FLOAT) FrameCount;
+                    x += dx;
+                    y = ChannelBaseline - (std::clamp((FLOAT) (Scaler(Frames[i]) * _State->_YGain), -1.f, 1.f) * ChannelMax);
 
-                    FLOAT x = 0.f;
-                    FLOAT y = ChannelBaseline - (std::clamp((FLOAT) (Scaler(Frames[ChannelOffset]) * _State->_YGain), -1.f, 1.f) * ChannelMax);
-
-                    Sink->BeginFigure(D2D1::Point2F(x, y), D2D1_FIGURE_BEGIN_HOLLOW);
-
-                    for (size_t i = ChannelCount + ChannelOffset; i < SampleCount; i += ChannelCount)
-                    {
-                        x += dx;
-                        y = ChannelBaseline - (std::clamp((FLOAT) (Scaler(Frames[i]) * _State->_YGain), -1.f, 1.f) * ChannelMax);
-
-                        Sink->AddLine(D2D1::Point2F(x, y));
-                    }
-
-                    Sink->EndFigure(D2D1_FIGURE_END_OPEN);
-
-
-                    ChannelBaseline += ChannelHeight;
+                    Sink->AddLine(D2D1::Point2F(x, y));
                 }
 
-                ChannelOffset++;
+                Sink->EndFigure(D2D1_FIGURE_END_OPEN);
+
+
+                ChannelBaseline += ChannelHeight;
             }
 
-            AvailableChannels >>= 1;
-            SelectedChannels >>= 1;
+            ChannelOffset++;
         }
 
-        hr = Sink->Close();
+        AvailableChannels >>= 1;
+        SelectedChannels >>= 1;
     }
+
+    hr = Sink->Close();
 
     return hr;
 }
@@ -570,7 +568,7 @@ HRESULT oscilloscope_t::CreateAxesCommandList(uint32_t axesCount) noexcept
 
                     WCHAR Text[8] = { };
 
-                    ::swprintf_s(Text, _countof(Text), L"%3d ms", Time);
+                    ::StringCchPrintfW(Text, _countof(Text), L"%3d ms", Time);
 
                     _DeviceContext->DrawText(Text, (UINT32) ::wcslen(Text), _XAxisTextStyle._TextFormat, TextRect, _XAxisTextStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
 

@@ -1,5 +1,5 @@
 
-/** $VER: Constants.h (2026.08.22) P. Stuer **/
+/** $VER: Constants.h (2026.09.09) P. Stuer **/
 
 #pragma once
 
@@ -18,9 +18,20 @@ enum class VisualizationType
     BitMeter = 8,
 
     Tester = 63,
+
+    Min = Bars,
+    Max = Tester,
 };
 
 // Common
+#ifdef _WIN64
+inline constexpr int64_t MinRefreshRate = 20;
+inline constexpr int64_t MaxRefreshRate = 200;
+#else
+inline constexpr int32_t MinRefreshRate = 20;
+inline constexpr int32_t MaxRefreshRate = 200;
+#endif
+
 inline constexpr double MinSmoothingFactor = 0.;
 inline constexpr double MaxSmoothingFactor = 1.;
 
@@ -106,11 +117,20 @@ inline constexpr FLOAT MaxLEDGap = 32.f;    // DIPs
 inline constexpr double MinRMSWindow = 0.;  // s
 inline constexpr double MaxRMSWindow = 3.;  // s
 
-inline constexpr FLOAT MinBarGap =   0.;    // DIPs
+inline constexpr FLOAT MinBarGap =   0.f;   // DIPs
 inline constexpr FLOAT MaxBarGap = std::numeric_limits<FLOAT>::max(); // DIPs
 
-inline constexpr FLOAT MinBarSize =   0.;   // DIPs
+inline constexpr FLOAT MinBarSize =   0.f;  // DIPs
 inline constexpr FLOAT MaxBarSize = std::numeric_limits<FLOAT>::max(); // DIPs
+
+inline constexpr double MinInnerRadius =   0.;  // DIPs
+inline constexpr double MaxInnerRadius = 100.;  // DIPs
+
+inline constexpr double MinOuterRadius =   0.;  // DIPs
+inline constexpr double MaxOuterRadius = 100.;  // DIPs
+
+inline constexpr double MinAngularVelocity = -360.; // Degrees
+inline constexpr double MaxAngularVelocity =  360.; // Degrees
 
 enum class PeakMode
 {
@@ -168,7 +188,7 @@ enum class FFTMode
     Max         = FFTDuration,
 };
 
-enum class Mapping
+enum class CoefficientMapping
 {
     Standard = 0,
     TriangularFilterBank = 1,
@@ -231,6 +251,9 @@ inline constexpr double MaxIIRBandwidth = 64.;
 inline constexpr int MinBands =    2;
 inline constexpr int MaxBands = 8192;
 
+inline constexpr int MinMelBands =   24;
+inline constexpr int MaxMelBands =  128;
+
 inline constexpr double MinFrequency =     1.; // Hz
 inline constexpr double MaxFrequency = 96000.; // Hz
 
@@ -269,9 +292,10 @@ enum class FrequencyDistribution
     Linear = 0,
     Octaves = 1,
     AveePlayer = 2,
+    Mel = 3,
 
     Min = Linear,
-    Max = AveePlayer,
+    Max = Mel,
 };
 
 enum class ScalingFunction
@@ -298,23 +322,23 @@ enum class ScalingFunction
 };
 
 // Filters
-inline constexpr double MinSlopeFunctionOffset = 0.;
-inline constexpr double MaxSlopeFunctionOffset = 8.;
+inline constexpr double MinFrequencyShift = 0.; // bins
+inline constexpr double MaxFrequencyShift = 8.; // bins
 
-inline constexpr double MinSlope = -12.;
-inline constexpr double MaxSlope =  12.;
+inline constexpr double MinFrequencyTilt = -12.; // dB / octave
+inline constexpr double MaxFrequencyTilt =  12.; // dB / octave
 
-inline constexpr double MinSlopeOffset =     0.; // Hz
-inline constexpr double MaxSlopeOffset = 96000.; // Hz
+inline constexpr double MinFrequencyTiltPivot =     0.; // Hz
+inline constexpr double MaxFrequencyTiltPivot = 96000.; // Hz
 
-inline constexpr double MinEqualizeAmount = -12.;
-inline constexpr double MaxEqualizeAmount =  12.;
+inline constexpr double MinEqualizationAmount = -12.;
+inline constexpr double MaxEqualizationAmount =  12.;
 
-inline constexpr double MinEqualizeOffset =     0.; // Hz
-inline constexpr double MaxEqualizeOffset = 96000.; // Hz
+inline constexpr double MinEqualizationFreqScale =     0.; // Hz
+inline constexpr double MaxEqualizationFreqScale = 96000.; // Hz
 
-inline constexpr double MinEqualizeDepth =     0.; // Hz
-inline constexpr double MaxEqualizeDepth = 96000.; // Hz
+inline constexpr double MinEqualizationDepth =     0.; // Hz
+inline constexpr double MaxEqualizationDepth = 96000.; // Hz
 
 inline constexpr double MinWeightingAmount = -1.; // %
 inline constexpr double MaxWeightingAmount =  1.; // %
@@ -397,7 +421,10 @@ enum class VisualElement : uint32_t
     BarMantissa                 = 36,
     BarExponent                 = 37,
 
-    Count                       = 38
+    WindowFunction              = 38,
+    WeighingFunction            = 39,
+
+    Count                       = 40
 };
 
 enum class ColorSource : uint32_t

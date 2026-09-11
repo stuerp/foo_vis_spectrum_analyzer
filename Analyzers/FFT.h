@@ -40,7 +40,7 @@ public:
     /// </summary>
     /// <param name="timeData"></param>
     /// <param name="freqData">freqData[0] = DC; freqData[1] = 1Hz; freqData[fftSize / 2] = Nyquist frequency</param>
-    bool Transform(const std::vector<std::complex<double>> & timeData, std::vector<complex<double>> & freqData) noexcept
+    bool Transform(const std::vector<std::complex<double>> & timeData, std::vector<std::complex<double>> & freqData) noexcept
     {
         freqData = timeData;
 

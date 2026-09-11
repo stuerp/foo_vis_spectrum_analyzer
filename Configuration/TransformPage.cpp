@@ -1,5 +1,5 @@
 
-/** $VER: TransformPage.cpp (2026.08.23) P. Stuer - Implements a configuration dialog page. **/
+/** $VER: TransformPage.cpp (2026.09.05) P. Stuer - Implements a configuration dialog page. **/
 
 #include "pch.h"
 
@@ -14,8 +14,10 @@ static const WCHAR * WindowFunctionNames[] =
     L"Hann", L"Hamming", L"Blackman", L"Nuttall", L"Flat Top",
     L"Bartlett (Triangular)", L"Parzen",
     L"Welch", L"Power-of-sine", L"Power-of-circle",
-    L"Gaussian", L"Tukey", L"Kaiser", L"Poison",
-    L"Hyperbolic secant", L"Quadratic spline", L"Ogg Vorbis", L"Cascaded sine", L"Galss"
+    L"Gaussian", L"Tukey", L"Kaiser", L"Poisson",
+    L"Hyperbolic secant", L"Quadratic spline", L"Ogg Vorbis", L"Cascaded sine", L"Galss",
+    L"Lanczos",
+    L"Blackman-Harris (4 terms)",
 };
 
 /// <summary>
@@ -25,7 +27,7 @@ BOOL transform_page_t::OnInitDialog(CWindow w, LPARAM lParam) noexcept
 {
     __super::OnInitDialog(w, lParam);
 
-    const std::unordered_map<int, const char *> Tips =
+    static const std::unordered_map<int, const char *> Tips =
     {
         { IDC_METHOD, "Selects the method used to perform the Time to Frequency domain transform" },
 
@@ -34,15 +36,15 @@ BOOL transform_page_t::OnInitDialog(CWindow w, LPARAM lParam) noexcept
         { IDC_WINDOW_SKEW, "Adjusts how the window function reacts to samples. Positive values makes it skew towards latest samples while negative values skews towards earliest samples. Defaults to 0 (None)." },
 
         { IDC_REACTION_ALIGNMENT, "Controls the delay between the actual playback and the visualization.\n"
-                                    "< 0: All samples are ahead of the playback sample (with the first sample equal to the actual playback sample).\n"
-                                    "= 0: The first half of samples are behind the current playback sample and the second half are ahead of it.\n"
-                                    "> 0: All samples are behind the playback with the last sample equal to the current playback sample." },
+                                  "< 0: All samples are ahead of the playback sample (with the first sample equal to the actual playback sample).\n"
+                                  "= 0: The first half of samples are behind the current playback sample and the second half are ahead of it.\n"
+                                  "> 0: All samples are behind the playback with the last sample equal to the current playback sample." },
 
         { IDC_NUM_BINS, "Sets the number of bins used by the Fourier transforms" },
         { IDC_NUM_BINS_PARAMETER, "Sets the parameter used to calculate the number of Fourier transform bins. Set the number of bins explicitly (Custom) or expressed as a number of ms taking the sample rate into account (Duration)" },
 
-        { IDC_SUMMATION_METHOD, "Method used to aggregate FFT coefficients" },
         { IDC_MAPPING_METHOD, "Determines how the FFT coefficients are mapped to the frequency bins." },
+        { IDC_AGGREGATION_METHOD, "Selects the method used to aggregate FFT coefficients." },
 
         { IDC_SMOOTH_LOWER_FREQUENCIES, "When enabled, the bandpower part only gets used when number of FFT bins to sum for each band is at least two or more." },
         { IDC_SMOOTH_GAIN_TRANSITION, "Smooths the frequency slope of the aggregation modes." },
@@ -114,7 +116,7 @@ void transform_page_t::InitializeControls() noexcept
     }
 
     {
-        auto w = (CComboBox) GetDlgItem(IDC_SUMMATION_METHOD);
+        auto w = (CComboBox) GetDlgItem(IDC_AGGREGATION_METHOD);
 
         w.ResetContent();
 
@@ -251,26 +253,26 @@ void transform_page_t::UpdateControls() noexcept
                          || (_State->_WindowFunction == WindowFunction::Gaussian)
                          || (_State->_WindowFunction == WindowFunction::Tukey)
                          || (_State->_WindowFunction == WindowFunction::Kaiser)
-                         || (_State->_WindowFunction == WindowFunction::Poison)
+                         || (_State->_WindowFunction == WindowFunction::Poisson)
                          || (_State->_WindowFunction == WindowFunction::HyperbolicSecant);
 
         GetDlgItem(IDC_WINDOW_FUNCTION).EnableWindow(!IsIIR);
         GetDlgItem(IDC_WINDOW_PARAMETER).EnableWindow(HasParameter && !IsIIR);
         GetDlgItem(IDC_WINDOW_SKEW).EnableWindow(!IsIIR);
 
+        GetDlgItem(IDC_MAPPING_METHOD).EnableWindow(IsFFT);
+
         // FFT
         {
-            for (const auto & Iter : { IDC_SUMMATION_METHOD, IDC_MAPPING_METHOD, IDC_SMOOTH_LOWER_FREQUENCIES, IDC_SMOOTH_GAIN_TRANSITION, IDC_KERNEL_SIZE })
-                GetDlgItem(Iter).EnableWindow(IsFFT);
+            const bool IsStandard = IsFFT && (_State->_MappingMethod == CoefficientMapping::Standard);
 
-            for (const auto & Iter : { IDC_NUM_BINS,  })
-                GetDlgItem(Iter).EnableWindow(IsFFT);
-
+            for (const auto & Iter : { IDC_NUM_BINS, IDC_AGGREGATION_METHOD, IDC_SMOOTH_LOWER_FREQUENCIES, IDC_SMOOTH_GAIN_TRANSITION, IDC_KERNEL_SIZE })
+                GetDlgItem(Iter).EnableWindow(IsStandard);
         }
 
         // Brown-Puckette CQT
         {
-            const bool IsBrownPuckette = IsFFT && (_State->_MappingMethod == Mapping::BrownPuckette);
+            const bool IsBrownPuckette = IsFFT && (_State->_MappingMethod == CoefficientMapping::BrownPuckette);
 
             for (const auto & Iter : { IDC_BW_OFFSET, IDC_BW_CAP, IDC_BW_AMOUNT, IDC_GRANULAR_BW, IDC_KERNEL_SHAPE, IDC_KERNEL_ASYMMETRY, })
                 GetDlgItem(Iter).EnableWindow(IsBrownPuckette);
@@ -292,8 +294,7 @@ void transform_page_t::UpdateControls() noexcept
         {
             IDC_METHOD,
             IDC_WINDOW_FUNCTION, IDC_WINDOW_PARAMETER, IDC_WINDOW_SKEW, IDC_REACTION_ALIGNMENT,
-//          IDC_NUM_BINS, IDC_NUM_BINS_PARAMETER,
-            IDC_SUMMATION_METHOD, IDC_MAPPING_METHOD,
+            IDC_AGGREGATION_METHOD, IDC_MAPPING_METHOD,
             IDC_SMOOTH_LOWER_FREQUENCIES, IDC_SMOOTH_GAIN_TRANSITION,
             IDC_KERNEL_SIZE, IDC_KERNEL_SIZE_SPIN,
             IDC_BW_OFFSET, IDC_BW_CAP, IDC_BW_AMOUNT, IDC_GRANULAR_BW,
@@ -384,13 +385,19 @@ void transform_page_t::OnSelectionChanged(UINT notificationCode, int id, CWindow
 
         case IDC_MAPPING_METHOD:
         {
-            _State->_MappingMethod = (Mapping) SelectedIndex;
+            _State->_MappingMethod = (CoefficientMapping) SelectedIndex;
+
+            if (_State->_MappingMethod == CoefficientMapping::TriangularFilterBank)
+            {
+                _State->_FrequencyDistribution = FrequencyDistribution::Mel;
+                _State->_ScalingFunction       = ScalingFunction::Mel;
+            }
 
             UpdateControls();
             break;
         }
 
-        case IDC_SUMMATION_METHOD:
+        case IDC_AGGREGATION_METHOD:
         {
             _State->_AggregationMethod = (AggregationMethod) SelectedIndex;
             break;

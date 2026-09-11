@@ -1,7 +1,8 @@
 
-/** $VER: UIElementToolTips.cpp (2025.11.12) P. Stuer **/
+/** $VER: UIElementToolTips.cpp (2026.08.26) P. Stuer **/
 
 #include "pch.h"
+
 #include "UIElement.h"
 
 #pragma hdrstop
@@ -49,7 +50,7 @@ void uielement_t::OnMouseMove(UINT, CPoint pt) noexcept
         _TrackingGraph->InitToolInfo(m_hWnd, _TrackingToolInfo);
 
         _LastMousePos = pt;
-        _LastBandIndex = ~0U;
+        _LastBandIndex = ~(size_t) 0;
 
         const FLOAT ScaledX = (FLOAT) ::MulDiv((int) pt.x, USER_DEFAULT_SCREEN_DPI, (int) _DPI);
         const FLOAT ScaledY = (FLOAT) ::MulDiv((int) pt.y, USER_DEFAULT_SCREEN_DPI, (int) _DPI);
@@ -173,5 +174,35 @@ void uielement_t::DeleteTrackingToolTip() noexcept
     _ToolTipControl.TrackActivate(&_TrackingToolInfo, FALSE);
 
     _TrackingGraph = nullptr;
-    _LastBandIndex = ~0U;
+    _LastBandIndex = ~(size_t) 0;
+}
+
+/// <summary>
+/// Adds a tool for each of the grid items to the ToolTip control.
+/// </summary>
+void uielement_t::AddTools() noexcept
+{
+    for (auto & Item : _Grid)
+    {
+        TTTOOLINFOW ti = { };
+
+        Item->InitToolInfo(m_hWnd, ti);
+
+        _ToolTipControl.AddTool(&ti);
+    }
+}
+
+/// <summary>
+/// Deletes the grid item tools from the ToolTip control.
+/// </summary>
+void uielement_t::DeleteTools() noexcept
+{
+    for (auto & Item : _Grid)
+    {
+        TTTOOLINFOW ti = { };
+
+        Item->InitToolInfo(m_hWnd, ti);
+
+        _ToolTipControl.DelTool(&ti);
+    }
 }

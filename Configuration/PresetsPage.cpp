@@ -15,7 +15,7 @@ BOOL presets_page_t::OnInitDialog(CWindow w, LPARAM lParam) noexcept
 
     DlgResize_Init(false, true); // This page has resizable controls.
 
-    const std::unordered_map<int, const char *> Tips =
+    static const std::unordered_map<int, const char *> Tips =
     {
         { IDC_PRESETS_ROOT, "Specifies the location of the preset files." },
         { IDC_PRESETS_ROOT_SELECT, "Opens a dialog to select a location." },

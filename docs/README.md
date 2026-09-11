@@ -370,6 +370,12 @@ Renders the spectrogram horizontally when enabled, vertically when not.
 
 `Use spectrum bar metrics`
 
+Some users create a *waterfall* effect by positioning the spectrogram under a spectrum visualization. This option tells the spectrogram to use the same spacing calculations so that the spectrum and spectrogram align.
+
+`Legend`
+
+Renders a color legend in the visualization area that tells which color correspondents to a power level.
+
 #### Peak / RMS group
 
 The Peak / RMS will display the instant peak and RMS over time level of the playing track.
@@ -452,6 +458,14 @@ Specifies the number of pixels for the Gaussian blur. Higher values increase the
 
 Specifies the color fade speed. Lower values cause a faster decay.
 
+`Downmix to mono`
+
+When enabled the input signals to the oscilloscope will be downmix to a mono signal.
+
+`Zero-crossing trigger`
+
+Enables a zero trigger to synchronize the oscilloscope display to the signal's zero crossings, creating a stable and readable waveform display.
+
 ---
 
 ### Transform page
@@ -525,6 +539,31 @@ Allows you to select the Time to Frequency domain transform. The following trans
 
 Selects the window function that will be applied to the samples (Time domain).
 
+| Name                   | Description |
+| ---------------------- | |
+| Box Car                | Bin-centered tones. Sharpest time edges, highest sidelobes (~13 dB). Use when you need perfect time localization and don’t care about leakage. (Rectangular, Dirichlet) |
+| Hann                   | General FFT and STFT work. Sidelobes ~31 dB, good compromise. Use with speech, audio, general-purpose. (Hanning, cosine squared, raised cosine) |
+| Hamming,               | Lower first sidelobe than Hann, but unlike Hann its endpoints do not reach zero. Suitable when reduced spectral leakage is preferred over exact endpoint continuity. (Raised cosine) |
+| Blackman               | High-dynamic-range measurements. Provides stronger sidelobe suppression (~58 dB) than Hann and Hamming at the cost of a wider main lobe. Use when a high dynamic range is needed. |
+| Nuttall                | Provides strong sidelobe suppression at the cost of a wider main lobe. |
+| Flat Top               | Tone-level measurement. Provides high amplitude accuracy and low scalloping loss at the cost of a significantly wider main lobe. |
+| Bartlett               | Basic leakage reduction. Reaches its maximum at the center and decreases linearly to zero at both endpoints. (Triangular) |
+| Parzen                 | Suppressing distant leakage. Useful for detecting weak frequency components near stronger ones. |
+| Welch                  | Smooth, parabolic taper. Useful for general spectral analysis. |
+| Power-Of-Sine          | The power controls the shape of the window. A power of 1 produces a sine window, while a power of 2 produces a Hann window. |
+| Power-Of-Circle        | The power controls the curvature of the window. A power of 1 produces the standard Welch window. |
+| Gaussian               | No sidelobes at all (theoretically), but infinite support. Use when you can afford a longer window. |
+| Tukey                  | Alpha controls the proportion of the window occupied by the cosine tapers. An alpha of 0 produces a BoxCar window, while an alpha of 1 produces a Hann window. (Tapered cosine) |
+| Kaiser                 | Beta controls the shape of the window. A beta of zero produces a BoxCar window, while larger values increase sidelobe suppression at the cost of a wider main lobe. |
+| Poisson                | Exponential, Decaying transients, impulse responses, reverberation, and modal analysis. |
+| Hyperbolic Secant      | Beta controls the concentration of the window. A beta of zero produces a BoxCar window, while larger values increase attenuation toward the endpoints. |
+| Quadratic Spline       | General spectral analysis, Smooth polynomial taper and faster distant roll-off. (Quadratic B-spline window) |
+| Ogg Vorbis             | Supports transitions between short and long blocks. Helps control leakage and transient coding artifacts. |
+| Cascaded Sine          | Sine taper. |
+| Galss                  | [Discussion](https://hydrogenaud.io/index.php/topic,125031.msg1036200.html#msg1036200) |
+| Lanczos                | Smooth taper. Balanced resolution and leakage. Only moderate sidelobe suppression. |
+| 4-term Blackman-Harris | Produces very clean peaks with minimal leakage from strong tones into neighboring bins. w(x) = a0​ + a1 ​cos(πt) + a2 ​cos(2πt) + a3​ cos(3πt) |
+
 `Window parameter`
 
 Allows you to tweak window functions that support a parameter like Gaussian and Kaiser.
@@ -566,11 +605,14 @@ Determines which method is used to aggregate the coefficients of the FFT into fr
 
 `Mapping`
 
-Determines how the FFT coefficients are mapped to the frequency bins.
+Determines how the FFT power coefficients are mapped to the frequency bins.
 
 - Standard
 - Triangular Filter Bank
 - Brown-Puckette CQT
+
+> [!Note]
+> The `Triangular Filter Bank` mapping always uses frequencies generated from the [Mel scale](https://en.wikipedia.org/wiki/Mel_scale).
 
 `Smooth lower frequencies`
 
@@ -661,10 +703,15 @@ Determines which parameters are used to generate the frequency bands.
 - Linear: Generate frequency bands based on the frequency parameters.
 - Octaves: Generate frequency bands based on the note parameters.
 - AveePlayer: Generate frequency bands used by AveePlayer.
+- Mel: Generate frequency bands using the Mel scale.
 
 `No. of bands`
 
-Specifies the number of frequency bands to generate (2 to 512) in the specified frequency range.
+Specifies the number of frequency bands to generate (2 to 8192) in the specified frequency range.
+
+`No. of Mel bands`
+
+Specifies the number of mel bands to generate (24 to 128) in the specified frequency range.
 
 `Frequency range`
 
@@ -693,7 +740,7 @@ Determines which algorithm will be used to scale the frequencies:
 - Linear
 - Logarithmic
 - Shifted logarithmic
-- Mel (AIMP)
+- [Mel](https://en.wikipedia.org/wiki/Mel_scale)
 - Bark
 - Adjustable Bark
 - ERB
@@ -709,7 +756,7 @@ Affects any adjustable frequency scaling functions like hyperbolic sine and n-th
 
 `Bandwidth`
 
-Distance between the low and high frequency boundaries for each frequency band. Valid values are 0.0 to 64.0.
+Distance between the low and high frequency boundaries for each frequency band. Valid values are 0 to 64.
 
 ---
 
@@ -717,39 +764,57 @@ Distance between the low and high frequency boundaries for each frequency band. 
 
 #### Acoustic Filters group
 
-This group contains settings to allow you to apply acoustic weighting filters (A-, B-, C-, D- and M-weighting (ITU-R 468)) to the samples.
+This group contains settings to allow you to apply acoustic weighting filters (A-, B-, C-, D- and M-weighting (ITU-R 468)) to the frequencies.
 
 `Weighting type`
 
 Selects the weighting filter type that will be applied.
 
-`Slope function offset`
+##### Frequency Tilt
 
-Slope function offset expressed in sample rate / FFT size in samples
+`Frequency shift`
 
-`Slope`
+Horizontally shifts the complete weighting curve. The value is expressed in spectrum-bin units and is converted to Hz using the current sample rate and bin count.
 
-Frequency slope offset in dB per octave
+Positive values shift the weighting curve toward lower displayed frequencies by evaluating each band at a higher effective frequency. Negative values evaluate each band at a lower effective frequency.
 
-`Slope offset`
+A value of 0 disables the frequency shift.
 
-Frequency slope in Hz
+`Frequency tilt`
 
-`Equalize amount`
+Sets the frequency tilt in approximately decibels per octave.
 
-Equalization amount
+Positive values progressively amplify higher frequencies and attenuate lower frequencies relative to the slope reference frequency. Negative values amplify lower frequencies and attenuate higher frequencies.
 
-`Equalize offset`
+A value of 0 dB/octave disables the tilt.
 
-Equalization offset
+`Frequency tilt pivot`
 
-`Equalize depth`
+Sets the frequency, in Hz, at which the tilt adjustment is 0 dB. Frequencies above and below this reference are adjusted according to the configured tilt.
 
-Equalization depth
+##### Equalization
+
+`Equalization amount`
+
+Controls the strength of the custom equalization curve.
+
+Zero disables equalization. Positive values progressively increase the effect of the curve. This parameter is an intensity control and does not directly represent decibels.
+
+`Equalization frequency scale`
+
+Controls the frequency scale of the custom equalization curve.
+
+Higher values move the curve’s frequency-dependent features toward higher frequencies; lower values move them toward lower frequencies.
+
+`Equalization depth`
+
+Controls the scale and shape of the custom equalization curve.
+
+Increasing or decreasing this value changes both the curve’s frequency progression and gain profile. It is not equivalent to a conventional equalizer bandwidth or Q control.
 
 `Weighting amount`
 
-Weighting amount
+Controls how strongly the selected A, B, C, D, or M acoustic weighting curve is applied. Zero disables acoustic weighting, 0.5 applies half the normal dB response, and 1.0 applies the full response. Values greater than one exaggerate the curve, while negative values invert it.
 
 ---
 
@@ -768,11 +833,14 @@ Determines how the spectrum coefficients and the Peak / RMS values are smoothed.
 
 `Smoothing factor`
 
-Specifies the strength of the smoothing (0.0 to 1.0)
+Specifies the strength of the smoothing (0 to 1)
 
 `Tooltips`
 
 Enable the check box to see a tooltip with the center frequency and when appropriate, the name of the note, or the frequency band.
+
+> [!Note]
+> When this option is disabled you can get tooltips by pressing and holding the left mousebutton on the graph.
 
 `Suppress mirror image`
 
@@ -861,14 +929,18 @@ The graph list shows all graphs in the current window. Use the + button to add a
 
 `Vertical layout`
 
-Enables this setting to stack the graphs vertically instead of horizontally.
+Enable this setting to stack the graphs vertically instead of horizontally.
 
 `Overlap graphs`
 
 Select to draw the graphs overlapped instead of stacked horizontally or vertically.
 
 > [!Note]
-> Only allowed for the bar, curve, radial bar and radial curve visualization.
+> Only supported by the bar, curve, radial bar and radial curve visualization.
+
+`Use local styles`
+
+Enable this setting to use local styles. A local style is tied to a graph. Each grah can have its own local style.
 
 `Description`
 
@@ -878,7 +950,7 @@ Allow you to edit the description of the selected graph.
 
 `Horizontal alignment`
 
-Determines the horizontal alignment of a graph within its bounds (taking into account any space used by the X-axis).
+Determines the horizontal alignment of a graph within its bounds (taking into account any space used by the left and/or right axis).
 
 - *Near* aligns the visualization with the near side of the graph (aka the *left* edge when using normal orientation).
 - *Center* centers the visualization in the graph area.
@@ -893,13 +965,33 @@ Flips the current graph horizontally. Any axes will be rendered accordingly.
 
 Flips the current graph vertically. Any axes will be rendered accordingly.
 
-#### X-axis group
+#### Axes group
 
-Groups the parameters that determine the way the X-axis is displayed.
+This group of settings determines which axes to show. Depending on the visualization the axes can have a different meaning.
+
+`Left`
+
+Displays an axis on the left of the graph.
+
+`Right`
+
+Displays an axis on the bottom of the graph.
+
+`Top`
+
+Displays an axis on top of the graph.
+
+`Bottom`
+
+Displays an axis at the bottom of the graph.
+
+#### Frequency axis group
+
+Groups the parameters that determine the way the frequency axis is displayed.
 
 `Mode`
 
-Determines which X-axis to display.
+Determines which frequency axis to display.
 
 - None: Hides the X-axis (reserve no screen area for it).
 - Bands: Center frequency of a band, every 10 bands.
@@ -907,37 +999,21 @@ Determines which X-axis to display.
 - Octaves: Frequency of the C note of each octave
 - Notes: C note of each octave
 
-`Top`
-
-Displays an X-axis on top of the graph.
-
-`Bottom`
-
-Displays an X-axis at the bottom of the graph.
-
 `Decimals`
 
-Determines the number of decimals to show in the X-axis labels. Valid values are 0 to 3.
+Determines the number of decimals to show in the axis labels. Valid values are 0 to 3.
 
-#### Y-axis group
+#### Amplitude axis group
 
-Groups the parameters that determine the way the Y-axis is displayed.
+Groups the parameters that determine the way the amplitude axis is displayed.
 
 `Mode`
 
-Determines which Y-axis to display.
+Determines which amplitude axis to display.
 
-- None: Hides the Y-axis (reserve no screen area for it).
+- None: Hides the axis (reserve no screen area for it).
 - Decibel: Uses decibel values to render the scale.
 - Linear/n-th root: Uses logarithmic values to render the scale.
-
-`Left`
-
-Displays an Y-axis on the left of the graph.
-
-`Right`
-
-Displays an Y-axis on the bottom of the graph.
 
 `Amplitude range`
 
@@ -949,11 +1025,13 @@ Determine the step size between the min. and max. amplitude.
 
 `Use absolute`
 
-Sets the min. amplitude to -∞ dB (0.0 on the linear scale) when enabled.
+Sets the min. amplitude to -∞ dB (0 on the linear scale) when enabled.
 
 `Gamma`
 
 Sets index n of the n-th root calculation.
+
+#### Channels group
 
 `Channels`
 

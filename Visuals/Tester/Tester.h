@@ -1,5 +1,5 @@
 
-/** $VER: Tester.h (2026.06.17) P. Stuer - Implements a minimal visualization for testing purposes. **/
+/** $VER: Tester.h (2026.09.10) P. Stuer - Implements a minimal visualization for testing purposes. **/
 
 #pragma once
 
@@ -26,8 +26,10 @@ public:
     void Release() noexcept override final;
 
     // visualization_t
-    void Initialize(state_t * state, graph_options_t * graphDescription, const analysis_t * analysis, bool isFirst, bool isLast) noexcept;
+    void Initialize(state_t * state, graph_options_t * graphOptions, const analysis_t * analysis, bool isFirst, bool isLast) noexcept;
     void Resize() noexcept;
+
+    static D2D1_COLOR_F ColorFromHSLA(FLOAT h, FLOAT s, FLOAT l, FLOAT a) noexcept;
 
 private:
     HRESULT CreateDeviceIndependentResources() noexcept;
@@ -37,7 +39,5 @@ private:
     void DeleteDeviceSpecificResources() noexcept;
 
 private:
-    float _Angle;
-
-    CComPtr<ID2D1SolidColorBrush> _DebugBrush;
+    CComPtr<ID2D1SolidColorBrush> _Brush;
 };

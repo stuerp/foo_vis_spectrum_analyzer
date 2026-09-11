@@ -1,5 +1,5 @@
 
-/** $VER: Analysis.h (2026.08.18) P. Stuer **/
+/** $VER: Analysis.h (2026.09.09) P. Stuer **/
 
 #pragma once
 
@@ -28,9 +28,7 @@
 /// </summary>
 struct measurement_t
 {
-    measurement_t(const WCHAR * _channelName) noexcept : ChannelName(_channelName)
-    {
-    }
+    measurement_t(const WCHAR * _channelName) noexcept : ChannelName(_channelName) { }
 
     std::wstring ChannelName;
 };
@@ -109,6 +107,8 @@ public:
 
     void UpdatePeakValues(bool isStopped) noexcept;
 
+    static double GetAcousticWeight(double x, WeightingType weightingType, double weightAmount) noexcept;
+
 private:
     // Spectrum
     void SpectrumProcessing(const audio_chunk & chunk) noexcept;
@@ -116,9 +116,14 @@ private:
     void GenerateLinearFrequencyBands();
     void GenerateOctaveFrequencyBands();
     void GenerateAveePlayerFrequencyBands();
+    void GenerateMelFrequencyBands();
 
-    void ApplyAcousticWeighting();
-    double GetWeight(double x) const noexcept;
+    void ApplyAcousticWeighting() noexcept;
+
+    double GetWeight(double frequency) const noexcept;
+
+    static inline double GetFrequencyTilt(double x, double amount, double offset) noexcept;
+    static inline double Equalize(double x, double amount, double depth, double offset) noexcept;
 
     void Normalize() noexcept;
     void NormalizeWithAverageSmoothing(double factor) noexcept;
@@ -214,7 +219,7 @@ public:
     std::wstring _DebugText;
 
 private:
-    const double Amax = M_SQRT1_2;
+    static constexpr double Amax = M_SQRT1_2;
     const double dBCorrection = -20. * std::log10(Amax); // 3.01 dB;
 
     chrono_t _Chrono;

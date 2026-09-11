@@ -46,6 +46,7 @@ void uielement_t::RenderThreadProc() noexcept
 
     for (;;)
     {
+        // Wait for the presentation time of the frame.
         {
             Now = Chrono.Now();
 
@@ -72,47 +73,46 @@ void uielement_t::RenderThreadProc() noexcept
             }
         }
 
-        if (!(_IsFrozen || !_IsVisible || ::IsIconic(_hParent)))
+        bool HaveArtworkColorsChanged = false;
+
+        if (_CriticalSection.TryEnter())
         {
-            bool HaveColorsChanged = false;
+            ProcessEvents();
 
-            if (_CriticalSection.TryEnter())
+            if (!(!IsWindowVisible() || ::IsIconic(_hParent) || _IsFrozen))
             {
-                ProcessEvents();
+                _FrameCounter.NewFrame();
 
-                if (IsWindowVisible())
-                {
-                    _FrameCounter.NewFrame();
+                ProcessAudio();
 
-                    ProcessAudio();
-
-                    Render();
-
-                    Animate(Chrono.Now());
-                }
-
-                if (_IsConfigurationChanged)
-                {
-                    _UIState._ArtworkDominantColor = _RenderState._ArtworkDominantColor;
-                    _UIState._ArtworkGradientStops = _RenderState._ArtworkGradientStops;
-
-                    _IsConfigurationChanged = false;
-
-                    HaveColorsChanged = true;
-                }
-
-                _CriticalSection.Leave();
+                Render();
             }
 
-            // Notify the configuration dialog about the changed artwork colors.
-            if (HaveColorsChanged && _ConfigurationDialog.IsWindow())
+            if (_IsConfigurationChanged)
             {
-                _ConfigurationDialog.PostMessageW(UM_CONFIGURATION_CHANGED, CC_COLORS); // Must be sent outside the critical section.
+                _UIState._ArtworkGradientStops = _RenderState._ArtworkGradientStops;
+                _UIState._ArtworkDominantColor = _RenderState._ArtworkDominantColor;
 
-                Log.AtDebug().Write(STR_COMPONENT_BASENAME " notified configuration dialog of configuration change (Artwork colors).");
+                _IsConfigurationChanged = false;
 
-                HaveColorsChanged = false;
+                HaveArtworkColorsChanged = true;
             }
+
+            // Continue to animate the peak values unless the parent window is minized.
+            if (!_IsFrozen)
+                Animate(Chrono.Now());
+
+            _CriticalSection.Leave();
+        }
+
+        // Notify the configuration dialog about the changed artwork colors.
+        if (HaveArtworkColorsChanged && _ConfigurationDialog.IsWindow())
+        {
+            _ConfigurationDialog.PostMessageW(UM_CONFIGURATION_CHANGED, CC_COLORS); // Must be sent outside the critical section.
+
+        //  Log.AtDebug().Write(STR_COMPONENT_BASENAME " notified configuration dialog of configuration change (Artwork colors).");
+
+            HaveArtworkColorsChanged = false;
         }
 
         // Determine the presentation time of the next frame.
@@ -138,7 +138,26 @@ void uielement_t::ProcessEvents() noexcept
     if (Flags == 0)
         return;
 
-    if (event_t::IsRaised(Flags, event_t::PlaybackStopped | event_t::PlaybackNewTrack))
+    if (event_t::IsRaised(Flags, event_t::PlaybackNewTrack))
+    {
+        _RenderState._PlaybackTime = 0.;
+        _RenderState._TrackTime = 0.;
+/*
+        for (auto & Item : _Grid)
+            Item->Reset();
+*/
+        _RenderState._IsPaused = false;
+
+        // Set the default dominant color and gradient for the artwork color scheme.
+        _RenderState._ArtworkGradientStops = GetBuiltInGradientStops(_Artwork.Bitmap() ? ColorScheme::Artwork : ColorScheme::Solid);
+        _RenderState._ArtworkDominantColor = _RenderState._ArtworkGradientStops[0].color;
+
+        _RenderState._RecreateStyles = true;
+
+        _IsConfigurationChanged = true;
+    }
+    else
+    if (event_t::IsRaised(Flags, event_t::PlaybackStopped))
     {
         _RenderState._PlaybackTime = 0.;
         _RenderState._TrackTime = 0.;
@@ -148,31 +167,19 @@ void uielement_t::ProcessEvents() noexcept
 
         _RenderState._IsPaused = false;
     }
-
+    else
     if (event_t::IsRaised(Flags, event_t::PlaybackPaused))
     {
+/*
         for (auto & Item : _Grid)
             Item->Reset();
-
+*/
         _RenderState._IsPaused = true;
     }
     else
     if (event_t::IsRaised(Flags, event_t::PlaybackResumed))
     {
         _RenderState._IsPaused = false;
-    }
-
-    if (event_t::IsRaised(Flags, event_t::PlaybackNewTrack))
-    {
-        if (_Artwork.Bitmap() == nullptr)
-        {
-            // Set the default dominant color and gradient for the artwork color scheme.
-            _RenderState._ArtworkGradientStops = GetBuiltInGradientStops(ColorScheme::Artwork);
-            _RenderState._ArtworkDominantColor = _RenderState._ArtworkGradientStops[0].color;
-            _RenderState._RecreateStyles = true;
-
-            _IsConfigurationChanged = true;
-        }
     }
 
     if (event_t::IsRaised(Flags, event_t::UserInterfaceColorsChanged))
@@ -192,8 +199,8 @@ void uielement_t::ProcessAudio() noexcept
     if (!(_VisualisationStream->get_absolute_time(PlaybackTime) && (PlaybackTime != _RenderState._PlaybackTime)))
         return; // Playback is paused.
 
-    double WindowSize;
-    double WindowOffset;
+    double WindowSize;   // in seconds
+    double WindowOffset; // in seconds
 
     const bool IsSlidingWindow = (_RenderState._TransformMethod == TransformMethod::SWIFT) || (_RenderState._TransformMethod == TransformMethod::AnalogStyle);
 
@@ -201,7 +208,7 @@ void uielement_t::ProcessAudio() noexcept
     {
         if (_RenderState._SampleRate != 0)
         {
-            const size_t FrameCount = (_RenderState._VisualizationType != VisualizationType::Oscilloscope) ? _RenderState._BinCount : _RenderState._FrameCount;
+            const size_t FrameCount = (_RenderState._VisualizationType != VisualizationType::Oscilloscope) ? _RenderState._BinCount: _RenderState._FrameCount;
 
             WindowSize   = (double) FrameCount / (double) _RenderState._SampleRate;
             WindowOffset = PlaybackTime - (WindowSize * (0.5 + _RenderState._ReactionAlignment));
@@ -222,7 +229,7 @@ void uielement_t::ProcessAudio() noexcept
     audio_chunk_impl Chunk;
 
     if (_VisualisationStream->get_chunk_absolute(Chunk, WindowOffset, WindowSize))
-//  if (GetAudioChunk(Chunk, 44100, _RenderState._BinCount))
+//  if (GetAudioChunk(Chunk, 44'100, (uint32_t) _RenderState._BinCount))
     {
         InitializeSampleRateDependentParameters(Chunk);
 
@@ -245,7 +252,7 @@ void uielement_t::Render() noexcept
 
     _DeviceContext->BeginDraw();
 
-    _DeviceContext->Clear(D2D1::ColorF(0.f, 0.f, 0.f, 0.f)); // Required for alpha transparency. Do this once for all graphs. A graph can overlay a background color with a semi-transparent style.
+    _DeviceContext->Clear(); // Required for alpha transparency. Do this once for all graphs. A graph can overlay a background color with a semi-transparent style.
 
     for (auto & Item : _Grid)
         Item->Render(_DeviceContext, _Artwork);
@@ -294,7 +301,7 @@ void uielement_t::InitializeSampleRateDependentParameters(const audio_chunk_impl
 
     _RenderState._SampleRate = chunk.get_sample_rate();
 
-    Log.AtDebug().Write(STR_COMPONENT_BASENAME " chunk parameters: %d Hz, %d channels (0x%04X), %d frames, %.1fms", chunk.get_sample_rate(), chunk.get_channel_count(), chunk.get_channel_config(), chunk.get_sample_count(), chunk.get_duration() * 1000.);
+    Log.AtDebug().Write(STR_COMPONENT_BASENAME " chunk parameters: %dHz, %d channels (0x%04X), %d frames, %.1fms", _RenderState._SampleRate, chunk.get_channel_count(), chunk.get_channel_config(), chunk.get_sample_count(), chunk.get_duration() * 1000.);
 
     #pragma warning(disable: 4061)
 
@@ -314,16 +321,6 @@ void uielement_t::InitializeSampleRateDependentParameters(const audio_chunk_impl
     }
 
     #pragma warning(default: 4061)
-}
-
-/// <summary>
-/// Render thread procedure.
-/// </summary>
-DWORD WINAPI uielement_t::CallRenderThreadProc(LPVOID context) noexcept
-{
-    ((uielement_t *) context)->RenderThreadProc();
-
-    return 0;
 }
 
 #pragma region DirectX
@@ -494,12 +491,12 @@ HRESULT uielement_t::CreateDeviceSpecificResources() noexcept
 
     #ifdef _DEBUG
         if (_DebugBrush == nullptr)
-            _DeviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), &_DebugBrush);
+            (void) _DeviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), &_DebugBrush);
     #endif
     }
 
     // Create the background bitmap from the artwork.
-    if (_Artwork.Bitmap() == nullptr)
+    if (!_Artwork.Bitmap())
     {
         hr = _Artwork.CreateDeviceSpecificResources(_DeviceContext);
 
@@ -528,7 +525,7 @@ void uielement_t::DeleteDeviceSpecificResources() noexcept
     for (auto & Item : _Grid)
         Item->Release();
 
-    _Artwork.DeleteDeviceSpecificResources();
+    _Artwork.DeleteWICResources();
 
     _FrameCounter.DeleteDeviceSpecificResources();
 
@@ -672,23 +669,23 @@ bool GetAudioChunk(audio_chunk & chunk, uint32_t sampleRate, uint32_t frameCount
     /** Hann
         const double x = (double) i / (double) (frameCount - 1);
 
-        Samples[i] = 0.5 * (1. + (audio_sample) std::cos(x * M_PI));
+        Samples[i] = 0.5 * (1. + (audio_sample) std::cos(x * std::numbers::pi));
     **/
     /** Hamming
-        const double x = 2.0 * M_PI * (double) i / (double) (frameCount - 1);
+        const double x = 2. * std::numbers::pi * (double) i / (double) (frameCount - 1);
 
         Samples[i] = 0.54 - 0.46 * (audio_sample) std::cos(x);
     **/
     /** Bartlett
         Samples[i] = 1. - (double) i / (double) (frameCount - 1);
      **/
-        const double Frequency = 440.0;
+        const double Frequency = 2'300.0;
 
         const double t = (double) i / (double) sampleRate;
 
-        Samples[i] = (audio_sample) std::sin(2.0 * M_PI * Frequency * t);
+        Samples[i] = (audio_sample) std::sin(2. * std::numbers::pi * Frequency * t);
     }
-    
+ 
     chunk = audio_chunk_impl(Samples, frameCount, ChannelCount, sampleRate);
     
     delete[] Samples;

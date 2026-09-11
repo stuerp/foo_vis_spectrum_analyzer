@@ -15,7 +15,7 @@ public:
     null_log_t & operator=(const null_log_t &) = delete;
     null_log_t & operator=(null_log_t &&) = delete;
 
-    virtual ~null_log_t() final { };
+    virtual ~null_log_t() override final { };
 
     ilog_t & SetLevel(LogLevel level) noexcept override final { return *this; }
     LogLevel GetLevel() const noexcept override final { return LogLevel::Never; }

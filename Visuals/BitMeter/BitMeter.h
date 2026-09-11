@@ -26,7 +26,7 @@ public:
     void Release() noexcept override final;
 
     // visualization_t
-    void Initialize(state_t * state, graph_options_t * graphDescription, const analysis_t * analysis, bool isFirst, bool isLast) noexcept override final;
+    void Initialize(state_t * state, graph_options_t * graphOptions, const analysis_t * analysis, bool isFirst, bool isLast) noexcept override final;
     void Resize() noexcept;
 
     void OnConfigurationChange(ConfigurationChanges configurationChanges) noexcept override final;

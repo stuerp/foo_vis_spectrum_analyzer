@@ -42,9 +42,9 @@ public:
     /// <summary>
     /// Downmixes an audio frame to a mono sample.
     /// </summary>
-    audio_sample Downmix(const audio_sample * samples, uint32_t selectedChannels) const noexcept
+    audio_sample Downmix(const audio_sample * frame, uint32_t selectedChannels) const noexcept
     {
-        if ((samples == nullptr) || (selectedChannels == 0))
+        if ((frame == nullptr) || (selectedChannels == 0))
             return (audio_sample) 0.;
 
         double Sample = 0.;
@@ -56,11 +56,11 @@ public:
             {
                 if (selectedChannels & 1)
                 {
-                    Sample += (double) *samples;
+                    Sample += (double) *frame;
                     n++;
                 }
 
-                ++samples;
+                ++frame;
             }
         }
 

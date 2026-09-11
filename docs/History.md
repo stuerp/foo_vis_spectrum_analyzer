@@ -1,6 +1,40 @@
 
 # foo_vis_spectrum_analyzer History
 
+v0.12.0.0-rc1, 2026-09-07
+
+- New: Lanczos and 4-term Blackman-Harris window function.
+  - The latter produces very clean peaks with minimal leakage from strong tones into neighboring bins.
+- Improved: Cleaned up the rough edges of the spectrogram.
+- Improved: Minor redesign of the Graphs page to make the spectrogram easier to configure.
+  - Left/Right and Top/Bottom axis should be more consistent for a horizontal or vertical spectrogram.
+- Changed: Made the CPU/GPU use optimization logic less invasive when the visualization is hidden or minimized to react more predictable to track changes and the end of a playlist.
+
+v0.12.0.0-alpha3, 2026-09-04
+
+- New: Mel scale frequency distribution.
+- New: A spectrogram color legend can be enabled in the configuration dialog.
+- Improved: Optimized the FFT analyzer and improved all coefficient mapping modes.
+- Fixed: Triangular Filter Bank (TFB) coefficient mapping. This mapping will always use frequencies generated using the Mel scale.
+- Changed: Peak values continue to animate when the parent window is minimized.
+
+v0.12.0.0-alpha2, 2026-08-30
+
+- Improved: Tweaked the behavior of the visualizations when changing tracks. They no longer fully reset.
+- Improved: Overall code hardening and cleanup.
+- Fixed: Minor regressions caused by the introduction of local styles.
+
+v0.12.0.0-alpha1, 2026-08-23
+
+- New: You can downmix the input of the oscilloscope to mono.
+- New: [Turbo](https://research.google/blog/turbo-an-improved-rainbow-colormap-for-visualization/) and a couple of Perceptually Uniform Sequential [Matplotlib](https://matplotlib.org/stable/users/explain/colors/colormaps.html) color maps.
+- Improved: Visualizations continue without interruption when starting a new track.
+- Improved: Performance and numeric stability of the CQT transform.
+- Improved: Downsampling of the oscilloscope input should now retain more peak values and produce better representation of large input audio chunks.
+- Breaking Change: The peak hold time and fall rate (was Acceleration) are now expressed in seconds and dB/s respectively to make them independent of the frame rate. The old values will be remapped to the new ranges but some tweaking may be necessary.
+- Breaking Change: Multiple graphs used to imply the use of local styles. By default global styles will be used unless you enable the setting `Use local style` on the `Graphs` page.
+- Fixed: Peak mode configuration was disabled for the Peak / RMS meter.
+
 v0.11.0.0, 2026-08-16
 
 - New: The number of decimals used by the X-axis labels can be configured.

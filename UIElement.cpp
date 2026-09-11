@@ -15,10 +15,14 @@
 
 #pragma hdrstop
 
+#ifdef _DEBUG
+extern void RunTests();
+#endif
+
 /// <summary>
 /// Initializes a new instance.
 /// </summary>
-uielement_t::uielement_t(): _IsFullScreen(false), _IsVisible(true), _IsInitializing(true), _hParent(), _DPI(), _DisplayRefreshRate(), _hStopRendering(), _hThread(), _TrackingGraph(), _TrackingToolInfo(), _LastMousePos(), _LastBandIndex(~0U)
+uielement_t::uielement_t(): _IsFullScreen(false), _IsVisible(true), _IsInitializing(true), _hParent(), _DPI(), _DisplayRefreshRate(), _hStopRendering(), _hThread(), _TrackingGraph(), _TrackingToolInfo(), _LastMousePos(), _LastBandIndex(~(size_t) 0)
 {
 }
 
@@ -109,6 +113,10 @@ LRESULT uielement_t::OnCreate(LPCREATESTRUCT cs) noexcept
     _hStopRendering = ::CreateEventW(nullptr, TRUE, FALSE, nullptr);
 
     StartRenderer();
+
+#ifdef _DEBUG
+    RunTests();
+#endif
 
     return 0;
 }
@@ -392,13 +400,7 @@ void uielement_t::Resize()
 
     // Resize the grid.
     {
-        for (auto & Item : _Grid)
-        {
-            TTTOOLINFOW ti = { };
-
-            Item->InitToolInfo(m_hWnd, ti);
-            _ToolTipControl.DelTool(&ti);
-        }
+        DeleteTools();
 
         {
             msc::lock_t Lock(_CriticalSection);
@@ -408,13 +410,7 @@ void uielement_t::Resize()
             _RenderState._RecreateStyles = true;
         }
 
-        for (auto & Item : _Grid)
-        {
-            TTTOOLINFOW ti = { };
-
-            Item->InitToolInfo(m_hWnd, ti);
-            _ToolTipControl.AddTool(&ti);
-        }
+        AddTools();
     }
 }
 
@@ -470,6 +466,16 @@ void uielement_t::StartRenderer() noexcept
 }
 
 /// <summary>
+/// Render thread procedure.
+/// </summary>
+DWORD WINAPI uielement_t::CallRenderThreadProc(LPVOID context) noexcept
+{
+    ((uielement_t *) context)->RenderThreadProc();
+
+    return 0;
+}
+
+/// <summary>
 /// Stops the render thread.
 /// </summary>
 void uielement_t::StopRenderer() noexcept
@@ -481,7 +487,8 @@ void uielement_t::StopRenderer() noexcept
 
     ::WaitForSingleObject(_hThread, INFINITE);
 
-    ::CloseHandle(_hThread), _hThread = NULL;
+    ::CloseHandle(_hThread);
+    _hThread = NULL;
 }
 
 /// <summary>
@@ -517,13 +524,7 @@ void uielement_t::UpdateState(ConfigurationChanges configurationChanges) noexcep
     {
         DeleteTrackingToolTip();
 
-        for (auto & Item : _Grid)
-        {
-            TTTOOLINFOW ti = { };
-
-            Item->InitToolInfo(m_hWnd, ti);
-            _ToolTipControl.DelTool(&ti);
-        }
+        DeleteTools();
     }
 
     {
@@ -593,17 +594,11 @@ void uielement_t::UpdateState(ConfigurationChanges configurationChanges) noexcep
 
     if (configurationChanges == ConfigurationChanges::All)
     {
-        for (auto & Item : _Grid)
-        {
-            TTTOOLINFOW ti = { };
+        Resize();
 
-            Item->InitToolInfo(m_hWnd, ti);
-            _ToolTipControl.AddTool(&ti);
-        }
+        AddTools();
 
         _ToolTipControl.Activate(_RenderState._ShowToolTipsAlways);
-
-        Resize();
     }
 }
 
@@ -630,8 +625,6 @@ graph_t * uielement_t::GetGraph(const CPoint & pt) noexcept
 /// </summary>
 void uielement_t::on_playback_new_track(metadb_handle_ptr track)
 {
-    UpdateState(ConfigurationChanges::UserInterfaceColors);
-
     // Always get the album art in case the user enables the _ShowArtworkOnBackground setting while playing a track.
     if (track.is_valid())
         GetArtwork(track);
@@ -679,6 +672,8 @@ void uielement_t::on_playback_time(double time)
 /// </summary>
 bool uielement_t::GetArtwork(const metadb_handle_ptr & track) noexcept
 {
+    _Artwork.DeleteWICResources();
+
     if (_UIState._ArtworkFilePath.empty())
         return GetArtworkFromTrack(track, fb2k::noAbort);
     else
@@ -692,7 +687,7 @@ bool uielement_t::GetArtworkFromTrack(const metadb_handle_ptr & track, abort_cal
 {
     Log.AtTrace().Write(STR_COMPONENT_BASENAME " is getting artwork for the playing track.");
 
-    GUID ArtworkGUID = GetArtworkTypeGUID(_UIState._ArtworkType);
+    const GUID ArtworkGUID = GetArtworkTypeGUID(_UIState._ArtworkType);
 
     static_api_ptr_t<album_art_manager_v2> ArtworkManager;
 

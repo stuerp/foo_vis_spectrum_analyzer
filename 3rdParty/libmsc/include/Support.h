@@ -1,5 +1,5 @@
 
-/** $VER: Support.h (2026.01.21) P. Stuer **/
+/** $VER: Support.h (2026.08.30) P. Stuer **/
 
 #pragma once
 
@@ -37,19 +37,34 @@ inline static constexpr T InRange(T value, T minValue, T maxValue)
 template<class T>
 inline static constexpr T Wrap(T value, T max)
 {
-    return (max + (value % max)) % max;
+    value %= max;
+
+    if (value < 0)
+        value += max;
+
+    return value;
 }
 
 template<>
 inline float Wrap(float value, float max)
 {
-    return std::fmod(std::fmod(value, max) + max, max);
+    value = std::fmod(value, max);
+
+    if (value < 0.f)
+        value += max;
+
+    return value;
 }
 
 template<>
 inline double Wrap(double value, double max)
 {
-    return std::fmod(std::fmod(value, max) + max, max);
+    value = std::fmod(value, max);
+
+    if (value < 0.)
+        value += max;
+
+    return value;
 }
 
 /// <summary>

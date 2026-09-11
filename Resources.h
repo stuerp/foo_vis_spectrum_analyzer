@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2026.08.22) P. Stuer **/
+/** $VER: Resources.h (2026.09.09) P. Stuer **/
 
 #pragma once
 
@@ -16,7 +16,7 @@
 #define NUM_PRODUCT_PATCH       0
 #define NUM_PRODUCT_PRERELEASE  0
 
-#define STR_RELEASE_TAG         "-alpha1"
+#define STR_RELEASE_TAG         ""
 
 /** Component specific **/
 
@@ -105,22 +105,18 @@
 
 #define IDC_FFT_GROUP                   2040
 
-#define IDC_NUM_BINS_LBL                2050
 #define IDC_NUM_BINS                    2052
 #define IDC_NUM_BINS_PARAMETER_NAME     2054
 #define IDC_NUM_BINS_PARAMETER          2056
 #define IDC_NUM_BINS_PARAMETER_UNIT     2058
 
-#define IDC_SUMMATION_METHOD_LBL        2060
-#define IDC_SUMMATION_METHOD            2062
-#define IDC_MAPPING_METHOD_LBL          2064
-#define IDC_MAPPING_METHOD              2066
+#define IDC_MAPPING_METHOD              2060
+#define IDC_AGGREGATION_METHOD          2062
 
 #define IDC_SMOOTH_LOWER_FREQUENCIES    2070
 #define IDC_SMOOTH_GAIN_TRANSITION      2072
 
-#define IDC_KERNEL_SIZE_LBL             2080
-#define IDC_KERNEL_SIZE                 2082
+#define IDC_KERNEL_SIZE                 2080
 #define IDC_KERNEL_SIZE_SPIN            2084
 
 #pragma endregion
@@ -166,49 +162,40 @@
 
 #define IDC_FREQUENCIES_GROUP           2100
 
-#define IDC_DISTRIBUTION_LBL            2110
 #define IDC_DISTRIBUTION                2112
 
-#define IDC_NUM_BANDS_LBL               2120
 #define IDC_NUM_BANDS                   2122
 #define IDC_NUM_BANDS_SPIN              2124
 
-#define IDC_RANGE_LBL_1                 2130
+#define IDC_NUM_MEL_BANDS               2126
+#define IDC_NUM_MEL_BANDS_SPIN          2128
+
 #define IDC_LO_FREQUENCY                2132
 #define IDC_LO_FREQUENCY_SPIN           2134
-#define IDC_RANGE_LBL_2                 2136
+
 #define IDC_HI_FREQUENCY                2138
 #define IDC_HI_FREQUENCY_SPIN           2140
-#define IDC_RANGE_LBL_3                 2142
 
-#define IDC_MIN_NOTE_LBL                2150
 #define IDC_MIN_NOTE                    2152
 #define IDC_MIN_NOTE_SPIN               2154
-#define IDC_MAX_NOTE_LBL                2156
+
 #define IDC_MAX_NOTE                    2158
 #define IDC_MAX_NOTE_SPIN               2160
 
-#define IDC_BANDS_PER_OCTAVE_LBL        2170
 #define IDC_BANDS_PER_OCTAVE            2172
 #define IDC_BANDS_PER_OCTAVE_SPIN       2174
 
-#define IDC_PITCH_LBL_1                 2180
 #define IDC_PITCH                       2182
 #define IDC_PITCH_SPIN                  2184
-#define IDC_PITCH_LBL_2                 2186
 
-#define IDC_TRANSPOSE_LBL               2200
 #define IDC_TRANSPOSE                   2202
 #define IDC_TRANSPOSE_SPIN              2204
 
-#define IDC_SCALING_FUNCTION_LBL        2210
 #define IDC_SCALING_FUNCTION            2212
 
-#define IDC_SKEW_FACTOR_LBL             2220
 #define IDC_SKEW_FACTOR                 2222
 #define IDC_SKEW_FACTOR_SPIN            2224
 
-#define IDC_BANDWIDTH_LBL               2230
 #define IDC_BANDWIDTH                   2232
 #define IDC_BANDWIDTH_SPIN              2234
 
@@ -218,38 +205,26 @@
 
 #define IDC_FILTERS_GROUP               2500
 
-#define IDC_ACOUSTIC_FILTER_LBL         2510
-#define IDC_ACOUSTIC_FILTER             2512
+#define IDC_ACOUSTIC_FILTER             2502
 
-#define IDC_SLOPE_FN_OFFS_LBL           2520
-#define IDC_SLOPE_FN_OFFS               2522
-#define IDC_SLOPE_FN_OFFS_SPIN          2524
+#define IDC_FREQ_SHIFT                  2510
+#define IDC_FREQ_SHIFT_SPIN             2512
 
-#define IDC_SLOPE_LBL                   2530
-#define IDC_SLOPE                       2532
-#define IDC_SLOPE_SPIN                  2534
-#define IDC_SLOPE_UNIT                  2536
+#define IDC_FREQ_TILT                   2520
+#define IDC_FREQ_TILT_SPIN              2522
 
-#define IDC_SLOPE_OFFS_LBL              2540
-#define IDC_SLOPE_OFFS                  2542
-#define IDC_SLOPE_OFFS_SPIN             2544
-#define IDC_SLOPE_OFFS_UNIT             2546
+#define IDC_FREQ_TILT_PIVOT             2530
+#define IDC_FREQ_TILT_PIVOT_SPIN        2532
 
-#define IDC_EQ_AMT_LBL                  2550
 #define IDC_EQ_AMT                      2552
 #define IDC_EQ_AMT_SPIN                 2554
 
-#define IDC_EQ_OFFS_LBL                 2560
 #define IDC_EQ_OFFS                     2562
 #define IDC_EQ_OFFS_SPIN                2564
-#define IDC_EQ_OFFS_UNIT                2566
 
-#define IDC_EQ_DEPTH_LBL                2570
 #define IDC_EQ_DEPTH                    2572
 #define IDC_EQ_DEPTH_SPIN               2574
-#define IDC_EQ_DEPTH_UNIT               2576
 
-#define IDC_WT_AMT_LBL                  2580
 #define IDC_WT_AMT                      2582
 #define IDC_WT_AMT_SPIN                 2584
 
@@ -309,10 +284,13 @@
 
 #pragma endregion
 
-#define IDC_COMPONENT                   6200
+#define IDC_DIAGNOSTICS                 6200
 
 #define IDC_LOG_LEVEL_LBL               6202
 #define IDC_LOG_LEVEL                   6204
+
+#define IDC_SHOW_WINDOW_FUNCTION        6206
+#define IDC_SHOW_WEIGHING_FUNCTION      6208
 
 /** Graphs **/
 
@@ -355,8 +333,6 @@
 
 #pragma region X axis
 
-#define IDC_X_AXIS                      4000
-
 #define IDC_X_AXIS_MODE                 4004
 
 #define IDC_X_AXIS_TOP                  4006
@@ -368,29 +344,21 @@
 
 #pragma region Y axis
 
-#define IDC_Y_AXIS                      5000
-
 #define IDC_Y_AXIS_MODE                 5004
 
 #define IDC_Y_AXIS_LEFT                 5006
 #define IDC_Y_AXIS_RIGHT                5008
 
-#define IDC_AMPLITUDE_LBL_1             5010
 #define IDC_AMPLITUDE_LO                5012
 #define IDC_AMPLITUDE_LO_SPIN           5014
-#define IDC_AMPLITUDE_LBL_2             5016
 #define IDC_AMPLITUDE_HI                5018
 #define IDC_AMPLITUDE_HI_SPIN           5020
-#define IDC_AMPLITUDE_LBL_3             5022
 
-#define IDC_AMPLITUDE_STEP_LBL        5030
 #define IDC_AMPLITUDE_STEP              5032
 #define IDC_AMPLITUDE_STEP_SPIN         5034
-#define IDC_AMPLITUDE_STEP_UNIT        5036
 
 #define IDC_USE_ABSOLUTE                5040
 
-#define IDC_GAMMA_LBL                   5050
 #define IDC_GAMMA                       5052
 
 #pragma endregion
@@ -447,6 +415,7 @@
 #define IDC_SCROLLING_SPECTROGRAM       7152
 #define IDC_HORIZONTAL_SPECTROGRAM      7154
 #define IDC_SPECTRUM_BAR_METRICS        7156
+#define IDC_SPECTROGRAM_LEGEND          7158
 
 // Peak Meter
 
@@ -498,6 +467,7 @@
 #define IDC_DECAY_FACTOR                7226
 
 #define IDC_DOWNMIX                     7228
+#define IDC_ZERO_CROSSING               7229
 
 // Bit Meter
 

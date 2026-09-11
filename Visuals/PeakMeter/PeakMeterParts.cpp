@@ -199,7 +199,7 @@ void part_t::CreateAxis() noexcept
     if (_GraphOptions->_YAxisMode == YAxisMode::None)
         return;
 
-    const double Epsilon = 1.e-3;
+    constexpr double Epsilon = 1.e-3;
 
     if (_State->_IsHorizontalPeakMeter)
     {

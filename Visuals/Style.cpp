@@ -154,7 +154,7 @@ D2D1_COLOR_F style_t::GetWindowsColor(uint32_t index) noexcept
         COLOR_HOTLIGHT,         // Hot Light
     };
 
-    return D2D1::ColorF(::GetSysColor(ColorIndex[std::clamp(index, 0U, (uint32_t) _countof(ColorIndex) - 1)]));
+    return D2D1::ColorF(::GetSysColor(ColorIndex[std::clamp(index, 0u, (uint32_t) _countof(ColorIndex) - 1)]));
 }
 
 /// <summary>
@@ -334,19 +334,19 @@ HRESULT style_t::CreateAmplitudeMap(ColorScheme colorScheme, const gradient_stop
         for (double amplitude = 0.; amplitude <= 1.; amplitude += 1. / Steps)
         {
             if (amplitude >= 0.13 && amplitude < 0.73)
-                r = ::sin((amplitude - 0.13) / 0.60 * M_PI_2);
+                r = ::sin((amplitude - 0.13) / 0.60 * std::numbers::pi / 2.);
             else
             if (amplitude >= 0.73)
                 r = 1.0;
 
             if (amplitude >= 0.6 && amplitude < 0.91)
-                g = ::sin((amplitude - 0.6) / 0.31 * M_PI_2);
+                g = ::sin((amplitude - 0.6) / 0.31 * std::numbers::pi / 2.);
             else
             if (amplitude >= 0.91)
                 g = 1.0;
 
             if (amplitude < 0.60)
-                b = 0.5 * ::sin(amplitude / 0.6 * M_PI);
+                b = 0.5 * ::sin(amplitude / 0.6 * std::numbers::pi);
             else
             if (amplitude >= 0.78)
                 b = (amplitude - 0.78) / 0.22;

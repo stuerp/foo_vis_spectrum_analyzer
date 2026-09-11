@@ -1,13 +1,13 @@
 
-/** $VER: XAXis.cpp (2026.08.22) P. Stuer - Implements the X axis of a graph. **/
+/** $VER: XAXis.cpp (2026.09.06) P. Stuer - Implements the X axis of a graph. **/
 
 #include "pch.h"
+
 #include "XAxis.h"
 
-#include "StyleManager.h"
 #include "DirectWrite.h"
-
-#include "Support.h"
+#include "FrequencyScaler.h"
+#include "StyleManager.h"
 
 #pragma hdrstop
 
@@ -47,7 +47,7 @@ void x_axis_t::Initialize(state_t * state, graph_options_t * graphOptions, const
             {
                 for (size_t i = 0; i < _BandCount; i += 10)
                 {
-                    double Frequency = fb[i].Mid;
+                    const double Frequency = fb[i].Mid;
 
                     if (Frequency < 1000.)
                         ::StringCchPrintfW(Text, _countof(Text), L"%.*f", graphOptions->_XAxisDecimals, Frequency);
@@ -91,8 +91,8 @@ void x_axis_t::Initialize(state_t * state, graph_options_t * graphOptions, const
 
             case XAxisMode::Octaves:
             {
-                double Note = -57.;                                     // Index of C0 (57 semi-tones lower than A4 at 440Hz)
-                double Frequency = _State->_TuningPitch * ::exp2(Note / 12.); // Frequency of C0
+                double Note = -57.;                                                 // Index of C0 (57 semi-tones lower than A4 at 440Hz)
+                double Frequency = _State->_TuningPitch * std::exp2(Note / 12.);    // Frequency of C0
 
                 for (int i = 0; Frequency < fb.back().Lo; ++i)
                 {
@@ -103,18 +103,18 @@ void x_axis_t::Initialize(state_t * state, graph_options_t * graphOptions, const
                     _Labels.push_back(lb);
 
                     Note += 12.;
-                    Frequency = _State->_TuningPitch * ::exp2(Note / 12.);
+                    Frequency = _State->_TuningPitch * std::exp2(Note / 12.);
                 }
                 break;
             }
 
             case XAxisMode::Notes:
             {
-                static const char Name[] = { 'C', 'D', 'E', 'F', 'G', 'A', 'B' };
-                static const int Step[] = { 2, 2, 1, 2, 2, 2, 1 };
+                static constexpr const char Name[] = { 'C', 'D', 'E', 'F', 'G', 'A', 'B' };
+                static constexpr const int Step[] = { 2, 2, 1, 2, 2, 2, 1 };
 
-                double Note = -57.;                                     // Index of C0 (57 semi-tones lower than A4 at 440Hz)
-                double Frequency = _State->_TuningPitch * ::exp2(Note / 12.); // Frequency of C0
+                double Note = -57.;                                                 // Index of C0 (57 semi-tones lower than A4 at 440Hz)
+                double Frequency = _State->_TuningPitch * std::exp2(Note / 12.);    // Frequency of C0
 
                 int j = 0;
 
@@ -132,7 +132,7 @@ void x_axis_t::Initialize(state_t * state, graph_options_t * graphOptions, const
                     _Labels.push_back(lb);
 
                     Note += Step[j];
-                    Frequency = _State->_TuningPitch * ::exp2(Note / 12.);
+                    Frequency = _State->_TuningPitch * std::exp2(Note / 12.);
 
                     if (j < 6) j++; else j = 0;
                 }
@@ -153,16 +153,16 @@ void x_axis_t::Move(const D2D1_RECT_F & rect) noexcept
 /// <summary>
 /// Recalculates parameters that are render target and size-sensitive.
 /// </summary>
-void x_axis_t::Resize() noexcept
+void x_axis_t::Resize(bool force) noexcept
 {
-    if (!_IsResized || (_Size.width == 0.f) || (_Size.height == 0.f))
+    if (!force && (!_IsResized || (_Size.width == 0.f) || (_Size.height == 0.f)))
         return;
 
     FLOAT t = _Size.width / (FLOAT) _BandCount;
 
     // Use the full width of the graph?
     if (_GraphOptions->_HorizontalAlignment != HorizontalAlignment::Fit)
-        t = ::floor(t);
+        t = std::floor(t);
 
     // Calculate the position of the labels.
     const FLOAT BarWidth = std::max(t, 2.f); // In DIP
