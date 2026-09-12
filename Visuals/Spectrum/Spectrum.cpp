@@ -659,7 +659,6 @@ void spectrum_t::RenderDiagnostics(ID2D1DeviceContext * deviceContext) const noe
         auto p2 = D2D1_POINT_2F(_ClientRect.right, msc::Map(y, 0., 1., y1, y2));
 
         deviceContext->DrawLine(p1, p2, _WindowFunctionStyle._Brush, _WindowFunctionStyle._Thickness);
-
     }
 
     // Render the weighing function.

@@ -1,5 +1,5 @@
 
-/** $VER: StyleManager.cpp (2026.06.23) P. Stuer - Creates and manages the DirectX resources of the styles. **/
+/** $VER: StyleManager.cpp (2026.09.12) P. Stuer - Creates and manages the DirectX resources of the styles. **/
 
 #include "pch.h"
 
@@ -993,7 +993,7 @@ std::unordered_map<VisualElement, style_t> style_manager_t::_DefaultStyles
             /* ColorScheme         */ ColorScheme::Solid,
             /* CustomGradientStops */ GetBuiltInGradientStops(ColorScheme::Solid),
             /* Opacity             */ 1.f,
-            /* Thickness           */ 0.f,
+            /* Thickness           */ 2.f,
             /* FontName            */ L"",
             /* FontSize            */ 0.f
         )
@@ -1011,7 +1011,7 @@ std::unordered_map<VisualElement, style_t> style_manager_t::_DefaultStyles
             /* ColorScheme         */ ColorScheme::Solid,
             /* CustomGradientStops */ GetBuiltInGradientStops(ColorScheme::Solid),
             /* Opacity             */ 1.f,
-            /* Thickness           */ 0.f,
+            /* Thickness           */ 2.f,
             /* FontName            */ L"",
             /* FontSize            */ 0.f
         )
