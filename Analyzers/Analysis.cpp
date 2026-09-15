@@ -1,5 +1,5 @@
 
-/** $VER: Analysis.cpp (2026.09.09) P. Stuer **/
+/** $VER: Analysis.cpp (2026.09.14) P. Stuer **/
 
 #include "pch.h"
 
@@ -167,6 +167,12 @@ void analysis_t::Process(const audio_chunk & chunk) noexcept
         case VisualizationType::BitMeter:
         {
             BitMeterProcessing(chunk);
+            break;
+        }
+
+        case VisualizationType::StereoMeter:
+        {
+            StereoMeterProcessing(chunk);
             break;
         }
 
@@ -432,6 +438,7 @@ void analysis_t::UpdatePeakValues(bool isStopped) noexcept
 
         case VisualizationType::Oscilloscope:
         case VisualizationType::BitMeter:
+        case VisualizationType::StereoMeter:
         {
             if (isStopped)
                 _Chunk.reset();
@@ -445,111 +452,6 @@ void analysis_t::UpdatePeakValues(bool isStopped) noexcept
     }
 
     _Chrono.Reset();
-}
-
-#pragma region Spectrum
-
-void analysis_t::SpectrumProcessing(const audio_chunk & chunk) noexcept
-{
-    const audio_sample * Frames = chunk.get_data();
-    const size_t FrameCount = chunk.get_sample_count(); // get_sample_count() actually returns the number of frames.
-
-    if ((Frames == nullptr) || (FrameCount == 0))
-        return;
-
-    if (_WindowFunction == nullptr)
-        _WindowFunction = window_function_t::Create(_State->_WindowFunction, _State->_WindowParameter, _State->_WindowSkew, _State->_Truncate);
-
-    switch (_State->_TransformMethod)
-    {
-        case TransformMethod::FFT:
-        {
-            if (_FFTAnalyzer == nullptr)
-            {       
-                if (_BrownPucketteKernel == nullptr)
-                    _BrownPucketteKernel = window_function_t::Create(_State->_KernelShape, _State->_KernelShapeParameter, _State->_KernelAsymmetry, _State->_Truncate);
-
-                _FFTAnalyzer = new fft_analyzer_t(_State, _SampleRate, _ChannelCount, _ChannelConfig, _State->_BinCount, *_WindowFunction, *_BrownPucketteKernel);
-            }
-
-            _FFTAnalyzer->AnalyzeSamples(Frames, FrameCount, _GraphOptions->_SelectedChannels, _FrequencyBands);
-            break;
-        }
-
-        case TransformMethod::CQT:
-        {
-            if (_CQTAnalyzer == nullptr)
-                _CQTAnalyzer = new cqt_analyzer_t(_State, _SampleRate, _ChannelCount, _ChannelConfig, *_WindowFunction);
-
-            _CQTAnalyzer->AnalyzeSamples(Frames, FrameCount, _GraphOptions->_SelectedChannels, _FrequencyBands);
-            break;
-        }
-
-        case TransformMethod::SWIFT:
-        {
-            if (_SWIFTAnalyzer == nullptr)
-            {
-                _SWIFTAnalyzer = new swift_analyzer_t(_State, _SampleRate, _ChannelCount, _ChannelConfig);
-
-                _SWIFTAnalyzer->Initialize(_FrequencyBands);
-            }
-
-            _SWIFTAnalyzer->AnalyzeSamples(Frames, FrameCount, _GraphOptions->_SelectedChannels, _FrequencyBands);
-            break;
-        }
-
-        case TransformMethod::AnalogStyle:
-        {
-            if (_AnalogStyleAnalyzer == nullptr)
-            {
-                _AnalogStyleAnalyzer = new analog_style_analyzer_t(_State, _SampleRate, _ChannelCount, _ChannelConfig, *_WindowFunction);
-
-                _AnalogStyleAnalyzer->Initialize(_FrequencyBands);
-            }
-
-            _AnalogStyleAnalyzer->AnalyzeSamples(Frames, FrameCount, _GraphOptions->_SelectedChannels, _FrequencyBands);
-            break;
-        }
-    }
-
-    // Filter the spectrum.
-    if (_State->_WeightingType != WeightingType::None)
-        ApplyAcousticWeighting();
-
-    // Smooth the spectrum.
-    switch (_State->_SmoothingMethod)
-    {
-        default:
-
-        case SmoothingMethod::None:
-        {
-            Normalize();
-            break;
-        }
-
-        case SmoothingMethod::Average:
-        {
-            NormalizeWithAverageSmoothing(_State->_SmoothingFactor);
-            break;
-        }
-
-        case SmoothingMethod::Peak:
-        {
-            NormalizeWithPeakSmoothing(_State->_SmoothingFactor);
-            break;
-        }
-    }
-
-    // From here on frequency_band_t::Value is guaranteed to be in the range [0, 1].
-/*
-{
-    for (auto & fb : _FrequencyBands)
-        fb.Value = 0.;
-
-    _FrequencyBands.front().Value = .5;
-    _FrequencyBands.back() .Value = .5;
-}
-*/
 }
 
 #pragma region Frequencies
@@ -794,7 +696,147 @@ void analysis_t::GenerateMelFrequencyBands()
     }
 }
 
+/// <summary>
+/// Generates logarithmically-spaced frequency bands.
+/// </summary>
+void analysis_t::GenerateLogFrequencyBands()
+{
+    constexpr std::size_t ScaleCount = 320;
+
+    _FrequencyBands.resize(ScaleCount);
+
+    const auto fMin = _State->_LoFrequency;
+    const auto fMax = _State->_HiFrequency;
+
+    size_t i = 0;
+
+    for (frequency_band_t & fb: _FrequencyBands)
+    {
+        const auto t = (double) i / (double) (ScaleCount - 1);
+
+        // Linear to logarithmic spacing.
+        fb.Mid = fMin * std::pow(fMax / fMin, t); // Hz
+
+        // Increase the bandwidth as the frequency rises.
+        const auto Bandwidth = std::max(fb.Mid * 0.15, 1e-9); // Hz
+
+        fb.Lo = std::max(fb.Mid - Bandwidth, MinFrequency); // Hz
+        fb.Hi = std::min(fb.Mid + Bandwidth, MaxFrequency); // Hz
+
+        ::StringCchPrintfW(fb.Label, _countof(fb.Label), L"%.*f Hz", _GraphOptions->_XAxisDecimals, fb.Mid);
+
+        fb.HasDarkBackground = true;
+
+        ++i;
+    }
+}
+
 #pragma endregion
+
+#pragma region Spectrum
+
+void analysis_t::SpectrumProcessing(const audio_chunk & chunk) noexcept
+{
+    const audio_sample * Frames = chunk.get_data();
+    const size_t FrameCount = chunk.get_sample_count(); // get_sample_count() actually returns the number of frames.
+
+    if ((Frames == nullptr) || (FrameCount == 0))
+        return;
+
+    if (_WindowFunction == nullptr)
+        _WindowFunction = window_function_t::Create(_State->_WindowFunction, _State->_WindowParameter, _State->_WindowSkew, _State->_Truncate);
+
+    switch (_State->_TransformMethod)
+    {
+        case TransformMethod::FFT:
+        {
+            if (_FFTAnalyzer == nullptr)
+            {       
+                if (_BrownPucketteKernel == nullptr)
+                    _BrownPucketteKernel = window_function_t::Create(_State->_KernelShape, _State->_KernelShapeParameter, _State->_KernelAsymmetry, _State->_Truncate);
+
+                _FFTAnalyzer = new fft_analyzer_t(_State, _SampleRate, _ChannelCount, _ChannelConfig, _State->_BinCount, *_WindowFunction, *_BrownPucketteKernel);
+            }
+
+            _FFTAnalyzer->AnalyzeSamples(Frames, FrameCount, _GraphOptions->_SelectedChannels, _FrequencyBands);
+            break;
+        }
+
+        case TransformMethod::CQT:
+        {
+            if (_CQTAnalyzer == nullptr)
+                _CQTAnalyzer = new cqt_analyzer_t(_State, _SampleRate, _ChannelCount, _ChannelConfig, *_WindowFunction);
+
+            _CQTAnalyzer->AnalyzeSamples(Frames, FrameCount, _GraphOptions->_SelectedChannels, _FrequencyBands);
+            break;
+        }
+
+        case TransformMethod::SWIFT:
+        {
+            if (_SWIFTAnalyzer == nullptr)
+            {
+                _SWIFTAnalyzer = new swift_analyzer_t(_State, _SampleRate, _ChannelCount, _ChannelConfig);
+
+                _SWIFTAnalyzer->Initialize(_FrequencyBands);
+            }
+
+            _SWIFTAnalyzer->AnalyzeSamples(Frames, FrameCount, _GraphOptions->_SelectedChannels, _FrequencyBands);
+            break;
+        }
+
+        case TransformMethod::AnalogStyle:
+        {
+            if (_AnalogStyleAnalyzer == nullptr)
+            {
+                _AnalogStyleAnalyzer = new analog_style_analyzer_t(_State, _SampleRate, _ChannelCount, _ChannelConfig, *_WindowFunction);
+
+                _AnalogStyleAnalyzer->Initialize(_FrequencyBands);
+            }
+
+            _AnalogStyleAnalyzer->AnalyzeSamples(Frames, FrameCount, _GraphOptions->_SelectedChannels, _FrequencyBands);
+            break;
+        }
+    }
+
+    // Filter the spectrum.
+    if (_State->_WeightingType != WeightingType::None)
+        ApplyAcousticWeighting();
+
+    // Smooth the spectrum.
+    switch (_State->_SmoothingMethod)
+    {
+        default:
+
+        case SmoothingMethod::None:
+        {
+            Normalize();
+            break;
+        }
+
+        case SmoothingMethod::Average:
+        {
+            NormalizeWithAverageSmoothing(_State->_SmoothingFactor);
+            break;
+        }
+
+        case SmoothingMethod::Peak:
+        {
+            NormalizeWithPeakSmoothing(_State->_SmoothingFactor);
+            break;
+        }
+    }
+
+    // From here on frequency_band_t::Value is guaranteed to be in the range [0, 1].
+/*
+{
+    for (auto & fb : _FrequencyBands)
+        fb.Value = 0.;
+
+    _FrequencyBands.front().Value = .5;
+    _FrequencyBands.back() .Value = .5;
+}
+*/
+}
 
 #pragma region Acoustic Weighting
 
@@ -982,7 +1024,7 @@ void analysis_t::MeterProcessing(const audio_chunk & chunk) noexcept
 
         uint32_t ChunkChannels    = chunk.get_channel_config();                         // Mask containing the channels in the audio chunk.
         uint32_t SelectedChannels = _GraphOptions->_SelectedChannels;                   // Mask containing the channels selected by the user for the level measuring.
-        uint32_t BalanceChannels  = ChannelPairs[(size_t) _GraphOptions->_ChannelPair]; // Mask containing the channels selected by the user for the balance measuring.
+        uint32_t PairedChannels   = ChannelPairs[(size_t) _GraphOptions->_ChannelPair]; // Mask containing the channels selected by the user for the balance measuring.
 
         while ((ChunkChannels & SelectedChannels) != 0)
         {
@@ -997,7 +1039,7 @@ void analysis_t::MeterProcessing(const audio_chunk & chunk) noexcept
                     m->Peak = std::max(Value, m->Peak);
                     m->RMSTotal += Value * Value;
 
-                    if ((BalanceChannels & 1) && (j < _countof(BalanceSamples)))
+                    if ((PairedChannels & 1) && (j < _countof(BalanceSamples)))
                         BalanceSamples[j++] = *Sample;
                 }
 
@@ -1006,7 +1048,7 @@ void analysis_t::MeterProcessing(const audio_chunk & chunk) noexcept
 
             ChunkChannels    >>= 1;
             SelectedChannels >>= 1;
-            BalanceChannels  >>= 1;
+            PairedChannels   >>= 1;
         }
 
         _Left  += BalanceSamples[0] * BalanceSamples[0];
@@ -1239,6 +1281,18 @@ void analysis_t::InitializeBitMeasurements(uint32_t measuredChannels) noexcept
         for (auto & m : _BitMeasurements)
             std::fill(m.BitCounts.begin(), m.BitCounts.end(), 0.);
     }
+}
+
+#pragma endregion
+
+#pragma region Stereo Meter
+
+/// <summary>
+/// Process the chunk data for the stereo meter.
+/// </summary>
+void analysis_t::StereoMeterProcessing(const audio_chunk & chunk) noexcept
+{
+    _Chunk.copy(chunk, true);
 }
 
 #pragma endregion

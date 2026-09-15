@@ -42,7 +42,7 @@ public:
     void Resize(FLOAT clientWidth, FLOAT clientHeight) noexcept;
 
     void NewFrame() noexcept;
-    HRESULT Render(ID2D1DeviceContext * deviceContext) noexcept;
+    HRESULT Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwapChain1> swapChain) noexcept;
 
     HRESULT CreateDeviceIndependentResources() noexcept;
     void DeleteDeviceIndependentResources() noexcept;

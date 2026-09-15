@@ -131,7 +131,7 @@ void transform_page_t::InitializeControls() noexcept
 
         w.ResetContent();
 
-        for (const auto & x : { L"Standard", L"Triangular Filter Bank", L"Brown-Puckette CQT" })
+        for (const auto & x : { L"Standard", L"Triangular Filter Bank", L"Brown-Puckette CQT", L"Gaussian Filter" })
             w.AddString(x);
 
         w.SetCurSel((int) _State->_MappingMethod);
@@ -264,7 +264,7 @@ void transform_page_t::UpdateControls() noexcept
 
         // FFT
         {
-            const bool IsStandard = IsFFT && (_State->_MappingMethod == CoefficientMapping::Standard);
+            const bool IsStandard = IsFFT && ((_State->_MappingMethod == CoefficientMapping::Standard) || (_State->_MappingMethod == CoefficientMapping::GaussianFilter));
 
             for (const auto & Iter : { IDC_NUM_BINS, IDC_AGGREGATION_METHOD, IDC_SMOOTH_LOWER_FREQUENCIES, IDC_SMOOTH_GAIN_TRANSITION, IDC_KERNEL_SIZE })
                 GetDlgItem(Iter).EnableWindow(IsStandard);

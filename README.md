@@ -98,7 +98,7 @@ To create the component first build the x86 configuration and next the x64 confi
 
 vNext, 2026-xx-xx
 
--
+- Fixed: A 3-year old bug in the non-radix 2 FFT.
 
 You can read the full history [here](docs/History.md).
 

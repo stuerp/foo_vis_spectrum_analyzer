@@ -89,7 +89,7 @@ private:
     /// </summary>
     inline double ScaleLinear(double value) const noexcept
     {
-        return msc::Map(::pow(std::abs(value), _Exponent), _RootMin, _RootMax, 0., 1.);
+        return msc::Map(std::pow(std::abs(value), _Exponent), _RootMin, _RootMax, 0., 1.);
     }
 
 private:

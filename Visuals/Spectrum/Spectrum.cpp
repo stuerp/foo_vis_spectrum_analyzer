@@ -26,7 +26,7 @@ spectrum_t::~spectrum_t()
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void spectrum_t::Initialize(state_t * state, graph_options_t * options, const analysis_t * analysis, bool isFirst, bool isLast) noexcept
+void spectrum_t::Initialize(state_t * state, graph_options_t * options, const analysis_t * analysis, bool isFirst, bool isLast, CComPtr<ID3D11Device> d3dDevice, CComPtr<ID3D11DeviceContext> d3dDeviceContext) noexcept
 {
     _State        = state;
     _GraphOptions = options;
@@ -58,7 +58,7 @@ void spectrum_t::Move(const D2D1_RECT_F & rect) noexcept
 /// </summary>
 void spectrum_t::Resize() noexcept
 {
-    if (!_IsResized ||(_Size.width == 0.f) || (_Size.height == 0.f))
+    if (!_ForceElementToResize ||(_Size.width == 0.f) || (_Size.height == 0.f))
         return;
 
     const FLOAT xt = ((_GraphOptions->_XAxisMode != XAxisMode::None) && _GraphOptions->_XAxisTop)    ? _XAxis.GetTextHeight() : 0.f;
@@ -73,13 +73,13 @@ void spectrum_t::Resize() noexcept
     _ClientRect = { _Rect.left + yl + PaddingX, _Rect.top + xt + PaddingY, _Rect.right - yr - PaddingX, _Rect.bottom - xb - PaddingY };
     _ClientSize = { _ClientRect.right - _ClientRect.left, _ClientRect.bottom - _ClientRect.top };
 
-    _IsResized = false;
+    _ForceElementToResize = false;
 }
 
 /// <summary>
 /// Renders this instance to the specified render target.
 /// </summary>
-void spectrum_t::Render(ID2D1DeviceContext * deviceContext) noexcept
+void spectrum_t::Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwapChain1> swapChain) noexcept
 {
     HRESULT hr = CreateDeviceSpecificResources(deviceContext);
 
@@ -93,8 +93,8 @@ void spectrum_t::Render(ID2D1DeviceContext * deviceContext) noexcept
         {
             if (_IsFirst)
             {
-                _XAxis.Render(deviceContext);
-                _YAxis.Render(deviceContext);
+                _XAxis.Render(deviceContext, swapChain);
+                _YAxis.Render(deviceContext, swapChain);
             }
 
             SetTransform(deviceContext, _ClientRect);
@@ -141,6 +141,7 @@ void spectrum_t::Render(ID2D1DeviceContext * deviceContext) noexcept
         case VisualizationType::LevelMeter:
         case VisualizationType::Oscilloscope:
         case VisualizationType::BitMeter:
+        case VisualizationType::StereoMeter:
 
         case VisualizationType::Tester:
 

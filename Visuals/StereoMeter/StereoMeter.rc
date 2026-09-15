@@ -1,0 +1,7 @@
+
+/** StereoMeter.rc (2026.09.14) P. Stuer - Stereo Meter resources **/
+
+#include "StereoMeterResources.h"
+
+IDR_SHADER_SCOPE        rcdata "Shaders/Scope.hlsl"
+IDR_SHADER_FULLSCREEN   rcdata "Shaders/Fullscreen.hlsl"

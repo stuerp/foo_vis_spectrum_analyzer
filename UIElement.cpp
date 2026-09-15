@@ -559,7 +559,7 @@ void uielement_t::UpdateState(ConfigurationChanges configurationChanges) noexcep
                         const bool IsFirst = !OverlapGraphs || (OverlapGraphs && (i == 0));
                         const bool IsLast  = !OverlapGraphs || (OverlapGraphs && (i == _RenderState._GraphOptions.size() - 1));
 
-                        Graph->Initialize(&_RenderState, &GraphOptions, IsFirst, IsLast);
+                        Graph->Initialize(&_RenderState, &GraphOptions, IsFirst, IsLast, _D3DDevice, _D3DDeviceContext, _SwapChain);
 
                         _Grid.push_back(Graph);
                         ++i;

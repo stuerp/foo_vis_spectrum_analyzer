@@ -1,5 +1,5 @@
 
-/** $VER: VisualizationPage.cpp (2026.09.08) P. Stuer - Implements a configuration dialog page. **/
+/** $VER: VisualizationPage.cpp (2026.09.14) P. Stuer - Implements a configuration dialog page. **/
 
 #include "pch.h"
 
@@ -75,7 +75,7 @@ void visualization_page_t::InitializeControls() noexcept
     {
         const WCHAR * Names[] =
         {
-            L"Bars", L"Curve", L"Spectrogram", L"Peak/RMS Meter", L"Balance/Correlation Meter", L"Radial Bars", L"Radial Curve", L"Oscilloscope", L"Bit Meter",
+            L"Bars", L"Curve", L"Spectrogram", L"Peak/RMS Meter", L"Balance/Correlation Meter", L"Radial Bars", L"Radial Curve", L"Oscilloscope", L"Bit Meter", L"Stereo Meter",
         #ifdef _DEBUG
             L"Tester"
         #endif

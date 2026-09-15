@@ -1,5 +1,5 @@
 
-/** $VER: Graph.cpp (2026.08.31) P. Stuer - Implements a graph on which the visualizations are rendered. **/
+/** $VER: Graph.cpp (2026.09.14) P. Stuer - Implements a graph on which the visualizations are rendered. **/
 
 #include "pch.h"
 
@@ -17,6 +17,7 @@
 #include "OscilloscopeXY.h"
 
 #include "BitMeter.h"
+#include "StereoMeter.h"
 
 #include "Tester.h"
 
@@ -39,7 +40,7 @@ graph_t::~graph_t() noexcept
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void graph_t::Initialize(state_t * state, graph_options_t * graphOptions, bool isFirst, bool isLast) noexcept
+void graph_t::Initialize(state_t * state, graph_options_t * graphOptions, bool isFirst, bool isLast, CComPtr<ID3D11Device> d3dDevice, CComPtr<ID3D11DeviceContext> d3dDeviceContext, CComPtr<IDXGISwapChain1> swapChain) noexcept
 {
     _State = state;
     _GraphOptions = graphOptions;
@@ -86,12 +87,16 @@ void graph_t::Initialize(state_t * state, graph_options_t * graphOptions, bool i
             _Visualization = std::make_unique<bit_meter_t>();
             break;
 
+        case VisualizationType::StereoMeter:
+            _Visualization = std::make_unique<stereo_meter_t>();
+            break;
+
         case VisualizationType::Tester:
             _Visualization = std::make_unique<tester_t>();
             break;
     }
 
-    _Visualization->Initialize(state, graphOptions, &_Analysis, _IsFirst, _IsLast);
+    _Visualization->Initialize(state, graphOptions, &_Analysis, _IsFirst, _IsLast, d3dDevice, d3dDeviceContext);
 }
 
 /// <summary>
@@ -123,7 +128,7 @@ void graph_t::Process(const audio_chunk & chunk) noexcept
 /// <summary>
 /// Renders this instance to the specified render target.
 /// </summary>
-void graph_t::Render(ID2D1DeviceContext * deviceContext, artwork_t & artwork) noexcept
+void graph_t::Render(ID2D1DeviceContext * deviceContext, artwork_t & artwork, CComPtr<IDXGISwapChain1> swapChain) noexcept
 {
     if (_State->_RecreateStyles)
         DeleteDeviceSpecificResources();
@@ -134,7 +139,7 @@ void graph_t::Render(ID2D1DeviceContext * deviceContext, artwork_t & artwork) no
         return;
 
     RenderBackground(deviceContext, artwork);
-    RenderForeground(deviceContext);
+    RenderForeground(deviceContext, swapChain);
 }
 
 /// <summary>
@@ -249,9 +254,9 @@ void graph_t::RenderBackground(ID2D1DeviceContext * deviceContext, artwork_t & a
 /// <summary>
 /// Renders the foreground.
 /// </summary>
-void graph_t::RenderForeground(ID2D1DeviceContext * deviceContext) noexcept
+void graph_t::RenderForeground(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwapChain1> swapChain) noexcept
 {
-    _Visualization->Render(deviceContext);
+    _Visualization->Render(deviceContext, swapChain);
 
     if ((_State->_VisualizationType == VisualizationType::PeakMeter) || (_State->_VisualizationType == VisualizationType::LevelMeter))
         return;

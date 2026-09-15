@@ -1,5 +1,5 @@
 
-/** $VER: Analysis.h (2026.09.09) P. Stuer **/
+/** $VER: Analysis.h (2026.09.14) P. Stuer **/
 
 #pragma once
 
@@ -117,6 +117,7 @@ private:
     void GenerateOctaveFrequencyBands();
     void GenerateAveePlayerFrequencyBands();
     void GenerateMelFrequencyBands();
+    void GenerateLogFrequencyBands();
 
     void ApplyAcousticWeighting() noexcept;
 
@@ -152,6 +153,9 @@ private:
     {
         return msc::Map(level, -1., 1., 0., 1.);
     }
+
+    // Stereo Meter
+    void StereoMeterProcessing(const audio_chunk & chunk) noexcept;
 
     double SmoothValue(double value, double smoothedValue) const noexcept
     {

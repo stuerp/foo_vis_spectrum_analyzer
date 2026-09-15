@@ -1,5 +1,5 @@
 
-/** $VER: Constants.h (2026.09.09) P. Stuer **/
+/** $VER: Constants.h (2026.09.14) P. Stuer **/
 
 #pragma once
 
@@ -16,6 +16,7 @@ enum class VisualizationType
     RadialCurve = 6,
     Oscilloscope = 7,
     BitMeter = 8,
+    StereoMeter = 9,
 
     Tester = 63,
 
@@ -193,9 +194,10 @@ enum class CoefficientMapping
     Standard = 0,
     TriangularFilterBank = 1,
     BrownPuckette = 2,
+    GaussianFilter = 3,
 
     Min = Standard,
-    Max = BrownPuckette,
+    Max = GaussianFilter,
 };
 
 enum class AggregationMethod
@@ -517,6 +519,7 @@ enum class VisualizationTypes : uint64_t
     RadialCurve     = 1 << (int) VisualizationType::RadialCurve,
     Oscilloscope    = 1 << (int) VisualizationType::Oscilloscope,
     BitMeter        = 1 << (int) VisualizationType::BitMeter,
+    StereoMeter     = 1 << (int) VisualizationType::StereoMeter,
 
     All = ~0ull
 };

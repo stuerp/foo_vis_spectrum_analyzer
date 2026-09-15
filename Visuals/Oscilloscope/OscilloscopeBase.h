@@ -21,7 +21,7 @@ public:
 
     // element_t
     virtual void Move(const D2D1_RECT_F & rect) noexcept = 0;
-    virtual void Render(ID2D1DeviceContext * deviceContext) noexcept = 0;
+    virtual void Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwapChain1> swapChain) noexcept = 0;
     virtual void Reset() noexcept = 0;
 
     virtual void Resize() noexcept;

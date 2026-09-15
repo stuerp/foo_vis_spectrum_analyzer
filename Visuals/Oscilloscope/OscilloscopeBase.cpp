@@ -29,7 +29,7 @@ oscilloscope_base_t::~oscilloscope_base_t() noexcept
 /// </summary>
 void oscilloscope_base_t::Resize() noexcept
 {
-    if (!_IsResized || (GetWidth() == 0.f) || (GetHeight() == 0.f))
+    if (!_ForceElementToResize || (GetWidth() == 0.f) || (GetHeight() == 0.f))
         return;
 
     // Release resources that are size dependent.
@@ -37,7 +37,7 @@ void oscilloscope_base_t::Resize() noexcept
     _BackBuffer.Release();
     _FrontBuffer.Release();
 
-    _IsResized = false;
+    _ForceElementToResize = false;
 }
 
 /// <summary>

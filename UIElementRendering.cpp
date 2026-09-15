@@ -250,21 +250,23 @@ void uielement_t::Render() noexcept
     if (!SUCCEEDED(hr))
         return;
 
-    _DeviceContext->BeginDraw();
+    {
+        _DeviceContext->BeginDraw();
 
-    _DeviceContext->Clear(); // Required for alpha transparency. Do this once for all graphs. A graph can overlay a background color with a semi-transparent style.
+        _DeviceContext->Clear(); // Required for alpha transparency. Do this once for all graphs. A graph can overlay a background color with a semi-transparent style.
 
-    for (auto & Item : _Grid)
-        Item->Render(_DeviceContext, _Artwork);
+        for (auto & Item : _Grid)
+            Item->Render(_DeviceContext, _Artwork, _SwapChain);
 
-    if (_UIState._ShowFrameCounter)
-        _FrameCounter.Render(_DeviceContext);
+        if (_UIState._ShowFrameCounter)
+            _FrameCounter.Render(_DeviceContext, _SwapChain);
 
-#ifdef _DEBUG
-    RenderDebug();
-#endif
+    #ifdef _DEBUG
+        RenderDebug();
+    #endif
 
-    hr = _DeviceContext->EndDraw();
+        hr = _DeviceContext->EndDraw();
+    }
 
     // Present the swap chain immediately.
     if (SUCCEEDED(hr))
@@ -442,22 +444,22 @@ HRESULT uielement_t::CreateDeviceSpecificResources() noexcept
 
         // Set up DirectComposition.
         {
-            hr = _DCompositionDevice->CreateTargetForHwnd(m_hWnd, TRUE, &_Target);
+            hr = _DCompositionDevice->CreateTargetForHwnd(m_hWnd, TRUE, &_CompositionTarget);
 
             if (!SUCCEEDED(hr))
                 return hr;
 
-            hr = _DCompositionDevice->CreateVisual(&_Visual);
+            hr = _DCompositionDevice->CreateVisual(&_CompositionVisual);
 
             if (!SUCCEEDED(hr))
                 return hr;
 
-            hr = _Visual->SetContent(_SwapChain);
+            hr = _CompositionVisual->SetContent(_SwapChain);
 
             if (!SUCCEEDED(hr))
                 return hr;
 
-            hr = _Target->SetRoot(_Visual);
+            hr = _CompositionTarget->SetRoot(_CompositionVisual);
 
             if (!SUCCEEDED(hr))
                 return hr;
@@ -530,8 +532,8 @@ void uielement_t::DeleteDeviceSpecificResources() noexcept
     _FrameCounter.DeleteDeviceSpecificResources();
 
     _BackBuffer.Release();
-    _Visual.Release();
-    _Target.Release();
+    _CompositionVisual.Release();
+    _CompositionTarget.Release();
 
     _SwapChain.Release();
     _DeviceContext.Release();
@@ -543,38 +545,43 @@ void uielement_t::DeleteDeviceSpecificResources() noexcept
 /// </summary>
 HRESULT uielement_t::CreateBackBuffer() noexcept
 {
-    CComPtr<IDXGISurface> Surface;
+    HRESULT hr = E_FAIL;
 
-    // Get a surface from the swap chain.
-    HRESULT hr = _SwapChain->GetBuffer(0, IID_PPV_ARGS(&Surface));
-
-    if (FAILED(hr))
-        return hr;
-
-    // Create a bitmap pointing to the surface.
-    const D2D1_BITMAP_PROPERTIES1 Properties = D2D1::BitmapProperties1
-    (
-        D2D1_BITMAP_OPTIONS_TARGET | D2D1_BITMAP_OPTIONS_CANNOT_DRAW,
-        D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED), // Required for alpha transparency. Otherwise use D2D1_ALPHA_MODE_IGNORE.
-        (FLOAT) _DPI, (FLOAT) _DPI
-    );
-
-    hr = _DeviceContext->CreateBitmapFromDxgiSurface(Surface, &Properties, &_BackBuffer);
-
-    if (FAILED(hr))
-        return hr;
-
-    Surface.Release();
-
-    // Update the DirectComposition visual.
-    if (_Visual && _Target)
     {
-        hr = _Visual->SetContent(_SwapChain);
+        // Get the DXGI backbuffer from the swap chain.
+        CComPtr<IDXGISurface> Surface;
+
+        hr = _SwapChain->GetBuffer(0, IID_PPV_ARGS(&Surface));
 
         if (FAILED(hr))
             return hr;
 
-        hr = _Target->SetRoot(_Visual);
+        // Create a bitmap pointing to the surface.
+        const D2D1_BITMAP_PROPERTIES1 Properties = D2D1::BitmapProperties1
+        (
+            D2D1_BITMAP_OPTIONS_TARGET | D2D1_BITMAP_OPTIONS_CANNOT_DRAW,
+            D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED), // Required for alpha transparency. Otherwise use D2D1_ALPHA_MODE_IGNORE.
+            (FLOAT) _DPI, (FLOAT) _DPI
+        );
+
+        // Create the Direct2D backbuffer.
+        hr = _DeviceContext->CreateBitmapFromDxgiSurface(Surface, &Properties, &_BackBuffer);
+
+        if (FAILED(hr))
+            return hr;
+
+        Surface.Release();
+    }
+
+    // Update the DirectComposition visual.
+    if (_CompositionVisual && _CompositionTarget)
+    {
+        hr = _CompositionVisual->SetContent(_SwapChain);
+
+        if (FAILED(hr))
+            return hr;
+
+        hr = _CompositionTarget->SetRoot(_CompositionVisual);
 
         if (FAILED(hr))
             return hr;

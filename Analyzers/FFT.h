@@ -46,7 +46,7 @@ public:
 
         try
         {
-            Fft::transform(freqData, _Exp, false);
+            Fft::transform(freqData, false, _Trig);
         }
         catch (std::exception &)
         {
@@ -58,6 +58,5 @@ public:
 
 private:
     size_t _FFTSize;
-
-    std::vector<std::complex<double>> _Exp; // Trigonometric table
+    Fft::trig_t _Trig;
 };

@@ -1,5 +1,5 @@
 
-/** $VER: FFTAnalyzer.h (2026.09.02) P. Stuer **/
+/** $VER: FFTAnalyzer.h (2026.09.13) P. Stuer **/
 
 #pragma once
 
@@ -44,10 +44,11 @@ private:
     void MapCoefficients(frequency_bands_t & freqBands) noexcept;
     void MapCoefficientsUsingTFB(frequency_bands_t & freqBands) const noexcept;
     void MapCoefficientsUsingBP(frequency_bands_t & freqBands) const noexcept;
+    void MapCoefficientsUsingGaussianFilter(frequency_bands_t & freqBands) const noexcept;
 
     double Interpolate(const std::vector<std::complex<double>> & fftCoeffs, double value, int kernelSize) const noexcept;
 
-    static double Median(std::vector<double> & data) noexcept;
+//  static double Median(std::vector<double> & data) noexcept;
 
     /// <summary>
     /// Gets the current FFT size.
@@ -62,7 +63,7 @@ private:
     /// </summary>
     size_t GetFFTIndex(double frequency) const noexcept
     {
-        return (size_t)(frequency / _NyquistFrequency * ((double) GetFFTSize() / 2.));
+        return (size_t) (frequency / _NyquistFrequency * ((double) _FFTSize / 2.));
     }
 
     /// <summary>
@@ -70,7 +71,7 @@ private:
     /// </summary>
     double GetFrequency(int index) const noexcept
     {
-        return ((double) index * _NyquistFrequency) / ((double) GetFFTSize() / 2.);
+        return ((double) index * _NyquistFrequency) / ((double) _FFTSize / 2.);
     }
 
     /// <summary>
@@ -84,9 +85,9 @@ private:
     /// <summary>
     /// Gets the frequency corresponding to the specified coefficient index.
     /// </summary>
-    double FFTIndexToHz(size_t index, size_t bufferSize) const noexcept
+    double BinIndexToHz(size_t index, size_t bufferSize) const noexcept
     {
-        return (double)((size_t)(index * _SampleRate) / bufferSize);
+        return (double) ((size_t) (index * _SampleRate) / bufferSize);
     }
 
 private:

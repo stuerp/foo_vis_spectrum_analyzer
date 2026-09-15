@@ -33,7 +33,7 @@ spectrogram_t::~spectrogram_t()
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void spectrogram_t::Initialize(state_t * state, graph_options_t * graphOptions, const analysis_t * analysis, bool isFirst, bool isLast) noexcept
+void spectrogram_t::Initialize(state_t * state, graph_options_t * graphOptions, const analysis_t * analysis, bool isFirst, bool isLast, CComPtr<ID3D11Device> d3dDevice, CComPtr<ID3D11DeviceContext> d3dDeviceContext) noexcept
 {
     _State = state;
     _GraphOptions = graphOptions;
@@ -65,7 +65,7 @@ void spectrogram_t::Move(const D2D1_RECT_F & rect) noexcept
 /// </summary>
 void spectrogram_t::Resize() noexcept
 {
-    if (!_IsResized || (_Size.width == 0.f) || (_Size.height == 0.f))
+    if (!_ForceElementToResize || (_Size.width == 0.f) || (_Size.height == 0.f))
         return;
 
     // Resize the legend bitmap.
@@ -305,13 +305,13 @@ void spectrogram_t::Resize() noexcept
         }
     }
 
-    _IsResized = false;
+    _ForceElementToResize = false;
 }
 
 /// <summary>
 /// Renders the spectrum analysis as a spectrogram.
 /// </summary>
-void spectrogram_t::Render(ID2D1DeviceContext * deviceContext) noexcept
+void spectrogram_t::Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwapChain1> swapChain) noexcept
 {
     HRESULT hr = CreateDeviceSpecificResources(deviceContext);
 

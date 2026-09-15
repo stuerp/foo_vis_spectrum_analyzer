@@ -14,12 +14,12 @@
 class element_t
 {
 public:
-    element_t() : _State(), _GraphOptions(), _Rect(), _Size(), _ScaleFactor(), _IsResized(true) {}
+    element_t() : _State(), _GraphOptions(), _Rect(), _Size(), _ScaleFactor(), _ForceElementToResize(true) {}
 
     virtual ~element_t() noexcept { }
 
     virtual void Move(const D2D1_RECT_F & rect) noexcept { }
-    virtual void Render(ID2D1DeviceContext * deviceContext) noexcept { }
+    virtual void Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwapChain1> swapChain) noexcept { }
     virtual void Reset() noexcept { }
     virtual void Release() noexcept { }
 
@@ -34,7 +34,7 @@ public:
         _Size = { std::abs(rect.right - rect.left), std::abs(rect.bottom - rect.top) };
         _ScaleFactor = std::min(_Size.width, _Size.height)  / 2.f; // For oscilloscope visualization.
 
-        _IsResized = true;
+        _ForceElementToResize = true;
     }
 
     virtual FLOAT GetWidth() const noexcept
@@ -97,5 +97,5 @@ protected:
     D2D1_SIZE_F _Size;
     FLOAT _ScaleFactor;
 
-    bool _IsResized;
+    bool _ForceElementToResize;
 };

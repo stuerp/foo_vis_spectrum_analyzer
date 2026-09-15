@@ -34,7 +34,7 @@ oscilloscope_t::~oscilloscope_t() noexcept
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void oscilloscope_t::Initialize(state_t * state, graph_options_t * graphOptions, const analysis_t * analysis, bool isFirst, bool isLast) noexcept
+void oscilloscope_t::Initialize(state_t * state, graph_options_t * graphOptions, const analysis_t * analysis, bool isFirst, bool isLast, CComPtr<ID3D11Device> d3dDevice, CComPtr<ID3D11DeviceContext> d3dDeviceContext) noexcept
 {
     _State = state;
     _GraphOptions = graphOptions;
@@ -84,10 +84,10 @@ void oscilloscope_t::Move(const D2D1_RECT_F & rect) noexcept
 /// </summary>
 void oscilloscope_t::Reset() noexcept
 {
-    if (!_IsResized || (GetWidth() == 0.f) || (GetHeight() == 0.f))
+    if (!_ForceElementToResize || (GetWidth() == 0.f) || (GetHeight() == 0.f))
         return;
 
-    _IsResized = true;
+    _ForceElementToResize = true;
 }
 
 /// <summary>
@@ -95,7 +95,7 @@ void oscilloscope_t::Reset() noexcept
 /// </summary>
 void oscilloscope_t::Resize() noexcept
 {
-    if (!_IsResized || (GetWidth() == 0.f) || (GetHeight() == 0.f))
+    if (!_ForceElementToResize || (GetWidth() == 0.f) || (GetHeight() == 0.f))
         return;
 
     oscilloscope_base_t::Resize();
@@ -106,13 +106,13 @@ void oscilloscope_t::Resize() noexcept
     _AxesCommandList.Release();
     _AxesCount = 0;
 
-    _IsResized = false;
+    _ForceElementToResize = false;
 }
 
 /// <summary>
 /// Renders this instance.
 /// </summary>
-void oscilloscope_t::Render(ID2D1DeviceContext * deviceContext) noexcept
+void oscilloscope_t::Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwapChain1> swapChain) noexcept
 {
     const size_t FrameCount     = _Analysis->_Chunk.get_sample_count();     // get_sample_count() actually returns the number of frames.
     const uint32_t ChannelCount = _Analysis->_Chunk.get_channel_count();

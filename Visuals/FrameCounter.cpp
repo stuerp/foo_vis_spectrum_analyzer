@@ -40,7 +40,7 @@ void frame_counter_t::Resize(FLOAT clientWidth, FLOAT clientHeight) noexcept
 /// <summary>
 /// Renders this instance to the specified render target.
 /// </summary>
-HRESULT frame_counter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
+HRESULT frame_counter_t::Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwapChain1> swapChain) noexcept
 {
     HRESULT hr = CreateDeviceSpecificResources(deviceContext);
 

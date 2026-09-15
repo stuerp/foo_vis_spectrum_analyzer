@@ -28,13 +28,13 @@ public:
 
     // element_t
     void Move(const D2D1_RECT_F & rect) noexcept override final;
-    void Render(ID2D1DeviceContext * deviceContext) noexcept override final { };
+    void Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwapChain1> swapChain) noexcept override final { };
     void Reset() noexcept override final;
     void Release() noexcept override final;
 
-    void Initialize(state_t * state, graph_options_t * graphOptions, bool isFirst, bool isLast) noexcept;
+    void Initialize(state_t * state, graph_options_t * graphOptions, bool isFirst, bool isLast, CComPtr<ID3D11Device> d3dDevice, CComPtr<ID3D11DeviceContext> d3dDeviceContext, CComPtr<IDXGISwapChain1> swapChain) noexcept;
     void Process(const audio_chunk & chunk) noexcept;
-    void Render(ID2D1DeviceContext * deviceContext, artwork_t & artwork) noexcept;
+    void Render(ID2D1DeviceContext * deviceContext, artwork_t & artwork, CComPtr<IDXGISwapChain1> swapChain) noexcept;
 
     void InitToolInfo(HWND hParent, TTTOOLINFOW & ti) const noexcept;
 
@@ -67,7 +67,7 @@ private:
     void DeleteDeviceSpecificResources() noexcept;
 
     void RenderBackground(ID2D1DeviceContext * deviceContext, artwork_t & artwork) noexcept;
-    void RenderForeground(ID2D1DeviceContext * deviceContext) noexcept;
+    void RenderForeground(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwapChain1> swapChain) noexcept;
     void RenderDescription(ID2D1DeviceContext * deviceContext) noexcept;
 
 public:

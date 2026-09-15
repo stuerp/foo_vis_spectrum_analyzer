@@ -209,12 +209,17 @@ private:
     // Device-dependent resources.
     CComPtr<ID3D11Device> _D3DDevice;
     CComPtr<ID3D11DeviceContext> _D3DDeviceContext;
+
     CComPtr<IDCompositionDevice> _DCompositionDevice;
+
     CComPtr<IDXGISwapChain1> _SwapChain;
+
     CComPtr<ID2D1Device> _D2DDevice;
     CComPtr<ID2D1DeviceContext> _DeviceContext;
-    CComPtr<IDCompositionVisual>  _Visual;
-    CComPtr<IDCompositionTarget>  _Target;
+
+    CComPtr<IDCompositionVisual>  _CompositionVisual;
+    CComPtr<IDCompositionTarget>  _CompositionTarget;
+
     CComPtr<ID2D1Bitmap1> _BackBuffer;
 
 #ifdef _DEBUG
@@ -222,7 +227,7 @@ private:
 #endif
 
     visualisation_stream_v2::ptr _VisualisationStream;
-    bool _IsFrozen;                 // True if the component should stop rendering the spectrum.
+    bool _IsFrozen;                 // True if the component should stop rendering.
 
     frame_counter_t _FrameCounter;
     grid_t _Grid;
