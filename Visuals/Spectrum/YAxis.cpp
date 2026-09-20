@@ -12,7 +12,7 @@
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void y_axis_t::Initialize(state_t * state, graph_options_t * graphOptions, const analysis_t * analysis, bool isFirst, bool isLast, CComPtr<ID3D11Device> d3dDevice, CComPtr<ID3D11DeviceContext> d3dDeviceContext) noexcept
+void y_axis_t::Configure(state_t * state, graph_options_t * graphOptions, const analysis_t * analysis, bool isFirst, bool isLast, CComPtr<ID3D11Device> d3dDevice, CComPtr<ID3D11DeviceContext> d3dDeviceContext) noexcept
 {
     _State = state;
     _GraphOptions = graphOptions;
@@ -53,7 +53,7 @@ void y_axis_t::Move(const D2D1_RECT_F & rect) noexcept
 /// </summary>
 void y_axis_t::Resize() noexcept
 {
-    if (!_ForceElementToResize || (_Size.width == 0.f) || (_Size.height == 0.f))
+    if (!_ForceElementToResize || (_Size.width <= 0.f) || (_Size.height <= 0.f))
         return;
 
     const FLOAT xl = _Rect.left  + (_GraphOptions->_YAxisLeft  ? _TextStyle._Width : 0.f); // Left axis

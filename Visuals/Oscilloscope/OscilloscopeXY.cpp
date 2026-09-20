@@ -1,5 +1,5 @@
 
-/** $VER: OscilloscopeXY.cpp (2026.08.26) P. Stuer - Implements an oscilloscope in X-Y mode. **/
+/** $VER: OscilloscopeXY.cpp (2026.09.20) P. Stuer - Implements an oscilloscope in X-Y mode. **/
 
 #include <pch.h>
 
@@ -28,7 +28,7 @@ oscilloscope_xy_t::~oscilloscope_xy_t() noexcept
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void oscilloscope_xy_t::Initialize(state_t * state, graph_options_t * graphOptions, const analysis_t * analysis, bool isFirst, bool isLast, CComPtr<ID3D11Device> d3dDevice, CComPtr<ID3D11DeviceContext> d3dDeviceContext) noexcept
+void oscilloscope_xy_t::Configure(state_t * state, graph_options_t * graphOptions, const analysis_t * analysis, bool isFirst, bool isLast, CComPtr<ID3D11Device> d3dDevice, CComPtr<ID3D11DeviceContext> d3dDeviceContext) noexcept
 {
     _State = state;
     _GraphOptions = graphOptions;
@@ -52,7 +52,7 @@ void oscilloscope_xy_t::Move(const D2D1_RECT_F & rect) noexcept
 /// </summary>
 void oscilloscope_xy_t::Reset() noexcept
 {
-    if (!_ForceElementToResize || (GetWidth() == 0.f) || (GetHeight() == 0.f))
+    if (_ForceElementToResize || (_Size.width <= 0.f) || (_Size.height <= 0.f))
         return;
 
     _ForceElementToResize = true;
@@ -63,7 +63,7 @@ void oscilloscope_xy_t::Reset() noexcept
 /// </summary>
 void oscilloscope_xy_t::Resize() noexcept
 {
-    if (!_ForceElementToResize || (GetWidth() == 0.f) || (GetHeight() == 0.f))
+    if (!_ForceElementToResize || (_Size.width <= 0.f) || (_Size.height <= 0.f))
         return;
 
     oscilloscope_base_t::Resize();
@@ -92,14 +92,14 @@ void oscilloscope_xy_t::Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGI
         const auto Scale     = D2D1::Matrix3x2F::Scale(D2D1::SizeF(_ScaleFactor, _ScaleFactor));
         const auto Rotate    = D2D1::Matrix3x2F::Rotation(_State->_Rotation, D2D1::Point2F(0.f, 0.f));
 
-        size_t FrameCount = _Analysis->_Chunk.get_sample_count();                                           // get_sample_count() actually returns the number of frames.
+        size_t FrameCount = _Analysis->_Chunk.get_sample_count();                                               // get_sample_count() actually returns the number of frames.
 
-        const uint32_t ChannelCount      = _Analysis->_Chunk.get_channel_count();
-        const uint32_t AvailableChannels = _Analysis->_Chunk.get_channel_config();                          // Mask containing the channels in the audio chunk.
-        const uint32_t SelectedChannels  = _GraphOptions->_SelectedChannels;                                // Mask containing the channels selected by the user.
-        const uint32_t PairedChannels    = analysis_t::ChannelPairs[(size_t) _GraphOptions->_ChannelPair];  // Mask containing the channels selected by the user as a channel pair.
+        const uint32_t ChannelCount         = _Analysis->_Chunk.get_channel_count();
+        const uint32_t AvailableChannelMask = _Analysis->_Chunk.get_channel_config();                           // Mask containing the channels in the audio chunk.
+        const uint32_t ActiveChannelMask    = _GraphOptions->_ActiveChannelMask;                                // Mask containing the channels selected by the user.
+        const uint32_t PairedChannelMask    = analysis_t::ChannelPairs[(size_t) _GraphOptions->_ChannelPair];   // Mask containing the channels selected by the user as a channel pair.
 
-        const uint32_t ChannelMask = AvailableChannels & SelectedChannels & PairedChannels;
+        const uint32_t ChannelMask = AvailableChannelMask & ActiveChannelMask & PairedChannelMask;
 
         const audio_sample * Frames = _Analysis->_Chunk.get_data();
 
@@ -275,7 +275,7 @@ void oscilloscope_xy_t::DeleteDeviceIndependentResources() noexcept
 /// </summary>
 HRESULT oscilloscope_xy_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept
 {
-    _ScaleFactor = std::min((_Size.width - 1.f) / 2.f, (_Size.height - 1.f) / 2.f);
+//  _ScaleFactor = std::min((_Size.width - 1.f) / 2.f, (_Size.height - 1.f) / 2.f);
 
     Resize();
 

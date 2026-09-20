@@ -14,7 +14,7 @@
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void x_axis_t::Initialize(state_t * state, graph_options_t * graphOptions, const analysis_t * analysis, bool isFirst, bool isLast, CComPtr<ID3D11Device> d3dDevice, CComPtr<ID3D11DeviceContext> d3dDeviceContext) noexcept
+void x_axis_t::Configure(state_t * state, graph_options_t * graphOptions, const analysis_t * analysis, bool isFirst, bool isLast, CComPtr<ID3D11Device> d3dDevice, CComPtr<ID3D11DeviceContext> d3dDeviceContext) noexcept
 {
     _State        = state;
     _GraphOptions = graphOptions;
@@ -155,7 +155,7 @@ void x_axis_t::Move(const D2D1_RECT_F & rect) noexcept
 /// </summary>
 void x_axis_t::Resize(bool force) noexcept
 {
-    if (!force && (!_ForceElementToResize || (_Size.width == 0.f) || (_Size.height == 0.f)))
+    if (!force && (!_ForceElementToResize || (_Size.width <= 0.f) || (_Size.height <= 0.f)))
         return;
 
     FLOAT t = _Size.width / (FLOAT) _BandCount;

@@ -1,5 +1,5 @@
 
-/** $VER: StyleManager.cpp (2026.09.12) P. Stuer - Creates and manages the DirectX resources of the styles. **/
+/** $VER: StyleManager.cpp (2026.09.20) P. Stuer - Creates and manages the DirectX resources of the styles. **/
 
 #include "pch.h"
 
@@ -456,7 +456,7 @@ std::unordered_map<VisualElement, style_t> style_manager_t::_DefaultStyles
         style_t
         (
             /* Name                */ L"X-axis Text",
-            /* UsedBy              */ VisualizationTypes::Bars | VisualizationTypes::Curve | VisualizationTypes::Spectrogram | VisualizationTypes::PeakMeter | VisualizationTypes::Oscilloscope | VisualizationTypes::BitMeter,
+            /* UsedBy              */ VisualizationTypes::Bars | VisualizationTypes::Curve | VisualizationTypes::Spectrogram | VisualizationTypes::PeakMeter | VisualizationTypes::Oscilloscope | VisualizationTypes::BitMeter | VisualizationTypes::Goniometer,
             /* Flags               */ style_t::Features::SupportsOpacity | style_t::Features::SupportsFont,
             /* ColorSource         */ ColorSource::Solid,
             /* CustomColor         */ D2D1::ColorF(D2D1::ColorF::White),
@@ -475,7 +475,7 @@ std::unordered_map<VisualElement, style_t> style_manager_t::_DefaultStyles
         style_t
         (
             /* Name                */ L"X-axis Line",
-            /* UsedBy              */ VisualizationTypes::Oscilloscope,
+            /* UsedBy              */ VisualizationTypes::Oscilloscope | VisualizationTypes::Goniometer,
             /* Flags               */ style_t::Features::SupportsOpacity | style_t::Features::SupportsThickness,
             /* ColorSource         */ ColorSource::Solid,
             /* CustomColor         */ D2D1::ColorF(.25f, .25f, .25f, 1.f),
@@ -494,7 +494,7 @@ std::unordered_map<VisualElement, style_t> style_manager_t::_DefaultStyles
         style_t
         (
             /* Name                */ L"Y-axis Text",
-            /* UsedBy              */ VisualizationTypes::Bars | VisualizationTypes::Curve | VisualizationTypes::Spectrogram | VisualizationTypes::PeakMeter | VisualizationTypes::Oscilloscope | VisualizationTypes::BitMeter,
+            /* UsedBy              */ VisualizationTypes::Bars | VisualizationTypes::Curve | VisualizationTypes::Spectrogram | VisualizationTypes::PeakMeter | VisualizationTypes::Oscilloscope | VisualizationTypes::BitMeter | VisualizationTypes::Goniometer,
             /* Flags               */ style_t::Features::SupportsOpacity | style_t::Features::SupportsFont,
             /* ColorSource         */ ColorSource::Solid,
             /* CustomColor         */ D2D1::ColorF(D2D1::ColorF::White),
@@ -513,17 +513,17 @@ std::unordered_map<VisualElement, style_t> style_manager_t::_DefaultStyles
         style_t
         (
             /* Name                */ L"Y-axis Line",
-            /* UsedBy              */ VisualizationTypes::Oscilloscope,
+            /* UsedBy              */ VisualizationTypes::Oscilloscope | VisualizationTypes::Goniometer,
             /* Flags               */ style_t::Features::SupportsOpacity | style_t::Features::SupportsThickness,
             /* ColorSource         */ ColorSource::Solid,
-            D2D1::ColorF(.25f, .25f, .25f, 1.f),
-            0,
-            ColorScheme::Solid,
-            GetBuiltInGradientStops(ColorScheme::Custom),
-            1.f,
-            1.f,
-            L"",
-            0.f
+            /* CustomColor         */ D2D1::ColorF(.25f, .25f, .25f, 1.f),
+            /* ColorIndex          */ 0,
+            /* ColorScheme         */ ColorScheme::Solid,
+            /* CustomGradientStops */ GetBuiltInGradientStops(ColorScheme::Custom),
+            /* Opacity             */ 1.f,
+            /* Thickness           */ 1.f,
+            /* FontName            */ L"Segoe UI",
+            /* FontSize            */ 0.f
         )
     },
 
@@ -901,13 +901,13 @@ std::unordered_map<VisualElement, style_t> style_manager_t::_DefaultStyles
     },
     #pragma endregion
 
-    #pragma region Oscilloscope
+    #pragma region Oscilloscope, Goniometer
     {
         VisualElement::SignalLine,
         style_t
         (
             /* Name                */ L"Signal Line",
-            /* UsedBy              */ VisualizationTypes::Oscilloscope,
+            /* UsedBy              */ VisualizationTypes::Oscilloscope | VisualizationTypes::Goniometer,
             /* Flags               */ style_t::Features::SupportsOpacity | style_t::Features::SupportsThickness,
             /* ColorSource         */ ColorSource::Solid,
             /* CustomColor         */ D2D1::ColorF(D2D1::ColorF::LightGreen),

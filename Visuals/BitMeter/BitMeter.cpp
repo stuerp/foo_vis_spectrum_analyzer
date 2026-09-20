@@ -26,7 +26,7 @@ bit_meter_t::~bit_meter_t() noexcept
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void bit_meter_t::Initialize(state_t * state, graph_options_t * graphOptions, const analysis_t * analysis, bool isFirst, bool isLast, CComPtr<ID3D11Device> d3dDevice, CComPtr<ID3D11DeviceContext> d3dDeviceContext) noexcept
+void bit_meter_t::Configure(state_t * state, graph_options_t * graphOptions, const analysis_t * analysis, bool isFirst, bool isLast, CComPtr<ID3D11Device> d3dDevice, CComPtr<ID3D11DeviceContext> d3dDeviceContext) noexcept
 {
     _State = state;
     _GraphOptions = graphOptions;
@@ -64,7 +64,7 @@ void bit_meter_t::Move(const D2D1_RECT_F & rect) noexcept
 /// </summary>
 void bit_meter_t::Reset() noexcept
 {
-    if (!_ForceElementToResize || (GetWidth() == 0.f) || (GetHeight() == 0.f))
+    if (_ForceElementToResize || (_Size.width <= 0.f) || (_Size.height <= 0.f))
         return;
 
     _ForceElementToResize = true;
@@ -83,7 +83,7 @@ void bit_meter_t::Release() noexcept
 /// </summary>
 void bit_meter_t::Resize() noexcept
 {
-    if (!_ForceElementToResize || (GetWidth() == 0.f) || (GetHeight() == 0.f))
+    if (!_ForceElementToResize || (_Size.width <= 0.f) || (_Size.height <= 0.f))
         return;
 
     _StaticContentCommandList = nullptr;
@@ -179,8 +179,8 @@ void bit_meter_t::Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwapCh
 /// </summary>
 HRESULT bit_meter_t::CreateDeviceSpecificResources(_In_ ID2D1DeviceContext * deviceContext) noexcept
 {
-    if ((_Size.width == 0.f) || _Size.height == 0.f)
-        return E_FAIL;
+    if ((_Size.width <= 0.f) || _Size.height <= 0.f)
+        return E_INVALIDARG;
 
     Resize();
 

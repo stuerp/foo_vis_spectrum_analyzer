@@ -1,5 +1,5 @@
 
-/** $VER: Gradients.cpp (2026.08.23) P. Stuer - Built-in gradients. **/
+/** $VER: Gradients.cpp (2026.09.20) P. Stuer - Built-in gradients. **/
 
 #include "pch.h"
 
@@ -346,6 +346,23 @@ static const gradient_stops_t Cividis =
     { 1.000f, D2D1::ColorF(0.000f, 0.135f, 0.304f) }
 };
 
+// Gold
+static const gradient_stops_t Gold =
+{
+    { 0.f / 3.f, D2D1::ColorF(255.f / 255.f, 204.f / 255.f,   0.f / 255.f) },
+    { 1.f / 3.f, D2D1::ColorF(212.f / 255.f, 175.f / 255.f,  55.f / 255.f) },
+    { 2.f / 3.f, D2D1::ColorF(184.f / 255.f, 134.f / 255.f,  11.f / 255.f) },
+    { 3.f / 3.f, D2D1::ColorF(153.f / 255.f, 101.f / 255.f,  21.f / 255.f) },
+};
+
+// Triband
+static const gradient_stops_t Triband =
+{
+    { 0.f / 2.f, D2D1::ColorF(1.00f,  .12f,  .04f) },
+    { 1.f / 2.f, D2D1::ColorF( .08f, 1.00f,  .25f) },
+    { 2.f / 2.f, D2D1::ColorF( .08f,  .35f, 1.00f) },
+};
+
 static const std::map<ColorScheme, const gradient_stops_t *> ColorMaps
 {
     { ColorScheme::Solid,               &Solid },
@@ -373,6 +390,10 @@ static const std::map<ColorScheme, const gradient_stops_t *> ColorMaps
     { ColorScheme::Inferno,             &Inferno },
     { ColorScheme::Magma,               &Magma },
     { ColorScheme::Cividis,             &Cividis },
+
+    // v0.13.0.0-alpha1
+    { ColorScheme::Gold,                &Gold },
+    { ColorScheme::Triband,             &Triband },
 };
 
 /// <summary>

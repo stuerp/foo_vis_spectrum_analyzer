@@ -99,14 +99,14 @@
 
 /** Axes Groupbox **/
 
-#define X_B09   X_B16
-#define Y_B09   Y_B16 + H_B16 + IY
+#define X_H00   X_B16
+#define Y_H00   Y_B16 + H_B16 + IY
 
     // Checkbox: Left
     #define W_G17    36
     #define H_G17    H_CHB
-    #define X_G17    X_B09 + 5
-    #define Y_G17    Y_B09 + 11
+    #define X_G17    X_H00 + 5
+    #define Y_G17    Y_H00 + 11
 
     // Checkbox: Right
     #define W_G18    36
@@ -126,13 +126,13 @@
     #define X_G16    X_G15 + W_G15 + IX
     #define Y_G16    Y_G15
 
-#define W_B09  170
-#define H_B09   11 + H_G17 + 7
+#define W_H00  170
+#define H_H00   11 + H_G17 + 7
 
 /** X axis Groupbox **/
 
-#define X_B02   X_B09
-#define Y_B02   Y_B09 + H_B09 + IY
+#define X_B02   X_H00
+#define Y_B02   Y_H00 + H_H00 + IY
 
     // Label: Mode
     #define W_A05    66

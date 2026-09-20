@@ -1,5 +1,5 @@
 
-/** $VER: VisualizationPageLayout.h (2026.09.08) P. Stuer - Defines the layout of a configuration dialog page. **/
+/** $VER: VisualizationPageLayout.h (2026.09.20) P. Stuer - Defines the layout of a configuration dialog page. **/
 
 #pragma once
 
@@ -253,17 +253,17 @@
     // Checkbox: Spectrum Bar Metrics
     #define W_C28    90
     #define H_C28    H_CHB
-    #define X_C28    X_C27
-    #define Y_C28    Y_C27 + H_C27 + IY
+    #define X_C28    X_C15 + W_C15 + IX
+    #define Y_C28    Y_C15
 
     // Checkbox: Legend
     #define W_C36    90
     #define H_C36    H_CHB
-    #define X_C36    X_C28
-    #define Y_C36    Y_C28 + H_C28 + IY
+    #define X_C36    X_C27 + W_C27 + IX
+    #define Y_C36    Y_C27
 
 #define W_B08   232
-#define H_B08   11 + H_C15 + IY + H_C27 + IY + H_C28 + IY + H_C36 + 7
+#define H_B08   11 + H_C15 + IY + H_C27 + 7
 
 /** Peak Meter **/
 
@@ -357,7 +357,7 @@
 #define W_B14  W_B12
 #define H_B14  11 + H_C52 + 7
 
-/** Oscilloscope **/
+/** Oscilloscope / Goniometer **/
 
 // Groupbox
 #define X_B18   X_B14
@@ -459,5 +459,17 @@
     #define X_A42    X_A40 + W_A40 + IX
     #define Y_A42    Y_A40
 
+    // Label: Goniometer Mode
+    #define W_A44    58
+    #define H_A44    H_LBL
+    #define X_A44    X_A40
+    #define Y_A44    Y_A40 + H_A40 + IY
+
+    // Combobox: Goniometer Mode
+    #define W_A46    42
+    #define H_A46    H_CBX
+    #define X_A46    X_A44 + W_A44 + IX
+    #define Y_A46    Y_A44
+
 #define W_B18  W_B14
-#define H_B18  11 + H_C56 + IY + H_C79 + IY + H_C68 + IY + H_A40 + IY + 7
+#define H_B18  11 + H_C56 + IY + H_C79 + IY + H_C68 + IY + H_A40 + IY + H_A46 + IY + 7

@@ -1,5 +1,5 @@
 
-/** $VER: VisualizationPage.cpp (2026.09.14) P. Stuer - Implements a configuration dialog page. **/
+/** $VER: VisualizationPage.cpp (2026.09.20) P. Stuer - Implements a configuration dialog page. **/
 
 #include "pch.h"
 
@@ -58,6 +58,8 @@ BOOL visualization_page_t::OnInitDialog(CWindow w, LPARAM lParam) noexcept
         { IDC_DECAY_FACTOR, "Specifies the color fade speed. Lower values cause a faster decay." },
         { IDC_DOWNMIX, "Enable this setting to downmix the input audio of the oscilloscope to mono." },
         { IDC_ZERO_CROSSING, "Enables a zero trigger to synchronize the oscilloscope display to the signal's zero crossings, creating a stable and readable waveform display." },
+
+        { IDC_GONIOMETER_MODE, "Selects the goniometer mode." },
     };
 
     for (const auto & [ID, Text] : Tips)
@@ -75,7 +77,7 @@ void visualization_page_t::InitializeControls() noexcept
     {
         const WCHAR * Names[] =
         {
-            L"Bars", L"Curve", L"Spectrogram", L"Peak/RMS Meter", L"Balance/Correlation Meter", L"Radial Bars", L"Radial Curve", L"Oscilloscope", L"Bit Meter", L"Stereo Meter",
+            L"Bars", L"Curve", L"Spectrogram", L"Peak/RMS Meter", L"Balance/Correlation Meter", L"Radial Bars", L"Radial Curve", L"Oscilloscope", L"Bit Meter", L"Goniometer",
         #ifdef _DEBUG
             L"Tester"
         #endif
@@ -217,6 +219,17 @@ void visualization_page_t::InitializeControls() noexcept
 
         SendDlgItemMessageW(IDC_DOWNMIX,       BM_SETCHECK, _State->_Downmix);
         SendDlgItemMessageW(IDC_ZERO_CROSSING, BM_SETCHECK, _State->_ZeroCrossingTrigger);
+
+        {
+            auto w = (CComboBox) GetDlgItem(IDC_GONIOMETER_MODE);
+
+            w.ResetContent();
+
+            for (const auto & x : { L"Mono", L"RGB", L"Triband" })
+                w.AddString(x);
+
+            w.SetCurSel((int) _State->_GoniometerColorMode);
+        }
     }
 
     UpdateControls();
@@ -237,6 +250,7 @@ void visualization_page_t::UpdateControls() noexcept
     const bool IsLevelMeter   = (_State->_VisualizationType == VisualizationType::LevelMeter);
     const bool IsOscilloscope = (_State->_VisualizationType == VisualizationType::Oscilloscope);
     const bool IsBitMeter     = (_State->_VisualizationType == VisualizationType::BitMeter);
+    const bool IsGoniometer   = (_State->_VisualizationType == VisualizationType::Goniometer);
 
 //  const bool IsTester       = (_State->_VisualizationType == VisualizationType::Tester);
 
@@ -246,59 +260,59 @@ void visualization_page_t::UpdateControls() noexcept
     const bool IsRadial = IsRadialBars || IsRadialCurve;
 
     // Peak Indicators
-    GetDlgItem(IDC_PEAK_MODE).EnableWindow(HasPeaks);
+    GetDlgItem(IDC_PEAK_MODE)               .EnableWindow(HasPeaks);
 
-    GetDlgItem(IDC_HOLD_TIME).EnableWindow(HasPeaks && (_State->_PeakMode != PeakMode::None));
-    GetDlgItem(IDC_FALL_RATE).EnableWindow(HasPeaks && (_State->_PeakMode != PeakMode::None));
+    GetDlgItem(IDC_HOLD_TIME)               .EnableWindow(HasPeaks && (_State->_PeakMode != PeakMode::None));
+    GetDlgItem(IDC_FALL_RATE)               .EnableWindow(HasPeaks && (_State->_PeakMode != PeakMode::None));
 
     // LEDs
-    GetDlgItem(IDC_LED_MODE).EnableWindow(HasLEDs);
+    GetDlgItem(IDC_LED_MODE)                .EnableWindow(HasLEDs);
 
-    GetDlgItem(IDC_LED_SIZE).EnableWindow(HasLEDs && _State->_LEDMode);
-    GetDlgItem(IDC_LED_GAP).EnableWindow(HasLEDs && _State->_LEDMode);
-    GetDlgItem(IDC_LED_INTEGRAL_SIZE).EnableWindow(HasLEDs && _State->_LEDMode);
+    GetDlgItem(IDC_LED_SIZE)                .EnableWindow(HasLEDs && _State->_LEDMode);
+    GetDlgItem(IDC_LED_GAP)                 .EnableWindow(HasLEDs && _State->_LEDMode);
+    GetDlgItem(IDC_LED_INTEGRAL_SIZE)       .EnableWindow(HasLEDs && _State->_LEDMode);
 
     // Radial Bars / Radial Curve
-    GetDlgItem(IDC_INNER_RADIUS).EnableWindow(IsRadial);
-    GetDlgItem(IDC_OUTER_RADIUS).EnableWindow(IsRadial);
-    GetDlgItem(IDC_ANGULAR_VELOCITY).EnableWindow(IsRadial);
+    GetDlgItem(IDC_INNER_RADIUS)            .EnableWindow(IsRadial);
+    GetDlgItem(IDC_OUTER_RADIUS)            .EnableWindow(IsRadial);
+    GetDlgItem(IDC_ANGULAR_VELOCITY)        .EnableWindow(IsRadial);
 
     // Bit Meter
-    GetDlgItem(IDC_BIT_METER_MODE).EnableWindow(IsBitMeter);
-    GetDlgItem(IDC_BITS_PER_INTEGER).EnableWindow(IsBitMeter && (_State->_BitMeterMode == BitMeterMode::Integer));
-    GetDlgItem(IDC_OPACITY_MODE).EnableWindow(IsBitMeter);
+    GetDlgItem(IDC_BIT_METER_MODE)          .EnableWindow(IsBitMeter);
+    GetDlgItem(IDC_BITS_PER_INTEGER)        .EnableWindow(IsBitMeter && (_State->_BitMeterMode == BitMeterMode::Integer));
+    GetDlgItem(IDC_OPACITY_MODE)            .EnableWindow(IsBitMeter);
  
     // Spectrogram
-    GetDlgItem(IDC_SCROLLING_SPECTROGRAM) .EnableWindow(IsSpectrogram);
-    GetDlgItem(IDC_HORIZONTAL_SPECTROGRAM).EnableWindow(IsSpectrogram);
-    GetDlgItem(IDC_SPECTRUM_BAR_METRICS)  .EnableWindow(IsSpectrogram && !_State->_IsHorizontalSpectrogram);
-    GetDlgItem(IDC_SPECTROGRAM_LEGEND)    .EnableWindow(IsSpectrogram);
+    GetDlgItem(IDC_SCROLLING_SPECTROGRAM)   .EnableWindow(IsSpectrogram);
+    GetDlgItem(IDC_HORIZONTAL_SPECTROGRAM)  .EnableWindow(IsSpectrogram);
+    GetDlgItem(IDC_SPECTRUM_BAR_METRICS)    .EnableWindow(IsSpectrogram && !_State->_IsHorizontalSpectrogram);
+    GetDlgItem(IDC_SPECTROGRAM_LEGEND)      .EnableWindow(IsSpectrogram);
 
     // Peak/RMS Meter
-    GetDlgItem(IDC_HORIZONTAL_PEAK_METER).EnableWindow(IsPeakMeter);
-    GetDlgItem(IDC_RMS_PLUS_3).EnableWindow(IsPeakMeter);
-    GetDlgItem(IDC_CENTER_SCALE).EnableWindow(IsPeakMeter);
-    GetDlgItem(IDC_SCALE_LINES).EnableWindow(IsPeakMeter);
+    GetDlgItem(IDC_HORIZONTAL_PEAK_METER)   .EnableWindow(IsPeakMeter);
+    GetDlgItem(IDC_RMS_PLUS_3)              .EnableWindow(IsPeakMeter);
+    GetDlgItem(IDC_CENTER_SCALE)            .EnableWindow(IsPeakMeter);
+    GetDlgItem(IDC_SCALE_LINES)             .EnableWindow(IsPeakMeter);
 
-    GetDlgItem(IDC_RMS_WINDOW).EnableWindow(IsPeakMeter);
-    GetDlgItem(IDC_BAR_GAP).EnableWindow(IsPeakMeter);
-    GetDlgItem(IDC_MAX_BAR_SIZE).EnableWindow(IsPeakMeter);
+    GetDlgItem(IDC_RMS_WINDOW)              .EnableWindow(IsPeakMeter);
+    GetDlgItem(IDC_BAR_GAP)                 .EnableWindow(IsPeakMeter);
+    GetDlgItem(IDC_MAX_BAR_SIZE)            .EnableWindow(IsPeakMeter);
 
     // Balance/Correlation Meter
-    GetDlgItem(IDC_HORIZONTAL_LEVEL_METER).EnableWindow(IsLevelMeter);
+    GetDlgItem(IDC_HORIZONTAL_LEVEL_METER)  .EnableWindow(IsLevelMeter);
 
-    // Oscilloscope
+    // Oscilloscope / Goniometer
     GetDlgItem(IDC_XY_MODE)       .EnableWindow(IsOscilloscope);
 
-    GetDlgItem(IDC_X_GAIN)        .EnableWindow(IsOscilloscope && _State->_XYMode);
-    GetDlgItem(IDC_Y_GAIN)        .EnableWindow(IsOscilloscope);    // Available in both modes.
+    GetDlgItem(IDC_X_GAIN)        .EnableWindow((IsOscilloscope && _State->_XYMode) || IsGoniometer);
+    GetDlgItem(IDC_Y_GAIN)        .EnableWindow(IsOscilloscope || IsGoniometer);                        // Available in both oscilloscope modes.
     GetDlgItem(IDC_ROTATION)      .EnableWindow(IsOscilloscope && _State->_XYMode);
-    GetDlgItem(IDC_FRAME_COUNT)   .EnableWindow(IsOscilloscope);    // Available in both modes.
+    GetDlgItem(IDC_FRAME_COUNT)   .EnableWindow(IsOscilloscope);                                        // Available in both oscilloscopemodes.
 
     GetDlgItem(IDC_PHOSPHOR_DECAY).EnableWindow(IsOscilloscope);
 
-    GetDlgItem(IDC_BLUR_SIGMA)    .EnableWindow(IsOscilloscope & _State->_HasPhosphorDecay);
-    GetDlgItem(IDC_DECAY_FACTOR)  .EnableWindow(IsOscilloscope & _State->_HasPhosphorDecay);
+    GetDlgItem(IDC_BLUR_SIGMA)    .EnableWindow((IsOscilloscope && _State->_HasPhosphorDecay) || IsGoniometer);
+    GetDlgItem(IDC_DECAY_FACTOR)  .EnableWindow((IsOscilloscope && _State->_HasPhosphorDecay));
 
     GetDlgItem(IDC_DOWNMIX)       .EnableWindow(IsOscilloscope && !_State->_XYMode);
     GetDlgItem(IDC_ZERO_CROSSING) .EnableWindow(IsOscilloscope && !_State->_XYMode);
@@ -354,6 +368,14 @@ void visualization_page_t::OnSelectionChanged(UINT notificationCode, int id, CWi
         case IDC_PEAK_MODE:
         {
             _State->_PeakMode = (PeakMode) SelectedIndex;
+
+            UpdateControls();
+            break;
+        }
+
+        case IDC_GONIOMETER_MODE:
+        {
+            _State->_GoniometerColorMode = (audio_processor_t::ColorMode) SelectedIndex;
 
             UpdateControls();
             break;

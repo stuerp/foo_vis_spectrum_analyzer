@@ -26,7 +26,7 @@ spectrum_t::~spectrum_t()
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void spectrum_t::Initialize(state_t * state, graph_options_t * options, const analysis_t * analysis, bool isFirst, bool isLast, CComPtr<ID3D11Device> d3dDevice, CComPtr<ID3D11DeviceContext> d3dDeviceContext) noexcept
+void spectrum_t::Configure(state_t * state, graph_options_t * options, const analysis_t * analysis, bool isFirst, bool isLast, CComPtr<ID3D11Device> d3dDevice, CComPtr<ID3D11DeviceContext> d3dDeviceContext) noexcept
 {
     _State        = state;
     _GraphOptions = options;
@@ -37,8 +37,8 @@ void spectrum_t::Initialize(state_t * state, graph_options_t * options, const an
 
     DeleteDeviceSpecificResources();
 
-    _XAxis.Initialize(state, options, analysis, isFirst, isLast);
-    _YAxis.Initialize(state, options, analysis, isFirst, isLast);
+    _XAxis.Configure(state, options, analysis, isFirst, isLast);
+    _YAxis.Configure(state, options, analysis, isFirst, isLast);
 
     _Chrono.Reset();
 }
@@ -58,7 +58,7 @@ void spectrum_t::Move(const D2D1_RECT_F & rect) noexcept
 /// </summary>
 void spectrum_t::Resize() noexcept
 {
-    if (!_ForceElementToResize ||(_Size.width == 0.f) || (_Size.height == 0.f))
+    if (!_ForceElementToResize ||(_Size.width <= 0.f) || (_Size.height <= 0.f))
         return;
 
     const FLOAT xt = ((_GraphOptions->_XAxisMode != XAxisMode::None) && _GraphOptions->_XAxisTop)    ? _XAxis.GetTextHeight() : 0.f;
@@ -141,7 +141,7 @@ void spectrum_t::Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwapCha
         case VisualizationType::LevelMeter:
         case VisualizationType::Oscilloscope:
         case VisualizationType::BitMeter:
-        case VisualizationType::StereoMeter:
+        case VisualizationType::Goniometer:
 
         case VisualizationType::Tester:
 
@@ -160,7 +160,7 @@ void spectrum_t::OnConfigurationChange(ConfigurationChanges configurationChanges
     if (configurationChanges != ConfigurationChanges::Layout)
         return;
 
-    _XAxis.Initialize(_State, _GraphOptions, _Analysis, _IsFirst, _IsLast);
+    _XAxis.Configure(_State, _GraphOptions, _Analysis, _IsFirst, _IsLast);
     _XAxis.Resize(true);
 }
 

@@ -26,7 +26,7 @@ peak_meter_t::~peak_meter_t() noexcept
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void peak_meter_t::Initialize(state_t * state, graph_options_t * graphOptions, const analysis_t * analysis, bool isFirst, bool isLast, CComPtr<ID3D11Device> d3dDevice, CComPtr<ID3D11DeviceContext> d3dDeviceContext) noexcept
+void peak_meter_t::Configure(state_t * state, graph_options_t * graphOptions, const analysis_t * analysis, bool isFirst, bool isLast, CComPtr<ID3D11Device> d3dDevice, CComPtr<ID3D11DeviceContext> d3dDeviceContext) noexcept
 {
     _State = state;
     _GraphOptions = graphOptions;
@@ -467,7 +467,7 @@ HRESULT peak_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceC
         (void) deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), &_DebugBrush);
 #endif
 
-    if (_RenderedChannels != _Analysis->_PeakMeasuredChannels)
+    if (_RenderedChannels != _Analysis->_PeakActiveChannelMask)
     {
         DeleteParts();
 
@@ -475,7 +475,7 @@ HRESULT peak_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceC
 
         MeasureParts(deviceContext);
 
-        _RenderedChannels = _Analysis->_PeakMeasuredChannels;
+        _RenderedChannels = _Analysis->_PeakActiveChannelMask;
     }
 
     return hr;

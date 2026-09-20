@@ -1,5 +1,5 @@
 
-/** $VER: Graph.cpp (2026.09.14) P. Stuer - Implements a graph on which the visualizations are rendered. **/
+/** $VER: Graph.cpp (2026.09.20) P. Stuer - Implements a graph on which the visualizations are rendered. **/
 
 #include "pch.h"
 
@@ -17,7 +17,7 @@
 #include "OscilloscopeXY.h"
 
 #include "BitMeter.h"
-#include "StereoMeter.h"
+#include "Goniometer.h"
 
 #include "Tester.h"
 
@@ -87,8 +87,8 @@ void graph_t::Initialize(state_t * state, graph_options_t * graphOptions, bool i
             _Visualization = std::make_unique<bit_meter_t>();
             break;
 
-        case VisualizationType::StereoMeter:
-            _Visualization = std::make_unique<stereo_meter_t>();
+        case VisualizationType::Goniometer:
+            _Visualization = std::make_unique<goniometer_t>();
             break;
 
         case VisualizationType::Tester:
@@ -96,7 +96,7 @@ void graph_t::Initialize(state_t * state, graph_options_t * graphOptions, bool i
             break;
     }
 
-    _Visualization->Initialize(state, graphOptions, &_Analysis, _IsFirst, _IsLast, d3dDevice, d3dDeviceContext);
+    _Visualization->Configure(state, graphOptions, &_Analysis, _IsFirst, _IsLast, d3dDevice, d3dDeviceContext);
 }
 
 /// <summary>

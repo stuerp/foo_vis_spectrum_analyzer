@@ -1,5 +1,5 @@
 
-/** $VER: GraphsPage.cpp (2026.09.06) P. Stuer - Implements a configuration dialog page. **/
+/** $VER: GraphsPage.cpp (2026.09.20) P. Stuer - Implements a configuration dialog page. **/
 
 #include "pch.h"
 
@@ -364,13 +364,13 @@ void graphs_page_t::UpdateControls() noexcept
     {
         auto w = (CListBox) GetDlgItem(IDC_CHANNELS);
 
-        uint32_t Channels = Options._SelectedChannels;
+        uint32_t Mask = Options._ActiveChannelMask;
 
         for (int i = 0; i < (int) _countof(ChannelNames); ++i)
         {
-            w.SetSel(i, (Channels & 1) ? TRUE : FALSE);
+            w.SetSel(i, (Mask & 1) ? TRUE : FALSE);
 
-            Channels >>= 1;
+            Mask >>= 1;
         }
     }
 
@@ -883,5 +883,5 @@ void graphs_page_t::UpdateSelectedChannels() noexcept
     for (int Item : Items)
         Channels |= 1 << Item;
 
-    _State->_GraphOptions[_SelectedGraph]._SelectedChannels = Channels;
+    _State->_GraphOptions[_SelectedGraph]._ActiveChannelMask = Channels;
 }

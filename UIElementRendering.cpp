@@ -250,23 +250,21 @@ void uielement_t::Render() noexcept
     if (!SUCCEEDED(hr))
         return;
 
-    {
-        _DeviceContext->BeginDraw();
+    _DeviceContext->BeginDraw();
 
-        _DeviceContext->Clear(); // Required for alpha transparency. Do this once for all graphs. A graph can overlay a background color with a semi-transparent style.
+    _DeviceContext->Clear(); // Required for alpha transparency. Do this once for all graphs. A graph can overlay a background color with a semi-transparent style.
 
-        for (auto & Item : _Grid)
-            Item->Render(_DeviceContext, _Artwork, _SwapChain);
+    for (auto & Item : _Grid)
+        Item->Render(_DeviceContext, _Artwork, _SwapChain);
 
-        if (_UIState._ShowFrameCounter)
-            _FrameCounter.Render(_DeviceContext, _SwapChain);
+    if (_UIState._ShowFrameCounter)
+        _FrameCounter.Render(_DeviceContext, _SwapChain);
 
-    #ifdef _DEBUG
-        RenderDebug();
-    #endif
+#ifdef _DEBUG
+    RenderDebug();
+#endif
 
-        hr = _DeviceContext->EndDraw();
-    }
+    hr = _DeviceContext->EndDraw();
 
     // Present the swap chain immediately.
     if (SUCCEEDED(hr))

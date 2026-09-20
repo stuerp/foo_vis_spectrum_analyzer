@@ -1,5 +1,5 @@
 
-/** $VER: Element.h (2026.03.17) P. Stuer - Base class for all visual elements (both graph and visualizations). **/
+/** $VER: Element.h (2026.09.20) P. Stuer - Base class for all visual elements (both graph and visualizations). **/
 
 #pragma once
 
@@ -35,26 +35,6 @@ public:
         _ScaleFactor = std::min(_Size.width, _Size.height)  / 2.f; // For oscilloscope visualization.
 
         _ForceElementToResize = true;
-    }
-
-    virtual FLOAT GetWidth() const noexcept
-    {
-        return _Size.width;
-    }
-
-    virtual FLOAT GetHeight() const noexcept
-    {
-        return _Size.height;
-    }
-
-    virtual FLOAT GetLeft() const noexcept
-    {
-        return _Rect.left;
-    }
-
-    virtual FLOAT GetRight() const noexcept
-    {
-        return _Rect.right;
     }
 
     virtual void SetTransform(ID2D1DeviceContext * deviceContext, const D2D1_RECT_F & rect) const noexcept;

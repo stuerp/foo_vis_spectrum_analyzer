@@ -1,9 +1,10 @@
 
-/** $VER: State.cpp (2026.09.09) P. Stuer **/
+/** $VER: State.cpp (2026.09.20) P. Stuer **/
 
 #include "pch.h"
 #include "State.h"
 
+#include "AudioProcessor.h"
 #include "Gradients.h"
 #include "Resources.h"
 #include "Log.h"
@@ -129,6 +130,13 @@ void state_t::Reset() noexcept
     _EqualizationDepth = 1024.;
 
     _WeightingAmount = 0.;
+
+    static constexpr double Woofer  =  220.; // Hz
+    static constexpr double Tweeter = 2500.; // Hz
+
+    _CrossoverMode = audio_crossover_t::CrossoverMode::LinkwitzRiley4;
+    _LowBand  = Woofer;
+    _HighBand = Tweeter;
 
     _SmoothingMethod = SmoothingMethod::Average;
     _SmoothingFactor = 0.5;
@@ -274,6 +282,8 @@ void state_t::Reset() noexcept
     _Downmix = false;
     _ZeroCrossingTrigger = false;
 
+    _GoniometerColorMode = audio_processor_t::ColorMode::Triband;
+
     // Bit Meter
     _BitMeterMode = BitMeterMode::FloatingPoint;
     _BitsPerInteger = 63;
@@ -397,18 +407,22 @@ state_t & state_t::operator=(const state_t & other) noexcept
 
     #pragma region Filters
 
-        _WeightingType = other._WeightingType;
+        _WeightingType         = other._WeightingType;
 
-        _FrequencyShift = other._FrequencyShift;
+        _FrequencyShift        = other._FrequencyShift;
 
-        _FrequencyTilt = other._FrequencyTilt;
-        _FrequencyTiltPivot = other._FrequencyTiltPivot;
+        _FrequencyTilt         = other._FrequencyTilt;
+        _FrequencyTiltPivot    = other._FrequencyTiltPivot;
 
-        _EqualizationAmount = other._EqualizationAmount;
+        _EqualizationAmount    = other._EqualizationAmount;
         _EqualizationFreqScale = other._EqualizationFreqScale;
-        _EqualizationDepth = other._EqualizationDepth;
+        _EqualizationDepth     = other._EqualizationDepth;
 
-        _WeightingAmount = other._WeightingAmount;
+        _WeightingAmount       = other._WeightingAmount;
+
+        _CrossoverMode         = other._CrossoverMode;
+        _LowBand               = other._LowBand;
+        _HighBand              = other._HighBand;
 
     #pragma endregion
 
@@ -560,6 +574,8 @@ state_t & state_t::operator=(const state_t & other) noexcept
     _FrameCount           = other._FrameCount;
     _Downmix              = other._Downmix;
     _ZeroCrossingTrigger  = other._ZeroCrossingTrigger;
+
+    _GoniometerColorMode  = other._GoniometerColorMode;
 
     // Bit Meter
     _BitMeterMode         = other._BitMeterMode;
@@ -849,7 +865,7 @@ void state_t::Read(stream_reader * stream, size_t size, abort_callback & abortHa
 
                 pfc::string Description; stream->read_string(Description, abortHandler); Options._Description = pfc::wideFromUTF8(Description);
 
-                stream->read_object_t(Options._SelectedChannels, abortHandler);
+                stream->read_object_t(Options._ActiveChannelMask, abortHandler);
                 stream->read_object_t(Options._FlipHorizontally, abortHandler);
                 stream->read_object_t(Options._FlipVertically, abortHandler);
 
@@ -1227,7 +1243,7 @@ void state_t::Write(stream_writer * stream, abort_callback & abortHandler, bool 
             pfc::string Description = pfc::utf8FromWide(gd._Description.c_str());
             stream->write_string(Description, abortHandler);
 
-            stream->write_object_t(gd._SelectedChannels, abortHandler);
+            stream->write_object_t(gd._ActiveChannelMask, abortHandler);
             stream->write_object_t(gd._FlipHorizontally, abortHandler);
             stream->write_object_t(gd._FlipVertically, abortHandler);
 
@@ -1465,6 +1481,11 @@ void state_t::FromJSON(const char * data, size_t size, bool isPreset)
         _ZeroCrossingTrigger = Oscilloscope.value("zeroCrossingTrigger", _ZeroCrossingTrigger);
     }
 
+    const auto & Goniometer = Object.value("goniometer", json::object());
+    {
+        _GoniometerColorMode = std::clamp(Goniometer.value("colorMode", _GoniometerColorMode), audio_processor_t::ColorMode::Min, audio_processor_t::ColorMode::Max);
+    }
+
     const auto & BitMeter = Object.value("bitMeter", json::object());
     {
         _BitMeterMode   = std::clamp(BitMeter.value("mode",           _BitMeterMode),   BitMeterMode::Min, BitMeterMode::Max);
@@ -1531,8 +1552,14 @@ void state_t::FromJSON(const char * data, size_t size, bool isPreset)
         _LoFrequency            = std::clamp(Frequencies.value("loFrequency",       _LoFrequency),              MinFrequency,               MaxFrequency);
         _HiFrequency            = std::clamp(Frequencies.value("hiFrequency",       _HiFrequency),              MinFrequency,               MaxFrequency);
 
+        if (_LoFrequency > _HiFrequency)
+            std::swap(_LoFrequency, _HiFrequency);
+
         _LoNote                 = std::clamp(Frequencies.value("loNote",            _LoNote),                   (uint32_t) MinNote,         (uint32_t) MaxNote);
         _HiNote                 = std::clamp(Frequencies.value("hiNote",            _HiNote),                   (uint32_t) MinNote,         (uint32_t) MaxNote);
+
+        if (_LoNote > _HiNote)
+            std::swap(_LoNote, _HiNote);
 
         _BandsPerOctave         = std::clamp(Frequencies.value("bandsPerOctave",    _BandsPerOctave),           (uint32_t) MinBandsPerOctave, (uint32_t) MaxBandsPerOctave);
         _TuningPitch            = std::clamp(Frequencies.value("tuningPitch",       _TuningPitch),              MinPitch,                   MaxPitch);
@@ -1557,6 +1584,17 @@ void state_t::FromJSON(const char * data, size_t size, bool isPreset)
         _EqualizationDepth      = std::clamp(Filters.value("equalizeDepth",         _EqualizationDepth),        MinEqualizationDepth,       MaxEqualizationDepth);
 
         _WeightingAmount        = std::clamp(Filters.value("weightingAmount",       _WeightingAmount),          MinWeightingAmount,         MaxWeightingAmount);
+    }
+
+
+    // Crossover Filters
+    const auto & CrossoverFilters = Object.value("crossoverFilters", json::object());
+    {
+        _LowBand                = std::clamp(CrossoverFilters.value("lowBand",      _LowBand),                  MinLowBand,                 MaxLowBand);
+        _HighBand               = std::clamp(CrossoverFilters.value("highBand",     _HighBand),                 MinHighBand,                MaxHighBand);
+
+        if (_LowBand > _HighBand)
+            std::swap(_LowBand, _HighBand);
     }
 
     // Common
@@ -1747,6 +1785,14 @@ json state_t::ToJSON(bool isPreset) const
 
         json::object_t::value_type
         (
+            "goniometer", json::object
+            ({
+                { "colorMode", _GoniometerColorMode },
+            })
+        ),
+
+        json::object_t::value_type
+        (
             "bitMeter", json::object
             ({
                 { "mode", _BitMeterMode },
@@ -1814,28 +1860,27 @@ json state_t::ToJSON(bool isPreset) const
         // Frequencies
         json::object_t::value_type
         (
-            "frequencies",
-                json::object
-                ({
-                    { "distribution", _FrequencyDistribution },
+            "frequencies", json::object
+            ({
+                { "distribution", _FrequencyDistribution },
 
-                    { "bandCount", _BandCount },
-                    { "melBandCount", _MelBandCount },
+                { "bandCount", _BandCount },
+                { "melBandCount", _MelBandCount },
 
-                    { "loFrequency", _LoFrequency },
-                    { "hiFrequency", _HiFrequency },
+                { "loFrequency", _LoFrequency },
+                { "hiFrequency", _HiFrequency },
 
-                    { "loNote", _LoNote },
-                    { "hiNote", _HiNote },
+                { "loNote", _LoNote },
+                { "hiNote", _HiNote },
 
-                    { "bandsPerOctave", _BandsPerOctave },
-                    { "tuningPitch", _TuningPitch },
-                    { "transpose", _Transpose },
+                { "bandsPerOctave", _BandsPerOctave },
+                { "tuningPitch", _TuningPitch },
+                { "transpose", _Transpose },
 
-                    { "scalingFunction", _ScalingFunction },
-                    { "skewFactor", _SkewFactor },
-                    { "bandwidth", _Bandwidth },
-                })
+                { "scalingFunction", _ScalingFunction },
+                { "skewFactor", _SkewFactor },
+                { "bandwidth", _Bandwidth },
+            })
         ),
 
         // Acoustic Filters
@@ -1843,26 +1888,37 @@ json state_t::ToJSON(bool isPreset) const
         (
             "acousticFilters", json::object
             ({
-                { "weightingType", _WeightingType },
+                { "weightingType",       _WeightingType },
 
                 { "slopeFunctionOffset", _FrequencyShift },
-                { "slope", _FrequencyTilt },
-                { "slopeOffset", _FrequencyTiltPivot },
+                { "slope",               _FrequencyTilt },
+                { "slopeOffset",         _FrequencyTiltPivot },
 
-                { "equalizeAmount", _EqualizationAmount},
-                { "equalizeOffset", _EqualizationFreqScale },
-                { "equalizeDepth", _EqualizationDepth },
+                { "equalizeAmount",      _EqualizationAmount},
+                { "equalizeOffset",      _EqualizationFreqScale },
+                { "equalizeDepth",       _EqualizationDepth },
 
-                { "weightingAmount", _WeightingAmount },
+                { "weightingAmount",     _WeightingAmount },
+            })
+        ), 
+
+        // Crossover Filters
+        json::object_t::value_type
+        (
+            "crossoverFilters", json::object
+            ({
+                { "mode",     _CrossoverMode },
+                { "lowBand",  _LowBand },
+                { "highBand", _HighBand },
             })
         ), 
 
         // Common
-        { "smoothingMethod", _SmoothingMethod },
-        { "smoothingFactor", _SmoothingFactor },
+        { "smoothingMethod",      _SmoothingMethod },
+        { "smoothingFactor",      _SmoothingFactor },
 
-        { "showToolTipsAlways", _ShowToolTipsAlways },
-        { "suppressMirrorImage", _SuppressMirrorImage },
+        { "showToolTipsAlways",   _ShowToolTipsAlways },
+        { "suppressMirrorImage",  _SuppressMirrorImage },
         { "visualizeDuringPause", _VisualizeDuringPause },
 
         json::object_t::value_type

@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2026.09.12) P. Stuer **/
+/** $VER: Resources.h (2026.09.20) P. Stuer **/
 
 #pragma once
 
@@ -16,7 +16,7 @@
 #define NUM_PRODUCT_PATCH       0
 #define NUM_PRODUCT_PRERELEASE  0
 
-#define STR_RELEASE_TAG         "alpha1"
+#define STR_RELEASE_TAG         "-alpha1"
 
 /** Component specific **/
 
@@ -201,7 +201,7 @@
 
 #pragma endregion
 
-#pragma region Filters
+// Weighing Filter
 
 #define IDC_FILTERS_GROUP               2500
 
@@ -228,7 +228,11 @@
 #define IDC_WT_AMT                      2582
 #define IDC_WT_AMT_SPIN                 2584
 
-#pragma endregion
+// Crossover Filter
+
+#define IDC_CROSSOVER_MODE              2600
+#define IDC_LOW_BAND                    2602
+#define IDC_HIGH_BAND                   2604
 
 /** Common **/
 
@@ -468,6 +472,8 @@
 
 #define IDC_DOWNMIX                     7228
 #define IDC_ZERO_CROSSING               7229
+
+#define IDC_GONIOMETER_MODE             7230
 
 // Bit Meter
 

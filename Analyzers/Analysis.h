@@ -1,5 +1,5 @@
 
-/** $VER: Analysis.h (2026.09.14) P. Stuer **/
+/** $VER: Analysis.h (2026.09.20) P. Stuer **/
 
 #pragma once
 
@@ -198,7 +198,7 @@ public:
     frequency_bands_t _FrequencyBands;
 
     // Peak meter
-    uint32_t _PeakMeasuredChannels;
+    uint32_t _PeakActiveChannelMask;
     std::vector<peak_measurement_t> _PeakMeasurements;
 
     double _RMSTimeElapsed; // Elapsed time in the current RMS window (in seconds).
@@ -215,7 +215,7 @@ public:
     double _Phase;          // [0, 1], 0.5 = Center
 
     // Bit Meter
-    uint32_t _BitMeasuredChannels;
+    uint32_t _BitActiveChannelMask;
     std::vector<bit_measurement_t> _BitMeasurements;
 
     static const uint32_t ChannelPairs[6];

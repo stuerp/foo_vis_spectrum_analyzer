@@ -29,7 +29,7 @@ oscilloscope_base_t::~oscilloscope_base_t() noexcept
 /// </summary>
 void oscilloscope_base_t::Resize() noexcept
 {
-    if (!_ForceElementToResize || (GetWidth() == 0.f) || (GetHeight() == 0.f))
+    if (!_ForceElementToResize || (_Size.width <= 0.f) || (_Size.height <= 0.f))
         return;
 
     // Release resources that are size dependent.
@@ -48,15 +48,18 @@ HRESULT oscilloscope_base_t::CreateDeviceIndependentResources() noexcept
     HRESULT hr = S_OK;
 
     // Create a brush stroke style for the signal.
-    if (SUCCEEDED(hr) && (_SignalStrokeStyle == nullptr))
+    if (_SignalStrokeStyle == nullptr)
     {
         const D2D1_STROKE_STYLE_PROPERTIES StrokeStyleProperties = D2D1::StrokeStyleProperties(D2D1_CAP_STYLE_FLAT, D2D1_CAP_STYLE_FLAT, D2D1_CAP_STYLE_FLAT, D2D1_LINE_JOIN_BEVEL);
 
         hr = _Direct2D.Factory->CreateStrokeStyle(StrokeStyleProperties, nullptr, 0, &_SignalStrokeStyle);
+
+        if (FAILED(hr))
+            return hr;
     }
 
     // Create a brush stroke style for the axes and grid that remains fixed during the scaling transformation.
-    if (SUCCEEDED(hr))
+    if (_AxisStrokeStyle == nullptr)
     {
         D2D1_STROKE_STYLE_PROPERTIES1 StrokeStyleProperties = D2D1::StrokeStyleProperties1();
 
@@ -198,7 +201,6 @@ HRESULT oscilloscope_base_t::CreateDeviceSpecificResources(ID2D1DeviceContext * 
 
         _DeviceContext->BeginDraw();
 
-//      _DeviceContext->Clear(_State->_HasPhosphorDecay ? D2D1::ColorF(D2D1::ColorF::Black) : D2D1::ColorF(D2D1::ColorF::Black, 0.f)); // FIXME: Phosphor decay does not work with alpha transparency.
         _DeviceContext->Clear(); // Transparent
 
         hr = _DeviceContext->EndDraw();
@@ -220,7 +222,6 @@ HRESULT oscilloscope_base_t::CreateDeviceSpecificResources(ID2D1DeviceContext * 
 
         _DeviceContext->BeginDraw();
 
-//      _DeviceContext->Clear(_State->_HasPhosphorDecay ? D2D1::ColorF(D2D1::ColorF::Black) : D2D1::ColorF(D2D1::ColorF::Black, 0.f)); // FIXME: Phosphor decay does not work with alpha transparency.
         _DeviceContext->Clear(); // Transparent
 
         hr = _DeviceContext->EndDraw();
@@ -239,7 +240,7 @@ HRESULT oscilloscope_base_t::CreateDeviceSpecificResources(ID2D1DeviceContext * 
             return hr;
 
         _BlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_STANDARD_DEVIATION, _State->_BlurSigma);
-        _BlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_OPTIMIZATION, D2D1_DIRECTIONALBLUR_OPTIMIZATION_QUALITY);
+        _BlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_OPTIMIZATION, D2D1_DIRECTIONALBLUR_OPTIMIZATION_BALANCED);
         _BlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_BORDER_MODE, D2D1_BORDER_MODE_HARD);
     }
 

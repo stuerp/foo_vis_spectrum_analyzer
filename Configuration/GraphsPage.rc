@@ -37,7 +37,7 @@ style DS_SETFONT | DS_CONTROL | WS_CHILD | WS_CLIPCHILDREN
 
     /* Axes layout */
 
-    groupbox "Axes", IDC_STATIC, X_B09, Y_B09, W_B09, H_B09, BS_GROUPBOX, WS_EX_TRANSPARENT
+    groupbox "Axes", IDC_STATIC, X_H00, Y_H00, W_H00, H_H00, BS_GROUPBOX, WS_EX_TRANSPARENT
 
         control         "Left",                     IDC_Y_AXIS_LEFT,                "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_G17, Y_G17, W_G17, H_G17
         control         "Right",                    IDC_Y_AXIS_RIGHT,               "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_G18, Y_G18, W_G18, H_G18

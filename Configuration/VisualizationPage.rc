@@ -1,5 +1,5 @@
 
-/** $VER: VisualizationPage.rc (2026.08.22) P. Stuer **/
+/** $VER: VisualizationPage.rc (2026.09.20) P. Stuer **/
 
 #include "Resources.h"
 
@@ -14,7 +14,7 @@ IDD_VISUALIZATION_PAGE dialogex 0, 0, 0, 0
 font 8, "MS Shell Dlg", 400, 0, 0x1
 style DS_SETFONT | DS_CONTROL | WS_CHILD | WS_CLIPCHILDREN
 {
-    rtext           "Type:",                        IDC_VISUALIZATION_LBL,          X_E01, Y_E01 + 2, W_E01, H_E01
+    rtext           "Type:",                        IDC_STATIC,                     X_E01, Y_E01 + 2, W_E01, H_E01
     combobox                                        IDC_VISUALIZATION,              X_E02, Y_E02,     W_E02, H_E02, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
 
     groupbox "Peak Indicators", IDC_PEAK_INDICATORS, X_B13, Y_B13, W_B13, H_B13, BS_GROUPBOX, WS_EX_TRANSPARENT
@@ -93,7 +93,7 @@ style DS_SETFONT | DS_CONTROL | WS_CHILD | WS_CLIPCHILDREN
 
         control     "Horizontal",                   IDC_HORIZONTAL_LEVEL_METER,     "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C52, Y_C52, W_C52, H_C52
 
-    groupbox "Oscilloscope", IDC_OSCILLOSCOPE, X_B18, Y_B18, W_B18, H_B18, BS_GROUPBOX, WS_EX_TRANSPARENT
+    groupbox "Oscilloscope / Goniometer", IDC_STATIC, X_B18, Y_B18, W_B18, H_B18, BS_GROUPBOX, WS_EX_TRANSPARENT
 
         control     "X/Y mode",                     IDC_XY_MODE, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C54, Y_C54 + 1, W_C54, H_C54
 
@@ -119,4 +119,7 @@ style DS_SETFONT | DS_CONTROL | WS_CHILD | WS_CLIPCHILDREN
 
         control     "Downmix to mono"               IDC_DOWNMIX,                    "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_A40, Y_A40 + 1, W_A40, H_A40
         control     "Zero-crossing trigger"         IDC_ZERO_CROSSING,              "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_A42, Y_A42 + 1, W_A42, H_A42
+
+        rtext       "Goniometer mode:",             IDC_STATIC,                     X_A44, Y_A44 + 2, W_A44, H_A44
+        combobox                                    IDC_GONIOMETER_MODE,            X_A46, Y_A46,     W_A46, H_A46, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
 }

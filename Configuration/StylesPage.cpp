@@ -1,5 +1,5 @@
 
-/** $VER: StylesPage.cpp (2026.08.23) P. Stuer - Implements a configuration dialog page. **/
+/** $VER: StylesPage.cpp (2026.09.20) P. Stuer - Implements a configuration dialog page. **/
 
 #include "pch.h"
 
@@ -110,7 +110,8 @@ void styles_page_t::InitializeControls() noexcept
             L"Fire", L"Rainbow",
             L"SoX", 
             L"Turbo",
-            L"Viridis", L"Plasma", L"Inferno", L"Magma", L"Cividis"
+            L"Viridis", L"Plasma", L"Inferno", L"Magma", L"Cividis",
+            L"Gold", L"Triband",
         };
 
         static_assert((_countof(ColorMapNames) - 1) == (size_t) ColorScheme::Max, "");

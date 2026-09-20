@@ -1,5 +1,5 @@
 
-/** $VER: Oscilloscope.cpp (2026.09.08) P. Stuer - Implements an oscilloscope. **/
+/** $VER: Oscilloscope.cpp (2026.09.20) P. Stuer - Implements an oscilloscope. **/
 
 #include <pch.h>
 
@@ -34,7 +34,7 @@ oscilloscope_t::~oscilloscope_t() noexcept
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void oscilloscope_t::Initialize(state_t * state, graph_options_t * graphOptions, const analysis_t * analysis, bool isFirst, bool isLast, CComPtr<ID3D11Device> d3dDevice, CComPtr<ID3D11DeviceContext> d3dDeviceContext) noexcept
+void oscilloscope_t::Configure(state_t * state, graph_options_t * graphOptions, const analysis_t * analysis, bool isFirst, bool isLast, CComPtr<ID3D11Device> d3dDevice, CComPtr<ID3D11DeviceContext> d3dDeviceContext) noexcept
 {
     _State = state;
     _GraphOptions = graphOptions;
@@ -84,7 +84,7 @@ void oscilloscope_t::Move(const D2D1_RECT_F & rect) noexcept
 /// </summary>
 void oscilloscope_t::Reset() noexcept
 {
-    if (!_ForceElementToResize || (GetWidth() == 0.f) || (GetHeight() == 0.f))
+    if (_ForceElementToResize || (_Size.width <= 0.f) || (_Size.height <= 0.f))
         return;
 
     _ForceElementToResize = true;
@@ -95,7 +95,7 @@ void oscilloscope_t::Reset() noexcept
 /// </summary>
 void oscilloscope_t::Resize() noexcept
 {
-    if (!_ForceElementToResize || (GetWidth() == 0.f) || (GetHeight() == 0.f))
+    if (!_ForceElementToResize || (_Size.width <= 0.f) || (_Size.height <= 0.f))
         return;
 
     oscilloscope_base_t::Resize();
@@ -330,7 +330,7 @@ HRESULT oscilloscope_t::CreateDeviceSpecificResources(ID2D1DeviceContext * devic
             return hr;
     }
 
-    const uint32_t AxesCount = (size_t) _State->_Downmix ? 1u : std::popcount(_Analysis->_Chunk.get_channel_config() & _GraphOptions->_SelectedChannels);
+    const uint32_t AxesCount = (size_t) _State->_Downmix ? 1u : std::popcount(_Analysis->_Chunk.get_channel_config() & _GraphOptions->_ActiveChannelMask);
 
     if ((_AxesCommandList == nullptr) || (_AxesCount != AxesCount))
         hr = CreateAxesCommandList(AxesCount);
@@ -378,12 +378,12 @@ HRESULT oscilloscope_t::CreateSignalGeometry(const audio_chunk_impl & chunk, con
 
     const uint32_t ChannelCount = chunk.get_channel_count();
 
-    uint32_t AvailableChannels  = chunk.get_channel_config();       // Mask containing the channels in the audio chunk.
-    uint32_t SelectedChannels   = _GraphOptions->_SelectedChannels;   // Mask containing the channels selected by the user.
+    uint32_t AvailableChannelMask = chunk.get_channel_config();         // Mask containing the channels in the audio chunk.
+    uint32_t ActiveChannelMask    = _GraphOptions->_ActiveChannelMask;  // Mask containing the channels selected by the user.
 
-    const size_t SelectedChannelCount = (size_t) std::popcount(AvailableChannels & SelectedChannels);
+    const size_t ActiveChannelCount = (size_t) std::popcount(AvailableChannelMask & ActiveChannelMask);
 
-    const FLOAT ChannelHeight = clientSize.height / (FLOAT) SelectedChannelCount; // Height available to one channel.
+    const FLOAT ChannelHeight = clientSize.height / (FLOAT) ActiveChannelCount; // Height available to one channel.
     const FLOAT ChannelMax    = ChannelHeight * (_GraphOptions->HasYAxis() ? 1.0f : 0.5f);
 
     const audio_sample * Frames = chunk.get_data();
@@ -412,12 +412,12 @@ HRESULT oscilloscope_t::CreateSignalGeometry(const audio_chunk_impl & chunk, con
     FLOAT ChannelBaseline = ChannelMax;
     size_t ChannelOffset = 0;
             
-    while ((AvailableChannels != 0) && (SelectedChannels != 0))
+    while ((AvailableChannelMask != 0) && (ActiveChannelMask != 0))
     {
         // Render the signal if the channel is in the chunk and if it has been selected.
-        if (AvailableChannels & 1)
+        if (AvailableChannelMask & 1)
         {
-            if (SelectedChannels & 1)
+            if (ActiveChannelMask & 1)
             {
                 const size_t SampleCount = FrameCount * ChannelCount;
                 const FLOAT dx = clientSize.width / (FLOAT) FrameCount;
@@ -444,8 +444,8 @@ HRESULT oscilloscope_t::CreateSignalGeometry(const audio_chunk_impl & chunk, con
             ChannelOffset++;
         }
 
-        AvailableChannels >>= 1;
-        SelectedChannels >>= 1;
+        AvailableChannelMask >>= 1;
+        ActiveChannelMask >>= 1;
     }
 
     hr = Sink->Close();

@@ -1,5 +1,5 @@
 
-/** $VER: Constants.h (2026.09.14) P. Stuer **/
+/** $VER: Constants.h (2026.09.20) P. Stuer **/
 
 #pragma once
 
@@ -16,7 +16,7 @@ enum class VisualizationType
     RadialCurve = 6,
     Oscilloscope = 7,
     BitMeter = 8,
-    StereoMeter = 9,
+    Goniometer = 9,
 
     Tester = 63,
 
@@ -360,6 +360,12 @@ enum class WeightingType
     Max = MWeighting,
 };
 
+inline constexpr double MinLowBand =     0.; // Hz
+inline constexpr double MaxLowBand = 96000.; // Hz
+
+inline constexpr double MinHighBand =     0.; // Hz
+inline constexpr double MaxHighBand = 96000.; // Hz
+
 // Styles
 inline constexpr double MinOpacity = 0.;
 inline constexpr double MaxOpacity = 1.;
@@ -502,8 +508,11 @@ enum class ColorScheme : uint32_t
     Magma,
     Cividis,
 
+    Gold,
+    Triband,
+
     Min = Solid,
-    Max = Cividis,
+    Max = Triband,
 };
 
 enum class VisualizationTypes : uint64_t
@@ -519,7 +528,7 @@ enum class VisualizationTypes : uint64_t
     RadialCurve     = 1 << (int) VisualizationType::RadialCurve,
     Oscilloscope    = 1 << (int) VisualizationType::Oscilloscope,
     BitMeter        = 1 << (int) VisualizationType::BitMeter,
-    StereoMeter     = 1 << (int) VisualizationType::StereoMeter,
+    Goniometer      = 1 << (int) VisualizationType::Goniometer,
 
     All = ~0ull
 };

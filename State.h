@@ -1,5 +1,5 @@
 
-/** $VER: State.h (2026.09.08) P. Stuer **/
+/** $VER: State.h (2026.09.20) P. Stuer **/
 
 #pragma once
 
@@ -8,6 +8,7 @@
 #include <Windows.h>
 
 #include "Constants.h"
+#include "AudioProcessor.h"
 #include "WindowFunctions.h"
 
 #include "StyleManager.h"
@@ -110,7 +111,7 @@ public:
 
         #pragma endregion
 
-        #pragma region Oscilloscope
+        #pragma region Oscilloscope / Goniometer
 
             bool _XYMode;                                               // Oscilloscope in X-Y mode
             double _XGain;
@@ -122,6 +123,8 @@ public:
             uint32_t _FrameCount;
             bool _Downmix;                                              // Downmix the input audio to mono.
             bool _ZeroCrossingTrigger;                                  // Use a zero-crossing trigger.
+
+            audio_processor_t::ColorMode _GoniometerColorMode;
 
         #pragma endregion
 
@@ -229,11 +232,15 @@ public:
         double _FrequencyTilt;                                          // [-12, 12], Adjusts the spectrum by the specified number of decibels per octave.
         double _FrequencyTiltPivot;                                     // Hz, [0, 96000], Frequency at which the tilt adjustment is 0 dB.
 
-        double _EqualizationAmount;                                         // [-12, 12], Equalize amount
-        double _EqualizationFreqScale;                                         // Hz, [0, 96000], Equalize offset
-        double _EqualizationDepth;                                          // Hz, [0, 96000], Equalize depth
+        double _EqualizationAmount;                                     // [-12, 12], Equalize amount
+        double _EqualizationFreqScale;                                  // Hz, [0, 96000], Equalize offset
+        double _EqualizationDepth;                                      // Hz, [0, 96000], Equalize depth
 
         double _WeightingAmount;                                        // [-1, 1], Weighting amount
+
+        audio_crossover_t::CrossoverMode _CrossoverMode;
+        double _LowBand;                                                // Hz, [0, 96000], End of the low band
+        double _HighBand;                                               // Hz, [0, 96000], Start of the high band
 
     #pragma endregion
 
