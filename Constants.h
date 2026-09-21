@@ -250,44 +250,44 @@ inline constexpr double MaxIIRBandwidth = 64.;
 // Analog-style (parallel band-pass IIR filter) transform
 
 // Frequencies
-inline constexpr int MinBands =    2;
-inline constexpr int MaxBands = 8192;
+inline constexpr int MinBands               =    2;
+inline constexpr int MaxBands               = 8192;
 
-inline constexpr int MinMelBands =   24;
-inline constexpr int MaxMelBands =  128;
+inline constexpr int MinMelBands            =   24;
+inline constexpr int MaxMelBands            =  128;
 
-inline constexpr double MinFrequency =     1.; // Hz
-inline constexpr double MaxFrequency = 96000.; // Hz
+inline constexpr double MinFrequency        =      1.; // Hz
+inline constexpr double MaxFrequency        = 96'000.; // Hz
 
-inline constexpr int MinNote =   0;
-inline constexpr int MaxNote = 143;
+inline constexpr int MinNote                =   0;
+inline constexpr int MaxNote                = 143;
 
-inline constexpr int MinBandsPerOctave =  1;
-inline constexpr int MaxBandsPerOctave = 48;
+inline constexpr int MinBandsPerOctave      =  1;
+inline constexpr int MaxBandsPerOctave      = 48;
 
-inline constexpr double MinPitch =    16.35; // Hz, C0
-inline constexpr double MaxPitch = 63217.06; // Hz, B11
+inline constexpr double MinPitch            =    16.35; // Hz, C0
+inline constexpr double MaxPitch            = 63'217.06; // Hz, B11
 
-inline constexpr int MinTranspose = -24;
-inline constexpr int MaxTranspose =  24;
+inline constexpr int MinTranspose           = -24;
+inline constexpr int MaxTranspose           =  24;
 
-inline constexpr double MinSkewFactor = 0.;
-inline constexpr double MaxSkewFactor = 1.;
+inline constexpr double MinSkewFactor       = 0.;
+inline constexpr double MaxSkewFactor       = 1.;
 
-inline constexpr double MinBandwidth =  0.;
-inline constexpr double MaxBandwidth = 64.;
+inline constexpr double MinBandwidth        =  0.;
+inline constexpr double MaxBandwidth        = 64.;
 
-inline constexpr double MinAmplitude = -120.; // dB
-inline constexpr double MaxAmplitude =    6.; // dB
+inline constexpr double MinAmplitude        = -120.; // dB
+inline constexpr double MaxAmplitude        =    6.; // dB
 
-inline constexpr double MinAmplitudeStep = -10.; // dB
-inline constexpr double MaxAmplitudeStep =  -1.; // dB
+inline constexpr double MinAmplitudeStep    = -10.; // dB
+inline constexpr double MaxAmplitudeStep    =  -1.; // dB
 
-inline constexpr double MinGamma =  0.5;
-inline constexpr double MaxGamma = 10.0;
+inline constexpr double MinGamma            =  0.5;
+inline constexpr double MaxGamma            = 10.0;
 
-inline constexpr int MinXAxisDecimals = 0;
-inline constexpr int MaxXAxisDecimals = 3;
+inline constexpr int MinXAxisDecimals       = 0;
+inline constexpr int MaxXAxisDecimals       = 3;
 
 enum class FrequencyDistribution
 {
@@ -360,11 +360,11 @@ enum class WeightingType
     Max = MWeighting,
 };
 
-inline constexpr double MinLowBand =     0.; // Hz
-inline constexpr double MaxLowBand = 96000.; // Hz
+inline constexpr double MinLowBand  =      0.; // Hz
+inline constexpr double MaxLowBand  = 96'000.; // Hz
 
-inline constexpr double MinHighBand =     0.; // Hz
-inline constexpr double MaxHighBand = 96000.; // Hz
+inline constexpr double MinHighBand =      0.; // Hz
+inline constexpr double MaxHighBand = 96'000.; // Hz
 
 // Styles
 inline constexpr double MinOpacity = 0.;
@@ -552,6 +552,9 @@ inline constexpr FLOAT MaxBlurSigma = 10.f;
 inline constexpr FLOAT MinDecayFactor = 0.f;
 inline constexpr FLOAT MaxDecayFactor = 1.f;
 
+inline constexpr double MinVisualGain = -12.;
+inline constexpr double MaxVisualGain = +12.;
+
 // Bit Meter
 enum class BitMeterMode : uint32_t
 {
@@ -721,10 +724,11 @@ enum class ConfigurationChanges : uint32_t
 
     RefreshRate         = 1 << 2,
     Oscilloscope        = 1 << 3, // Configuration change impacts the oscilloscope.
+    Goniometer          = 1 << 4, // Configuration change impacts the goniometer.
 
-    Artwork             = 1 << 4, // Configuration change impacts how the artwork is rendered.
+    Artwork             = 1 << 5, // Configuration change impacts how the artwork is rendered.
 
-    UserInterfaceColors = 1 << 5, // Configuration change impacts the user interface colors.
+    UserInterfaceColors = 1 << 6, // Configuration change impacts the user interface colors.
 
     All = ~0u,
 };

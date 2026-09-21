@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2026.09.20) P. Stuer **/
+/** $VER: Resources.h (2026.09.21) P. Stuer **/
 
 #pragma once
 
@@ -375,8 +375,6 @@
 #define IDC_VISUALIZATION               7102
 
 // Peak Indicators
-#define IDC_PEAK_INDICATORS             7104
-
 #define IDC_PEAK_MODE_LBL               7108
 #define IDC_PEAK_MODE                   7110
 
@@ -386,9 +384,9 @@
 #define IDC_ACCELERATION_LBL            7116
 #define IDC_FALL_RATE                   7118
 
-// LEDs
-#define IDC_LEDS                        7120
+#define IDC_RESET_PEAKS                 7119
 
+// LEDs
 #define IDC_LED_MODE                    7122
 #define IDC_LED_SIZE_LBL                7124
 #define IDC_LED_SIZE                    7126
@@ -396,12 +394,7 @@
 #define IDC_LED_GAP                     7130
 #define IDC_LED_INTEGRAL_SIZE           7132
 
-// Bars
-#define IDC_BARS                        7200
-
 // Radial Bars
-
-#define IDC_RADIAL_BARS                 7190
 
 #define IDC_INNER_RADIUS_LBL            7192
 #define IDC_INNER_RADIUS                7193
@@ -414,16 +407,12 @@
 
 // Spectrogram
 
-#define IDC_SPECTROGRAM                 7150
-
 #define IDC_SCROLLING_SPECTROGRAM       7152
 #define IDC_HORIZONTAL_SPECTROGRAM      7154
 #define IDC_SPECTRUM_BAR_METRICS        7156
 #define IDC_SPECTROGRAM_LEGEND          7158
 
 // Peak Meter
-
-#define IDC_PEAK_METER                  7160
 
 #define IDC_HORIZONTAL_PEAK_METER       7162
 #define IDC_RMS_PLUS_3                  7164
@@ -443,9 +432,7 @@
 
 // Level Meter
 
-#define IDC_LEVEL_METER                 7230
-
-#define IDC_HORIZONTAL_LEVEL_METER      7232
+#define IDC_HORIZONTAL_LEVEL_METER      7186
 
 // Oscilloscope
 
@@ -474,6 +461,10 @@
 #define IDC_ZERO_CROSSING               7229
 
 #define IDC_GONIOMETER_MODE             7230
+
+#define IDC_LOW_VISUAL_GAIN             7232
+#define IDC_MID_VISUAL_GAIN             7233
+#define IDC_HIGH_VISUAL_GAIN            7234
 
 // Bit Meter
 

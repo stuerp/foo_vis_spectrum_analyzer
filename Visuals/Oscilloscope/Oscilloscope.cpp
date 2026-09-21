@@ -1,5 +1,5 @@
 
-/** $VER: Oscilloscope.cpp (2026.09.20) P. Stuer - Implements an oscilloscope. **/
+/** $VER: Oscilloscope.cpp (2026.09.21) P. Stuer - Implements an oscilloscope. **/
 
 #include <pch.h>
 
@@ -300,6 +300,9 @@ void oscilloscope_t::DeleteDeviceIndependentResources() noexcept
 /// </summary>
 HRESULT oscilloscope_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept
 {
+    if (_State->_RecreateStyles)
+        DeleteDeviceSpecificResources();
+
     Resize();
 
     HRESULT hr = oscilloscope_base_t::CreateDeviceSpecificResources(deviceContext);

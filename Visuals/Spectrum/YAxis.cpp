@@ -1,5 +1,5 @@
 
-/** $VER: YAXis.cpp (2026.08.22) P. Stuer - Implements the Y axis of a graph. **/
+/** $VER: YAXis.cpp (2026.09.21) P. Stuer - Implements the Y axis of a graph. **/
 
 #include "pch.h"
 #include "YAxis.h"
@@ -138,6 +138,9 @@ void y_axis_t::Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwapChain
 /// </summary>
 HRESULT y_axis_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext, style_manager_t & styleManager) noexcept
 {
+    if (_State->_RecreateStyles)
+        DeleteDeviceSpecificResources();
+
     HRESULT hr = S_OK;
 
     if (_LineStyle._Brush == nullptr)

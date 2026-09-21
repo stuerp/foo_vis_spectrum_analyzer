@@ -275,6 +275,9 @@ void oscilloscope_xy_t::DeleteDeviceIndependentResources() noexcept
 /// </summary>
 HRESULT oscilloscope_xy_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept
 {
+    if (_State->_RecreateStyles)
+        DeleteDeviceSpecificResources();
+
 //  _ScaleFactor = std::min((_Size.width - 1.f) / 2.f, (_Size.height - 1.f) / 2.f);
 
     Resize();

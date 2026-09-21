@@ -30,6 +30,8 @@ public:
     void Reset() noexcept override final;
     void Release() noexcept override final;
 
+    void OnConfigurationChange(ConfigurationChanges configurationChanges) noexcept override final;
+
     // visualization_t
     void Configure(state_t * state, graph_options_t * graphOptions, const analysis_t * analysis, bool isFirst, bool isLast, CComPtr<ID3D11Device> d3dDevice, CComPtr<ID3D11DeviceContext> d3dDeviceContext) noexcept;
     void Resize() noexcept;
@@ -49,8 +51,8 @@ private:
     HRESULT CreatePointSprite(ComPtr<ID2D1Bitmap1> & bitmap) noexcept;
     HRESULT CreateAxesCommandList() noexcept;
 
-    double _LoFreq = 0.f;
-    double _HiFreq = 0.f;
+    double _LowBand  = 0.; // Hz
+    double _HighBand = 0.; // Hz
 
     static constexpr FLOAT Radius = .98f;
 

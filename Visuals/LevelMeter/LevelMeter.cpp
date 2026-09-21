@@ -1,5 +1,5 @@
 
-/** $VER: LevelMeter.cpp (2026.06.17) P. Stuer - Implements a left/right/mid/side level meter. **/
+/** $VER: LevelMeter.cpp (2026.09.21) P. Stuer - Implements a left/right/mid/side level meter. **/
 
 #include "pch.h"
 
@@ -255,6 +255,9 @@ void level_meter_t::Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwap
 /// </summary>
 HRESULT level_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept
 {
+    if (_State->_RecreateStyles)
+        DeleteDeviceSpecificResources();
+
     HRESULT hr = S_OK;
 
     D2D1_SIZE_F Size = deviceContext->GetSize();

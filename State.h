@@ -1,5 +1,5 @@
 
-/** $VER: State.h (2026.09.20) P. Stuer **/
+/** $VER: State.h (2026.09.21) P. Stuer **/
 
 #pragma once
 
@@ -62,9 +62,14 @@ public:
 
         VisualizationType _VisualizationType;
 
-        PeakMode _PeakMode;
-        double _HoldTime;                                               // Peak hold time, in seconds
-        double _FallRate;                                               // Peak fall rate, in dB/s
+        #pragma region Peaks
+
+            PeakMode _PeakMode;
+            double _HoldTime;                                           // Peak hold time, in seconds
+            double _FallRate;                                           // Peak fall rate, in dB/s
+            bool _ResetPeaksOnTrackChange;                              // Reset peaks on track change.
+
+        #pragma endregion
 
         #pragma region Bars
 
@@ -125,6 +130,9 @@ public:
             bool _ZeroCrossingTrigger;                                  // Use a zero-crossing trigger.
 
             audio_processor_t::ColorMode _GoniometerColorMode;
+            double _LowVisualGain;                                      // dB, [-12, 12]
+            double _MidVisualGain;                                      // dB, [-12, 12]
+            double _HighVisualGain;                                     // dB, [-12, 12]
 
         #pragma endregion
 

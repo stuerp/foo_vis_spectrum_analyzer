@@ -1,5 +1,5 @@
 
-/** $VER: VisualizationPage.cpp (2026.09.20) P. Stuer - Implements a configuration dialog page. **/
+/** $VER: VisualizationPage.cpp (2026.09.21) P. Stuer - Implements a configuration dialog page. **/
 
 #include "pch.h"
 
@@ -19,6 +19,7 @@ BOOL visualization_page_t::OnInitDialog(CWindow w, LPARAM lParam) noexcept
         { IDC_PEAK_MODE, "Determines how to display the peak values." },
         { IDC_HOLD_TIME, "Determines how long the peak values are held before they fall in seconds." },
         { IDC_FALL_RATE, "Determines the fall rate of the peak value in dB/s." },
+        { IDC_RESET_PEAKS, "Resets the peaks on track change." },
 
         { IDC_LED_MODE, "Renders the spectrum bars Peak/RMS and Balance/Correlation meters as LEDs." },
         { IDC_LED_SIZE, "Specifies the size of a LED in pixels." },
@@ -60,6 +61,9 @@ BOOL visualization_page_t::OnInitDialog(CWindow w, LPARAM lParam) noexcept
         { IDC_ZERO_CROSSING, "Enables a zero trigger to synchronize the oscilloscope display to the signal's zero crossings, creating a stable and readable waveform display." },
 
         { IDC_GONIOMETER_MODE, "Selects the goniometer mode." },
+        { IDC_LOW_VISUAL_GAIN, "Specifies the gain in dB to the intensity of the low band points." },
+        { IDC_MID_VISUAL_GAIN, "Specifies the gain in dB to the intensity of the middle band points." },
+        { IDC_HIGH_VISUAL_GAIN, "Specifies the gain in dB to the intensity of the high band points." },
     };
 
     for (const auto & [ID, Text] : Tips)
@@ -106,6 +110,8 @@ void visualization_page_t::InitializeControls() noexcept
 
         SetDouble(IDC_HOLD_TIME, _State->_HoldTime, 0, 1);
         SetDouble(IDC_FALL_RATE, _State->_FallRate, 0, 1);
+
+        SendDlgItemMessageW(IDC_RESET_PEAKS, BM_SETCHECK, _State->_ResetPeaksOnTrackChange);
     }
 
     // LEDs
@@ -230,6 +236,15 @@ void visualization_page_t::InitializeControls() noexcept
 
             w.SetCurSel((int) _State->_GoniometerColorMode);
         }
+        {
+            auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_LOW_VISUAL_GAIN)); _NumericEdits.push_back(ne); SetDouble(IDC_LOW_VISUAL_GAIN, _State->_LowVisualGain);
+        }
+        {
+            auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_MID_VISUAL_GAIN)); _NumericEdits.push_back(ne); SetDouble(IDC_MID_VISUAL_GAIN, _State->_MidVisualGain);
+        }
+        {
+            auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_HIGH_VISUAL_GAIN)); _NumericEdits.push_back(ne); SetDouble(IDC_HIGH_VISUAL_GAIN, _State->_HighVisualGain);
+        }
     }
 
     UpdateControls();
@@ -264,6 +279,8 @@ void visualization_page_t::UpdateControls() noexcept
 
     GetDlgItem(IDC_HOLD_TIME)               .EnableWindow(HasPeaks && (_State->_PeakMode != PeakMode::None));
     GetDlgItem(IDC_FALL_RATE)               .EnableWindow(HasPeaks && (_State->_PeakMode != PeakMode::None));
+
+    GetDlgItem(IDC_RESET_PEAKS)             .EnableWindow(HasPeaks);
 
     // LEDs
     GetDlgItem(IDC_LED_MODE)                .EnableWindow(HasLEDs);
@@ -316,6 +333,11 @@ void visualization_page_t::UpdateControls() noexcept
 
     GetDlgItem(IDC_DOWNMIX)       .EnableWindow(IsOscilloscope && !_State->_XYMode);
     GetDlgItem(IDC_ZERO_CROSSING) .EnableWindow(IsOscilloscope && !_State->_XYMode);
+
+    GetDlgItem(IDC_GONIOMETER_MODE)     .EnableWindow(IsGoniometer);
+    GetDlgItem(IDC_LOW_VISUAL_GAIN)     .EnableWindow(IsGoniometer);
+    GetDlgItem(IDC_MID_VISUAL_GAIN)     .EnableWindow(IsGoniometer);
+    GetDlgItem(IDC_HIGH_VISUAL_GAIN)    .EnableWindow(IsGoniometer);
 }
 
 /// <summary>
@@ -378,6 +400,8 @@ void visualization_page_t::OnSelectionChanged(UINT notificationCode, int id, CWi
             _State->_GoniometerColorMode = (audio_processor_t::ColorMode) SelectedIndex;
 
             UpdateControls();
+
+            ChangedSettings = ConfigurationChanges::Goniometer;
             break;
         }
     }
@@ -551,6 +575,33 @@ void visualization_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
             ChangedSettings = ConfigurationChanges::Oscilloscope;
             break;
         }
+
+        case IDC_LOW_VISUAL_GAIN:
+        {
+            if (!SetProperty(_State->_LowVisualGain, std::clamp(::_wtof(Text), MinVisualGain, MaxVisualGain)))
+                return;
+
+            ChangedSettings = ConfigurationChanges::Goniometer;
+            break;
+        }
+
+        case IDC_MID_VISUAL_GAIN:
+        {
+            if (!SetProperty(_State->_MidVisualGain, std::clamp(::_wtof(Text), MinVisualGain, MaxVisualGain)))
+                return;
+
+            ChangedSettings = ConfigurationChanges::Goniometer;
+            break;
+        }
+
+        case IDC_HIGH_VISUAL_GAIN:
+        {
+            if (!SetProperty(_State->_HighVisualGain, std::clamp(::_wtof(Text), MinVisualGain, MaxVisualGain)))
+                return;
+
+            ChangedSettings = ConfigurationChanges::Goniometer;
+            break;
+        }
     }
 
     ConfigurationChanged(ChangedSettings);
@@ -690,6 +741,30 @@ void visualization_page_t::OnEditLostFocus(UINT code, int id, CWindow) noexcept
             ChangedSettings = ConfigurationChanges::Oscilloscope;
             break;
         }
+
+        case IDC_LOW_VISUAL_GAIN:
+        {
+            SetDouble(id, _State->_LowVisualGain, 0, 2);
+
+            ChangedSettings = ConfigurationChanges::Goniometer;
+            break;
+        }
+
+        case IDC_MID_VISUAL_GAIN:
+        {
+            SetDouble(id, _State->_MidVisualGain, 0, 2);
+
+            ChangedSettings = ConfigurationChanges::Goniometer;
+            break;
+        }
+
+        case IDC_HIGH_VISUAL_GAIN:
+        {
+            SetDouble(id, _State->_HighVisualGain, 0, 2);
+
+            ChangedSettings = ConfigurationChanges::Goniometer;
+            break;
+        }
     }
 
     ConfigurationChanged(ChangedSettings);
@@ -709,6 +784,14 @@ void visualization_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
     {
         default:
             return;
+
+        case IDC_RESET_PEAKS:
+        {
+            _State->_ResetPeaksOnTrackChange = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+
+            UpdateControls();
+            break;
+        }
 
         case IDC_LED_MODE:
         {

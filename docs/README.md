@@ -299,6 +299,10 @@ Specifies how long a peak value will be held steady before it starts falling (in
 
 Specifies the rate at which the peak value decreases towards 0 (in dB/s).
 
+`Reset on track change`
+
+Resets the FFT peaks when a track starts or stops. This can be useful combined with fall rate of 0 dB/s to view the peaks of a complete track.
+
 #### LEDs group
 
 Some visualizations can display a bar as simulated LED lights.

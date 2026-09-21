@@ -93,7 +93,16 @@ void analysis_t::Reset() noexcept
 
     // FFT-based visualizations
     for (auto & fb : _FrequencyBands)
+    {
         fb.Value = 0.;
+
+        if (_State->_ResetPeaksOnTrackChange)
+        {
+            fb.PeakValue = 0.;
+            fb.FallRate = 0.;
+            fb.Opacity  = 1.;
+        }
+    }
 
     // Peak/RMS Meter
     {

@@ -1,5 +1,5 @@
 
-/** $VER: OscilloscopeBase.cpp (2026.06.21) P. Stuer - Implements a base class for an oscilloscope. **/
+/** $VER: OscilloscopeBase.cpp (2026.09.21) P. Stuer - Implements a base class for an oscilloscope. **/
 
 #include <pch.h>
 
@@ -86,6 +86,9 @@ void oscilloscope_base_t::DeleteDeviceIndependentResources() noexcept
 /// </summary>
 HRESULT oscilloscope_base_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept
 {
+    if (_State->_RecreateStyles)
+        DeleteDeviceSpecificResources();
+
     Resize();
 
     HRESULT hr = S_OK;

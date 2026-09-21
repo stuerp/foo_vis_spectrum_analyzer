@@ -1,5 +1,5 @@
 
-/** $VER: Spectrogram.cpp (2026.09.06) P. Stuer - Represents a spectrum analysis as a 2D heat map **/
+/** $VER: Spectrogram.cpp (2026.09.21) P. Stuer - Represents a spectrum analysis as a 2D heat map **/
 
 #include "pch.h"
 
@@ -932,9 +932,10 @@ void spectrogram_t::InitFreqAxis() noexcept
 /// </summary>
 HRESULT spectrogram_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext)
 {
-    HRESULT hr = S_OK;
+    if (_State->_RecreateStyles)
+        DeleteDeviceSpecificResources();
 
-    D2D1_SIZE_F Size = deviceContext->GetSize();
+    HRESULT hr = S_OK;
 
     if (_SpectrogramStyle._Brush == nullptr)
     {

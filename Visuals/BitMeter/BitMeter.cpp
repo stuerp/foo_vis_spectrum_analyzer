@@ -1,5 +1,5 @@
 
-/** $VER: BitMeter.cpp (2026.06.17) P. Stuer - Implements a bit meter visualization. **/
+/** $VER: BitMeter.cpp (2026.09.21) P. Stuer - Implements a bit meter visualization. **/
 
 #include <pch.h>
 
@@ -158,7 +158,10 @@ void bit_meter_t::Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwapCh
                     if (_State->_OpacityMode)
                         Style->_Brush->SetOpacity((FLOAT) BitCount);
                     else
+                    {
+                        Style->_Brush->SetOpacity(Style->_Opacity); // Always set the opacity in case we're returning from opacity mode.
                         r.top = ChannelHeight - ((FLOAT) BitCount * ChannelHeight);
+                    }
 
                     deviceContext->FillRectangle(r, Style->_Brush);
                 }
@@ -179,6 +182,9 @@ void bit_meter_t::Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwapCh
 /// </summary>
 HRESULT bit_meter_t::CreateDeviceSpecificResources(_In_ ID2D1DeviceContext * deviceContext) noexcept
 {
+    if (_State->_RecreateStyles)
+        DeleteDeviceSpecificResources();
+
     if ((_Size.width <= 0.f) || _Size.height <= 0.f)
         return E_INVALIDARG;
 

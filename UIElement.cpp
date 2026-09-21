@@ -569,6 +569,7 @@ void uielement_t::UpdateState(ConfigurationChanges configurationChanges) noexcep
             }
             
             case ConfigurationChanges::Layout:
+            case ConfigurationChanges::Goniometer:
             {
                 for (auto & Item : _Grid)
                     Item->OnConfigurationChange(configurationChanges);

@@ -1,5 +1,5 @@
 
-/** $VER: VisualizationPageLayout.h (2026.09.20) P. Stuer - Defines the layout of a configuration dialog page. **/
+/** $VER: VisualizationPageLayout.h (2026.09.21) P. Stuer - Defines the layout of a configuration dialog page. **/
 
 #pragma once
 
@@ -77,8 +77,14 @@
     #define Y_A56    Y_A54
     #pragma endregion
 
+    // Checkbox: Reset on track change
+    #define W_A58    100
+    #define H_A58    H_CHB
+    #define X_A58    X_A53
+    #define Y_A58    Y_A54 + H_A54 + IY
+
 #define W_B13   116
-#define H_B13   11 + H_A12 + IY + H_A52 + IY + H_A54 + 7
+#define H_B13   11 + H_A12 + IY + H_A52 + IY + H_A54 + IY + H_A58 + 7
 
 /** LEDs **/
 
@@ -471,5 +477,48 @@
     #define X_A46    X_A44 + W_A44 + IX
     #define Y_A46    Y_A44
 
+    // Groupbox: Visual Gain (dB)
+    #define X_A01   X_A44
+    #define Y_A01   Y_A44 + H_A44 + 11
+
+        // Label: Low
+        #define W_A02   20
+        #define H_A02   H_LBL
+        #define X_A02   X_A01 +  5
+        #define Y_A02   Y_A01 + 11
+
+        // Editbox: Low
+        #define W_A03   28
+        #define H_A03   H_TBX
+        #define X_A03   X_A02 + W_A02 + IX
+        #define Y_A03   Y_A02
+
+        // Label: Mid
+        #define W_A04   W_A02
+        #define H_A04   H_LBL
+        #define X_A04   X_A03 + W_A03 + IX
+        #define Y_A04   Y_A03
+
+        // Editbox: Mid
+        #define W_A05   W_A03
+        #define H_A05   H_TBX
+        #define X_A05   X_A04 + W_A04 + IX
+        #define Y_A05   Y_A04
+
+        // Label: High
+        #define W_A06   W_A04
+        #define H_A06   H_LBL
+        #define X_A06   X_A05 + W_A05 + IX
+        #define Y_A06   Y_A05
+
+        // Editbox: High
+        #define W_A07   W_A05
+        #define H_A07   H_TBX
+        #define X_A07   X_A06 + W_A06 + IX
+        #define Y_A07   Y_A06
+
+    #define W_A01   W_B14 - 10
+    #define H_A01   11 + H_A03 + 7
+
 #define W_B18  W_B14
-#define H_B18  11 + H_C56 + IY + H_C79 + IY + H_C68 + IY + H_A40 + IY + H_A46 + IY + 7
+#define H_B18  11 + H_C56 + IY + H_C79 + IY + H_C68 + IY + H_A40 + IY + H_A46 + IY + H_A01 + IY + 7

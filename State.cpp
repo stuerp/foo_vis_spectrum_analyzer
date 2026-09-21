@@ -1,5 +1,5 @@
 
-/** $VER: State.cpp (2026.09.20) P. Stuer **/
+/** $VER: State.cpp (2026.09.21) P. Stuer **/
 
 #include "pch.h"
 #include "State.h"
@@ -122,12 +122,12 @@ void state_t::Reset() noexcept
 
     _FrequencyShift = 1.;
 
-    _FrequencyTilt = 0.;
+    _FrequencyTilt      =    0.;
     _FrequencyTiltPivot = 1000.;
 
-    _EqualizationAmount = 0.;
-    _EqualizationFreqScale = 44100.;
-    _EqualizationDepth = 1024.;
+    _EqualizationAmount    =     0.;
+    _EqualizationFreqScale = 44100.; // Hz
+    _EqualizationDepth     =  1024.;
 
     _WeightingAmount = 0.;
 
@@ -135,16 +135,16 @@ void state_t::Reset() noexcept
     static constexpr double Tweeter = 2500.; // Hz
 
     _CrossoverMode = crossover_filter_t::Mode::LinkwitzRiley4;
-    _LowBand  = Woofer;
-    _HighBand = Tweeter;
+    _LowBand       = Woofer;
+    _HighBand      = Tweeter;
 
     _SmoothingMethod = SmoothingMethod::Average;
     _SmoothingFactor = 0.5;
 
-    _KernelSize = 32;
-    _AggregationMethod = AggregationMethod::Maximum;
+    _KernelSize             = 32;
+    _AggregationMethod      = AggregationMethod::Maximum;
     _SmoothLowerFrequencies = true;
-    _SmoothGainTransition = true;
+    _SmoothGainTransition   = true;
 
     // Rendering parameters
     _BackColor_Deprecated = D2D1::ColorF(D2D1::ColorF::Black);                  // Deprecated
@@ -238,6 +238,7 @@ void state_t::Reset() noexcept
     _PeakMode = PeakMode::Classic;
     _HoldTime = .5; // s
     _FallRate = 20; // dB/s
+    _ResetPeaksOnTrackChange = false;
 
     // Radial Bars
     _InnerRadius = 0.2f;
@@ -279,15 +280,18 @@ void state_t::Reset() noexcept
     _BlurSigma = 3.f;
     _DecayFactor = 0.95f;
     _FrameCount = 1024;
-    _Downmix = false;
-    _ZeroCrossingTrigger = false;
+    _Downmix                = false;
+    _ZeroCrossingTrigger    = false;
 
-    _GoniometerColorMode = audio_processor_t::ColorMode::Triband;
+    _GoniometerColorMode    = audio_processor_t::ColorMode::Triband;
+    _LowVisualGain          = +6.; // dB
+    _MidVisualGain          =  0.; // dB
+    _HighVisualGain         = -3.; // dB
 
     // Bit Meter
-    _BitMeterMode = BitMeterMode::FloatingPoint;
-    _BitsPerInteger = 63;
-    _OpacityMode = false;
+    _BitMeterMode           = BitMeterMode::FloatingPoint;
+    _BitsPerInteger         = 63;
+    _OpacityMode            = false;
 
     _StyleManager.Reset();
 
@@ -531,6 +535,7 @@ state_t & state_t::operator=(const state_t & other) noexcept
     _PeakMode = other._PeakMode;
     _HoldTime = other._HoldTime;
     _FallRate = other._FallRate;
+    _ResetPeaksOnTrackChange = other._ResetPeaksOnTrackChange;
 
     // Radial Bars
     _InnerRadius = other._InnerRadius;
@@ -576,6 +581,9 @@ state_t & state_t::operator=(const state_t & other) noexcept
     _ZeroCrossingTrigger  = other._ZeroCrossingTrigger;
 
     _GoniometerColorMode  = other._GoniometerColorMode;
+    _LowVisualGain        = other._LowVisualGain;
+    _MidVisualGain        = other._MidVisualGain;
+    _HighVisualGain       = other._HighVisualGain;
 
     // Bit Meter
     _BitMeterMode         = other._BitMeterMode;
@@ -1421,6 +1429,8 @@ void state_t::FromJSON(const char * data, size_t size, bool isPreset)
         }
         else
             _FallRate = std::clamp(PeakIndicators.value("fallRate", _FallRate), MinFallRate, MaxFallRate);
+
+        _ResetPeaksOnTrackChange = PeakIndicators.value("resetOnTrackChange", _ResetPeaksOnTrackChange);
     }
 
     const auto & LEDs = Object.value("leds", json::object());
@@ -1484,6 +1494,10 @@ void state_t::FromJSON(const char * data, size_t size, bool isPreset)
     const auto & Goniometer = Object.value("goniometer", json::object());
     {
         _GoniometerColorMode = std::clamp(Goniometer.value("colorMode", _GoniometerColorMode), audio_processor_t::ColorMode::Min, audio_processor_t::ColorMode::Max);
+
+        _LowVisualGain       = std::clamp(Goniometer.value("lowVisualGain",  _LowVisualGain),  MinVisualGain, MaxVisualGain);
+        _MidVisualGain       = std::clamp(Goniometer.value("midVisualGain",  _MidVisualGain),  MinVisualGain, MaxVisualGain);
+        _HighVisualGain      = std::clamp(Goniometer.value("highVisualGain", _HighVisualGain), MinVisualGain, MaxVisualGain);
     }
 
     const auto & BitMeter = Object.value("bitMeter", json::object());
@@ -1702,6 +1716,7 @@ json state_t::ToJSON(bool isPreset) const
                 { "mode", _PeakMode },
                 { "holdTime", _HoldTime },
                 { "fallRate", _FallRate },
+                { "resetOnTrackChange", _ResetPeaksOnTrackChange },
             })
         ),
 
@@ -1788,6 +1803,9 @@ json state_t::ToJSON(bool isPreset) const
             "goniometer", json::object
             ({
                 { "colorMode", _GoniometerColorMode },
+                { "lowVisualGain", _LowVisualGain },
+                { "midVisualGain", _MidVisualGain },
+                { "highVisualGain", _HighVisualGain },
             })
         ),
 

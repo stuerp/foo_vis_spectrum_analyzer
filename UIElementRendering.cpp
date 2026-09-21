@@ -117,7 +117,7 @@ void uielement_t::RenderThreadProc() noexcept
 
         // Determine the presentation time of the next frame.
         {
-            MaxFrameTime = Chrono.SecondsToTicks(1.0 / (double) _RenderState._RefreshRateLimit);
+            MaxFrameTime = Chrono.SecondsToTicks(1. / (double) _RenderState._RefreshRateLimit);
             NextFrameTime += MaxFrameTime;
 
             const int64_t Latency = Chrono.Now() - NextFrameTime;

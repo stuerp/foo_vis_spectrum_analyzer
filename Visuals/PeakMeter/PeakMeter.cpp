@@ -1,5 +1,5 @@
 
-/** $VER: PeakMeter.cpp (2026.06.15) P. Stuer - Represents a peak meter. **/
+/** $VER: PeakMeter.cpp (2026.09.21) P. Stuer - Represents a peak meter. **/
 
 #include "pch.h"
 
@@ -320,6 +320,9 @@ void peak_meter_t::MeasureParts(ID2D1DeviceContext * deviceContext) noexcept
 /// </summary>
 HRESULT peak_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept
 {
+    if (_State->_RecreateStyles)
+        DeleteDeviceSpecificResources();
+
     HRESULT hr = S_OK;
 
     if (_BackgroundStyle._Brush == nullptr)
@@ -467,7 +470,7 @@ HRESULT peak_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceC
         (void) deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), &_DebugBrush);
 #endif
 
-    if (_RenderedChannels != _Analysis->_PeakActiveChannelMask)
+    if ((_RenderedChannels != _Analysis->_PeakActiveChannelMask) || _State->_RecreateStyles)
     {
         DeleteParts();
 

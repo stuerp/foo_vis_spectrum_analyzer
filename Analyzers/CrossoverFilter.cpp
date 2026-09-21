@@ -112,25 +112,25 @@ void lr4_crossover_t::Reset() noexcept
 /// <summary>
 /// Configures this instance.
 /// </summary>
-HRESULT crossover_filter_t::Configure(double loFreq, double hiFreq, double sampleRate) noexcept
+HRESULT crossover_filter_t::Configure(double lowBand, double highBand, double sampleRate) noexcept
 {
-    if ((loFreq >= hiFreq) || (sampleRate <= 0.))
+    if ((lowBand >= highBand) || (sampleRate <= 0.))
         return E_INVALIDARG;
 
-    if ((loFreq == _LoFreq) && (hiFreq == _HiFreq) && (sampleRate == _SampleRate))
+    if ((lowBand == _LowBand) && (highBand == _HighBand) && (sampleRate == _SampleRate))
         return S_FALSE;
 
     constexpr double TwoPi = 2. * std::numbers::pi_v<double>;
 
-    _LoFreq     = loFreq;
-    _HiFreq     = hiFreq;
+    _LowBand    = lowBand;
+    _HighBand   = highBand;
     _SampleRate = sampleRate;
 
-    _LowMid .Configure(loFreq, sampleRate);
-    _MidHigh.Configure(hiFreq, sampleRate);
+    _LowMid .Configure(lowBand, sampleRate);
+    _MidHigh.Configure(highBand, sampleRate);
 
-    _LoAlpha = 1. - std::exp(-TwoPi * _LoFreq / _SampleRate);
-    _HiAlpha = 1. - std::exp(-TwoPi * _HiFreq / _SampleRate);
+    _LoAlpha = 1. - std::exp(-TwoPi * _LowBand  / _SampleRate);
+    _HiAlpha = 1. - std::exp(-TwoPi * _HighBand / _SampleRate);
 
     Reset();
 

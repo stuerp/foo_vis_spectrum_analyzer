@@ -1,5 +1,5 @@
 
-/** $VER: AudioProcessor.cpp (2026.09.20) P. Stuer - Implements an audio processor for the goniometer. **/
+/** $VER: AudioProcessor.cpp (2026.09.21) P. Stuer - Implements an audio processor for the goniometer. **/
 
 #include <pch.h>
 
@@ -11,24 +11,24 @@
 /// <summary>
 /// Configures the audio processor.
 /// </summary>
-HRESULT audio_processor_t::Configure(double loFreq, double hiFreq, double sampleRate) noexcept
+HRESULT audio_processor_t::Configure(double lowBand, double highBand, double sampleRate) noexcept
 {
-    if ((loFreq >= hiFreq) || (sampleRate <= 0.))
+    if ((lowBand >= highBand) || (sampleRate <= 0.))
         return E_INVALIDARG;
 
-    if ((loFreq == _LoFreq) && (hiFreq == _HiFreq) && (sampleRate == _SampleRate))
+    if ((lowBand == _LowBand) && (highBand == _HighBand) && (sampleRate == _SampleRate))
         return S_FALSE;
 
-    _LoFreq     = loFreq;
-    _HiFreq     = hiFreq;
+    _LowBand    = lowBand;
+    _HighBand   = highBand;
     _SampleRate = sampleRate;
 
-    HRESULT hr = _CrossoverL.Configure(_LoFreq, _HiFreq, sampleRate);
+    HRESULT hr = _CrossoverL.Configure(_LowBand, _HighBand, sampleRate);
 
     if (FAILED(hr))
         return hr;
 
-    hr = _CrossoverR.Configure(_LoFreq, _HiFreq, sampleRate);
+    hr = _CrossoverR.Configure(_LowBand, _HighBand, sampleRate);
 
     if (FAILED(hr))
         return hr;
@@ -66,11 +66,11 @@ HRESULT audio_processor_t::SetCrossoverMode(crossover_filter_t::Mode mode) noexc
 /// <summary>
 /// Processes the audio frames.
 /// </summary>
-void audio_processor_t::Process(const audio_chunk_impl & chunk, uint32_t activeChannelMask, uint32_t pairedChannelMask, double loFreq, double hiFreq) noexcept
+void audio_processor_t::Process(const audio_chunk_impl & chunk, uint32_t activeChannelMask, uint32_t pairedChannelMask, double lowBand, double highBand) noexcept
 {
     _PointCount = 0;
 
-    Configure(loFreq, hiFreq, (double) chunk.get_sample_rate());
+    Configure(lowBand, highBand, (double) chunk.get_sample_rate());
 
     const size_t FrameCount             = chunk.get_sample_count();    // get_sample_count() actually returns the number of frames.
     const uint32_t ChannelCount         = chunk.get_channel_count();
@@ -91,18 +91,15 @@ void audio_processor_t::Process(const audio_chunk_impl & chunk, uint32_t activeC
     }
 
     {
-        const auto PointCapacity = (_ColorMode == ColorMode::Triband ? FrameCount * 3 : FrameCount);
+        const auto PointCapacity = (_ColorMode == ColorMode::Triband) ? (FrameCount * 3) : FrameCount;
 
         if (_Points.size() < PointCapacity)
             _Points.resize(PointCapacity);
     }
 
-    double LeftEnergy = 0., RightEnergy = 0., CrossEnergy = 0.;
+    double LeftPowerSum = 0., RightPowerSum = 0., CrossPowerSum = 0.;
 
     const audio_sample * CurrentFrame = chunk.get_data();
-
-    // Experimental opacity of one point. Having a lot of overlapping points will increase the brightness.
-    constexpr double PointOpacity = 0.018;
 
     for (size_t FrameIndex = 0; FrameIndex < FrameCount; ++FrameIndex)
     {
@@ -118,49 +115,49 @@ void audio_processor_t::Process(const audio_chunk_impl & chunk, uint32_t activeC
 
             if (_ColorMode == ColorMode::Mono)
             {
-                AddPoint(SampleL, SampleR, _MonoColor, PointOpacity);
+                AddPoint(SampleL, SampleR, _MonoColor, _MidVisualGain);
             }
             else
             {
-                const double EnergyL = (LowL  * LowL)  + (LowR  * LowR);
-                const double EnergyM = (MidL  * MidL)  + (MidR  * MidR);
-                const double EnergyH = (HighL * HighL) + (HighR * HighR);
+                const double LowBandPower  = (LowL  * LowL)  + (LowR  * LowR);
+                const double MidBandPower  = (MidL  * MidL)  + (MidR  * MidR);
+                const double HighBandPower = (HighL * HighL) + (HighR * HighR);
 
                 if (_ColorMode == ColorMode::RGB)
                 {
-                    const auto TotalEnergy = EnergyL + EnergyM + EnergyH + 1e-12;
+                    const auto TotalBandPower = LowBandPower + MidBandPower + HighBandPower + 1e-12;
 
-                    const auto Color = D2D1::ColorF((float) std::sqrt(EnergyL / TotalEnergy), (float) std::sqrt(EnergyM / TotalEnergy), (float) std::sqrt(EnergyH / TotalEnergy));
+                    const auto Color = D2D1::ColorF((float) std::sqrt(LowBandPower / TotalBandPower), (float) std::sqrt(MidBandPower / TotalBandPower), (float) std::sqrt(HighBandPower / TotalBandPower));
 
-                    AddPoint(SampleL, SampleR, Color, PointOpacity);
+                    AddPoint(SampleL, SampleR, Color, _MidVisualGain);
                 }
                 else
                 {
-                    if (EnergyL > _EnergyThreshold)
-                        AddPoint(LowL,  LowR,  _LowColor,  std::clamp(PointOpacity * _LowGain,  0., 1.));
+                    if (LowBandPower > _BandPowerThreshold)
+                        AddPoint(LowL,  LowR,  _LowColor,  _LowVisualGain);
 
-                    if (EnergyM > _EnergyThreshold)
-                        AddPoint(MidL,  MidR,  _MidColor,  std::clamp(PointOpacity * _MidGain,  0., 1.));
+                    if (MidBandPower > _BandPowerThreshold)
+                        AddPoint(MidL,  MidR,  _MidColor,  _MidVisualGain);
 
-                    if (EnergyH > _EnergyThreshold)
-                        AddPoint(HighL, HighR, _HighColor, std::clamp(PointOpacity * _HighGain, 0., 1.));
+                    if (HighBandPower > _BandPowerThreshold)
+                        AddPoint(HighL, HighR, _HighColor, _HighVisualGain);
                 }
             }
         }
 
         // Update the correlation accumulators.
-        LeftEnergy  += SampleL * SampleL;
-        RightEnergy += SampleR * SampleR;
-        CrossEnergy += SampleL * SampleR;
+        LeftPowerSum  += SampleL * SampleL;
+        RightPowerSum += SampleR * SampleR;
+        CrossPowerSum += SampleL * SampleR;
 
         CurrentFrame += ChannelCount;
     }
 
     // Calculate the normalized cross-correlation coefficient.
     {
-        const double Normalizer = std::sqrt(LeftEnergy * RightEnergy);
+        const double Normalizer = std::sqrt(LeftPowerSum * RightPowerSum);
 
-        const double InstantCorrelation = (Normalizer > 1e-20) ? std::clamp(CrossEnergy / Normalizer, -1., 1.) : 0.;
+        const double InstantCorrelation = (Normalizer > 1e-20) ? std::clamp(CrossPowerSum / Normalizer, -1., 1.) : 0.;
 
         _Correlation += (InstantCorrelation - _Correlation) * .16; // Avoid jitter by smoothing the value.
     }

@@ -1,5 +1,5 @@
 
-/** $VER: XAXis.cpp (2026.09.06) P. Stuer - Implements the X axis of a graph. **/
+/** $VER: XAXis.cpp (2026.09.21) P. Stuer - Implements the X axis of a graph. **/
 
 #include "pch.h"
 
@@ -309,6 +309,9 @@ void x_axis_t::Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwapChain
 /// </summary>
 HRESULT x_axis_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext, style_manager_t & styleManager) noexcept
 {
+    if (_State->_RecreateStyles)
+        DeleteDeviceSpecificResources();
+
     HRESULT hr = S_OK;
 
     if (_LineStyle._Brush == nullptr)

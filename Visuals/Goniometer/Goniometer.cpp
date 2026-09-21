@@ -1,5 +1,5 @@
 
-/** $VER: Goniometer.cpp (2026.09.20) P. Stuer - Implements a goniometer. **/
+/** $VER: Goniometer.cpp (2026.09.21) P. Stuer - Implements a goniometer. **/
 
 #include <pch.h>
 
@@ -36,11 +36,12 @@ void goniometer_t::Configure(state_t * state, graph_options_t * graphOptions, co
     _GraphOptions = graphOptions;
     _Analysis     = analysis;
 
-    _LoFreq = _State->_LowBand;
-    _HiFreq = _State->_HighBand;
+    _LowBand  = _State->_LowBand;
+    _HighBand = _State->_HighBand;
 
     _AudioProcessor.SetColorMode(_State->_GoniometerColorMode);
     _AudioProcessor.SetCrossoverMode(_State->_CrossoverMode);
+    _AudioProcessor.SetVisualGain(_State->_LowVisualGain, _State->_MidVisualGain, _State->_HighVisualGain);
 
     CreateDeviceIndependentResources();
 }
@@ -82,6 +83,19 @@ void goniometer_t::Release() noexcept
 }
 
 /// <summary>
+/// Handles a configuration change.
+/// </summary>
+void goniometer_t::OnConfigurationChange(ConfigurationChanges configurationChanges) noexcept
+{
+    if (configurationChanges != ConfigurationChanges::Goniometer)
+        return;
+
+    _AudioProcessor.SetColorMode(_State->_GoniometerColorMode);
+    _AudioProcessor.SetCrossoverMode(_State->_CrossoverMode);
+    _AudioProcessor.SetVisualGain(_State->_LowVisualGain, _State->_MidVisualGain, _State->_HighVisualGain);
+}
+
+/// <summary>
 /// Recalculates parameters that are render target and size-sensitive.
 /// </summary>
 void goniometer_t::Resize() noexcept
@@ -93,6 +107,7 @@ void goniometer_t::Resize() noexcept
 
     _ForceElementToResize = false;
 }
+
 
 /// <summary>
 /// Renders this instance.
@@ -109,7 +124,7 @@ void goniometer_t::Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwapC
         const uint32_t ActiveChannelMask = _GraphOptions->_ActiveChannelMask;                               // Mask containing the channels selected by the user.
         const uint32_t PairedChannelMask = analysis_t::ChannelPairs[(size_t) _GraphOptions->_ChannelPair];  // Mask containing the channels selected by the user as a channel pair.
 
-        _AudioProcessor.Process(_Analysis->_Chunk, ActiveChannelMask, PairedChannelMask, _LoFreq, _HiFreq);
+        _AudioProcessor.Process(_Analysis->_Chunk, ActiveChannelMask, PairedChannelMask, _LowBand, _HighBand);
     }
 
     // Create the sprite batch from the audio points.
@@ -182,6 +197,9 @@ void goniometer_t::DeleteDeviceIndependentResources() noexcept
 /// </summary>
 HRESULT goniometer_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept
 {
+    if (_State->_RecreateStyles)
+        DeleteDeviceSpecificResources();
+
     HRESULT hr = S_OK;
 
 #ifdef _DEBUG

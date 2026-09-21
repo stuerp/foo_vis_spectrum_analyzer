@@ -65,7 +65,7 @@ private:
 class crossover_filter_t
 {
 public:
-    HRESULT Configure(double loFreq, double hiFreq, double sampleRate) noexcept;
+    HRESULT Configure(double lowBand, double highBand, double sampleRate) noexcept;
 
     enum class Mode
     {
@@ -96,9 +96,9 @@ public:
 private:
     Mode _Mode = Mode::LinkwitzRiley4;
 
-    double _LoFreq     = 0.;
-    double _HiFreq     = 0.;
-    double _SampleRate = 0.;
+    double _LowBand    = 0.; // Hz
+    double _HighBand   = 0.; // Hz
+    double _SampleRate = 0.; // Hz
 
     double _LoAlpha = 0.;
     double _HiAlpha = 0.;

@@ -183,6 +183,9 @@ void tester_t::DeleteDeviceIndependentResources() noexcept
 /// </summary>
 HRESULT tester_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept
 {
+    if (_State->_RecreateStyles)
+        DeleteDeviceSpecificResources();
+
     if ((_Size.width <= 0.f) || _Size.height <= 0.f)
         return E_INVALIDARG;
 

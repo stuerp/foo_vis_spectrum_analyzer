@@ -130,9 +130,6 @@ void graph_t::Process(const audio_chunk & chunk) noexcept
 /// </summary>
 void graph_t::Render(ID2D1DeviceContext * deviceContext, artwork_t & artwork, CComPtr<IDXGISwapChain1> swapChain) noexcept
 {
-    if (_State->_RecreateStyles)
-        DeleteDeviceSpecificResources();
-
     HRESULT hr = CreateDeviceSpecificResources(deviceContext);
 
     if (!SUCCEEDED(hr))
@@ -309,6 +306,9 @@ void graph_t::RenderDescription(ID2D1DeviceContext * deviceContext) noexcept
 /// </summary>
 HRESULT graph_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept
 {
+    if (_State->_RecreateStyles)
+        DeleteDeviceSpecificResources();
+
     HRESULT hr = S_OK;
 
     auto & StyleManager = _GraphOptions->_UseLocalStyles ? _GraphOptions->_StyleManager : _State->_StyleManager;
