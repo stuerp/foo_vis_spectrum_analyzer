@@ -237,7 +237,7 @@ void filters_page_t::UpdateControls() noexcept
     {
         GetDlgItem(IDC_CROSSOVER_MODE).EnableWindow(IsGoniometer);
 
-        const bool HasCrossover = (_State->_CrossoverMode != audio_crossover_t::CrossoverMode::None);
+        const bool HasCrossover = (_State->_CrossoverMode != crossover_filter_t::Mode::None);
 
         GetDlgItem(IDC_LOW_BAND) .EnableWindow(IsGoniometer && HasCrossover);
         GetDlgItem(IDC_HIGH_BAND).EnableWindow(IsGoniometer && HasCrossover);
@@ -285,7 +285,7 @@ void filters_page_t::OnSelectionChanged(UINT notificationCode, int id, CWindow w
 
         case IDC_CROSSOVER_MODE:
         {
-            _State->_CrossoverMode = (audio_crossover_t::CrossoverMode) SelectedIndex;
+            _State->_CrossoverMode = (crossover_filter_t::Mode) SelectedIndex;
 
             UpdateControls();
             break;

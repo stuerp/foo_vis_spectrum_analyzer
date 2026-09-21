@@ -315,11 +315,11 @@ void graphs_page_t::UpdateControls() noexcept
         CheckDlgButton(IDC_X_AXIS_TOP,    Options._XAxisTop);
         CheckDlgButton(IDC_X_AXIS_BOTTOM, Options._XAxisBottom);
 
-        GetDlgItem(IDC_Y_AXIS_LEFT)  .EnableWindow(IsSpectrogram || (Options.HasYAxis() && !(IsPeakMeter || IsLevelMeter || IsOscilloscopeXY)));
-        GetDlgItem(IDC_Y_AXIS_RIGHT) .EnableWindow(IsSpectrogram || (Options.HasYAxis() && !(IsPeakMeter || IsLevelMeter || IsOscilloscopeXY || IsBitMeter)));
+        GetDlgItem(IDC_Y_AXIS_LEFT)  .EnableWindow(IsSpectrogram || (Options.HasYAxis() && !(IsLevelMeter || IsOscilloscopeXY)));
+        GetDlgItem(IDC_Y_AXIS_RIGHT) .EnableWindow(IsSpectrogram || (Options.HasYAxis() && !(IsLevelMeter || IsOscilloscopeXY || IsBitMeter)));
 
-        GetDlgItem(IDC_X_AXIS_TOP)   .EnableWindow(IsSpectrogram || (Options.HasXAxis() && !(IsPeakMeter || IsLevelMeter || IsOscilloscope || IsBitMeter)));
-        GetDlgItem(IDC_X_AXIS_BOTTOM).EnableWindow(IsSpectrogram || (Options.HasXAxis() && !(IsPeakMeter || IsLevelMeter || IsOscilloscope)));
+        GetDlgItem(IDC_X_AXIS_TOP)   .EnableWindow(IsSpectrogram || (Options.HasXAxis() && !(IsLevelMeter || IsOscilloscope || IsBitMeter)));
+        GetDlgItem(IDC_X_AXIS_BOTTOM).EnableWindow(IsSpectrogram || (Options.HasXAxis() && !(IsLevelMeter || IsOscilloscope)));
     }
 
     // X axis

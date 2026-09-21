@@ -134,7 +134,7 @@ void state_t::Reset() noexcept
     static constexpr double Woofer  =  220.; // Hz
     static constexpr double Tweeter = 2500.; // Hz
 
-    _CrossoverMode = audio_crossover_t::CrossoverMode::LinkwitzRiley4;
+    _CrossoverMode = crossover_filter_t::Mode::LinkwitzRiley4;
     _LowBand  = Woofer;
     _HighBand = Tweeter;
 

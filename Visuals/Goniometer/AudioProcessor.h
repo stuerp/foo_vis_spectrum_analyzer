@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "AudioCrossover.h"
+#include "CrossoverFilter.h"
 
 #include <vector>
 
@@ -67,9 +67,9 @@ public:
         return S_OK;
     }
 
-    HRESULT SetCrossoverMode(audio_crossover_t::CrossoverMode mode) noexcept;
+    HRESULT SetCrossoverMode(crossover_filter_t::Mode mode) noexcept;
 
-    audio_crossover_t::CrossoverMode GetCrossoverMode() const noexcept
+    crossover_filter_t::Mode GetCrossoverMode() const noexcept
     {
         return _CrossoverMode;
     }
@@ -87,7 +87,7 @@ public:
 
 private:
     ColorMode _ColorMode = ColorMode::Triband;
-    audio_crossover_t::CrossoverMode _CrossoverMode = audio_crossover_t::CrossoverMode::LinkwitzRiley4;
+    crossover_filter_t::Mode _CrossoverMode = crossover_filter_t::Mode::LinkwitzRiley4;
 
     double _LoFreq = 0.;
     double _HiFreq = 0.;
@@ -107,8 +107,8 @@ private:
     D2D1_COLOR_F _MidColor  = D2D1::ColorF( .08f, 1.00f,  .25f); // Green
     D2D1_COLOR_F _HighColor = D2D1::ColorF( .08f,  .35f, 1.00f); // Blue
 
-    audio_crossover_t _CrossoverL;
-    audio_crossover_t _CrossoverR;
+    crossover_filter_t _CrossoverL;
+    crossover_filter_t _CrossoverR;
 
     double _Correlation = 0.f;
 };

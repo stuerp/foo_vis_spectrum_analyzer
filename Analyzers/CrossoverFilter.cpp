@@ -1,9 +1,9 @@
 
-/** $VER: CrossoverFilter.cpp (2026.09.20) P. Stuer - Implements an audio crossover filter. **/
+/** $VER: CrossoverFilter.cpp (2026.09.21) P. Stuer - Implements an audio crossover filter. **/
 
 #include <pch.h>
 
-#include "AudioCrossover.h"
+#include "CrossoverFilter.h"
 
 /// <summary>
 /// Configure this instance.
@@ -112,7 +112,7 @@ void lr4_crossover_t::Reset() noexcept
 /// <summary>
 /// Configures this instance.
 /// </summary>
-HRESULT audio_crossover_t::Configure(double loFreq, double hiFreq, double sampleRate) noexcept
+HRESULT crossover_filter_t::Configure(double loFreq, double hiFreq, double sampleRate) noexcept
 {
     if ((loFreq >= hiFreq) || (sampleRate <= 0.))
         return E_INVALIDARG;
@@ -140,7 +140,7 @@ HRESULT audio_crossover_t::Configure(double loFreq, double hiFreq, double sample
 /// <summary>
 /// Resets this instance.
 /// </summary>
-void audio_crossover_t::Reset() noexcept
+void crossover_filter_t::Reset() noexcept
 {
     _LoLP = _HiLP = 0.;
 
@@ -151,9 +151,9 @@ void audio_crossover_t::Reset() noexcept
 /// <summary>
 /// Processes a sample.
 /// </summary>
-void audio_crossover_t::Process(double amplitude, double & lowBand, double & midBand, double & highBand) noexcept
+void crossover_filter_t::Process(double amplitude, double & lowBand, double & midBand, double & highBand) noexcept
 {
-    if (_Mode == CrossoverMode::LinkwitzRiley4)
+    if (_Mode == Mode::LinkwitzRiley4)
     {
         // 24 dB/octave slopes, much better isolation, phase-aligned summation.
         double AboveLow = 0.;
@@ -162,7 +162,7 @@ void audio_crossover_t::Process(double amplitude, double & lowBand, double & mid
         _MidHigh.Process(AboveLow, midBand, highBand);
     }
     else
-    if (_Mode == CrossoverMode::FirstOrder)
+    if (_Mode == Mode::FirstOrder)
     {
         // 6 dB/octave slopes, large overlap due to the shallow slopes, substantial phase shift, broad mid band.
         _LoLP += _LoAlpha * (amplitude - _LoLP);
@@ -174,8 +174,9 @@ void audio_crossover_t::Process(double amplitude, double & lowBand, double & mid
     }
     else
     {
-        lowBand  = -1.;
+        // Pass the signal unchanged.
+        lowBand  = 0.;
         midBand  = amplitude;
-        highBand =  1.;
+        highBand = 0.;
     }
 }

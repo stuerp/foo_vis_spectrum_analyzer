@@ -60,14 +60,14 @@ private:
 };
 
 /// <summary>
-/// Three band audio crossover filter.
+/// Three-way audio crossover filter.
 /// </summary>
-class audio_crossover_t
+class crossover_filter_t
 {
 public:
     HRESULT Configure(double loFreq, double hiFreq, double sampleRate) noexcept;
 
-    enum class CrossoverMode
+    enum class Mode
     {
         None = 0,
 
@@ -78,7 +78,7 @@ public:
         Max = LinkwitzRiley4,
     };
 
-    HRESULT SetCrossoverMode(CrossoverMode mode) noexcept
+    HRESULT SetCrossoverMode(Mode mode) noexcept
     {
         if (mode == _Mode)
             return S_FALSE;
@@ -94,7 +94,7 @@ public:
     void Reset() noexcept;
 
 private:
-    CrossoverMode _Mode = CrossoverMode::LinkwitzRiley4;
+    Mode _Mode = Mode::LinkwitzRiley4;
 
     double _LoFreq     = 0.;
     double _HiFreq     = 0.;

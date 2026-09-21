@@ -46,7 +46,7 @@ HRESULT audio_processor_t::Configure(double loFreq, double hiFreq, double sample
 /// <summary>
 /// 
 /// </summary>
-HRESULT audio_processor_t::SetCrossoverMode(audio_crossover_t::CrossoverMode mode) noexcept
+HRESULT audio_processor_t::SetCrossoverMode(crossover_filter_t::Mode mode) noexcept
 {
     if (mode == _CrossoverMode)
         return S_FALSE;

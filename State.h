@@ -238,7 +238,7 @@ public:
 
         double _WeightingAmount;                                        // [-1, 1], Weighting amount
 
-        audio_crossover_t::CrossoverMode _CrossoverMode;
+        crossover_filter_t::Mode _CrossoverMode;
         double _LowBand;                                                // Hz, [0, 96000], End of the low band
         double _HighBand;                                               // Hz, [0, 96000], Start of the high band
 

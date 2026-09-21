@@ -221,7 +221,7 @@
     <ClInclude Include="Analyzers\Aggregator.h" />
     <ClInclude Include="Analyzers\AnalogStyleAnalyzer.h" />
     <ClInclude Include="Analyzers\Analysis.h" />
-    <ClInclude Include="Analyzers\AudioCrossover.h" />
+    <ClInclude Include="Analyzers\CrossoverFilter.h" />
     <ClInclude Include="Analyzers\Downmixer.h" />
     <ClInclude Include="Analyzers\Downsampler.h" />
     <ClInclude Include="Analyzers\FrequencyScaler.h" />
@@ -319,7 +319,7 @@
     <ClCompile Include="Analyzers\AnalogStyleAnalyzer.cpp" />
     <ClCompile Include="Analyzers\Analysis.cpp" />
     <ClCompile Include="Analyzers\CQTAnalyzer.cpp" />
-    <ClCompile Include="Analyzers\AudioCrossover.cpp" />
+    <ClCompile Include="Analyzers\CrossoverFilter.cpp" />
     <ClCompile Include="Analyzers\Decimator.cpp" />
     <ClCompile Include="Analyzers\Downmixer.cpp" />
     <ClCompile Include="Analyzers\Downsampler.cpp" />

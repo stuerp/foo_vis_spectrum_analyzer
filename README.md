@@ -103,6 +103,7 @@ v0.13.0.0-alpha1, 2026-09-xx
   - The crossover filter can be configured on the `Filters` configuration page.
 - Fixed: A 3-year old bug in the non-radix 2 FFT.
 - Fixed: 32-bit Bit Meter interpreted the audio sample as 64-bit.
+- Fixed: Axis settings were disabled for the peak meter.
 
 You can read the full history [here](docs/History.md).
 
