@@ -1,5 +1,5 @@
 
-/** $VER: Goniometer.cpp (2026.09.21) P. Stuer - Implements a goniometer. **/
+/** $VER: Goniometer.cpp (2026.09.22) P. Stuer - Implements a goniometer. **/
 
 #include <pch.h>
 
@@ -30,7 +30,7 @@ goniometer_t::~goniometer_t()
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void goniometer_t::Configure(state_t * state, graph_options_t * graphOptions, const analysis_t * analysis, bool isFirst, bool isLast, CComPtr<ID3D11Device>, CComPtr<ID3D11DeviceContext>) noexcept
+void goniometer_t::Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, CComPtr<ID3D11Device>, CComPtr<ID3D11DeviceContext>) noexcept
 {
     _State        = state;
     _GraphOptions = graphOptions;
@@ -38,6 +38,8 @@ void goniometer_t::Configure(state_t * state, graph_options_t * graphOptions, co
 
     _LowBand  = _State->_LowBand;
     _HighBand = _State->_HighBand;
+
+    _AudioProcessor.Initialize(state);
 
     _AudioProcessor.SetColorMode(_State->_GoniometerColorMode);
     _AudioProcessor.SetCrossoverMode(_State->_CrossoverMode);
@@ -87,7 +89,7 @@ void goniometer_t::Release() noexcept
 /// </summary>
 void goniometer_t::OnConfigurationChange(ConfigurationChanges configurationChanges) noexcept
 {
-    if (configurationChanges != ConfigurationChanges::Goniometer)
+    if (!IsSet(configurationChanges, ConfigurationChanges::Goniometer))
         return;
 
     _AudioProcessor.SetColorMode(_State->_GoniometerColorMode);
@@ -120,12 +122,15 @@ void goniometer_t::Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwapC
         return;
 
     // Process the chunk.
+    if (!_Analysis->_Chunk.is_empty())
     {
         const uint32_t ActiveChannelMask = _GraphOptions->_ActiveChannelMask;                               // Mask containing the channels selected by the user.
         const uint32_t PairedChannelMask = analysis_t::ChannelPairs[(size_t) _GraphOptions->_ChannelPair];  // Mask containing the channels selected by the user as a channel pair.
 
         _AudioProcessor.Process(_Analysis->_Chunk, ActiveChannelMask, PairedChannelMask, _LowBand, _HighBand);
     }
+    else
+        _AudioProcessor.Reset();
 
     // Create the sprite batch from the audio points.
     if (_AudioProcessor._PointCount != 0)
@@ -140,11 +145,14 @@ void goniometer_t::Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwapC
         _DeviceContext->BeginDraw();
 
         _DeviceContext->SetTarget(_Bitmaps[BitmapIndex].Get());
+
         _DeviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
 
-        // Draw a blurred version of the previous bitmap.
+        _DeviceContext->Clear();
+
+        // Draw a faded and blurred version of the previous bitmap.
         {
-            _BlurEffect->SetInput(0, _Bitmaps[_PrevBitmapIndex].Get());
+            _OpacityEffect->SetInput(0, _Bitmaps[_PrevBitmapIndex].Get());
 
             _DeviceContext->DrawImage(_BlurEffect.Get());
         }
@@ -161,14 +169,15 @@ void goniometer_t::Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwapC
             return;
     }
 
-    // Draw the final result to the front buffer.
     {
+        // Draw the static content to the front buffer.
         deviceContext->SetTransform(_TranslationMatrix);
 
-        deviceContext->DrawImage(_AxesCommandList.Get());
+        deviceContext->DrawImage(_StaticContent.Get());
 
         deviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
 
+        // Draw the composited frame to the front buffer.
         deviceContext->DrawBitmap(_Bitmaps[BitmapIndex].Get(), _DestinationRectangle, 1.f, D2D1_INTERPOLATION_MODE_LINEAR);
     }
 
@@ -226,15 +235,31 @@ HRESULT goniometer_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceC
             return hr;
     }
 
-    if (_BlurEffect == nullptr)
+    if (_OpacityEffect == nullptr)
     {
-        hr = _DeviceContext->CreateEffect(CLSID_D2D1GaussianBlur, _BlurEffect.GetAddressOf());
+        hr = _DeviceContext->CreateEffect(CLSID_D2D1Opacity, _OpacityEffect.GetAddressOf());
 
         if (FAILED(hr))
             return hr;
 
+        constexpr FLOAT Persistence = 120.f; // ms
+
+        const FLOAT Opacity = std::expf(-(1000.f / (FLOAT) _State->_RefreshRateLimit) / Persistence);
+
+        _OpacityEffect->SetValue(D2D1_OPACITY_PROP_OPACITY, Opacity);
+    }
+
+    if (_BlurEffect == nullptr)
+    {
+        hr = _DeviceContext->CreateEffect(CLSID_D2D1GaussianBlur, &_BlurEffect);
+
+        if (FAILED(hr))
+            return hr;
+
+        _BlurEffect->SetInputEffect(0, _OpacityEffect.Get());
+
         _BlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_STANDARD_DEVIATION, _State->_BlurSigma);
-        _BlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_OPTIMIZATION, D2D1_DIRECTIONALBLUR_OPTIMIZATION_SPEED);
+        _BlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_OPTIMIZATION, D2D1_DIRECTIONALBLUR_OPTIMIZATION_BALANCED);
         _BlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_BORDER_MODE, D2D1_BORDER_MODE_HARD);
     }
 
@@ -255,13 +280,13 @@ HRESULT goniometer_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceC
     }
 
     // Create a brush stroke style for the axes that remains fixed during the scaling transformation.
-    if (_AxisStrokeStyle == nullptr)
+    if (_StaticStrokeStyle == nullptr)
     {
         D2D1_STROKE_STYLE_PROPERTIES1 StrokeStyleProperties = D2D1::StrokeStyleProperties1();
 
         StrokeStyleProperties.transformType = D2D1_STROKE_TRANSFORM_TYPE_FIXED; // Prevent stroke scaling
 
-        hr = _Direct2D.Factory->CreateStrokeStyle(StrokeStyleProperties, nullptr, 0, _AxisStrokeStyle.GetAddressOf());
+        hr = _Direct2D.Factory->CreateStrokeStyle(StrokeStyleProperties, nullptr, 0, _StaticStrokeStyle.GetAddressOf());
 
         if (FAILED(hr))
             return hr;
@@ -279,11 +304,12 @@ void goniometer_t::DeleteDeviceSpecificResources() noexcept
 {
     DeleteSizeDependentResources();
 
-    _AxisStrokeStyle.Reset();
+    _StaticStrokeStyle.Reset();
 
     _SpriteBatch.Reset();
     _Sprite.Reset();
 
+    _OpacityEffect.Reset();
     _BlurEffect.Reset();
 
     _DeviceContext.Reset();
@@ -314,14 +340,14 @@ HRESULT goniometer_t::CreateSizeDependentResources(ID2D1DeviceContext * deviceCo
         if (FAILED(hr))
             return hr;
 
-        if (_AudioProcessor.GetColorMode() == audio_processor_t::ColorMode::Mono)
+        if (_AudioProcessor.GetColorMode() == goniometer::ColorMode::Mono)
         {
             _SignalStyle._CurrentColor = _SignalStyle._CustomColor;
 
             _AudioProcessor.SetMonoColor(_SignalStyle._CurrentColor);
         }
         else
-        if (_AudioProcessor.GetColorMode() == audio_processor_t::ColorMode::Triband)
+        if (_AudioProcessor.GetColorMode() == goniometer::ColorMode::Triband)
         {
             auto cl = _SignalStyle._CurrentGradientStops.front().color;
             auto ch = _SignalStyle._CurrentGradientStops.back().color;
@@ -416,15 +442,15 @@ HRESULT goniometer_t::CreateSizeDependentResources(ID2D1DeviceContext * deviceCo
             return hr;
 
         _PrevBitmapIndex = 0;
+
+        hr = ClearBitmaps();
+
+        if (FAILED(hr))
+            return hr;
     }
 
-    hr = ClearBitmaps();
-
-    if (FAILED(hr))
-        return hr;
-
-    if (_AxesCommandList == nullptr)
-        hr = CreateAxesCommandList();
+    if (_StaticContent == nullptr)
+        hr = CreateStaticContent();
 
     return hr;
 }
@@ -434,7 +460,7 @@ HRESULT goniometer_t::CreateSizeDependentResources(ID2D1DeviceContext * deviceCo
 /// </summary>
 void goniometer_t::DeleteSizeDependentResources() noexcept
 {
-    _AxesCommandList.Reset();
+    _StaticContent.Reset();
 
     for (auto & Bitmap : _Bitmaps)
         Bitmap.Reset();
@@ -594,20 +620,20 @@ HRESULT goniometer_t::CreatePointSprite(ComPtr<ID2D1Bitmap1> & bitmap) noexcept
 }
 
 /// <summary>
-/// Creates a command list to render the axes and the X and Y axis labels.
+/// Creates a command list to render static content.
 /// This is created in a [-1, 1] axis setup and scaled up as necessary.
 /// </summary>
-HRESULT goniometer_t::CreateAxesCommandList() noexcept
+HRESULT goniometer_t::CreateStaticContent() noexcept
 {
     const auto ScaleTransform = D2D1::Matrix3x2F::Scale(D2D1::SizeF(_ScaleFactor, _ScaleFactor));
 
     // Create a command list that will store the grid pattern and the axes.
-    HRESULT hr = _DeviceContext->CreateCommandList(&_AxesCommandList);
+    HRESULT hr = _DeviceContext->CreateCommandList(&_StaticContent);
 
     if (FAILED(hr))
         return hr;
 
-    _DeviceContext->SetTarget(_AxesCommandList.Get());
+    _DeviceContext->SetTarget(_StaticContent.Get());
     _DeviceContext->BeginDraw();
 
     _DeviceContext->SetTransform(ScaleTransform);
@@ -620,7 +646,7 @@ HRESULT goniometer_t::CreateAxesCommandList() noexcept
 
     // Draw the L-axis.
     {
-        _DeviceContext->DrawLine(D2D1::Point2F(-Radius * Sin, -Radius * Cos), D2D1::Point2F(Radius * Sin, Radius * Cos), _XAxisLineStyle._Brush, 1.f, _AxisStrokeStyle.Get());
+        _DeviceContext->DrawLine(D2D1::Point2F(-Radius * Sin, -Radius * Cos), D2D1::Point2F(Radius * Sin, Radius * Cos), _XAxisLineStyle._Brush, 1.f, _StaticStrokeStyle.Get());
 
         _XAxisTextStyle.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
         _XAxisTextStyle.SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_FAR);
@@ -632,7 +658,7 @@ HRESULT goniometer_t::CreateAxesCommandList() noexcept
 
     // Draw the R-axis.
     {
-        _DeviceContext->DrawLine(D2D1::Point2F(-Radius * Sin, Radius * Cos), D2D1::Point2F(Radius * Sin, -Radius * Cos), _YAxisLineStyle._Brush, 1.f, _AxisStrokeStyle.Get());
+        _DeviceContext->DrawLine(D2D1::Point2F(-Radius * Sin, Radius * Cos), D2D1::Point2F(Radius * Sin, -Radius * Cos), _YAxisLineStyle._Brush, 1.f, _StaticStrokeStyle.Get());
 
         _XAxisTextStyle.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
         _XAxisTextStyle.SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_FAR);
@@ -644,7 +670,7 @@ HRESULT goniometer_t::CreateAxesCommandList() noexcept
 
     // Draw the S-axis.
     {
-        _DeviceContext->DrawLine(D2D1::Point2F(-Radius, 0.f), D2D1::Point2F(Radius, 0.f), _XAxisLineStyle._Brush, 1.f, _AxisStrokeStyle.Get());
+        _DeviceContext->DrawLine(D2D1::Point2F(-Radius, 0.f), D2D1::Point2F(Radius, 0.f), _XAxisLineStyle._Brush, 1.f, _StaticStrokeStyle.Get());
 
         {
             _XAxisTextStyle.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
@@ -666,7 +692,7 @@ HRESULT goniometer_t::CreateAxesCommandList() noexcept
 
     // Draw the M-axis.
     {
-        _DeviceContext->DrawLine(D2D1::Point2F(0.f, -Radius), D2D1::Point2F(0, Radius), _XAxisLineStyle._Brush, 1.f, _AxisStrokeStyle.Get());
+        _DeviceContext->DrawLine(D2D1::Point2F(0.f, -Radius), D2D1::Point2F(0, Radius), _XAxisLineStyle._Brush, 1.f, _StaticStrokeStyle.Get());
 /*
         _XAxisTextStyle.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
         _XAxisTextStyle.SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
@@ -677,6 +703,32 @@ HRESULT goniometer_t::CreateAxesCommandList() noexcept
 */
     }
 
+    // Draw the outer circle (0 dBFS).
+    {
+        auto Ellipse = D2D1::Ellipse(D2D1::Point2F(0.f, 0.f), Radius, Radius);
+
+        _DeviceContext->DrawEllipse(Ellipse, _XAxisLineStyle._Brush, 1.f, _StaticStrokeStyle.Get());
+    }
+
+    // Draw the middle circle (-6 dBFS).
+    {
+        const auto r = Radius * std::powf(10.f, -6.f / 20.f);
+
+        auto Ellipse = D2D1::Ellipse(D2D1::Point2F(0.f, 0.f), r, r);
+
+        _DeviceContext->DrawEllipse(Ellipse, _XAxisLineStyle._Brush, 1.f, _StaticStrokeStyle.Get());
+    }
+
+    // Draw the inner circle (-12 dBFS).
+    {
+        const auto r = Radius * std::powf(10.f, -12.f / 20.f);
+
+        auto Ellipse = D2D1::Ellipse(D2D1::Point2F(0.f, 0.f), r, r);
+
+
+        _DeviceContext->DrawEllipse(Ellipse, _XAxisLineStyle._Brush, 1.f, _StaticStrokeStyle.Get());
+    }
+
     _DeviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
 
     hr = _DeviceContext->EndDraw();
@@ -684,7 +736,7 @@ HRESULT goniometer_t::CreateAxesCommandList() noexcept
     if (FAILED(hr))
         return hr;
 
-    hr = _AxesCommandList->Close();
+    hr = _StaticContent->Close();
 
     return hr;
 }

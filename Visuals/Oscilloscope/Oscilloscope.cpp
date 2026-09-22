@@ -34,7 +34,7 @@ oscilloscope_t::~oscilloscope_t() noexcept
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void oscilloscope_t::Configure(state_t * state, graph_options_t * graphOptions, const analysis_t * analysis, bool isFirst, bool isLast, CComPtr<ID3D11Device> d3dDevice, CComPtr<ID3D11DeviceContext> d3dDeviceContext) noexcept
+void oscilloscope_t::Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, CComPtr<ID3D11Device> d3dDevice, CComPtr<ID3D11DeviceContext> d3dDeviceContext) noexcept
 {
     _State = state;
     _GraphOptions = graphOptions;
@@ -426,14 +426,14 @@ HRESULT oscilloscope_t::CreateSignalGeometry(const audio_chunk_impl & chunk, con
                 const FLOAT dx = clientSize.width / (FLOAT) FrameCount;
 
                 FLOAT x = 0.f;
-                FLOAT y = ChannelBaseline - (std::clamp((FLOAT) (Scaler(Frames[ChannelOffset]) * _State->_YGain), -1.f, 1.f) * ChannelMax);
+                FLOAT y = ChannelBaseline - (std::clamp((FLOAT) (Scaler(Frames[ChannelOffset]) * _State->_YInputGain), -1.f, 1.f) * ChannelMax);
 
                 Sink->BeginFigure(D2D1::Point2F(x, y), D2D1_FIGURE_BEGIN_HOLLOW);
 
                 for (size_t i = ChannelCount + ChannelOffset; i < SampleCount; i += ChannelCount)
                 {
                     x += dx;
-                    y = ChannelBaseline - (std::clamp((FLOAT) (Scaler(Frames[i]) * _State->_YGain), -1.f, 1.f) * ChannelMax);
+                    y = ChannelBaseline - (std::clamp((FLOAT) (Scaler(Frames[i]) * _State->_YInputGain), -1.f, 1.f) * ChannelMax);
 
                     Sink->AddLine(D2D1::Point2F(x, y));
                 }

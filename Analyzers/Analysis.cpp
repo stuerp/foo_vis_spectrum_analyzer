@@ -168,6 +168,7 @@ void analysis_t::Process(const audio_chunk & chunk) noexcept
         }
 
         case VisualizationType::Oscilloscope:
+        case VisualizationType::Goniometer:
         {
             OscilloscopeProcessing(chunk);
             break;
@@ -176,12 +177,6 @@ void analysis_t::Process(const audio_chunk & chunk) noexcept
         case VisualizationType::BitMeter:
         {
             BitMeterProcessing(chunk);
-            break;
-        }
-
-        case VisualizationType::Goniometer:
-        {
-            StereoMeterProcessing(chunk);
             break;
         }
 
@@ -1168,7 +1163,7 @@ void analysis_t::InitializePeakMeasurements(uint32_t activeChannelMask) noexcept
 #pragma region Oscilloscope
 
 /// <summary>
-/// Process the chunk data for the oscilloscope.
+/// Process the chunk data for the oscilloscope / goniometer.
 /// </summary>
 void analysis_t::OscilloscopeProcessing(const audio_chunk & chunk) noexcept
 {
@@ -1302,18 +1297,6 @@ void analysis_t::InitializeBitMeasurements(uint32_t activeChannelMask) noexcept
         for (auto & m : _BitMeasurements)
             std::fill(m.BitCounts.begin(), m.BitCounts.end(), 0.);
     }
-}
-
-#pragma endregion
-
-#pragma region Goniometer
-
-/// <summary>
-/// Process the chunk data for the goniometer.
-/// </summary>
-void analysis_t::StereoMeterProcessing(const audio_chunk & chunk) noexcept
-{
-    _Chunk.copy(chunk, true);
 }
 
 #pragma endregion

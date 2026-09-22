@@ -33,7 +33,7 @@ public:
     void OnConfigurationChange(ConfigurationChanges configurationChanges) noexcept override final;
 
     // visualization_t
-    void Configure(state_t * state, graph_options_t * graphOptions, const analysis_t * analysis, bool isFirst, bool isLast, CComPtr<ID3D11Device> d3dDevice, CComPtr<ID3D11DeviceContext> d3dDeviceContext) noexcept;
+    void Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, CComPtr<ID3D11Device> d3dDevice, CComPtr<ID3D11DeviceContext> d3dDeviceContext) noexcept;
     void Resize() noexcept;
 
 private:
@@ -49,7 +49,7 @@ private:
     HRESULT CreateSprites() noexcept;
     HRESULT ClearBitmaps() noexcept;
     HRESULT CreatePointSprite(ComPtr<ID2D1Bitmap1> & bitmap) noexcept;
-    HRESULT CreateAxesCommandList() noexcept;
+    HRESULT CreateStaticContent() noexcept;
 
     double _LowBand  = 0.; // Hz
     double _HighBand = 0.; // Hz
@@ -78,6 +78,7 @@ private:
     ComPtr<ID2D1DeviceContext3> _DeviceContext; // Device context used to render to the back buffers.
     ComPtr<ID2D1Bitmap1> _Bitmaps[2];
 
+    ComPtr<ID2D1Effect> _OpacityEffect;
     ComPtr<ID2D1Effect> _BlurEffect;
 
     ComPtr<ID2D1Bitmap1> _Sprite;
@@ -88,8 +89,8 @@ private:
     std::vector<D2D1_COLOR_F> _SpriteColors;
     std::vector<D2D1_MATRIX_3X2_F> _SpriteTransforms;
 
-    ComPtr<ID2D1StrokeStyle1> _AxisStrokeStyle;
-    ComPtr<ID2D1CommandList> _AxesCommandList;
+    ComPtr<ID2D1StrokeStyle1> _StaticStrokeStyle;
+    ComPtr<ID2D1CommandList> _StaticContent;
 
     audio_processor_t _AudioProcessor;
 };

@@ -1,5 +1,5 @@
 
-/** $VER: Constants.h (2026.09.20) P. Stuer **/
+/** $VER: Constants.h (2026.09.22) P. Stuer **/
 
 #pragma once
 
@@ -714,6 +714,33 @@ enum class VerticalTextAlignment : uint32_t
     Min = Top,
     Max = Bottom
 };
+
+namespace goniometer
+{
+    enum class ColorMode
+    {
+        Mono = 0,
+        RGB,
+        Triband,
+
+        Min = Mono,
+        Max = Triband,
+    };
+}
+
+namespace crossover
+{
+    enum class Mode
+    {
+        None = 0,
+
+        FirstOrder,
+        LinkwitzRiley4,
+
+        Min = None,
+        Max = LinkwitzRiley4,
+    };
+}
 
 enum class ConfigurationChanges : uint32_t
 {

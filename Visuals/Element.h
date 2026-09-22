@@ -68,7 +68,7 @@ public:
 protected:
     state_t * _State;
     graph_options_t * _GraphOptions;
-    const analysis_t * _Analysis;
+    analysis_t * _Analysis;
 
     bool _IsFirst;
     bool _IsLast;

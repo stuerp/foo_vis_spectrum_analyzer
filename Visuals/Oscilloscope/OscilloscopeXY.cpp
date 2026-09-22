@@ -28,7 +28,7 @@ oscilloscope_xy_t::~oscilloscope_xy_t() noexcept
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void oscilloscope_xy_t::Configure(state_t * state, graph_options_t * graphOptions, const analysis_t * analysis, bool isFirst, bool isLast, CComPtr<ID3D11Device> d3dDevice, CComPtr<ID3D11DeviceContext> d3dDeviceContext) noexcept
+void oscilloscope_xy_t::Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, CComPtr<ID3D11Device> d3dDevice, CComPtr<ID3D11DeviceContext> d3dDeviceContext) noexcept
 {
     _State = state;
     _GraphOptions = graphOptions;
@@ -134,15 +134,15 @@ void oscilloscope_xy_t::Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGI
 
                     hr = Geometry->Open(&Sink);
 
-                    FLOAT x = (FLOAT) std::clamp(Frames[Channel1] * _State->_XGain, -1., 1.);
-                    FLOAT y = (FLOAT) std::clamp(Frames[Channel2] * _State->_YGain, -1., 1.);
+                    auto x = (FLOAT) std::clamp(Frames[Channel1] * _State->_XInputGain, -1., 1.);
+                    auto y = (FLOAT) std::clamp(Frames[Channel2] * _State->_YInputGain, -1., 1.);
 
                     Sink->BeginFigure(D2D1::Point2F(x, y), D2D1_FIGURE_BEGIN_HOLLOW);
 
                     for (size_t i = ChannelCount; i < FrameCount; i += ChannelCount)
                     {
-                        x = (FLOAT) std::clamp(Frames[Channel1 + i] * _State->_XGain, -1., 1.);
-                        y = (FLOAT) std::clamp(Frames[Channel2 + i] * _State->_YGain, -1., 1.);
+                        x = (FLOAT) std::clamp(Frames[Channel1 + i] * _State->_XInputGain, -1., 1.);
+                        y = (FLOAT) std::clamp(Frames[Channel2 + i] * _State->_YInputGain, -1., 1.);
 
                         Sink->AddLine(D2D1::Point2F(x, y));
                     }

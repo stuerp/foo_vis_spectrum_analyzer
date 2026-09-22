@@ -1,5 +1,5 @@
 
-/** $VER: State.cpp (2026.09.21) P. Stuer **/
+/** $VER: State.cpp (2026.09.22) P. Stuer **/
 
 #include "pch.h"
 #include "State.h"
@@ -134,7 +134,7 @@ void state_t::Reset() noexcept
     static constexpr double Woofer  =  220.; // Hz
     static constexpr double Tweeter = 2500.; // Hz
 
-    _CrossoverMode = crossover_filter_t::Mode::LinkwitzRiley4;
+    _CrossoverMode = crossover::Mode::LinkwitzRiley4;
     _LowBand       = Woofer;
     _HighBand      = Tweeter;
 
@@ -272,19 +272,19 @@ void state_t::Reset() noexcept
     _IsHorizontalLevelMeter = false;
 
     // Oscilloscope
-    _XYMode = false;
-    _XGain = 1.f;
-    _YGain = 1.f;
-    _Rotation = 0.f;
-    _HasPhosphorDecay = true;
-    _BlurSigma = 3.f;
-    _DecayFactor = 0.95f;
-    _FrameCount = 1024;
+    _XYMode                 = false;
+    _XInputGain             = 1.;
+    _YInputGain             = 1.;
+    _Rotation               = 0.f;
+    _HasPhosphorDecay       = true;
+    _BlurSigma              = 3.f;
+    _DecayFactor            = 0.95f;
+    _FrameCount             = 1024;
     _Downmix                = false;
     _ZeroCrossingTrigger    = false;
 
-    _GoniometerColorMode    = audio_processor_t::ColorMode::Triband;
-    _LowVisualGain          = +6.; // dB
+    _GoniometerColorMode    = goniometer::ColorMode::Triband;
+    _LowVisualGain          = -6.; // dB
     _MidVisualGain          =  0.; // dB
     _HighVisualGain         = -3.; // dB
 
@@ -570,8 +570,8 @@ state_t & state_t::operator=(const state_t & other) noexcept
 
     // Oscilloscope
     _XYMode               = other._XYMode;
-    _XGain                = other._XGain;
-    _YGain                = other._YGain;
+    _XInputGain           = other._XInputGain;
+    _YInputGain           = other._YInputGain;
     _Rotation             = other._Rotation;
     _HasPhosphorDecay     = other._HasPhosphorDecay;
     _BlurSigma            = other._BlurSigma;
@@ -1004,8 +1004,8 @@ void state_t::Read(stream_reader * stream, size_t size, abort_callback & abortHa
         if (Version >= 31)
         {
             stream->read_object_t(_XYMode, abortHandler);
-            stream->read_object_t(_XGain, abortHandler);
-            stream->read_object_t(_YGain, abortHandler);
+            stream->read_object_t(_XInputGain, abortHandler);
+            stream->read_object_t(_YInputGain, abortHandler);
 
             stream->read_object_t(_HasPhosphorDecay, abortHandler);
             stream->read_object_t(_BlurSigma, abortHandler);
@@ -1360,8 +1360,8 @@ void state_t::Write(stream_writer * stream, abort_callback & abortHandler, bool 
 
         // Version 31, v0.9.0.0-alpha3
         stream->write_object_t(_XYMode, abortHandler);
-        stream->write_object_t(_XGain, abortHandler);
-        stream->write_object_t(_YGain, abortHandler);
+        stream->write_object_t(_XInputGain, abortHandler);
+        stream->write_object_t(_YInputGain, abortHandler);
         stream->write_object_t(_HasPhosphorDecay, abortHandler);
         stream->write_object_t(_BlurSigma, abortHandler);
         stream->write_object_t(_DecayFactor, abortHandler);
@@ -1475,8 +1475,8 @@ void state_t::FromJSON(const char * data, size_t size, bool isPreset)
     const auto & Oscilloscope = Object.value("oscilloscope", json::object());
     {
         _XYMode     = Oscilloscope.value("xyMode", _XYMode);
-        _XGain      = std::clamp(Oscilloscope.value("xGain",      _XGain),      MinXGain,      MaxXGain);
-        _YGain      = std::clamp(Oscilloscope.value("yGain",      _YGain),      MinYGain,      MaxYGain);
+        _XInputGain = std::clamp(Oscilloscope.value("xGain",      _XInputGain), MinXGain,      MaxXGain);
+        _YInputGain = std::clamp(Oscilloscope.value("yGain",      _YInputGain), MinYGain,      MaxYGain);
         _Rotation   = std::clamp(Oscilloscope.value("rotation",   _Rotation),   MinRotation,   MaxRotation);
         _FrameCount = std::clamp(Oscilloscope.value("frameCount", _FrameCount), MinFrameCount, MaxFrameCount);
 
@@ -1493,7 +1493,7 @@ void state_t::FromJSON(const char * data, size_t size, bool isPreset)
 
     const auto & Goniometer = Object.value("goniometer", json::object());
     {
-        _GoniometerColorMode = std::clamp(Goniometer.value("colorMode", _GoniometerColorMode), audio_processor_t::ColorMode::Min, audio_processor_t::ColorMode::Max);
+        _GoniometerColorMode = std::clamp(Goniometer.value("colorMode", _GoniometerColorMode), goniometer::ColorMode::Min, goniometer::ColorMode::Max);
 
         _LowVisualGain       = std::clamp(Goniometer.value("lowVisualGain",  _LowVisualGain),  MinVisualGain, MaxVisualGain);
         _MidVisualGain       = std::clamp(Goniometer.value("midVisualGain",  _MidVisualGain),  MinVisualGain, MaxVisualGain);
@@ -1779,8 +1779,8 @@ json state_t::ToJSON(bool isPreset) const
             "oscilloscope", json::object
             ({
                 { "xyMode", _XYMode },
-                { "xGain", _XGain },
-                { "yGain", _YGain },
+                { "xGain", _XInputGain },
+                { "yGain", _YInputGain },
 
                 { "rotation", _Rotation },
                 { "frameCount", _FrameCount },

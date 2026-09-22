@@ -153,7 +153,7 @@ void crossover_filter_t::Reset() noexcept
 /// </summary>
 void crossover_filter_t::Process(double amplitude, double & lowBand, double & midBand, double & highBand) noexcept
 {
-    if (_Mode == Mode::LinkwitzRiley4)
+    if (_Mode == crossover::Mode::LinkwitzRiley4)
     {
         // 24 dB/octave slopes, much better isolation, phase-aligned summation.
         double AboveLow = 0.;
@@ -162,7 +162,7 @@ void crossover_filter_t::Process(double amplitude, double & lowBand, double & mi
         _MidHigh.Process(AboveLow, midBand, highBand);
     }
     else
-    if (_Mode == Mode::FirstOrder)
+    if (_Mode == crossover::Mode::FirstOrder)
     {
         // 6 dB/octave slopes, large overlap due to the shallow slopes, substantial phase shift, broad mid band.
         _LoLP += _LoAlpha * (amplitude - _LoLP);

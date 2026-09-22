@@ -26,7 +26,7 @@ bit_meter_t::~bit_meter_t() noexcept
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void bit_meter_t::Configure(state_t * state, graph_options_t * graphOptions, const analysis_t * analysis, bool isFirst, bool isLast, CComPtr<ID3D11Device> d3dDevice, CComPtr<ID3D11DeviceContext> d3dDeviceContext) noexcept
+void bit_meter_t::Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, CComPtr<ID3D11Device> d3dDevice, CComPtr<ID3D11DeviceContext> d3dDeviceContext) noexcept
 {
     _State = state;
     _GraphOptions = graphOptions;
@@ -450,6 +450,6 @@ HRESULT bit_meter_t::CreateStaticContentCommandList() noexcept
 /// </summary>
 void bit_meter_t::OnConfigurationChange(ConfigurationChanges configurationChanges) noexcept
 {
-    if ((configurationChanges & ConfigurationChanges::Layout) == ConfigurationChanges::Layout)
+    if (!IsSet(configurationChanges, ConfigurationChanges::Layout))
         _StaticContentCommandList.Release();
 }

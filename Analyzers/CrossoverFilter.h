@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include "Constants.h"
+
 /// <summary>
 /// Biquad filter
 /// </summary>
@@ -67,18 +69,7 @@ class crossover_filter_t
 public:
     HRESULT Configure(double lowBand, double highBand, double sampleRate) noexcept;
 
-    enum class Mode
-    {
-        None = 0,
-
-        FirstOrder,
-        LinkwitzRiley4,
-
-        Min = None,
-        Max = LinkwitzRiley4,
-    };
-
-    HRESULT SetCrossoverMode(Mode mode) noexcept
+    HRESULT SetCrossoverMode(crossover::Mode mode) noexcept
     {
         if (mode == _Mode)
             return S_FALSE;
@@ -94,7 +85,7 @@ public:
     void Reset() noexcept;
 
 private:
-    Mode _Mode = Mode::LinkwitzRiley4;
+    crossover::Mode _Mode = crossover::Mode::LinkwitzRiley4;
 
     double _LowBand    = 0.; // Hz
     double _HighBand   = 0.; // Hz

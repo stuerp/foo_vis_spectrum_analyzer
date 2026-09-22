@@ -137,6 +137,9 @@ void graph_t::Render(ID2D1DeviceContext * deviceContext, artwork_t & artwork, CC
 
     RenderBackground(deviceContext, artwork);
     RenderForeground(deviceContext, swapChain);
+
+    // Erase the copy of the chunk.
+    _Analysis._Chunk.reset();
 }
 
 /// <summary>

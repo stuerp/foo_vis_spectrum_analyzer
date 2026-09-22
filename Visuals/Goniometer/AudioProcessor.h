@@ -1,9 +1,10 @@
 
-/** $VER: AudioProcessor.h (2026.09.21) P. Stuer - Implements an audio processor for the goniometer. **/
+/** $VER: AudioProcessor.h (2026.09.22) P. Stuer - Implements an audio processor for the goniometer. **/
 
 #pragma once
 
 #include "CrossoverFilter.h"
+#include "State.h"
 
 #include <vector>
 
@@ -12,8 +13,8 @@
 
 struct point_t
 {
-    float x;
-    float y;
+    FLOAT x;
+    FLOAT y;
     D2D1_COLOR_F Color;
 };
 
@@ -29,24 +30,14 @@ public:
 
     virtual ~audio_processor_t() = default;
 
-    enum class ColorMode
-    {
-        Mono = 0,
-        RGB,
-        Triband,
-
-        Min = Mono,
-        Max = Triband,
-    };
-
-    HRESULT SetColorMode(ColorMode mode) noexcept
+    HRESULT SetColorMode(goniometer::ColorMode mode) noexcept
     {
         _ColorMode = mode;
 
         return S_OK;
     }
 
-    ColorMode GetColorMode() const noexcept
+    goniometer::ColorMode GetColorMode() const noexcept
     {
         return _ColorMode;
     }
@@ -54,6 +45,8 @@ public:
     HRESULT SetMonoColor(const D2D1_COLOR_F & color) noexcept
     {
         _MonoColor = color;
+
+        _MonoColor.a = (FLOAT) _MidOpacity;
 
         return S_OK;
     }
@@ -64,36 +57,58 @@ public:
         _MidColor  = midColor;
         _HighColor = highColor;
 
+        _LowColor.a  = (FLOAT) _LowOpacity;
+        _MidColor.a  = (FLOAT) _MidOpacity;
+        _HighColor.a = (FLOAT) _HighOpacity;
+
         return S_OK;
     }
 
-    HRESULT SetCrossoverMode(crossover_filter_t::Mode mode) noexcept;
+    HRESULT SetCrossoverMode(crossover::Mode mode) noexcept;
 
     HRESULT SetVisualGain(double lowVisualGain, double midVisualGain, double highVisualGain) noexcept
     {
         constexpr double PointOpacity = 0.018;
 
-        _LowVisualGain  = PointOpacity * std::pow(10.0, lowVisualGain  / 20.0);
-        _MidVisualGain  = PointOpacity * std::pow(10.0, midVisualGain  / 20.0);
-        _HighVisualGain = PointOpacity * std::pow(10.0, highVisualGain / 20.0);
+        _LowOpacity  = PointOpacity * std::pow(10.0, lowVisualGain  / 20.0);
+        _MidOpacity  = PointOpacity * std::pow(10.0, midVisualGain  / 20.0);
+        _HighOpacity = PointOpacity * std::pow(10.0, highVisualGain / 20.0);
+
+        _MonoColor.a = (FLOAT) _MidOpacity;
+
+        _LowColor.a  = (FLOAT) _LowOpacity;
+        _MidColor.a  = (FLOAT) _MidOpacity;
+        _HighColor.a = (FLOAT) _HighOpacity;
 
         return S_OK;
     }
 
+    void Initialize(state_t * state) noexcept
+    {
+        _State = state;
+    }
+
     void Process(const audio_chunk_impl & chunk, uint32_t selectedChannels, uint32_t pairedChannels, double loFreq, double hiFreq) noexcept;
 
-private:
-    HRESULT Configure(double loFreq, double hiFreq, double sampleRate) noexcept;
+    void Reset() noexcept
+    {
+        _PointCount = 0;
+    }
 
-    void AddPoint(double left, double right, const D2D1_COLOR_F color, double opacity) noexcept;
+private:
+    HRESULT Configure(double loBand, double hiBand, double sampleRate) noexcept;
+
+    inline void AddPoint(double left, double right, const D2D1_COLOR_F color) noexcept;
 
 public:
     std::vector<point_t> _Points;
     size_t _PointCount = 0;
 
 private:
-    ColorMode _ColorMode = ColorMode::Triband;
-    crossover_filter_t::Mode _CrossoverMode = crossover_filter_t::Mode::LinkwitzRiley4;
+    state_t * _State = nullptr;
+
+    goniometer::ColorMode _ColorMode = goniometer::ColorMode::Triband;
+    crossover::Mode _CrossoverMode = crossover::Mode::LinkwitzRiley4;
 
     double _LowBand    = 0.; // Hz
     double _HighBand   = 0.; // Hz
@@ -103,9 +118,9 @@ private:
 //  static constexpr double _BandPowerThreshold = 1e-8; // -80 dB
 //  static constexpr double _BandPowerThreshold = 1e-6; // -60 dB
 
-    double _LowVisualGain  = 0.036;
-    double _MidVisualGain  = 0.018;
-    double _HighVisualGain = 0.013;
+    double _LowOpacity  = 0.036;
+    double _MidOpacity  = 0.018;
+    double _HighOpacity = 0.013;
 
     D2D1_COLOR_F _MonoColor = D2D1::ColorF( .10f, 1.00f,  .45f); // Green
 

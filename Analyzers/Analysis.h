@@ -135,7 +135,7 @@ private:
 
     void InitializePeakMeasurements(uint32_t channelMask) noexcept;
 
-    // Oscilloscope
+    // Oscilloscope / Goniometer
     void OscilloscopeProcessing(const audio_chunk & chunk) noexcept;
 
     // Bit Meter
@@ -153,9 +153,6 @@ private:
     {
         return msc::Map(level, -1., 1., 0., 1.);
     }
-
-    // Stereo Meter
-    void StereoMeterProcessing(const audio_chunk & chunk) noexcept;
 
     double SmoothValue(double value, double smoothedValue) const noexcept
     {

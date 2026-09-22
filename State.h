@@ -8,7 +8,6 @@
 #include <Windows.h>
 
 #include "Constants.h"
-#include "AudioProcessor.h"
 #include "WindowFunctions.h"
 
 #include "StyleManager.h"
@@ -119,8 +118,8 @@ public:
         #pragma region Oscilloscope / Goniometer
 
             bool _XYMode;                                               // Oscilloscope in X-Y mode
-            double _XGain;
-            double _YGain;
+            double _XInputGain;                                         // Audio input gain
+            double _YInputGain;                                         // Audio input gain
             FLOAT _Rotation;
             bool _HasPhosphorDecay;
             FLOAT _BlurSigma;
@@ -129,7 +128,7 @@ public:
             bool _Downmix;                                              // Downmix the input audio to mono.
             bool _ZeroCrossingTrigger;                                  // Use a zero-crossing trigger.
 
-            audio_processor_t::ColorMode _GoniometerColorMode;
+            goniometer::ColorMode _GoniometerColorMode;
             double _LowVisualGain;                                      // dB, [-12, 12]
             double _MidVisualGain;                                      // dB, [-12, 12]
             double _HighVisualGain;                                     // dB, [-12, 12]
@@ -246,7 +245,7 @@ public:
 
         double _WeightingAmount;                                        // [-1, 1], Weighting amount
 
-        crossover_filter_t::Mode _CrossoverMode;
+        crossover::Mode _CrossoverMode;
         double _LowBand;                                                // Hz, [0, 96000], End of the low band
         double _HighBand;                                               // Hz, [0, 96000], Start of the high band
 

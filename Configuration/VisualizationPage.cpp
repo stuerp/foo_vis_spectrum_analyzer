@@ -1,5 +1,5 @@
 
-/** $VER: VisualizationPage.cpp (2026.09.21) P. Stuer - Implements a configuration dialog page. **/
+/** $VER: VisualizationPage.cpp (2026.09.22) P. Stuer - Implements a configuration dialog page. **/
 
 #include "pch.h"
 
@@ -53,7 +53,7 @@ BOOL visualization_page_t::OnInitDialog(CWindow w, LPARAM lParam) noexcept
         { IDC_X_GAIN, "Specifies the gain applied to the X signal." },
         { IDC_Y_GAIN, "Specifies the gain applied to the Y signal." },
         { IDC_ROTATION, "Specifies the rotation angle of the signal in degrees." },
-        { IDC_FRAME_COUNT, "Specifies the number of audio frames that will be used by the oscilloscope per screen update." },
+        { IDC_FRAME_COUNT, "Specifies the number of audio frames that will be used by the oscilloscope and goniometer per screen update." },
         { IDC_PHOSPHOR_DECAY, "Enables a phosphor decay effect simulation of analog oscilloscopes." },
         { IDC_BLUR_SIGMA, "Specifies the number of pixels used for the Gaussian blur. A higher value increases the blurring." },
         { IDC_DECAY_FACTOR, "Specifies the color fade speed. Lower values cause a faster decay." },
@@ -203,10 +203,10 @@ void visualization_page_t::InitializeControls() noexcept
         SendDlgItemMessageW(IDC_XY_MODE, BM_SETCHECK, _State->_XYMode);
 
         {
-            auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_X_GAIN)); _NumericEdits.push_back(ne); SetDouble(IDC_X_GAIN, _State->_XGain);
+            auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_X_GAIN)); _NumericEdits.push_back(ne); SetDouble(IDC_X_GAIN, _State->_XInputGain);
         }
         {
-            auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_Y_GAIN)); _NumericEdits.push_back(ne); SetDouble(IDC_Y_GAIN, _State->_YGain);
+            auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_Y_GAIN)); _NumericEdits.push_back(ne); SetDouble(IDC_Y_GAIN, _State->_YInputGain);
         }
         {
             auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_ROTATION)); _NumericEdits.push_back(ne); SetDouble(IDC_ROTATION, _State->_Rotation);
@@ -323,8 +323,8 @@ void visualization_page_t::UpdateControls() noexcept
 
     GetDlgItem(IDC_X_GAIN)        .EnableWindow((IsOscilloscope && _State->_XYMode) || IsGoniometer);
     GetDlgItem(IDC_Y_GAIN)        .EnableWindow(IsOscilloscope || IsGoniometer);                        // Available in both oscilloscope modes.
-    GetDlgItem(IDC_ROTATION)      .EnableWindow(IsOscilloscope && _State->_XYMode);
-    GetDlgItem(IDC_FRAME_COUNT)   .EnableWindow(IsOscilloscope);                                        // Available in both oscilloscopemodes.
+    GetDlgItem(IDC_ROTATION)      .EnableWindow((IsOscilloscope && _State->_XYMode));
+    GetDlgItem(IDC_FRAME_COUNT)   .EnableWindow(IsOscilloscope || IsGoniometer);                        // Available in both oscilloscope modes.
 
     GetDlgItem(IDC_PHOSPHOR_DECAY).EnableWindow(IsOscilloscope);
 
@@ -397,7 +397,7 @@ void visualization_page_t::OnSelectionChanged(UINT notificationCode, int id, CWi
 
         case IDC_GONIOMETER_MODE:
         {
-            _State->_GoniometerColorMode = (audio_processor_t::ColorMode) SelectedIndex;
+            _State->_GoniometerColorMode = (goniometer::ColorMode) SelectedIndex;
 
             UpdateControls();
 
@@ -524,19 +524,19 @@ void visualization_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
         // Oscilloscope
         case IDC_X_GAIN:
         {
-            if (!SetProperty(_State->_XGain, std::clamp(::_wtof(Text), MinXGain, MaxXGain)))
+            if (!SetProperty(_State->_XInputGain, std::clamp(::_wtof(Text), MinXGain, MaxXGain)))
                 return;
 
-            ChangedSettings = ConfigurationChanges::Oscilloscope;
+            ChangedSettings = ConfigurationChanges::Oscilloscope | ConfigurationChanges::Goniometer;
             break;
         }
 
         case IDC_Y_GAIN:
         {
-            if (!SetProperty(_State->_YGain, std::clamp(::_wtof(Text), MinYGain, MaxYGain)))
+            if (!SetProperty(_State->_YInputGain, std::clamp(::_wtof(Text), MinYGain, MaxYGain)))
                 return;
             
-            ChangedSettings = ConfigurationChanges::Oscilloscope;
+            ChangedSettings = ConfigurationChanges::Oscilloscope | ConfigurationChanges::Goniometer;
             break;
         }
 
@@ -554,7 +554,7 @@ void visualization_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
             if (!SetProperty(_State->_FrameCount, std::clamp((uint32_t) ::_wtoi(Text), MinFrameCount, MaxFrameCount)))
                 return;
 
-            ChangedSettings = ConfigurationChanges::Oscilloscope;
+            ChangedSettings = ConfigurationChanges::Oscilloscope | ConfigurationChanges::Goniometer;
             break;
         }
 
@@ -563,7 +563,7 @@ void visualization_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
             if (!SetProperty(_State->_BlurSigma, std::clamp((FLOAT) ::_wtof(Text), MinBlurSigma, MaxBlurSigma)))
                 return;
 
-            ChangedSettings = ConfigurationChanges::Oscilloscope;
+            ChangedSettings = ConfigurationChanges::Oscilloscope | ConfigurationChanges::Goniometer;
             break;
         }
 
@@ -576,6 +576,7 @@ void visualization_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
             break;
         }
 
+        // Goniometer
         case IDC_LOW_VISUAL_GAIN:
         {
             if (!SetProperty(_State->_LowVisualGain, std::clamp(::_wtof(Text), MinVisualGain, MaxVisualGain)))
@@ -693,20 +694,20 @@ void visualization_page_t::OnEditLostFocus(UINT code, int id, CWindow) noexcept
             break;
         }
 
-        // Oscilloscope
+        // Oscilloscope / Goniometer
         case IDC_X_GAIN:
         {
-            SetDouble(id, _State->_XGain, 0, 2);
+            SetDouble(id, _State->_XInputGain, 0, 2);
 
-            ChangedSettings = ConfigurationChanges::Oscilloscope;
+            ChangedSettings = ConfigurationChanges::Oscilloscope | ConfigurationChanges::Goniometer;
             break;
         }
 
         case IDC_Y_GAIN:
         {
-            SetDouble(id, _State->_YGain, 0, 2);
+            SetDouble(id, _State->_YInputGain, 0, 2);
 
-            ChangedSettings = ConfigurationChanges::Oscilloscope;
+            ChangedSettings = ConfigurationChanges::Oscilloscope | ConfigurationChanges::Goniometer;
             break;
         }
 
@@ -722,7 +723,7 @@ void visualization_page_t::OnEditLostFocus(UINT code, int id, CWindow) noexcept
         {
             SetInteger(id, _State->_FrameCount);
 
-            ChangedSettings = ConfigurationChanges::Oscilloscope;
+            ChangedSettings = ConfigurationChanges::Oscilloscope | ConfigurationChanges::Goniometer;
             break;
         }
 
@@ -730,7 +731,7 @@ void visualization_page_t::OnEditLostFocus(UINT code, int id, CWindow) noexcept
         {
             SetDouble(id, _State->_BlurSigma, 0, 2);
 
-            ChangedSettings = ConfigurationChanges::Oscilloscope;
+            ChangedSettings = ConfigurationChanges::Oscilloscope | ConfigurationChanges::Goniometer;
             break;
         }
 
@@ -742,6 +743,7 @@ void visualization_page_t::OnEditLostFocus(UINT code, int id, CWindow) noexcept
             break;
         }
 
+        // Goniometer
         case IDC_LOW_VISUAL_GAIN:
         {
             SetDouble(id, _State->_LowVisualGain, 0, 2);

@@ -26,7 +26,7 @@ spectrum_t::~spectrum_t()
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void spectrum_t::Configure(state_t * state, graph_options_t * options, const analysis_t * analysis, bool isFirst, bool isLast, CComPtr<ID3D11Device> d3dDevice, CComPtr<ID3D11DeviceContext> d3dDeviceContext) noexcept
+void spectrum_t::Configure(state_t * state, graph_options_t * options, analysis_t * analysis, bool isFirst, bool isLast, CComPtr<ID3D11Device> d3dDevice, CComPtr<ID3D11DeviceContext> d3dDeviceContext) noexcept
 {
     _State        = state;
     _GraphOptions = options;
@@ -157,7 +157,7 @@ void spectrum_t::Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwapCha
 /// </summary>
 void spectrum_t::OnConfigurationChange(ConfigurationChanges configurationChanges) noexcept
 {
-    if (configurationChanges != ConfigurationChanges::Layout)
+    if (!IsSet(configurationChanges, ConfigurationChanges::Layout))
         return;
 
     _XAxis.Configure(_State, _GraphOptions, _Analysis, _IsFirst, _IsLast);

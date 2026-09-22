@@ -1,5 +1,5 @@
 
-/** $VER: AudioProcessor.cpp (2026.09.21) P. Stuer - Implements an audio processor for the goniometer. **/
+/** $VER: AudioProcessor.cpp (2026.09.22) P. Stuer - Implements an audio processor for the goniometer. **/
 
 #include <pch.h>
 
@@ -46,7 +46,7 @@ HRESULT audio_processor_t::Configure(double lowBand, double highBand, double sam
 /// <summary>
 /// 
 /// </summary>
-HRESULT audio_processor_t::SetCrossoverMode(crossover_filter_t::Mode mode) noexcept
+HRESULT audio_processor_t::SetCrossoverMode(crossover::Mode mode) noexcept
 {
     if (mode == _CrossoverMode)
         return S_FALSE;
@@ -91,7 +91,7 @@ void audio_processor_t::Process(const audio_chunk_impl & chunk, uint32_t activeC
     }
 
     {
-        const auto PointCapacity = (_ColorMode == ColorMode::Triband) ? (FrameCount * 3) : FrameCount;
+        const auto PointCapacity = (_ColorMode == goniometer::ColorMode::Triband) ? (FrameCount * 3) : FrameCount;
 
         if (_Points.size() < PointCapacity)
             _Points.resize(PointCapacity);
@@ -113,9 +113,9 @@ void audio_processor_t::Process(const audio_chunk_impl & chunk, uint32_t activeC
             _CrossoverL.Process(SampleL, LowL, MidL, HighL);
             _CrossoverR.Process(SampleR, LowR, MidR, HighR);
 
-            if (_ColorMode == ColorMode::Mono)
+            if (_ColorMode == goniometer::ColorMode::Mono)
             {
-                AddPoint(SampleL, SampleR, _MonoColor, _MidVisualGain);
+                AddPoint(SampleL, SampleR, _MonoColor);
             }
             else
             {
@@ -123,24 +123,24 @@ void audio_processor_t::Process(const audio_chunk_impl & chunk, uint32_t activeC
                 const double MidBandPower  = (MidL  * MidL)  + (MidR  * MidR);
                 const double HighBandPower = (HighL * HighL) + (HighR * HighR);
 
-                if (_ColorMode == ColorMode::RGB)
+                if (_ColorMode == goniometer::ColorMode::RGB)
                 {
                     const auto TotalBandPower = LowBandPower + MidBandPower + HighBandPower + 1e-12;
 
-                    const auto Color = D2D1::ColorF((float) std::sqrt(LowBandPower / TotalBandPower), (float) std::sqrt(MidBandPower / TotalBandPower), (float) std::sqrt(HighBandPower / TotalBandPower));
+                    const auto Color = D2D1::ColorF((float) std::sqrt(LowBandPower / TotalBandPower), (float) std::sqrt(MidBandPower / TotalBandPower), (float) std::sqrt(HighBandPower / TotalBandPower), (FLOAT) _MidOpacity);
 
-                    AddPoint(SampleL, SampleR, Color, _MidVisualGain);
+                    AddPoint(SampleL, SampleR, Color);
                 }
                 else
                 {
                     if (LowBandPower > _BandPowerThreshold)
-                        AddPoint(LowL,  LowR,  _LowColor,  _LowVisualGain);
+                        AddPoint(LowL,  LowR,  _LowColor);
 
                     if (MidBandPower > _BandPowerThreshold)
-                        AddPoint(MidL,  MidR,  _MidColor,  _MidVisualGain);
+                        AddPoint(MidL,  MidR,  _MidColor);
 
                     if (HighBandPower > _BandPowerThreshold)
-                        AddPoint(HighL, HighR, _HighColor, _HighVisualGain);
+                        AddPoint(HighL, HighR, _HighColor);
                 }
             }
         }
@@ -166,16 +166,16 @@ void audio_processor_t::Process(const audio_chunk_impl & chunk, uint32_t activeC
 /// <summary>
 /// Adds a point.
 /// </summary>
-void audio_processor_t::AddPoint(double l, double r, const D2D1_COLOR_F color, double opacity) noexcept
+void audio_processor_t::AddPoint(double l, double r, const D2D1_COLOR_F color) noexcept
 {
     constexpr double InverseSqrt2 = 1. / std::numbers::sqrt2_v<double>; // = cos 45 = sin 45
 
-    const auto x = (float) std::clamp((l - r) * InverseSqrt2, -1., 1.); // Side component
-    const auto y = (float) std::clamp((l + r) * InverseSqrt2, -1., 1.); // Mid component
+    const auto x = (FLOAT) std::clamp((l - r) * InverseSqrt2 * _State->_XInputGain, -1., 1.); // Side component
+    const auto y = (FLOAT) std::clamp((l + r) * InverseSqrt2 * _State->_YInputGain, -1., 1.); // Mid component
 
     _Points[_PointCount++] =
     {
         x, y,
-        D2D1::ColorF(color.r, color.g, color.b, (float) opacity),
+        color,
     };
 }
