@@ -1,6 +1,19 @@
 
 # foo_vis_spectrum_analyzer History
 
+v0.13.0.0-alpha1, 2026-09-22
+
+- New: Goniometer with a 1st order or 4-th order Linkwitz-Riley crossover filter.
+  - Has a mono, RGG and Triband mode.
+  - The crossover filter can be configured on the `Filters` configuration page.
+- New: *Gold* and *Triband* gradient.
+- New: `Reset on track change` setting to reset the FFT peaks when a track starts or stops. Useful when you set the fall rate to 0 dB/s. [Forum request](https://hydrogenaudio.org/index.php/topic,125031.msg1087330.html#msg1087330)
+- Fixed: A 3-year old bug in the non-radix 2 FFT.
+- Fixed: 32-bit Bit Meter interpreted the audio sample as 64-bit.
+- Fixed: Enabling and disabling Bit Meter opacity mode did not reset the opacity of the bit styles.
+- Fixed: Axis settings were disabled for the peak meter.
+- Fixed: Some visualizations did not pick up changes to the user interface colors. (Regression)
+
 v0.12.0.0, 2026-09-11
 
 - New: You can downmix the input of the oscilloscope to mono.

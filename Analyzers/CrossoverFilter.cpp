@@ -10,7 +10,7 @@
 /// </summary>
 HRESULT biquad_t::Configure(PassType type, double frequency, double sampleRate, double q) noexcept
 {
-    constexpr double TwoPi = 2. * std::numbers::pi_v<double>;
+    constexpr double TwoPi = 2. * std::numbers::pi;
 
     // Prevent invalid or unstable cutoff frequencies. The cutoff frequency is between 10Hz and the Nyquist frequency.
     frequency = std::clamp(frequency, 10., sampleRate * .495);
@@ -120,7 +120,7 @@ HRESULT crossover_filter_t::Configure(double lowBand, double highBand, double sa
     if ((lowBand == _LowBand) && (highBand == _HighBand) && (sampleRate == _SampleRate))
         return S_FALSE;
 
-    constexpr double TwoPi = 2. * std::numbers::pi_v<double>;
+    constexpr double TwoPi = 2. * std::numbers::pi;
 
     _LowBand    = lowBand;
     _HighBand   = highBand;

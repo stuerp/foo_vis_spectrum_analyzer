@@ -1,10 +1,10 @@
 
-/** $VER: FFTComplex.cpp (2026.09.13) P. Stuer - Modified version of the original Nayuki code **/
+/** $VER: FFTComplex.cpp (2026.09.18) Nayuki - Modified version of the original Nayuki code with trig caching **/
 
 /*
  * Free FFT and convolution (C++)
  *
- * Copyright (c) 2021 Project Nayuki. (MIT License)
+ * Copyright (c) 2026 Project Nayuki. (MIT License)
  * https://www.nayuki.io/page/free-small-fft-in-multiple-languages
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
@@ -24,11 +24,10 @@
  *   Software.
  */
 
-#include "pch.h"
+#include <pch.h>
 
-#include <bit>
 #include <cstdint>
-#include <limits>
+#include <numbers>
 #include <stdexcept>
 #include <utility>
 #include "FftComplex.hpp"
@@ -39,22 +38,9 @@ using std::uintmax_t;
 using std::vector;
 
 // Private function prototypes
-[[nodiscard]]
-constexpr size_t reverseBits(std::size_t value, unsigned width) noexcept
-{
-    size_t result = 0;
+static constexpr size_t reverseBits(size_t val, int width) noexcept;
 
-    while (width--)
-    {
-        result = (result << 1) | (value & (size_t) 1);
-
-        value >>= 1;
-    }
-
-    return result;
-}
-
-void Fft::transform(vector<complex<double>> & vec, bool inverse, trig_t & trig)
+void Fft::transform(vector<complex<double> > & vec, bool inverse, trig_t & trig)
 {
     const size_t n = vec.size();
 
@@ -67,15 +53,13 @@ void Fft::transform(vector<complex<double>> & vec, bool inverse, trig_t & trig)
         transformBluestein(vec, inverse, trig);
 }
 
-void Fft::transformRadix2(vector<complex<double>> & vec, bool inverse, trig_t & trig)
+void Fft::transformRadix2(vector<complex<double> > & vec, bool inverse, trig_t & trig)
 {
     // Length variables
     const size_t n = vec.size();
 
     if (!std::has_single_bit(n))
         throw std::domain_error("Length is not a power of 2");
-
-    const auto Levels = (unsigned int) (std::bit_width(n) - 1);
 
     if ((trig._Exp.size() != n / 2) || (trig._Inverse != inverse))
     {
@@ -92,6 +76,8 @@ void Fft::transformRadix2(vector<complex<double>> & vec, bool inverse, trig_t & 
     }
 
     // Bit-reversed addressing permutation
+    const auto Levels = std::bit_width(n) - 1;
+
     for (size_t i = 0; i < n; ++i)
     {
         const size_t j = reverseBits(i, Levels);
@@ -116,13 +102,12 @@ void Fft::transformRadix2(vector<complex<double>> & vec, bool inverse, trig_t & 
                 vec[j] += temp;
             }
         }
-
         if (size == n)  // Prevent overflow in 'size *= 2'
             break;
     }
 }
 
-void Fft::transformBluestein(vector<complex<double>> & vec, bool inverse, trig_t & trig)
+void Fft::transformBluestein(vector<complex<double> > & vec, bool inverse, trig_t & trig)
 {
     // Find a power-of-2 convolution length m such that m >= n * 2 + 1
     const size_t n = vec.size();
@@ -137,7 +122,7 @@ void Fft::transformBluestein(vector<complex<double>> & vec, bool inverse, trig_t
         m *= 2;
     }
 
-    vector<complex<double>> expTable(n);
+    vector<complex<double> > expTable(n);
 
     for (size_t i = 0; i < n; ++i)
     {
@@ -149,12 +134,12 @@ void Fft::transformBluestein(vector<complex<double>> & vec, bool inverse, trig_t
     }
 
     // Temporary vectors and preprocessing
-    vector<complex<double>> avec(m);
+    vector<complex<double> > avec(m);
 
     for (size_t i = 0; i < n; ++i)
         avec[i] = vec[i] * expTable[i];
 
-    vector<complex<double>> bvec(m);
+    vector<complex<double> > bvec(m);
 
     bvec[0] = expTable[0];
 
@@ -162,14 +147,14 @@ void Fft::transformBluestein(vector<complex<double>> & vec, bool inverse, trig_t
         bvec[i] = bvec[m - i] = std::conj(expTable[i]);
 
     // Convolution
-    vector<complex<double>> cvec = convolve(std::move(avec), std::move(bvec), trig);
+    vector<complex<double> > cvec = convolve(std::move(avec), std::move(bvec), trig);
 
     // Postprocessing
     for (size_t i = 0; i < n; ++i)
         vec[i] = cvec[i] * expTable[i];
 }
 
-vector<complex<double>> Fft::convolve(vector<complex<double>> xvec, vector<complex<double>> yvec, trig_t & trig)
+vector<complex<double> > Fft::convolve(vector<complex<double> > xvec, vector<complex<double> > yvec, trig_t & trig)
 {
     const size_t n = xvec.size();
 
@@ -188,4 +173,15 @@ vector<complex<double>> Fft::convolve(vector<complex<double>> xvec, vector<compl
         xvec[i] /= (double) n;
 
     return xvec;
+}
+
+[[nodiscard]]
+static constexpr size_t reverseBits(size_t value, int width) noexcept
+{
+    size_t result = 0;
+
+    for (int i = 0; i < width; ++i, value >>= 1)
+        result = (result << 1) | (value & (size_t) 1);
+
+    return result;
 }

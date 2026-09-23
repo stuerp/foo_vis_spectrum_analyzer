@@ -1,5 +1,5 @@
 
-/** $VER: FFTComplex.cpp (2026.09.13) P. Stuer - Modified version of the original Nayuki code **/
+/** $VER: FFTComplex.cpp (2026.09.18) Nayuki - Modified version of the original Nayuki code with trig caching **/
 
 /*
  * Free FFT and convolution (C++)
@@ -41,23 +41,23 @@ namespace Fft
      * Computes the discrete Fourier transform (DFT) of the given complex vector, storing the result back into the vector.
      * The vector can have any length. This is a wrapper function. The inverse transform does not perform scaling, so it is not a true inverse.
      */
-    void transform(std::vector<std::complex<double>> & vec, bool inverse, trig_t & trig);
+    void transform(std::vector<std::complex<double> > & vec, bool inverse, trig_t & trig);
 
     /*
      * Computes the discrete Fourier transform (DFT) of the given complex vector, storing the result back into the vector.
      * The vector's length must be a power of 2. Uses the Cooley-Tukey decimation-in-time radix-2 algorithm.
      */
-    void transformRadix2(std::vector<std::complex<double>> & vec, bool inverse, trig_t & trig);
+    void transformRadix2(std::vector<std::complex<double> > & vec, bool inverse, trig_t & trig);
 
     /*
      * Computes the discrete Fourier transform (DFT) of the given complex vector, storing the result back into the vector.
      * The vector can have any length. This requires the convolution function, which in turn requires the radix-2 FFT function.
      * Uses Bluestein's chirp z-transform algorithm.
      */
-    void transformBluestein(std::vector<std::complex<double>> & vec, bool inverse, trig_t & trig);
+    void transformBluestein(std::vector<std::complex<double> > & vec, bool inverse, trig_t & trig);
 
     /*
      * Computes the circular convolution of the given complex vectors. Each vector's length must be the same.
      */
-    std::vector<std::complex<double>> convolve(std::vector<std::complex<double>> xvec, std::vector<std::complex<double>> yvec, trig_t & trig);
+    std::vector<std::complex<double> > convolve(std::vector<std::complex<double> > xvec, std::vector<std::complex<double> > yvec, trig_t & trig);
 }
