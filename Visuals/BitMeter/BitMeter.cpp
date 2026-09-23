@@ -359,6 +359,7 @@ HRESULT bit_meter_t::CreateStaticContentCommandList() noexcept
         return hr;
 
     _DeviceContext->SetTarget(_StaticContentCommandList);
+
     _DeviceContext->BeginDraw();
 
     _DeviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED); // Prevent line blurring

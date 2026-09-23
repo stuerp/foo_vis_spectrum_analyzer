@@ -1,5 +1,5 @@
 
-/** $VER: Constants.h (2026.09.22) P. Stuer **/
+/** $VER: Constants.h (2026.09.23) P. Stuer **/
 
 #pragma once
 
@@ -373,7 +373,7 @@ inline constexpr double MaxOpacity = 1.;
 inline constexpr double MinThickness =  0.;
 inline constexpr double MaxThickness = 32.;
 
-inline constexpr double MinFontSize = 1.;
+inline constexpr double MinFontSize =   1.;
 inline constexpr double MaxFontSize = 200.;
 
 enum class VisualElement : uint32_t
@@ -432,7 +432,10 @@ enum class VisualElement : uint32_t
     WindowFunction              = 38,
     WeighingFunction            = 39,
 
-    Count                       = 40
+    StaticText                  = 40,
+    StaticLines                 = 41,
+
+    Count                       = 42
 };
 
 enum class ColorSource : uint32_t

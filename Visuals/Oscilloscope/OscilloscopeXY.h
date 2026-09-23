@@ -34,11 +34,11 @@ private:
     HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept;
     void DeleteDeviceSpecificResources() noexcept;
 
-    HRESULT CreateGridCommandList() noexcept;
+    HRESULT CreateStaticContent() noexcept;
 
 private:
     style_t _XAxisTextStyle;
     style_t _YAxisTextStyle;
 
-    CComPtr<ID2D1CommandList> _GridCommandList;
+    ComPtr<ID2D1CommandList> _StaticContent;
 };

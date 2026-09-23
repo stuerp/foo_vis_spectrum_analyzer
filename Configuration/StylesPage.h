@@ -83,7 +83,7 @@ private:
     style_manager_t * _StyleManager;
 
     // An index of the styles to determine the display order in the configuration dialog.
-    const VisualElement _StyleDisplayOrder[(size_t) VisualElement::Count] =
+    static constexpr VisualElement _StyleDisplayOrder[(size_t) VisualElement::Count] =
     {
         VisualElement::GraphBackground,
         VisualElement::GraphDescriptionText,
@@ -140,6 +140,10 @@ private:
 
         // Oscilloscope
         VisualElement::SignalLine,
+
+        // Goniometer
+        VisualElement::StaticText,
+        VisualElement::StaticLines,
 
         // Bit Meter
         VisualElement::BarSign,

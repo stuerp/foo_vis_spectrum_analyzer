@@ -199,6 +199,12 @@ private:
     UINT _DPI;
     double _DisplayRefreshRate;
 
+#ifdef _DEBUG
+    static constexpr int64_t RefreshRates[] = { 1, 5, 20, 30, 60, 100, 200 };
+#else
+    static constexpr int64_t RefreshRates[] = { 20, 30, 60, 100, 200 };
+#endif
+
     // Device-independent resources.
     CComPtr<ID2D1Factory1> _D2DFactory;
     CComPtr<IDXGIFactory2> _DXGIFactory;
@@ -241,13 +247,9 @@ private:
         IDM_TOGGLE_FULLSCREEN = 1,
         IDM_TOGGLE_FRAME_COUNTER,
 
-        IDM_REFRESH_RATE_LIMIT_20,
-        IDM_REFRESH_RATE_LIMIT_30,
-        IDM_REFRESH_RATE_LIMIT_60,
-        IDM_REFRESH_RATE_LIMIT_100,
-        IDM_REFRESH_RATE_LIMIT_200,
+        IDM_REFRESH_RATE_LIMIT = 1000,
 
-        IDM_CONFIGURE,
+        IDM_CONFIGURE = 2000,
         IDM_FREEZE,
 
         IDM_PRESET_NAME,

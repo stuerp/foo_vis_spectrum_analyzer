@@ -1,5 +1,5 @@
 
-/** $VER: OscilloscopeBase.h (2026.09.09) P. Stuer - Implements a base class for an oscilloscope. **/
+/** $VER: OscilloscopeBase.h (2026.09.23) P. Stuer - Implements a base class for an oscilloscope. **/
 
 #pragma once
 
@@ -33,11 +33,18 @@ protected:
     HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept;
     void DeleteDeviceSpecificResources() noexcept;
 
+    HRESULT CreateSizeDependentResources(ID2D1DeviceContext * deviceContext) noexcept;
+    void DeleteSizeDependentResources() noexcept;
+
+    HRESULT ClearBitmaps() noexcept;
+
     static size_t FindZeroCrossing(const audio_sample * frames, size_t frameCount, uint32_t channelCount) noexcept;
 
 protected:
-    CComPtr<ID2D1StrokeStyle> _SignalStrokeStyle;
-    CComPtr<ID2D1StrokeStyle1> _AxisStrokeStyle;
+    size_t _PrevBitmapIndex = 1; // Start drawing in bitmap 0.
+
+    FLOAT _Side  = 0.f;
+    D2D1_RECT_F _DestinationRectangle = { };
 
     style_t _SignalLineStyle;
     style_t _XAxisLineStyle;
@@ -45,16 +52,24 @@ protected:
     style_t _HorizontalGridLineStyle;
     style_t _VerticalGridLineStyle;
 
+    // Device independent resources
+    ComPtr<ID2D1StrokeStyle> _SignalStrokeStyle;
+    ComPtr<ID2D1StrokeStyle1> _StaticStrokeStyle;
+
+    // Device dependent resources
 #ifdef _DEBUG
-    CComPtr<ID2D1SolidColorBrush> _DebugBrush;
+    ComPtr<ID2D1SolidColorBrush> _DebugBrush;
 #endif
 
-    CComPtr<ID2D1DeviceContext> _DeviceContext; // Device context used to render the phospor blur
+    ComPtr<ID2D1DeviceContext> _DeviceContext; // Device context used to render the phospor blur
+
+    ComPtr<ID2D1Effect> _BlurEffect;
+    ComPtr<ID2D1Effect> _ColorMatrixEffect;
+
+    // Device dependent resources (Size dependent)
+    ComPtr<ID2D1Bitmap1> _Bitmaps[2];
 
     CComPtr<ID2D1Bitmap1> _FrontBuffer;
     CComPtr<ID2D1Bitmap1> _BackBuffer;
     CComPtr<ID2D1Bitmap1> _CompositeBuffer;
-
-    CComPtr<ID2D1Effect> _BlurEffect;
-    CComPtr<ID2D1Effect> _ColorMatrixEffect;
 };

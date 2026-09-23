@@ -1,5 +1,5 @@
 
-/** $VER: OscilloscopeBase.cpp (2026.09.21) P. Stuer - Implements a base class for an oscilloscope. **/
+/** $VER: OscilloscopeBase.cpp (2026.09.23) P. Stuer - Implements a base class for an oscilloscope. **/
 
 #include <pch.h>
 
@@ -52,20 +52,20 @@ HRESULT oscilloscope_base_t::CreateDeviceIndependentResources() noexcept
     {
         const D2D1_STROKE_STYLE_PROPERTIES StrokeStyleProperties = D2D1::StrokeStyleProperties(D2D1_CAP_STYLE_FLAT, D2D1_CAP_STYLE_FLAT, D2D1_CAP_STYLE_FLAT, D2D1_LINE_JOIN_BEVEL);
 
-        hr = _Direct2D.Factory->CreateStrokeStyle(StrokeStyleProperties, nullptr, 0, &_SignalStrokeStyle);
+        hr = _Direct2D.Factory->CreateStrokeStyle(StrokeStyleProperties, nullptr, 0, _SignalStrokeStyle.GetAddressOf());
 
         if (FAILED(hr))
             return hr;
     }
 
-    // Create a brush stroke style for the axes and grid that remains fixed during the scaling transformation.
-    if (_AxisStrokeStyle == nullptr)
+    // Create a brush stroke style for the static content that remains fixed during the scaling transformation.
+    if (_StaticStrokeStyle == nullptr)
     {
         D2D1_STROKE_STYLE_PROPERTIES1 StrokeStyleProperties = D2D1::StrokeStyleProperties1();
 
         StrokeStyleProperties.transformType = D2D1_STROKE_TRANSFORM_TYPE_FIXED; // Prevent stroke scaling
 
-        hr = _Direct2D.Factory->CreateStrokeStyle(StrokeStyleProperties, nullptr, 0, &_AxisStrokeStyle);
+        hr = _Direct2D.Factory->CreateStrokeStyle(StrokeStyleProperties, nullptr, 0, _StaticStrokeStyle.GetAddressOf());
     }
 
     return hr;
@@ -76,9 +76,8 @@ HRESULT oscilloscope_base_t::CreateDeviceIndependentResources() noexcept
 /// </summary>
 void oscilloscope_base_t::DeleteDeviceIndependentResources() noexcept
 {
-    _AxisStrokeStyle.Release();
-
-    _SignalStrokeStyle.Release();
+    _StaticStrokeStyle.Reset();
+    _SignalStrokeStyle.Reset();
 }
 
 /// <summary>
@@ -90,6 +89,88 @@ HRESULT oscilloscope_base_t::CreateDeviceSpecificResources(ID2D1DeviceContext * 
         DeleteDeviceSpecificResources();
 
     Resize();
+
+    HRESULT hr = S_OK;
+
+#ifdef _DEBUG
+    if (_DebugBrush == nullptr)
+        (void) deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), _DebugBrush.GetAddressOf());
+#endif
+
+    if (_DeviceContext == nullptr)
+    {
+        CComPtr<ID2D1Device> D2DDevice;
+
+        deviceContext->GetDevice(&D2DDevice);
+
+        hr = D2DDevice->CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_ENABLE_MULTITHREADED_OPTIMIZATIONS, _DeviceContext.GetAddressOf());
+
+        if (!SUCCEEDED(hr))
+            return hr;
+    }
+
+    if (_BlurEffect == nullptr)
+    {
+        hr = _DeviceContext->CreateEffect(CLSID_D2D1GaussianBlur, &_BlurEffect);
+
+        if (!SUCCEEDED(hr))
+            return hr;
+
+        _BlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_STANDARD_DEVIATION, _State->_BlurSigma);
+        _BlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_OPTIMIZATION, D2D1_DIRECTIONALBLUR_OPTIMIZATION_BALANCED);
+        _BlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_BORDER_MODE, D2D1_BORDER_MODE_HARD);
+    }
+
+    if (_ColorMatrixEffect == nullptr)
+    {
+        hr = _DeviceContext->CreateEffect(CLSID_D2D1ColorMatrix, &_ColorMatrixEffect);
+
+        if (!SUCCEEDED(hr))
+            return hr;
+
+        // Color matrix for uniform decay
+        #pragma warning(disable: 5246) // 'anonymous struct or union': the initialization of a subobject should be wrapped in braces
+        const D2D1_MATRIX_5X4_F DecayMatrix =
+        {
+            _State->_DecayFactor, 0, 0, 0,  // Decay red
+            0, _State->_DecayFactor, 0, 0,  // Decay green
+            0, 0, _State->_DecayFactor, 0,  // Decay blue
+            0, 0, 0, 1,                     // Keep alpha
+            0, 0, 0, 0                      // Unused. Translation
+        };
+
+        _ColorMatrixEffect->SetValue(D2D1_COLORMATRIX_PROP_COLOR_MATRIX, DecayMatrix);
+    }
+
+    hr = CreateSizeDependentResources(deviceContext);
+
+    return hr;
+}
+
+/// <summary>
+/// Releases the device specific resources.
+/// </summary>
+void oscilloscope_base_t::DeleteDeviceSpecificResources() noexcept
+{
+    DeleteSizeDependentResources();
+
+    _ColorMatrixEffect.Reset();
+    _BlurEffect.Reset();
+
+    _DeviceContext.Reset();
+
+#ifdef _DEBUG
+    _DebugBrush.Reset();
+#endif
+}
+
+/// <summary>
+/// Creates the resources that depend on the size of the front buffer of the device context.
+/// </summary>
+HRESULT oscilloscope_base_t::CreateSizeDependentResources(ID2D1DeviceContext * deviceContext) noexcept
+{
+    if ((_Size.width <= 0.f) || _Size.height <= 0.f)
+        return E_INVALIDARG;
 
     HRESULT hr = S_OK;
 
@@ -153,15 +234,42 @@ HRESULT oscilloscope_base_t::CreateDeviceSpecificResources(ID2D1DeviceContext * 
             return hr;
     }
 
-    if (_DeviceContext == nullptr)
+    if ((_Bitmaps[0] == nullptr) || (_Bitmaps[1] == nullptr))
     {
-        CComPtr<ID2D1Device> D2DDevice;
+        const D2D1_BITMAP_PROPERTIES1 BitmapProperties = D2D1::BitmapProperties1
+        (
+            D2D1_BITMAP_OPTIONS_TARGET,
+            D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED) // Required for alpha transparency. Otherwise use D2D1_ALPHA_MODE_IGNORE.
+        );
 
-        deviceContext->GetDevice(&D2DDevice);
+        _Side = std::min(_Size.width, _Size.height);
 
-        hr = D2DDevice->CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_ENABLE_MULTITHREADED_OPTIMIZATIONS, &_DeviceContext);
+        const FLOAT x = (_Size.width  - _Side) / 2.f;
+        const FLOAT y = (_Size.height - _Side) / 2.f;
 
-        if (!SUCCEEDED(hr))
+        _DestinationRectangle = { x, y, x + _Side, y + _Side };
+
+        if (_Bitmaps[0] == nullptr)
+        {
+            hr = deviceContext->CreateBitmap(D2D1::SizeU((UINT32) _Side, (UINT32) _Side), nullptr, 0, &BitmapProperties, _Bitmaps[0].GetAddressOf());
+
+            if (FAILED(hr))
+                return hr;
+        }
+
+        if (_Bitmaps[1] == nullptr)
+        {
+            hr = deviceContext->CreateBitmap(D2D1::SizeU((UINT32) _Side, (UINT32) _Side), nullptr, 0, &BitmapProperties, _Bitmaps[1].GetAddressOf());
+
+            if (FAILED(hr))
+                return hr;
+        }
+
+        _PrevBitmapIndex = 1; // Start rendering in bitmap 0.
+
+        hr = ClearBitmaps();
+
+        if (FAILED(hr))
             return hr;
     }
 
@@ -182,7 +290,6 @@ HRESULT oscilloscope_base_t::CreateDeviceSpecificResources(ID2D1DeviceContext * 
 
         _DeviceContext->BeginDraw();
 
-//      _DeviceContext->Clear(_State->_HasPhosphorDecay ? D2D1::ColorF(D2D1::ColorF::Black) : D2D1::ColorF(D2D1::ColorF::Black, 0.f)); // FIXME: Phosphor decay does not work with alpha transparency.
         _DeviceContext->Clear(); // Transparent
 
         hr = _DeviceContext->EndDraw();
@@ -235,70 +342,51 @@ HRESULT oscilloscope_base_t::CreateDeviceSpecificResources(ID2D1DeviceContext * 
         _DeviceContext->SetTarget(nullptr);
     }
 
-    if (_BlurEffect == nullptr)
-    {
-        hr = _DeviceContext->CreateEffect(CLSID_D2D1GaussianBlur, &_BlurEffect);
-
-        if (!SUCCEEDED(hr))
-            return hr;
-
-        _BlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_STANDARD_DEVIATION, _State->_BlurSigma);
-        _BlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_OPTIMIZATION, D2D1_DIRECTIONALBLUR_OPTIMIZATION_BALANCED);
-        _BlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_BORDER_MODE, D2D1_BORDER_MODE_HARD);
-    }
-
-    if (_ColorMatrixEffect == nullptr)
-    {
-        hr = _DeviceContext->CreateEffect(CLSID_D2D1ColorMatrix, &_ColorMatrixEffect);
-
-        if (!SUCCEEDED(hr))
-            return hr;
-
-        // Color matrix for uniform decay
-        #pragma warning(disable: 5246) // 'anonymous struct or union': the initialization of a subobject should be wrapped in braces
-        const D2D1_MATRIX_5X4_F DecayMatrix =
-        {
-            _State->_DecayFactor, 0, 0, 0,  // Decay red
-            0, _State->_DecayFactor, 0, 0,  // Decay green
-            0, 0, _State->_DecayFactor, 0,  // Decay blue
-            0, 0, 0, 1,                     // Keep alpha
-            0, 0, 0, 0                      // Unused. Translation
-        };
-
-        _ColorMatrixEffect->SetValue(D2D1_COLORMATRIX_PROP_COLOR_MATRIX, DecayMatrix);
-    }
-
-#ifdef _DEBUG
-    if (_DebugBrush == nullptr)
-        (void) deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), &_DebugBrush);
-#endif
-
     return hr;
 }
 
 /// <summary>
-/// Releases the device specific resources.
+/// Deletes the resources that depend on the size of the front buffer of the device context.
 /// </summary>
-void oscilloscope_base_t::DeleteDeviceSpecificResources() noexcept
+void oscilloscope_base_t::DeleteSizeDependentResources() noexcept
 {
-#ifdef _DEBUG
-    _DebugBrush.Release();
-#endif
-
-    _ColorMatrixEffect.Release();
-
-    _BlurEffect.Release();
+    _Bitmaps[1].Reset();
+    _Bitmaps[0].Reset();
 
     _CompositeBuffer.Release();
     _BackBuffer.Release();
     _FrontBuffer.Release();
 
-    _DeviceContext.Release();
-
     _SignalLineStyle.DeleteDeviceSpecificResources();
     _XAxisLineStyle.DeleteDeviceSpecificResources();
     _YAxisLineStyle.DeleteDeviceSpecificResources();
     _HorizontalGridLineStyle.DeleteDeviceSpecificResources();
+}
+
+/// <summary>
+/// Clears the back buffers.
+/// </summary>
+HRESULT oscilloscope_base_t::ClearBitmaps() noexcept
+{
+    HRESULT hr = E_FAIL;
+
+    _DeviceContext->BeginDraw();
+
+    for (auto Bitmap : _Bitmaps)
+    {
+        if (Bitmap == nullptr)
+            continue;
+
+        _DeviceContext->SetTarget(Bitmap.Get());
+
+        _DeviceContext->Clear(); // Transparent
+    }
+
+    _DeviceContext->SetTarget(nullptr);
+
+    hr = _DeviceContext->EndDraw();
+
+    return hr;
 }
 
 /// <summary>

@@ -1,5 +1,5 @@
 
-/** $VER: pch.h (2026.09.05) P. Stuer **/
+/** $VER: pch.h (2026.09.23) P. Stuer **/
 
 #pragma once
 
@@ -24,6 +24,10 @@
 #include <wincodec.h>
 
 #include <comdef.h> // For _com_error
+
+#include <wrl/client.h>
+
+using Microsoft::WRL::ComPtr;
 
 #include <stdlib.h>
 #include <strsafe.h>

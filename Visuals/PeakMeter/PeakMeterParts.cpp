@@ -711,6 +711,7 @@ HRESULT bar_t::CreateScaleLinesCommandList() noexcept
     if (SUCCEEDED(hr))
     {
         _DeviceContext->SetTarget(_ScaleLinesCommandList);
+
         _DeviceContext->BeginDraw();
 
         _DeviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED); // Prevent line blurring
@@ -864,6 +865,7 @@ HRESULT scale_t::CreateAxisCommandList() noexcept
     if (SUCCEEDED(hr))
     {
         _DeviceContext->SetTarget(_AxisCommandList);
+
         _DeviceContext->BeginDraw();
 
         _DeviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED); // Prevent line blurring

@@ -142,9 +142,9 @@ void goniometer_t::Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwapC
 
     // Draw the next back buffer frame.
     {
-        _DeviceContext->BeginDraw();
-
         _DeviceContext->SetTarget(_Bitmaps[BitmapIndex].Get());
+
+        _DeviceContext->BeginDraw();
 
         _DeviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
 
@@ -191,6 +191,19 @@ HRESULT goniometer_t::CreateDeviceIndependentResources() noexcept
 {
     HRESULT hr = S_OK;
 
+    // Create a brush stroke style for the static content that remains fixed during the scaling transformation.
+    if (_StaticStrokeStyle == nullptr)
+    {
+        D2D1_STROKE_STYLE_PROPERTIES1 StrokeStyleProperties = D2D1::StrokeStyleProperties1();
+
+        StrokeStyleProperties.transformType = D2D1_STROKE_TRANSFORM_TYPE_FIXED; // Prevent stroke scaling
+
+        hr = _Direct2D.Factory->CreateStrokeStyle(StrokeStyleProperties, nullptr, 0, _StaticStrokeStyle.GetAddressOf());
+
+        if (FAILED(hr))
+            return hr;
+    }
+
     return hr;
 }
 
@@ -199,6 +212,7 @@ HRESULT goniometer_t::CreateDeviceIndependentResources() noexcept
 /// </summary>
 void goniometer_t::DeleteDeviceIndependentResources() noexcept
 {
+    _StaticStrokeStyle.Reset();
 }
 
 /// <summary>
@@ -279,19 +293,6 @@ HRESULT goniometer_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceC
             return hr;
     }
 
-    // Create a brush stroke style for the axes that remains fixed during the scaling transformation.
-    if (_StaticStrokeStyle == nullptr)
-    {
-        D2D1_STROKE_STYLE_PROPERTIES1 StrokeStyleProperties = D2D1::StrokeStyleProperties1();
-
-        StrokeStyleProperties.transformType = D2D1_STROKE_TRANSFORM_TYPE_FIXED; // Prevent stroke scaling
-
-        hr = _Direct2D.Factory->CreateStrokeStyle(StrokeStyleProperties, nullptr, 0, _StaticStrokeStyle.GetAddressOf());
-
-        if (FAILED(hr))
-            return hr;
-    }
-
     hr = CreateSizeDependentResources(deviceContext);
 
     return hr;
@@ -304,14 +305,12 @@ void goniometer_t::DeleteDeviceSpecificResources() noexcept
 {
     DeleteSizeDependentResources();
 
-    _StaticStrokeStyle.Reset();
-
     _SpriteBatch.Reset();
     _Sprite.Reset();
 
-    _OpacityEffect.Reset();
     _BlurEffect.Reset();
-
+    _OpacityEffect.Reset();
+    
     _DeviceContext.Reset();
 
 #ifdef _DEBUG
@@ -320,7 +319,7 @@ void goniometer_t::DeleteDeviceSpecificResources() noexcept
 }
 
 /// <summary>
-/// Creates the resources that depend on the size of the backbuffer.
+/// Creates the resources that depend on the size of the front buffer of the device context.
 /// </summary>
 HRESULT goniometer_t::CreateSizeDependentResources(ID2D1DeviceContext * deviceContext) noexcept
 {
@@ -367,81 +366,62 @@ HRESULT goniometer_t::CreateSizeDependentResources(ID2D1DeviceContext * deviceCo
         }
     }
 
-    if (_XAxisLineStyle._Brush == nullptr)
+    if (_StaticLinesStyle._Brush == nullptr)
     {
-        _XAxisLineStyle = *_State->_StyleManager.GetStyle(VisualElement::XAxisLine);
+        _StaticLinesStyle = *_State->_StyleManager.GetStyle(VisualElement::StaticLines);
 
-        _XAxisLineStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+        _StaticLinesStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
 
         // The font style is created prescaled to counter the Scale transform in the command list.
-        hr = _XAxisLineStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
+        hr = _StaticLinesStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
 
         if (FAILED(hr))
             return hr;
     }
 
-    if (_XAxisTextStyle._Brush == nullptr)
+    if (_StaticTextStyle._Brush == nullptr)
     {
-        _XAxisTextStyle = *_State->_StyleManager.GetStyle(VisualElement::XAxisText);
+        _StaticTextStyle = *_State->_StyleManager.GetStyle(VisualElement::StaticText);
 
-        _XAxisTextStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+        _StaticTextStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
 
         // The font style is created prescaled to counter the Scale transform in the command list.
-        hr = _XAxisTextStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"L", _ScaleFactor);
+        hr = _StaticTextStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"L", _ScaleFactor);
 
         if (FAILED(hr))
             return hr;
     }
-
-    if (_YAxisLineStyle._Brush == nullptr)
-    {
-        _YAxisLineStyle = *_State->_StyleManager.GetStyle(VisualElement::YAxisLine);
-
-        _YAxisLineStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
-
-        hr = _YAxisLineStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
-
-        if (FAILED(hr))
-            return hr;
-    }
-
-    if (_YAxisTextStyle._Brush == nullptr)
-    {
-        _YAxisTextStyle = *_State->_StyleManager.GetStyle(VisualElement::YAxisText);
-
-        _YAxisTextStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
-
-        // The font style is created prescaled to counter the Scale transform in the command list.
-        hr = _YAxisTextStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"R", _ScaleFactor);
-
-        if (FAILED(hr))
-            return hr;
-    }
-
-    const D2D1_BITMAP_PROPERTIES1 BitmapProperties = D2D1::BitmapProperties1
-    (
-        D2D1_BITMAP_OPTIONS_TARGET,
-        D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED) // Required for alpha transparency. Otherwise use D2D1_ALPHA_MODE_IGNORE.
-    );
 
     if ((_Bitmaps[0] == nullptr) || (_Bitmaps[1] == nullptr))
     {
+        const D2D1_BITMAP_PROPERTIES1 BitmapProperties = D2D1::BitmapProperties1
+        (
+            D2D1_BITMAP_OPTIONS_TARGET,
+            D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED) // Required for alpha transparency. Otherwise use D2D1_ALPHA_MODE_IGNORE.
+        );
+
         const FLOAT x = (_Size.width  - _Side) / 2.f;
         const FLOAT y = (_Size.height - _Side) / 2.f;
 
         _DestinationRectangle = { x, y, x + _Side, y + _Side };
 
-        hr = deviceContext->CreateBitmap(D2D1::SizeU((UINT32) _Side, (UINT32) _Side), nullptr, 0, &BitmapProperties, _Bitmaps[0].GetAddressOf());
+        if (_Bitmaps[0] == nullptr)
+        {
+            hr = deviceContext->CreateBitmap(D2D1::SizeU((UINT32) _Side, (UINT32) _Side), nullptr, 0, &BitmapProperties, _Bitmaps[0].GetAddressOf());
 
-        if (FAILED(hr))
-            return hr;
+            if (FAILED(hr))
+                return hr;
+        }
 
-        hr = deviceContext->CreateBitmap(D2D1::SizeU((UINT32) _Side, (UINT32) _Side), nullptr, 0, &BitmapProperties, _Bitmaps[1].GetAddressOf());
+        if (_Bitmaps[1] == nullptr)
+        {
+            hr = deviceContext->CreateBitmap(D2D1::SizeU((UINT32) _Side, (UINT32) _Side), nullptr, 0, &BitmapProperties, _Bitmaps[1].GetAddressOf());
 
-        if (FAILED(hr))
-            return hr;
+            if (FAILED(hr))
+                return hr;
+        }
 
-        _PrevBitmapIndex = 0;
+        _PrevBitmapIndex = 1; // Start rendering in bitmap 0.
 
         hr = ClearBitmaps();
 
@@ -456,21 +436,45 @@ HRESULT goniometer_t::CreateSizeDependentResources(ID2D1DeviceContext * deviceCo
 }
 
 /// <summary>
-/// Deletes the resources that depend on the size of the backbuffer.
+/// Deletes the resources that depend on the size of the front buffer of the device context.
 /// </summary>
 void goniometer_t::DeleteSizeDependentResources() noexcept
 {
     _StaticContent.Reset();
 
-    for (auto & Bitmap : _Bitmaps)
-        Bitmap.Reset();
+    _Bitmaps[1].Reset();
+    _Bitmaps[0].Reset();
 
-    _YAxisTextStyle.DeleteDeviceSpecificResources();
-    _YAxisLineStyle.DeleteDeviceSpecificResources();
-    _XAxisTextStyle.DeleteDeviceSpecificResources();
-    _XAxisLineStyle.DeleteDeviceSpecificResources();
+    _StaticTextStyle.DeleteDeviceSpecificResources();
+    _StaticLinesStyle.DeleteDeviceSpecificResources();
 
     _SignalStyle.DeleteDeviceSpecificResources();
+}
+
+/// <summary>
+/// Clears the back buffers.
+/// </summary>
+HRESULT goniometer_t::ClearBitmaps() noexcept
+{
+    HRESULT hr = E_FAIL;
+
+    _DeviceContext->BeginDraw();
+
+    for (auto Bitmap : _Bitmaps)
+    {
+        if (Bitmap == nullptr)
+            continue;
+
+        _DeviceContext->SetTarget(Bitmap.Get());
+
+        _DeviceContext->Clear(); // Transparent
+    }
+
+    _DeviceContext->SetTarget(nullptr);
+
+    hr = _DeviceContext->EndDraw();
+
+    return hr;
 }
 
 /// <summary>
@@ -544,32 +548,6 @@ HRESULT goniometer_t::CreateSprites() noexcept
 }
 
 /// <summary>
-/// Clears the back buffers.
-/// </summary>
-HRESULT goniometer_t::ClearBitmaps() noexcept
-{
-    HRESULT hr = E_FAIL;
-
-    _DeviceContext->BeginDraw();
-
-    for (auto Bitmap : _Bitmaps)
-    {
-        if (Bitmap == nullptr)
-            continue;
-
-        _DeviceContext->SetTarget(Bitmap.Get());
-
-        _DeviceContext->Clear(); // Transparent
-    }
-
-    _DeviceContext->SetTarget(nullptr);
-
-    hr = _DeviceContext->EndDraw();
-
-    return hr;
-}
-
-/// <summary>
 /// Creates the point sprite.
 /// </summary>
 HRESULT goniometer_t::CreatePointSprite(ComPtr<ID2D1Bitmap1> & bitmap) noexcept
@@ -594,9 +572,9 @@ HRESULT goniometer_t::CreatePointSprite(ComPtr<ID2D1Bitmap1> & bitmap) noexcept
 
     _DeviceContext->SetTarget(bitmap.Get());
 
-    _DeviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
-
     _DeviceContext->BeginDraw();
+
+    _DeviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
     _DeviceContext->Clear(); // Transparent
 
@@ -634,6 +612,7 @@ HRESULT goniometer_t::CreateStaticContent() noexcept
         return hr;
 
     _DeviceContext->SetTarget(_StaticContent.Get());
+
     _DeviceContext->BeginDraw();
 
     _DeviceContext->SetTransform(ScaleTransform);
@@ -646,53 +625,53 @@ HRESULT goniometer_t::CreateStaticContent() noexcept
 
     // Draw the L-axis.
     {
-        _DeviceContext->DrawLine(D2D1::Point2F(-Radius * Sin, -Radius * Cos), D2D1::Point2F(Radius * Sin, Radius * Cos), _XAxisLineStyle._Brush, 1.f, _StaticStrokeStyle.Get());
+        _DeviceContext->DrawLine(D2D1::Point2F(-Radius * Sin, -Radius * Cos), D2D1::Point2F(Radius * Sin, Radius * Cos), _StaticLinesStyle._Brush, 1.f, _StaticStrokeStyle.Get());
 
-        _XAxisTextStyle.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
-        _XAxisTextStyle.SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_FAR);
+        _StaticTextStyle.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
+        _StaticTextStyle.SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_FAR);
 
         const D2D1_RECT_F TextRect = {-Sin, -Cos, -Radius * Sin, -Radius * Cos };
 
-        _DeviceContext->DrawText(L"L", 1u, _XAxisTextStyle._TextFormat, TextRect, _XAxisTextStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
+        _DeviceContext->DrawText(L"L", 1u, _StaticTextStyle._TextFormat, TextRect, _StaticTextStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
     }
 
     // Draw the R-axis.
     {
-        _DeviceContext->DrawLine(D2D1::Point2F(-Radius * Sin, Radius * Cos), D2D1::Point2F(Radius * Sin, -Radius * Cos), _YAxisLineStyle._Brush, 1.f, _StaticStrokeStyle.Get());
+        _DeviceContext->DrawLine(D2D1::Point2F(-Radius * Sin, Radius * Cos), D2D1::Point2F(Radius * Sin, -Radius * Cos), _StaticLinesStyle._Brush, 1.f, _StaticStrokeStyle.Get());
 
-        _XAxisTextStyle.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
-        _XAxisTextStyle.SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_FAR);
+        _StaticTextStyle.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
+        _StaticTextStyle.SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_FAR);
 
         const D2D1_RECT_F TextRect = { Radius * Sin, -Radius * Cos, Sin, -Cos };
 
-        _DeviceContext->DrawText(L"R", 1u, _XAxisTextStyle._TextFormat, TextRect, _XAxisTextStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
+        _DeviceContext->DrawText(L"R", 1u, _StaticTextStyle._TextFormat, TextRect, _StaticTextStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
     }
 
     // Draw the S-axis.
     {
-        _DeviceContext->DrawLine(D2D1::Point2F(-Radius, 0.f), D2D1::Point2F(Radius, 0.f), _XAxisLineStyle._Brush, 1.f, _StaticStrokeStyle.Get());
+        _DeviceContext->DrawLine(D2D1::Point2F(-Radius, 0.f), D2D1::Point2F(Radius, 0.f), _StaticLinesStyle._Brush, 1.f, _StaticStrokeStyle.Get());
 
         {
-            _XAxisTextStyle.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
-            _XAxisTextStyle.SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
+            _StaticTextStyle.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
+            _StaticTextStyle.SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
 
             const D2D1_RECT_F TextRect = { -Radius, 0.f, -Radius, 0.f };
 
-            _DeviceContext->DrawText(L"+S", 2u, _XAxisTextStyle._TextFormat, TextRect, _XAxisTextStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
+            _DeviceContext->DrawText(L"+S", 2u, _StaticTextStyle._TextFormat, TextRect, _StaticTextStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
         }
 
         {
-            _XAxisTextStyle.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
+            _StaticTextStyle.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
 
             const D2D1_RECT_F TextRect = { Radius, 0.f, Radius, 0.f };
 
-            _DeviceContext->DrawText(L"-S", 2u, _XAxisTextStyle._TextFormat, TextRect, _XAxisTextStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
+            _DeviceContext->DrawText(L"-S", 2u, _StaticTextStyle._TextFormat, TextRect, _StaticTextStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
         }
     }
 
     // Draw the M-axis.
     {
-        _DeviceContext->DrawLine(D2D1::Point2F(0.f, -Radius), D2D1::Point2F(0, Radius), _XAxisLineStyle._Brush, 1.f, _StaticStrokeStyle.Get());
+        _DeviceContext->DrawLine(D2D1::Point2F(0.f, -Radius), D2D1::Point2F(0, Radius), _StaticLinesStyle._Brush, 1.f, _StaticStrokeStyle.Get());
 /*
         _XAxisTextStyle.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
         _XAxisTextStyle.SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
@@ -707,7 +686,7 @@ HRESULT goniometer_t::CreateStaticContent() noexcept
     {
         auto Ellipse = D2D1::Ellipse(D2D1::Point2F(0.f, 0.f), Radius, Radius);
 
-        _DeviceContext->DrawEllipse(Ellipse, _XAxisLineStyle._Brush, 1.f, _StaticStrokeStyle.Get());
+        _DeviceContext->DrawEllipse(Ellipse, _StaticLinesStyle._Brush, 1.f, _StaticStrokeStyle.Get());
     }
 
     // Draw the middle circle (-6 dBFS).
@@ -716,7 +695,7 @@ HRESULT goniometer_t::CreateStaticContent() noexcept
 
         auto Ellipse = D2D1::Ellipse(D2D1::Point2F(0.f, 0.f), r, r);
 
-        _DeviceContext->DrawEllipse(Ellipse, _XAxisLineStyle._Brush, 1.f, _StaticStrokeStyle.Get());
+        _DeviceContext->DrawEllipse(Ellipse, _StaticLinesStyle._Brush, 1.f, _StaticStrokeStyle.Get());
     }
 
     // Draw the inner circle (-12 dBFS).
@@ -726,7 +705,7 @@ HRESULT goniometer_t::CreateStaticContent() noexcept
         auto Ellipse = D2D1::Ellipse(D2D1::Point2F(0.f, 0.f), r, r);
 
 
-        _DeviceContext->DrawEllipse(Ellipse, _XAxisLineStyle._Brush, 1.f, _StaticStrokeStyle.Get());
+        _DeviceContext->DrawEllipse(Ellipse, _StaticLinesStyle._Brush, 1.f, _StaticStrokeStyle.Get());
     }
 
     _DeviceContext->SetTransform(D2D1::Matrix3x2F::Identity());

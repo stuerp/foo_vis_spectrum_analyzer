@@ -808,6 +808,8 @@ void styles_page_t::InitializeStyles() noexcept
 
     const auto User = (VisualizationTypes) ((uint64_t) 1 << (int) _State->_VisualizationType);
 
+    static_assert(_countof(_StyleDisplayOrder) == (size_t) VisualElement::Count, "");
+
     for (const auto & ID : _StyleDisplayOrder)
     {
         const style_t * const Style = _StyleManager->GetStyle(ID);

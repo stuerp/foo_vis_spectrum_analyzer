@@ -1,16 +1,12 @@
 
-/** $VER: Goniometer.h (2026.09.20) P. Stuer - Implements a goniometer. **/
+/** $VER: Goniometer.h (2026.09.23) P. Stuer - Implements a goniometer. **/
 
 #pragma once
 
 #include <pch.h>
 
-#include <wrl/client.h>
-
 #include "Visualization.h"
 #include "AudioProcessor.h"
-
-using Microsoft::WRL::ComPtr;
 
 class goniometer_t : public visualization_t
 {
@@ -59,24 +55,25 @@ private:
     static constexpr FLOAT SpriteRadius = 2.5f;
     static constexpr D2D1_RECT_U SpriteRectangle = { 0u, 0u, (UINT32) (SpriteRadius * 2.f), (UINT32) (SpriteRadius * 2.f) };
 
-    size_t _PrevBitmapIndex = 0;
+    size_t _PrevBitmapIndex = 1; // Start drawing in bitmap 0.
 
     FLOAT _Side  = 0.f;
     D2D1_RECT_F _DestinationRectangle = { };
     D2D1::Matrix3x2F _TranslationMatrix;
 
     style_t _SignalStyle;
-    style_t _XAxisTextStyle;
-    style_t _XAxisLineStyle;
-    style_t _YAxisTextStyle;
-    style_t _YAxisLineStyle;
+    style_t _StaticTextStyle;
+    style_t _StaticLinesStyle;
 
+    // Device independent resources
+    ComPtr<ID2D1StrokeStyle1> _StaticStrokeStyle;
+
+    // Device dependent resources
 #ifdef _DEBUG
     ComPtr<ID2D1SolidColorBrush> _DebugBrush;
 #endif
 
     ComPtr<ID2D1DeviceContext3> _DeviceContext; // Device context used to render to the back buffers.
-    ComPtr<ID2D1Bitmap1> _Bitmaps[2];
 
     ComPtr<ID2D1Effect> _OpacityEffect;
     ComPtr<ID2D1Effect> _BlurEffect;
@@ -89,7 +86,8 @@ private:
     std::vector<D2D1_COLOR_F> _SpriteColors;
     std::vector<D2D1_MATRIX_3X2_F> _SpriteTransforms;
 
-    ComPtr<ID2D1StrokeStyle1> _StaticStrokeStyle;
+    // Device dependent resources (Size dependent)
+    ComPtr<ID2D1Bitmap1> _Bitmaps[2];
     ComPtr<ID2D1CommandList> _StaticContent;
 
     audio_processor_t _AudioProcessor;

@@ -1,5 +1,5 @@
 
-/** $VER: Oscilloscope.cpp (2026.09.21) P. Stuer - Implements an oscilloscope. **/
+/** $VER: Oscilloscope.cpp (2026.09.233) P. Stuer - Implements an oscilloscope. **/
 
 #include <pch.h>
 
@@ -46,10 +46,10 @@ void oscilloscope_t::Configure(state_t * state, graph_options_t * graphOptions, 
     {
         _Labels.clear();
 
+        WCHAR Text[16] = { };
+
         for (double Amplitude = _GraphOptions->_AmplitudeLo; Amplitude <= _GraphOptions->_AmplitudeHi; Amplitude -= _GraphOptions->_AmplitudeStep)
         {
-            WCHAR Text[16] = { };
-
             ::StringCchPrintfW(Text, _countof(Text), L"%+d", (int) Amplitude);
 
             const label_t lb =
@@ -103,7 +103,7 @@ void oscilloscope_t::Resize() noexcept
     _XAxisTextStyle.DeleteDeviceSpecificResources();
     _YAxisTextStyle.DeleteDeviceSpecificResources();
 
-    _AxesCommandList.Release();
+    _StaticContext.Release();
     _AxesCount = 0;
 
     _ForceElementToResize = false;
@@ -123,7 +123,7 @@ void oscilloscope_t::Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwa
 
     if (_GraphOptions->HasXAxis() && (_ChunkDuration != _Analysis->_Chunk.get_duration()))
     {
-        _AxesCommandList.Release();
+        _StaticContext.Release();
         _AxesCount = 0;
     }
 
@@ -185,7 +185,7 @@ void oscilloscope_t::Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwa
                     _DeviceContext->PushAxisAlignedClip({ 0.f, 0.f, SignalSize.width, SignalSize.height }, D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
                     // Draw a wide version of the signal.
-                    _DeviceContext->DrawGeometry(Geometry, _SignalLineStyle._Brush, _SignalLineStyle._Thickness * 3.f, _SignalStrokeStyle);
+                    _DeviceContext->DrawGeometry(Geometry, _SignalLineStyle._Brush, _SignalLineStyle._Thickness * 3.f, _SignalStrokeStyle.Get());
 
                     // Remove the clip region.
                     _DeviceContext->PopAxisAlignedClip();
@@ -202,23 +202,23 @@ void oscilloscope_t::Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwa
                     // Draw a color reduced version of the front buffer.
                     _ColorMatrixEffect->SetInput(0, _FrontBuffer);
 
-                    _DeviceContext->DrawImage(_ColorMatrixEffect);
+                    _DeviceContext->DrawImage(_ColorMatrixEffect.Get());
 
                     // Draw a color reduced version of the back buffer.
                     _ColorMatrixEffect->SetInput(0, _BackBuffer);
 
-                    _DeviceContext->DrawImage(_ColorMatrixEffect);
+                    _DeviceContext->DrawImage(_ColorMatrixEffect.Get());
 
                     // Draw a blurred version of the back buffer.
                     _BlurEffect->SetInput(0, _BackBuffer);
 
-                    _DeviceContext->DrawImage(_BlurEffect);
+                    _DeviceContext->DrawImage(_BlurEffect.Get());
 
                     // Set a clip region to prevent the anti-aliasing from spilling into the axis rectangle.
                     _DeviceContext->PushAxisAlignedClip({ 0.f, 0.f, SignalSize.width, SignalSize.height }, D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
                     // Draw a normal version of the signal.
-                    _DeviceContext->DrawGeometry(Geometry, _SignalLineStyle._Brush, _SignalLineStyle._Thickness, _SignalStrokeStyle);
+                    _DeviceContext->DrawGeometry(Geometry, _SignalLineStyle._Brush, _SignalLineStyle._Thickness, _SignalStrokeStyle.Get());
 
                     // Remove the clip region.
                     _DeviceContext->PopAxisAlignedClip();
@@ -236,7 +236,7 @@ void oscilloscope_t::Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwa
                     _DeviceContext->PushAxisAlignedClip({ 0.f, 0.f, SignalSize.width, SignalSize.height }, D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
                     // Draw a normal version of the signal.
-                    _DeviceContext->DrawGeometry(Geometry, _SignalLineStyle._Brush, _SignalLineStyle._Thickness, _SignalStrokeStyle);
+                    _DeviceContext->DrawGeometry(Geometry, _SignalLineStyle._Brush, _SignalLineStyle._Thickness, _SignalStrokeStyle.Get());
 
                     // Remove the clip region.
                     _DeviceContext->PopAxisAlignedClip();
@@ -257,7 +257,7 @@ void oscilloscope_t::Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwa
 
             deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
 
-            deviceContext->DrawImage(_AxesCommandList);
+            deviceContext->DrawImage(_StaticContext);
         }
 
         // Draw the composite buffer to the window.
@@ -335,7 +335,7 @@ HRESULT oscilloscope_t::CreateDeviceSpecificResources(ID2D1DeviceContext * devic
 
     const uint32_t AxesCount = (size_t) _State->_Downmix ? 1u : std::popcount(_Analysis->_Chunk.get_channel_config() & _GraphOptions->_ActiveChannelMask);
 
-    if ((_AxesCommandList == nullptr) || (_AxesCount != AxesCount))
+    if ((_StaticContext == nullptr) || (_AxesCount != AxesCount))
         hr = CreateAxesCommandList(AxesCount);
 
     return hr;
@@ -346,7 +346,7 @@ HRESULT oscilloscope_t::CreateDeviceSpecificResources(ID2D1DeviceContext * devic
 /// </summary>
 void oscilloscope_t::DeleteDeviceSpecificResources() noexcept
 {
-    _AxesCommandList.Release();
+    _StaticContext.Release();
     _AxesCount = 0;
 
     _YAxisTextStyle.DeleteDeviceSpecificResources();
@@ -461,7 +461,7 @@ HRESULT oscilloscope_t::CreateSignalGeometry(const audio_chunk_impl & chunk, con
 /// </summary>
 HRESULT oscilloscope_t::CreateAxesCommandList(uint32_t axesCount) noexcept
 {
-    _AxesCommandList.Release();
+    _StaticContext.Release();
 
     const FLOAT ChannelHeight = _Size.height / (FLOAT) axesCount; // Height available to one channel.
     const FLOAT YAxisWidth = _YAxisTextStyle._Width;
@@ -470,12 +470,13 @@ HRESULT oscilloscope_t::CreateAxesCommandList(uint32_t axesCount) noexcept
     const FLOAT x2 = _Size.width - ((_GraphOptions->HasYAxis() && _GraphOptions->_YAxisRight) ? YAxisWidth : 0.f);
 
     // Create a command list that will store the grid pattern and the axes.
-    HRESULT hr = _DeviceContext->CreateCommandList(&_AxesCommandList);
+    HRESULT hr = _DeviceContext->CreateCommandList(&_StaticContext);
 
     if (!SUCCEEDED(hr))
         return hr;
 
-    _DeviceContext->SetTarget(_AxesCommandList);
+    _DeviceContext->SetTarget(_StaticContext);
+
     _DeviceContext->BeginDraw();
 
     _DeviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED); // Prevent line blurring
@@ -506,7 +507,7 @@ HRESULT oscilloscope_t::CreateAxesCommandList(uint32_t axesCount) noexcept
                     const FLOAT y = msc::Map(_GraphOptions->ScaleAmplitude(ToMagnitude(Label.Amplitude)), 0., 1., y2, y1);
 
                     if (_HorizontalGridLineStyle.IsEnabled())
-                        _DeviceContext->DrawLine(D2D1::Point2F(x1, y), D2D1::Point2F(x2, y), _HorizontalGridLineStyle._Brush, _HorizontalGridLineStyle._Thickness, _AxisStrokeStyle);
+                        _DeviceContext->DrawLine(D2D1::Point2F(x1, y), D2D1::Point2F(x2, y), _HorizontalGridLineStyle._Brush, _HorizontalGridLineStyle._Thickness, _StaticStrokeStyle.Get());
 
                     TextRect.top    = Label.IsMin ? y - _YAxisTextStyle._Height : (Label.IsMax ? y : y - (_YAxisTextStyle._Height / 2.f));
                     TextRect.bottom = TextRect.top + _YAxisTextStyle._Height;
@@ -556,7 +557,7 @@ HRESULT oscilloscope_t::CreateAxesCommandList(uint32_t axesCount) noexcept
             int Time = dt;
 
             if (_XAxisLineStyle.IsEnabled())
-                _DeviceContext->DrawLine(D2D1::Point2F(x1, y), D2D1::Point2F(x2, y), _XAxisLineStyle._Brush, _XAxisLineStyle._Thickness, _AxisStrokeStyle);
+                _DeviceContext->DrawLine(D2D1::Point2F(x1, y), D2D1::Point2F(x2, y), _XAxisLineStyle._Brush, _XAxisLineStyle._Thickness, _StaticStrokeStyle.Get());
 
             if (_XAxisTextStyle.IsEnabled())
             {
@@ -567,7 +568,7 @@ HRESULT oscilloscope_t::CreateAxesCommandList(uint32_t axesCount) noexcept
                 for (TextRect.left = x1 + dx; TextRect.left < x2; TextRect.left += dx)
                 {
                     if (_VerticalGridLineStyle.IsEnabled())
-                        _DeviceContext->DrawLine(D2D1::Point2F(TextRect.left, y1), D2D1::Point2F(TextRect.left, y2), _VerticalGridLineStyle._Brush, _VerticalGridLineStyle._Thickness, _AxisStrokeStyle);
+                        _DeviceContext->DrawLine(D2D1::Point2F(TextRect.left, y1), D2D1::Point2F(TextRect.left, y2), _VerticalGridLineStyle._Brush, _VerticalGridLineStyle._Thickness, _StaticStrokeStyle.Get());
 
                     WCHAR Text[8] = { };
 
@@ -588,7 +589,7 @@ HRESULT oscilloscope_t::CreateAxesCommandList(uint32_t axesCount) noexcept
 
     (void) _DeviceContext->EndDraw();
 
-    hr = _AxesCommandList->Close();
+    hr = _StaticContext->Close();
 
     _AxesCount = axesCount;
 

@@ -1,5 +1,5 @@
 
-/** $VER: OscilloscopeXY.cpp (2026.09.20) P. Stuer - Implements an oscilloscope in X-Y mode. **/
+/** $VER: OscilloscopeXY.cpp (2026.09.23) P. Stuer - Implements an oscilloscope in X-Y mode. **/
 
 #include <pch.h>
 
@@ -71,7 +71,7 @@ void oscilloscope_xy_t::Resize() noexcept
     _XAxisTextStyle.DeleteDeviceSpecificResources();
     _YAxisTextStyle.DeleteDeviceSpecificResources();
 
-    _GridCommandList.Release();
+    _StaticContent.Reset();
 
     _ForceElementToResize = false;
 }
@@ -176,14 +176,13 @@ void oscilloscope_xy_t::Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGI
 
                     // Draw a wide version of the signal.
                     if (TransformedGeometry)
-                        _DeviceContext->DrawGeometry(TransformedGeometry, _SignalLineStyle._Brush, _SignalLineStyle._Thickness * 3.f, _SignalStrokeStyle);
+                        _DeviceContext->DrawGeometry(TransformedGeometry, _SignalLineStyle._Brush, _SignalLineStyle._Thickness * 3.f, _SignalStrokeStyle.Get());
                 }
 
                 _DeviceContext->SetTarget(_CompositeBuffer);
 
                 {
                     // Clear the composite buffer.
-//                  _DeviceContext->Clear(D2D1::ColorF(D2D1::ColorF::Black, 0.f));
                     _DeviceContext->Clear(); // Required for alpha transparency.
 
                     _DeviceContext->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_ADD);
@@ -191,21 +190,21 @@ void oscilloscope_xy_t::Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGI
                     // Draw a color reduced version of the front buffer.
                     _ColorMatrixEffect->SetInput(0, _FrontBuffer);
 
-                    _DeviceContext->DrawImage(_ColorMatrixEffect);
+                    _DeviceContext->DrawImage(_ColorMatrixEffect.Get());
 
                     // Draw a color reduced version of the back buffer.
                     _ColorMatrixEffect->SetInput(0, _BackBuffer);
 
-                    _DeviceContext->DrawImage(_ColorMatrixEffect);
+                    _DeviceContext->DrawImage(_ColorMatrixEffect.Get());
 
                     // Draw a blurred version of the back buffer.
                     _BlurEffect->SetInput(0, _BackBuffer);
 
-                    _DeviceContext->DrawImage(_BlurEffect);
+                    _DeviceContext->DrawImage(_BlurEffect.Get());
 
                     // Draw a normal version of the signal.
                     if (TransformedGeometry)
-                        _DeviceContext->DrawGeometry(TransformedGeometry, _SignalLineStyle._Brush, _SignalLineStyle._Thickness, _SignalStrokeStyle);
+                        _DeviceContext->DrawGeometry(TransformedGeometry, _SignalLineStyle._Brush, _SignalLineStyle._Thickness, _SignalStrokeStyle.Get());
                 }
             }
             else
@@ -216,7 +215,7 @@ void oscilloscope_xy_t::Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGI
                 _DeviceContext->Clear(); // Required for alpha transparency
 
                 if (TransformedGeometry)
-                    _DeviceContext->DrawGeometry(TransformedGeometry, _SignalLineStyle._Brush, _SignalLineStyle._Thickness, _SignalStrokeStyle);
+                    _DeviceContext->DrawGeometry(TransformedGeometry, _SignalLineStyle._Brush, _SignalLineStyle._Thickness, _SignalStrokeStyle.Get());
             }
 
             _DeviceContext->EndDraw();
@@ -234,7 +233,7 @@ void oscilloscope_xy_t::Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGI
 
             deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
-            deviceContext->DrawImage(_GridCommandList);
+            deviceContext->DrawImage(_StaticContent.Get());
         }
 
         // Draw the composite buffer to the window.
@@ -310,8 +309,8 @@ HRESULT oscilloscope_xy_t::CreateDeviceSpecificResources(ID2D1DeviceContext * de
             return hr;
     }
 
-    if (_GridCommandList == nullptr)
-        hr = CreateGridCommandList();
+    if (_StaticContent == nullptr)
+        hr = CreateStaticContent();
 
     return hr;
 }
@@ -321,7 +320,7 @@ HRESULT oscilloscope_xy_t::CreateDeviceSpecificResources(ID2D1DeviceContext * de
 /// </summary>
 void oscilloscope_xy_t::DeleteDeviceSpecificResources() noexcept
 {
-    _GridCommandList.Release();
+    _StaticContent.Reset();
 
     _YAxisTextStyle.DeleteDeviceSpecificResources();
     _XAxisTextStyle.DeleteDeviceSpecificResources();
@@ -330,10 +329,10 @@ void oscilloscope_xy_t::DeleteDeviceSpecificResources() noexcept
 }
 
 /// <summary>
-/// Creates a command list to render the grid and the X and Y axis labels.
+/// Creates a command list to render the static content (grid, the X and Y axis labels).
 /// This is created in a [-1, 1] axis setup and scaled up as necessary.
 /// </summary>
-HRESULT oscilloscope_xy_t::CreateGridCommandList() noexcept
+HRESULT oscilloscope_xy_t::CreateStaticContent() noexcept
 {
     HRESULT hr = S_OK;
 
@@ -341,17 +340,17 @@ HRESULT oscilloscope_xy_t::CreateGridCommandList() noexcept
 
     // Create a command list that will store the grid pattern and the axes.
     if (SUCCEEDED(hr))
-        hr = _DeviceContext->CreateCommandList(&_GridCommandList);
+        hr = _DeviceContext->CreateCommandList(_StaticContent.GetAddressOf());
 
     if (SUCCEEDED(hr))
     {
         WCHAR Text[6] = { };
 
-        _DeviceContext->SetTarget(_GridCommandList);
+        _DeviceContext->SetTarget(_StaticContent.Get());
+
         _DeviceContext->BeginDraw();
 
         _DeviceContext->SetTransform(ScaleTransform);
-
         _DeviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED); // Prevent line blurring
 
         // Draw the X-axis, Y-axis and the center label.
@@ -367,10 +366,10 @@ HRESULT oscilloscope_xy_t::CreateGridCommandList() noexcept
             }
 
             if (_GraphOptions->HasXAxis())
-                _DeviceContext->DrawLine(D2D1::Point2F(-1.f,  0.f), D2D1::Point2F(1.f, 0.f), _XAxisLineStyle._Brush, 1.f, _AxisStrokeStyle);
+                _DeviceContext->DrawLine(D2D1::Point2F(-1.f,  0.f), D2D1::Point2F(1.f, 0.f), _XAxisLineStyle._Brush, 1.f, _StaticStrokeStyle.Get());
 
             if (_GraphOptions->HasYAxis())
-                _DeviceContext->DrawLine(D2D1::Point2F( 0.f, -1.f), D2D1::Point2F(0.f, 1.f), _YAxisLineStyle._Brush, 1.f, _AxisStrokeStyle);
+                _DeviceContext->DrawLine(D2D1::Point2F( 0.f, -1.f), D2D1::Point2F(0.f, 1.f), _YAxisLineStyle._Brush, 1.f, _StaticStrokeStyle.Get());
         }
 
         _XAxisTextStyle.SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
@@ -380,8 +379,8 @@ HRESULT oscilloscope_xy_t::CreateGridCommandList() noexcept
             // Draw the vertical grid line.
             if (_VerticalGridLineStyle.IsEnabled())
             {
-                _DeviceContext->DrawLine(D2D1::Point2F( x, -1.f), D2D1::Point2F( x, 1.f), _VerticalGridLineStyle._Brush, 1.f, _AxisStrokeStyle);
-                _DeviceContext->DrawLine(D2D1::Point2F(-x, -1.f), D2D1::Point2F(-x, 1.f), _VerticalGridLineStyle._Brush, 1.f, _AxisStrokeStyle);
+                _DeviceContext->DrawLine(D2D1::Point2F( x, -1.f), D2D1::Point2F( x, 1.f), _VerticalGridLineStyle._Brush, 1.f, _StaticStrokeStyle.Get());
+                _DeviceContext->DrawLine(D2D1::Point2F(-x, -1.f), D2D1::Point2F(-x, 1.f), _VerticalGridLineStyle._Brush, 1.f, _StaticStrokeStyle.Get());
             }
 
             if (_GraphOptions->HasXAxis())
@@ -405,7 +404,7 @@ HRESULT oscilloscope_xy_t::CreateGridCommandList() noexcept
         }
 
         if (!_GraphOptions->HasXAxis())
-            _DeviceContext->DrawLine(D2D1::Point2F(0.f, -1.f), D2D1::Point2F(0.f, 1.f), _VerticalGridLineStyle._Brush, 1.f, _AxisStrokeStyle);
+            _DeviceContext->DrawLine(D2D1::Point2F(0.f, -1.f), D2D1::Point2F(0.f, 1.f), _VerticalGridLineStyle._Brush, 1.f, _StaticStrokeStyle.Get());
 
         _YAxisTextStyle.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
 
@@ -414,8 +413,8 @@ HRESULT oscilloscope_xy_t::CreateGridCommandList() noexcept
             // Draw the horizontal grid line.
             if (_HorizontalGridLineStyle.IsEnabled())
             {
-                _DeviceContext->DrawLine(D2D1::Point2F(-1.f,  y), D2D1::Point2F(1.f,  y), _HorizontalGridLineStyle._Brush, 1.f, _AxisStrokeStyle);
-                _DeviceContext->DrawLine(D2D1::Point2F(-1.f, -y), D2D1::Point2F(1.f, -y), _HorizontalGridLineStyle._Brush, 1.f, _AxisStrokeStyle);
+                _DeviceContext->DrawLine(D2D1::Point2F(-1.f,  y), D2D1::Point2F(1.f,  y), _HorizontalGridLineStyle._Brush, 1.f, _StaticStrokeStyle.Get());
+                _DeviceContext->DrawLine(D2D1::Point2F(-1.f, -y), D2D1::Point2F(1.f, -y), _HorizontalGridLineStyle._Brush, 1.f, _StaticStrokeStyle.Get());
             }
 
             if (_GraphOptions->HasYAxis())
@@ -439,7 +438,7 @@ HRESULT oscilloscope_xy_t::CreateGridCommandList() noexcept
         }
 
         if (!_GraphOptions->HasYAxis())
-            _DeviceContext->DrawLine(D2D1::Point2F(-1.f, 0.f), D2D1::Point2F(1.f, 0.f), _HorizontalGridLineStyle._Brush, 1.f, _AxisStrokeStyle);
+            _DeviceContext->DrawLine(D2D1::Point2F(-1.f, 0.f), D2D1::Point2F(1.f, 0.f), _HorizontalGridLineStyle._Brush, 1.f, _StaticStrokeStyle.Get());
 
         _DeviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
@@ -449,7 +448,7 @@ HRESULT oscilloscope_xy_t::CreateGridCommandList() noexcept
     }
 
     if (SUCCEEDED(hr))
-        hr = _GridCommandList->Close();
+        hr = _StaticContent->Close();
 
     return hr;
 }

@@ -59,6 +59,6 @@ private:
 
     double _ChunkDuration;
 
-    CComPtr<ID2D1CommandList> _AxesCommandList;
+    CComPtr<ID2D1CommandList> _StaticContext;
     size_t _AxesCount;
 };

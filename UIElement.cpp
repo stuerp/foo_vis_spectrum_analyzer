@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.cpp (2026.06.08) P. Stuer - UIElement methods that run on the UI thread. **/
+/** $VER: UIElement.cpp (2026.09.23) P. Stuer - UIElement methods that run on the UI thread. **/
 
 #include "pch.h"
 
@@ -211,17 +211,21 @@ void uielement_t::OnContextMenu(CWindow wnd, CPoint position) noexcept
         Menu.AppendMenu((UINT) MF_STRING | (_UIState._ShowFrameCounter ? MF_CHECKED : 0), IDM_TOGGLE_FRAME_COUNTER, L"Frame Counter");
 
         {
+            WCHAR Text[16] = { };
+
             RefreshRateLimitMenu.CreatePopupMenu();
 
-            const int64_t RefreshRates[] = { 20, 30, 60, 100, 200 };
-
             for (size_t i = 0; i < _countof(RefreshRates); ++i)
+            {
+                ::StringCchPrintfW(Text, _countof(Text), L"%dHz", (int) RefreshRates[i]);
+
                 RefreshRateLimitMenu.AppendMenu
                 (
-                    (UINT) MF_STRING | ((_UIState._RefreshRateLimit ==  RefreshRates[i]) ? MF_CHECKED : 0),
-                    IDM_REFRESH_RATE_LIMIT_20 + i,
-                    pfc::wideFromUTF8(pfc::format(RefreshRates[i], L"Hz"))
+                    (UINT) MF_STRING | ((_UIState._RefreshRateLimit == RefreshRates[i]) ? MF_CHECKED : 0),
+                    IDM_REFRESH_RATE_LIMIT + i,
+                    Text
                 );
+            }
 
             Menu.AppendMenu((UINT) MF_STRING, RefreshRateLimitMenu, L"Refresh Rate Limit");
         }
@@ -248,53 +252,42 @@ void uielement_t::OnContextMenu(CWindow wnd, CPoint position) noexcept
         Menu.SetMenuDefaultItem(IDM_CONFIGURE);
     }
 
-    int CommandId = Menu.TrackPopupMenu(TPM_RETURNCMD | TPM_VERNEGANIMATION | TPM_RIGHTBUTTON | TPM_NONOTIFY, position.x, position.y, *this);
+    const int CommandId = Menu.TrackPopupMenu(TPM_RETURNCMD | TPM_VERNEGANIMATION | TPM_RIGHTBUTTON | TPM_NONOTIFY, position.x, position.y, *this);
 
     switch (CommandId)
     {
         case IDM_TOGGLE_FULLSCREEN:
+        {
             ToggleFullScreen();
             break;
+        }
 
         case IDM_TOGGLE_FRAME_COUNTER:
+        {
             ToggleFrameCounter();
             break;
-
-        case IDM_REFRESH_RATE_LIMIT_20:
-            _UIState._RefreshRateLimit =
-            _RenderState._RefreshRateLimit = 20; // Near-atomic
-            break;
-
-        case IDM_REFRESH_RATE_LIMIT_30:
-            _UIState._RefreshRateLimit =
-            _RenderState._RefreshRateLimit = 30; // Near-atomic
-            break;
-
-        case IDM_REFRESH_RATE_LIMIT_60:
-            _UIState._RefreshRateLimit =
-            _RenderState._RefreshRateLimit = 60; // Near-atomic
-            break;
-
-        case IDM_REFRESH_RATE_LIMIT_100:
-            _UIState._RefreshRateLimit =
-            _RenderState._RefreshRateLimit = 100; // Near-atomic
-            break;
-
-        case IDM_REFRESH_RATE_LIMIT_200:
-            _UIState._RefreshRateLimit =
-            _RenderState._RefreshRateLimit = 200; // Near-atomic
-            break;
+        }
 
         case IDM_CONFIGURE:
+        {
             Configure();
             break;
+        }
 
         case IDM_FREEZE:
+        {
             _IsFrozen = !_IsFrozen;
             break;
+        }
 
         default:
         {
+            if (msc::InRange(CommandId, (int) IDM_REFRESH_RATE_LIMIT, (int) IDM_REFRESH_RATE_LIMIT + 999))
+            {
+                _UIState    ._RefreshRateLimit =
+                _RenderState._RefreshRateLimit = RefreshRates[CommandId - IDM_REFRESH_RATE_LIMIT]; // Near-atomic
+            }
+            else
             if (CommandId >= IDM_PRESET_NAME)
             {
                 state_t NewState;
