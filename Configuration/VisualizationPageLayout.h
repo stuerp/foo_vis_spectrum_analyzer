@@ -375,32 +375,32 @@
     #define X_C54    X_B18 +  5
     #define Y_C54    Y_B18 + 11
 
-    // Label: X gain
-    #define W_C56    34
+    // Label: X input gain
+    #define W_C56    40
     #define H_C56    H_LBL
     #define X_C56    X_C54 + W_C54 + IX
     #define Y_C56    Y_C54
 
-    // Textbox: X gain
+    // Textbox: X input gain
     #define W_C58    30
     #define H_C58    H_TBX
     #define X_C58    X_C56 + W_C56 + IX
     #define Y_C58    Y_C56
 
-    // Label: Y gain
-    #define W_C60    48
+    // Label: Y input gain
+    #define W_C60    42
     #define H_C60    H_LBL
     #define X_C60    X_C58 + W_C58 + IX
     #define Y_C60    Y_C58
 
-    // Textbox: Y gain
+    // Textbox: Y input gain
     #define W_C62    30
     #define H_C62    H_TBX
     #define X_C62    X_C60 + W_C60 + IX
     #define Y_C62    Y_C60
 
     // Label: Rotation
-    #define W_C78    34
+    #define W_C78    W_C56
     #define H_C78    H_LBL
     #define X_C78    X_C56
     #define Y_C78    Y_C62 + H_C62 + IY
@@ -412,7 +412,7 @@
     #define Y_C79    Y_C78
 
     // Label: Frame Count
-    #define W_C90    48
+    #define W_C90    W_C60
     #define H_C90    H_LBL
     #define X_C90    X_C60
     #define Y_C90    Y_C78
@@ -430,7 +430,7 @@
     #define Y_C64    Y_C79 + H_C79 + IY
 
     // Label: Blur sigma
-    #define W_C66    34
+    #define W_C66    W_C78
     #define H_C66    H_LBL
     #define X_C66    X_C64 + W_C64 + IX
     #define Y_C66    Y_C64
@@ -442,7 +442,7 @@
     #define Y_C68    Y_C66
 
     // Label: Decay factor
-    #define W_C70    48
+    #define W_C70    W_C60
     #define H_C70    H_LBL
     #define X_C70    X_C68 + W_C68 + IX
     #define Y_C70    Y_C68

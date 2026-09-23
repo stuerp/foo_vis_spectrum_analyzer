@@ -37,8 +37,8 @@ private:
     HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept;
     void DeleteDeviceSpecificResources() noexcept;
 
-    HRESULT CreateSignalGeometry(const audio_chunk_impl & chunk, const D2D1_SIZE_F & size, CComPtr<ID2D1PathGeometry> & geometry) noexcept;
-    HRESULT CreateAxesCommandList(uint32_t axesCount) noexcept;
+    HRESULT CreateSignalGeometry(const audio_chunk_impl & chunk, const D2D1_SIZE_F & size, ComPtr<ID2D1PathGeometry> & geometry) noexcept;
+    HRESULT CreateStaticContent(uint32_t axesCount) noexcept;
 
 private:
     downsampler_t _Downsampler;

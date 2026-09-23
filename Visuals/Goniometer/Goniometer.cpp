@@ -151,7 +151,16 @@ void goniometer_t::Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwapC
         _DeviceContext->Clear();
 
         // Draw a faded and blurred version of the previous bitmap.
+        if (_State->_HasPhosphorDecay)
         {
+            {
+                const FLOAT Opacity = (_State->_Afterglow != 0.f) ? std::expf(-(1000.f / (FLOAT) _State->_RefreshRateLimit) / _State->_Afterglow) : 0.f;
+
+                _OpacityEffect->SetValue(D2D1_OPACITY_PROP_OPACITY, Opacity);
+
+                _BlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_STANDARD_DEVIATION, _State->_BlurSigma);
+            }
+
             _OpacityEffect->SetInput(0, _Bitmaps[_PrevBitmapIndex].Get());
 
             _DeviceContext->DrawImage(_BlurEffect.Get());
@@ -255,12 +264,6 @@ HRESULT goniometer_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceC
 
         if (FAILED(hr))
             return hr;
-
-        constexpr FLOAT Persistence = 120.f; // ms
-
-        const FLOAT Opacity = std::expf(-(1000.f / (FLOAT) _State->_RefreshRateLimit) / Persistence);
-
-        _OpacityEffect->SetValue(D2D1_OPACITY_PROP_OPACITY, Opacity);
     }
 
     if (_BlurEffect == nullptr)
@@ -272,7 +275,6 @@ HRESULT goniometer_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceC
 
         _BlurEffect->SetInputEffect(0, _OpacityEffect.Get());
 
-        _BlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_STANDARD_DEVIATION, _State->_BlurSigma);
         _BlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_OPTIMIZATION, D2D1_DIRECTIONALBLUR_OPTIMIZATION_BALANCED);
         _BlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_BORDER_MODE, D2D1_BORDER_MODE_HARD);
     }

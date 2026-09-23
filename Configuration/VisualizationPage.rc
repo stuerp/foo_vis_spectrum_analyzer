@@ -88,7 +88,7 @@ style DS_SETFONT | DS_CONTROL | WS_CHILD | WS_CLIPCHILDREN
         rtext       "Bar gap:"                      IDC_BAR_GAP_LBL,                X_C25, Y_C25 + 2, W_C25, H_C25
         edittext                                    IDC_BAR_GAP,                    X_C26, Y_C26,     W_C26, H_C26, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
 
-        rtext       "Max. bar size:"                IDC_MAX_BAR_SIZE_LBL,           X_C75, Y_C75 + 2, W_C75, H_C75
+        rtext       "Max. bar size:"                IDC_STATIC,                     X_C75, Y_C75 + 2, W_C75, H_C75
         edittext                                    IDC_MAX_BAR_SIZE,               X_C76, Y_C76,     W_C76, H_C76, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
 
     groupbox "Balance / Correlation Meter", IDC_STATIC, X_B14, Y_B14, W_B14, H_B14, BS_GROUPBOX, WS_EX_TRANSPARENT
@@ -97,27 +97,27 @@ style DS_SETFONT | DS_CONTROL | WS_CHILD | WS_CLIPCHILDREN
 
     groupbox "Oscilloscope / Goniometer", IDC_STATIC, X_B18, Y_B18, W_B18, H_B18, BS_GROUPBOX, WS_EX_TRANSPARENT
 
-        control     "X/Y mode",                     IDC_XY_MODE, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C54, Y_C54 + 1, W_C54, H_C54
+        control     "X/Y mode",                     IDC_XY_MODE,                    "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C54, Y_C54 + 1, W_C54, H_C54
 
-        rtext       "X gain:"                       IDC_X_GAIN_LBL,                 X_C56, Y_C56 + 2, W_C56, H_C56
-        edittext                                    IDC_X_GAIN,                     X_C58, Y_C58, W_C58, H_C58, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+        rtext       "X input gain:"                 IDC_STATIC,                     X_C56, Y_C56 + 2, W_C56, H_C56
+        edittext                                    IDC_X_GAIN,                     X_C58, Y_C58,     W_C58, H_C58, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
 
-        rtext       "Y gain:"                       IDC_Y_GAIN_LBL,                 X_C60, Y_C60 + 2, W_C60, H_C60
-        edittext                                    IDC_Y_GAIN,                     X_C62, Y_C62, W_C62, H_C62, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+        rtext       "Y input gain:"                 IDC_STATIC,                     X_C60, Y_C60 + 2, W_C60, H_C60
+        edittext                                    IDC_Y_GAIN,                     X_C62, Y_C62,     W_C62, H_C62, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
 
-        rtext       "Rotation:"                     IDC_ROTATION_LBL,               X_C78, Y_C78 + 2, W_C78, H_C78
-        edittext                                    IDC_ROTATION,                   X_C79, Y_C79, W_C79, H_C79, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+        rtext       "Rotation:"                     IDC_STATIC,                     X_C78, Y_C78 + 2, W_C78, H_C78
+        edittext                                    IDC_ROTATION,                   X_C79, Y_C79,     W_C79, H_C79, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
 
         rtext       "Frame count:"                  IDC_STATIC,                     X_C90, Y_C90 + 2, W_C90, H_C90
-        edittext                                    IDC_FRAME_COUNT,                X_C91, Y_C91, W_C91, H_C91, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+        edittext                                    IDC_FRAME_COUNT,                X_C91, Y_C91,     W_C91, H_C91, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
 
-        control     "Phosphor decay"                IDC_PHOSPHOR_DECAY, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C64, Y_C64 + 1, W_C64, H_C64
+        control     "Phosphor decay"                IDC_PHOSPHOR_DECAY,             "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C64, Y_C64 + 1, W_C64, H_C64
 
-        rtext       "Blur sigma:"                   IDC_BLUR_SIGMA_LBL,             X_C66, Y_C66 + 2, W_C66, H_C66
-        edittext                                    IDC_BLUR_SIGMA,                 X_C68, Y_C68, W_C68, H_C68, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+        rtext       "Blur sigma:"                   IDC_STATIC,                     X_C66, Y_C66 + 2, W_C66, H_C66
+        edittext                                    IDC_BLUR_SIGMA,                 X_C68, Y_C68,     W_C68, H_C68, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
 
-        rtext       "Decay factor:"                 IDC_DECAY_FACTOR_LBL,           X_C70, Y_C70 + 2, W_C70, H_C70
-        edittext                                    IDC_DECAY_FACTOR,               X_C72, Y_C72, W_C72, H_C72, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+        rtext       "Afterglow:"                    IDC_STATIC,                     X_C70, Y_C70 + 2, W_C70, H_C70
+        edittext                                    IDC_AFTERGLOW,                  X_C72, Y_C72,     W_C72, H_C72, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
 
         control     "Downmix to mono"               IDC_DOWNMIX,                    "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_A40, Y_A40 + 1, W_A40, H_A40
         control     "Zero-crossing trigger"         IDC_ZERO_CROSSING,              "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_A42, Y_A42 + 1, W_A42, H_A42

@@ -34,9 +34,13 @@ private:
     HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept;
     void DeleteDeviceSpecificResources() noexcept;
 
+    HRESULT CreateSignalGeometry(const audio_chunk_impl & chunk, ComPtr<ID2D1TransformedGeometry> & transformedGeometry) noexcept;
     HRESULT CreateStaticContent() noexcept;
 
 private:
+    D2D1::Matrix3x2F _TranslateTransform;
+    D2D1::Matrix3x2F _ScaleTransform;
+
     style_t _XAxisTextStyle;
     style_t _YAxisTextStyle;
 

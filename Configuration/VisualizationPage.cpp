@@ -1,5 +1,5 @@
 
-/** $VER: VisualizationPage.cpp (2026.09.22) P. Stuer - Implements a configuration dialog page. **/
+/** $VER: VisualizationPage.cpp (2026.09.23) P. Stuer - Implements a configuration dialog page. **/
 
 #include "pch.h"
 
@@ -50,13 +50,13 @@ BOOL visualization_page_t::OnInitDialog(CWindow w, LPARAM lParam) noexcept
         { IDC_HORIZONTAL_LEVEL_METER, "Renders the Balance/Correlation meter horizontally." },
 
         { IDC_XY_MODE, "Enables X/Y mode." },
-        { IDC_X_GAIN, "Specifies the gain applied to the X signal." },
-        { IDC_Y_GAIN, "Specifies the gain applied to the Y signal." },
+        { IDC_X_GAIN, "Specifies the input gain applied to the X signal." },
+        { IDC_Y_GAIN, "Specifies the input gain applied to the Y signal." },
         { IDC_ROTATION, "Specifies the rotation angle of the signal in degrees." },
         { IDC_FRAME_COUNT, "Specifies the number of audio frames that will be used by the oscilloscope and goniometer per screen update." },
         { IDC_PHOSPHOR_DECAY, "Enables a phosphor decay effect simulation of analog oscilloscopes." },
         { IDC_BLUR_SIGMA, "Specifies the number of pixels used for the Gaussian blur. A higher value increases the blurring." },
-        { IDC_DECAY_FACTOR, "Specifies the color fade speed. Lower values cause a faster decay." },
+        { IDC_AFTERGLOW, "Specifies the afterglow of the dispay in ms. Use lower values for a shorter afterglow." },
         { IDC_DOWNMIX, "Enable this setting to downmix the input audio of the oscilloscope to mono." },
         { IDC_ZERO_CROSSING, "Enables a zero trigger to synchronize the oscilloscope display to the signal's zero crossings, creating a stable and readable waveform display." },
 
@@ -220,7 +220,7 @@ void visualization_page_t::InitializeControls() noexcept
             auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_BLUR_SIGMA)); _NumericEdits.push_back(ne); SetDouble(IDC_BLUR_SIGMA, _State->_BlurSigma);
         }
         {
-            auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_DECAY_FACTOR)); _NumericEdits.push_back(ne); SetDouble(IDC_DECAY_FACTOR, _State->_DecayFactor);
+            auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_AFTERGLOW)); _NumericEdits.push_back(ne); SetDouble(IDC_AFTERGLOW, _State->_Afterglow);
         }
 
         SendDlgItemMessageW(IDC_DOWNMIX,       BM_SETCHECK, _State->_Downmix);
@@ -319,20 +319,20 @@ void visualization_page_t::UpdateControls() noexcept
     GetDlgItem(IDC_HORIZONTAL_LEVEL_METER)  .EnableWindow(IsLevelMeter);
 
     // Oscilloscope / Goniometer
-    GetDlgItem(IDC_XY_MODE)       .EnableWindow(IsOscilloscope);
+    GetDlgItem(IDC_XY_MODE)             .EnableWindow(IsOscilloscope);
 
-    GetDlgItem(IDC_X_GAIN)        .EnableWindow((IsOscilloscope && _State->_XYMode) || IsGoniometer);
-    GetDlgItem(IDC_Y_GAIN)        .EnableWindow(IsOscilloscope || IsGoniometer);                        // Available in both oscilloscope modes.
-    GetDlgItem(IDC_ROTATION)      .EnableWindow((IsOscilloscope && _State->_XYMode));
-    GetDlgItem(IDC_FRAME_COUNT)   .EnableWindow(IsOscilloscope || IsGoniometer);                        // Available in both oscilloscope modes.
+    GetDlgItem(IDC_X_GAIN)              .EnableWindow((IsOscilloscope && _State->_XYMode) || IsGoniometer);
+    GetDlgItem(IDC_Y_GAIN)              .EnableWindow(IsOscilloscope || IsGoniometer);                        // Available in both oscilloscope modes.
+    GetDlgItem(IDC_ROTATION)            .EnableWindow((IsOscilloscope && _State->_XYMode));
+    GetDlgItem(IDC_FRAME_COUNT)         .EnableWindow(IsOscilloscope || IsGoniometer);                        // Available in both oscilloscope modes.
 
-    GetDlgItem(IDC_PHOSPHOR_DECAY).EnableWindow(IsOscilloscope);
+    GetDlgItem(IDC_PHOSPHOR_DECAY)      .EnableWindow(IsOscilloscope || IsGoniometer);
 
-    GetDlgItem(IDC_BLUR_SIGMA)    .EnableWindow((IsOscilloscope && _State->_HasPhosphorDecay) || IsGoniometer);
-    GetDlgItem(IDC_DECAY_FACTOR)  .EnableWindow((IsOscilloscope && _State->_HasPhosphorDecay));
+    GetDlgItem(IDC_BLUR_SIGMA)          .EnableWindow((IsOscilloscope ||IsGoniometer) && _State->_HasPhosphorDecay);
+    GetDlgItem(IDC_AFTERGLOW)           .EnableWindow((IsOscilloscope ||IsGoniometer) && _State->_HasPhosphorDecay);
 
-    GetDlgItem(IDC_DOWNMIX)       .EnableWindow(IsOscilloscope && !_State->_XYMode);
-    GetDlgItem(IDC_ZERO_CROSSING) .EnableWindow(IsOscilloscope && !_State->_XYMode);
+    GetDlgItem(IDC_DOWNMIX)             .EnableWindow(IsOscilloscope && !_State->_XYMode);
+    GetDlgItem(IDC_ZERO_CROSSING)       .EnableWindow(IsOscilloscope && !_State->_XYMode);
 
     GetDlgItem(IDC_GONIOMETER_MODE)     .EnableWindow(IsGoniometer);
     GetDlgItem(IDC_LOW_VISUAL_GAIN)     .EnableWindow(IsGoniometer);
@@ -567,12 +567,12 @@ void visualization_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
             break;
         }
 
-        case IDC_DECAY_FACTOR:
+        case IDC_AFTERGLOW:
         {
-            if (!SetProperty(_State->_DecayFactor, std::clamp((FLOAT) ::_wtof(Text), MinDecayFactor, MaxDecayFactor)))
+            if (!SetProperty(_State->_Afterglow, std::clamp((FLOAT) ::_wtof(Text), MinAfterGlow, MaxAfterglow)))
                 return;
 
-            ChangedSettings = ConfigurationChanges::Oscilloscope;
+            ChangedSettings = ConfigurationChanges::Oscilloscope | ConfigurationChanges::Goniometer;
             break;
         }
 
@@ -735,11 +735,11 @@ void visualization_page_t::OnEditLostFocus(UINT code, int id, CWindow) noexcept
             break;
         }
 
-        case IDC_DECAY_FACTOR:
+        case IDC_AFTERGLOW:
         {
-            SetDouble(id, _State->_DecayFactor, 0, 2);
+            SetDouble(id, _State->_Afterglow, 0, 2);
 
-            ChangedSettings = ConfigurationChanges::Oscilloscope;
+            ChangedSettings = ConfigurationChanges::Oscilloscope | ConfigurationChanges::Goniometer;
             break;
         }
 

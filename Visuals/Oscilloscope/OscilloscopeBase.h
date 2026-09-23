@@ -43,6 +43,7 @@ protected:
 protected:
     size_t _PrevBitmapIndex = 1; // Start drawing in bitmap 0.
 
+    bool _SquareBitmaps = false;
     FLOAT _Side  = 0.f;
     D2D1_RECT_F _DestinationRectangle = { };
 
@@ -63,13 +64,9 @@ protected:
 
     ComPtr<ID2D1DeviceContext> _DeviceContext; // Device context used to render the phospor blur
 
+    ComPtr<ID2D1Effect> _OpacityEffect;
     ComPtr<ID2D1Effect> _BlurEffect;
-    ComPtr<ID2D1Effect> _ColorMatrixEffect;
 
     // Device dependent resources (Size dependent)
     ComPtr<ID2D1Bitmap1> _Bitmaps[2];
-
-    CComPtr<ID2D1Bitmap1> _FrontBuffer;
-    CComPtr<ID2D1Bitmap1> _BackBuffer;
-    CComPtr<ID2D1Bitmap1> _CompositeBuffer;
 };

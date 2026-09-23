@@ -32,10 +32,7 @@ void oscilloscope_base_t::Resize() noexcept
     if (!_ForceElementToResize || (_Size.width <= 0.f) || (_Size.height <= 0.f))
         return;
 
-    // Release resources that are size dependent.
-    _CompositeBuffer.Release();
-    _BackBuffer.Release();
-    _FrontBuffer.Release();
+    DeleteSizeDependentResources();
 
     _ForceElementToResize = false;
 }
@@ -88,8 +85,6 @@ HRESULT oscilloscope_base_t::CreateDeviceSpecificResources(ID2D1DeviceContext * 
     if (_State->_RecreateStyles)
         DeleteDeviceSpecificResources();
 
-    Resize();
-
     HRESULT hr = S_OK;
 
 #ifdef _DEBUG
@@ -105,7 +100,15 @@ HRESULT oscilloscope_base_t::CreateDeviceSpecificResources(ID2D1DeviceContext * 
 
         hr = D2DDevice->CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_ENABLE_MULTITHREADED_OPTIMIZATIONS, _DeviceContext.GetAddressOf());
 
-        if (!SUCCEEDED(hr))
+        if (FAILED(hr))
+            return hr;
+    }
+
+    if (_OpacityEffect == nullptr)
+    {
+        hr = _DeviceContext->CreateEffect(CLSID_D2D1Opacity, _OpacityEffect.GetAddressOf());
+
+        if (FAILED(hr))
             return hr;
     }
 
@@ -113,33 +116,13 @@ HRESULT oscilloscope_base_t::CreateDeviceSpecificResources(ID2D1DeviceContext * 
     {
         hr = _DeviceContext->CreateEffect(CLSID_D2D1GaussianBlur, &_BlurEffect);
 
-        if (!SUCCEEDED(hr))
+        if (FAILED(hr))
             return hr;
 
-        _BlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_STANDARD_DEVIATION, _State->_BlurSigma);
+        _BlurEffect->SetInputEffect(0, _OpacityEffect.Get());
+
         _BlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_OPTIMIZATION, D2D1_DIRECTIONALBLUR_OPTIMIZATION_BALANCED);
         _BlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_BORDER_MODE, D2D1_BORDER_MODE_HARD);
-    }
-
-    if (_ColorMatrixEffect == nullptr)
-    {
-        hr = _DeviceContext->CreateEffect(CLSID_D2D1ColorMatrix, &_ColorMatrixEffect);
-
-        if (!SUCCEEDED(hr))
-            return hr;
-
-        // Color matrix for uniform decay
-        #pragma warning(disable: 5246) // 'anonymous struct or union': the initialization of a subobject should be wrapped in braces
-        const D2D1_MATRIX_5X4_F DecayMatrix =
-        {
-            _State->_DecayFactor, 0, 0, 0,  // Decay red
-            0, _State->_DecayFactor, 0, 0,  // Decay green
-            0, 0, _State->_DecayFactor, 0,  // Decay blue
-            0, 0, 0, 1,                     // Keep alpha
-            0, 0, 0, 0                      // Unused. Translation
-        };
-
-        _ColorMatrixEffect->SetValue(D2D1_COLORMATRIX_PROP_COLOR_MATRIX, DecayMatrix);
     }
 
     hr = CreateSizeDependentResources(deviceContext);
@@ -154,8 +137,8 @@ void oscilloscope_base_t::DeleteDeviceSpecificResources() noexcept
 {
     DeleteSizeDependentResources();
 
-    _ColorMatrixEffect.Reset();
     _BlurEffect.Reset();
+    _OpacityEffect.Reset();
 
     _DeviceContext.Reset();
 
@@ -182,7 +165,7 @@ HRESULT oscilloscope_base_t::CreateSizeDependentResources(ID2D1DeviceContext * d
 
         hr = _SignalLineStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
 
-        if (!SUCCEEDED(hr))
+        if (FAILED(hr))
             return hr;
     }
 
@@ -194,7 +177,7 @@ HRESULT oscilloscope_base_t::CreateSizeDependentResources(ID2D1DeviceContext * d
 
         hr = _XAxisLineStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
 
-        if (!SUCCEEDED(hr))
+        if (FAILED(hr))
             return hr;
     }
 
@@ -206,7 +189,7 @@ HRESULT oscilloscope_base_t::CreateSizeDependentResources(ID2D1DeviceContext * d
 
         hr = _YAxisLineStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
 
-        if (!SUCCEEDED(hr))
+        if (FAILED(hr))
             return hr;
     }
 
@@ -218,7 +201,7 @@ HRESULT oscilloscope_base_t::CreateSizeDependentResources(ID2D1DeviceContext * d
 
         hr = _HorizontalGridLineStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
 
-        if (!SUCCEEDED(hr))
+        if (FAILED(hr))
             return hr;
     }
 
@@ -230,7 +213,7 @@ HRESULT oscilloscope_base_t::CreateSizeDependentResources(ID2D1DeviceContext * d
 
         hr = _VerticalGridLineStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
 
-        if (!SUCCEEDED(hr))
+        if (FAILED(hr))
             return hr;
     }
 
@@ -242,16 +225,23 @@ HRESULT oscilloscope_base_t::CreateSizeDependentResources(ID2D1DeviceContext * d
             D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED) // Required for alpha transparency. Otherwise use D2D1_ALPHA_MODE_IGNORE.
         );
 
-        _Side = std::min(_Size.width, _Size.height);
+        UINT32 w = (UINT32) _Size.width, h = (UINT32) _Size.height;
 
-        const FLOAT x = (_Size.width  - _Side) / 2.f;
-        const FLOAT y = (_Size.height - _Side) / 2.f;
+        if (_SquareBitmaps)
+        {
+            _Side = std::min(_Size.width, _Size.height);
 
-        _DestinationRectangle = { x, y, x + _Side, y + _Side };
+            const FLOAT x = (_Size.width  - _Side) / 2.f;
+            const FLOAT y = (_Size.height - _Side) / 2.f;
+
+            _DestinationRectangle = { x, y, x + _Side, y + _Side };
+
+            w = h = (UINT) _Side;
+        }
 
         if (_Bitmaps[0] == nullptr)
         {
-            hr = deviceContext->CreateBitmap(D2D1::SizeU((UINT32) _Side, (UINT32) _Side), nullptr, 0, &BitmapProperties, _Bitmaps[0].GetAddressOf());
+            hr = deviceContext->CreateBitmap(D2D1::SizeU(w, h), nullptr, 0, &BitmapProperties, _Bitmaps[0].GetAddressOf());
 
             if (FAILED(hr))
                 return hr;
@@ -259,87 +249,16 @@ HRESULT oscilloscope_base_t::CreateSizeDependentResources(ID2D1DeviceContext * d
 
         if (_Bitmaps[1] == nullptr)
         {
-            hr = deviceContext->CreateBitmap(D2D1::SizeU((UINT32) _Side, (UINT32) _Side), nullptr, 0, &BitmapProperties, _Bitmaps[1].GetAddressOf());
+            hr = deviceContext->CreateBitmap(D2D1::SizeU(w, h), nullptr, 0, &BitmapProperties, _Bitmaps[1].GetAddressOf());
 
             if (FAILED(hr))
                 return hr;
         }
 
-        _PrevBitmapIndex = 1; // Start rendering in bitmap 0.
-
         hr = ClearBitmaps();
 
         if (FAILED(hr))
             return hr;
-    }
-
-    const D2D1_BITMAP_PROPERTIES1 BitmapProperties = D2D1::BitmapProperties1
-    (
-        D2D1_BITMAP_OPTIONS_TARGET,
-        D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED) // Required for alpha transparency. Otherwise use D2D1_ALPHA_MODE_IGNORE.
-    );
-
-    if (_FrontBuffer == nullptr)
-    {
-        hr = deviceContext->CreateBitmap(D2D1::SizeU((UINT32) _Size.width, (UINT32) _Size.height), nullptr, 0, &BitmapProperties, &_FrontBuffer);
-
-        if (!SUCCEEDED(hr))
-            return hr;
-
-        _DeviceContext->SetTarget(_FrontBuffer);
-
-        _DeviceContext->BeginDraw();
-
-        _DeviceContext->Clear(); // Transparent
-
-        hr = _DeviceContext->EndDraw();
-
-        if (!SUCCEEDED(hr))
-            return hr;
-
-        _DeviceContext->SetTarget(nullptr);
-    }
-
-    if (_BackBuffer == nullptr)
-    {
-        hr = _DeviceContext->CreateBitmap(D2D1::SizeU((UINT32) _Size.width, (UINT32) _Size.height), nullptr, 0, &BitmapProperties, &_BackBuffer);
-
-        if (!SUCCEEDED(hr))
-            return hr;
-
-        _DeviceContext->SetTarget(_BackBuffer);
-
-        _DeviceContext->BeginDraw();
-
-        _DeviceContext->Clear(); // Transparent
-
-        hr = _DeviceContext->EndDraw();
-
-        if (!SUCCEEDED(hr))
-            return hr;
-
-        _DeviceContext->SetTarget(nullptr);
-    }
-
-    if (_CompositeBuffer == nullptr)
-    {
-        hr = _DeviceContext->CreateBitmap(D2D1::SizeU((UINT32) _Size.width, (UINT32) _Size.height), nullptr, 0, &BitmapProperties, &_CompositeBuffer);
-
-        if (!SUCCEEDED(hr))
-            return hr;
-
-        _DeviceContext->SetTarget(_CompositeBuffer);
-
-        _DeviceContext->BeginDraw();
-
-        _DeviceContext->Clear(); // Transparent
-
-        hr = _DeviceContext->EndDraw();
-
-        if (!SUCCEEDED(hr))
-            return hr;
-
-        _DeviceContext->SetTarget(nullptr);
     }
 
     return hr;
@@ -352,10 +271,6 @@ void oscilloscope_base_t::DeleteSizeDependentResources() noexcept
 {
     _Bitmaps[1].Reset();
     _Bitmaps[0].Reset();
-
-    _CompositeBuffer.Release();
-    _BackBuffer.Release();
-    _FrontBuffer.Release();
 
     _SignalLineStyle.DeleteDeviceSpecificResources();
     _XAxisLineStyle.DeleteDeviceSpecificResources();

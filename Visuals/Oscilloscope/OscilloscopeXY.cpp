@@ -34,6 +34,8 @@ void oscilloscope_xy_t::Configure(state_t * state, graph_options_t * graphOption
     _GraphOptions = graphOptions;
     _Analysis = analysis;
 
+    _SquareBitmaps = true;
+
     DeleteDeviceSpecificResources();
 
     CreateDeviceIndependentResources();
@@ -83,171 +85,177 @@ void oscilloscope_xy_t::Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGI
 {
     HRESULT hr = CreateDeviceSpecificResources(deviceContext);
 
-    if (!SUCCEEDED(hr))
+    if (FAILED(hr))
         return;
 
+    ComPtr<ID2D1TransformedGeometry> TransformedGeometry;
+
+    // Create the signal.
     if (!_State->_IsPaused || (_State->_IsPaused && _State->_VisualizeDuringPause))
     {
-        const auto Translate = D2D1::Matrix3x2F::Translation(_Size.width / 2.f, _Size.height / 2.f);
-        const auto Scale     = D2D1::Matrix3x2F::Scale(D2D1::SizeF(_ScaleFactor, _ScaleFactor));
-        const auto Rotate    = D2D1::Matrix3x2F::Rotation(_State->_Rotation, D2D1::Point2F(0.f, 0.f));
+        hr = CreateSignalGeometry(_Analysis->_Chunk, TransformedGeometry);
 
-        size_t FrameCount = _Analysis->_Chunk.get_sample_count();                                               // get_sample_count() actually returns the number of frames.
+        if (FAILED(hr))
+            return;
+    }
+    else
+        TransformedGeometry.Reset();
 
-        const uint32_t ChannelCount         = _Analysis->_Chunk.get_channel_count();
-        const uint32_t AvailableChannelMask = _Analysis->_Chunk.get_channel_config();                           // Mask containing the channels in the audio chunk.
-        const uint32_t ActiveChannelMask    = _GraphOptions->_ActiveChannelMask;                                // Mask containing the channels selected by the user.
-        const uint32_t PairedChannelMask    = analysis_t::ChannelPairs[(size_t) _GraphOptions->_ChannelPair];   // Mask containing the channels selected by the user as a channel pair.
+    {
+        const FLOAT Opacity = (_State->_Afterglow != 0.f) ? std::expf(-(1000.f / (FLOAT) _State->_RefreshRateLimit) / _State->_Afterglow) : 0.f;
 
-        const uint32_t ChannelMask = AvailableChannelMask & ActiveChannelMask & PairedChannelMask;
+        _OpacityEffect->SetValue(D2D1_OPACITY_PROP_OPACITY, Opacity);
 
-        const audio_sample * Frames = _Analysis->_Chunk.get_data();
-
-        if (_State->_ZeroCrossingTrigger && (FrameCount >= 4))
-        {
-            FrameCount /= 2;
-
-            const size_t CrossIndex = FindZeroCrossing(Frames, FrameCount, ChannelCount);
-        
-            Frames += CrossIndex * ChannelCount;
-        }
-
-        CComPtr<ID2D1TransformedGeometry> TransformedGeometry;
-
-        if ((FrameCount >= 2) && (ChannelCount >= 2) && (ChannelMask != 0))
-        {
-            size_t Channel1 = (size_t) std::countr_zero(ChannelMask);         // Index of the channel 1 sample in the audio chunk.
-            size_t Channel2 = (size_t) (31 - std::countl_zero(ChannelMask));  // Index of the channel 2 sample in the audio chunk.
-
-            if (_GraphOptions->_SwapChannels)
-                std::swap(Channel1, Channel2);
-
-            // Create the signal geometry.
-            {
-                CComPtr<ID2D1PathGeometry> Geometry;
-
-                hr = _Direct2D.Factory->CreatePathGeometry(&Geometry);
-
-                if (SUCCEEDED(hr))
-                {
-                    CComPtr<ID2D1GeometrySink> Sink;
-
-                    hr = Geometry->Open(&Sink);
-
-                    auto x = (FLOAT) std::clamp(Frames[Channel1] * _State->_XInputGain, -1., 1.);
-                    auto y = (FLOAT) std::clamp(Frames[Channel2] * _State->_YInputGain, -1., 1.);
-
-                    Sink->BeginFigure(D2D1::Point2F(x, y), D2D1_FIGURE_BEGIN_HOLLOW);
-
-                    for (size_t i = ChannelCount; i < FrameCount; i += ChannelCount)
-                    {
-                        x = (FLOAT) std::clamp(Frames[Channel1 + i] * _State->_XInputGain, -1., 1.);
-                        y = (FLOAT) std::clamp(Frames[Channel2 + i] * _State->_YInputGain, -1., 1.);
-
-                        Sink->AddLine(D2D1::Point2F(x, y));
-                    }
-
-                    Sink->EndFigure(D2D1_FIGURE_END_OPEN);
-
-                    hr = Sink->Close();
-                }
-
-                if (SUCCEEDED(hr))
-                    hr = _Direct2D.Factory->CreateTransformedGeometry(Geometry, Rotate * Scale * Translate, &TransformedGeometry);
-            }
-        }
-
-        // Draw the signal in the composite buffer. Keep drawing even if no signal data is available to create the blur effect.
-        if (SUCCEEDED(hr))
-        {
-            _DeviceContext->BeginDraw();
-
-            _DeviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
-
-            if (_State->_HasPhosphorDecay)
-            {
-                _DeviceContext->SetTarget(_BackBuffer);
-
-                {
-                    // Clear the back buffer.
-                    _DeviceContext->Clear(); // Required for alpha transparency
-
-                    _DeviceContext->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_SOURCE_OVER);
-
-                    // Draw a wide version of the signal.
-                    if (TransformedGeometry)
-                        _DeviceContext->DrawGeometry(TransformedGeometry, _SignalLineStyle._Brush, _SignalLineStyle._Thickness * 3.f, _SignalStrokeStyle.Get());
-                }
-
-                _DeviceContext->SetTarget(_CompositeBuffer);
-
-                {
-                    // Clear the composite buffer.
-                    _DeviceContext->Clear(); // Required for alpha transparency.
-
-                    _DeviceContext->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_ADD);
-
-                    // Draw a color reduced version of the front buffer.
-                    _ColorMatrixEffect->SetInput(0, _FrontBuffer);
-
-                    _DeviceContext->DrawImage(_ColorMatrixEffect.Get());
-
-                    // Draw a color reduced version of the back buffer.
-                    _ColorMatrixEffect->SetInput(0, _BackBuffer);
-
-                    _DeviceContext->DrawImage(_ColorMatrixEffect.Get());
-
-                    // Draw a blurred version of the back buffer.
-                    _BlurEffect->SetInput(0, _BackBuffer);
-
-                    _DeviceContext->DrawImage(_BlurEffect.Get());
-
-                    // Draw a normal version of the signal.
-                    if (TransformedGeometry)
-                        _DeviceContext->DrawGeometry(TransformedGeometry, _SignalLineStyle._Brush, _SignalLineStyle._Thickness, _SignalStrokeStyle.Get());
-                }
-            }
-            else
-            {
-                _DeviceContext->SetTarget(_CompositeBuffer);
-
-                // Clear the buffer.
-                _DeviceContext->Clear(); // Required for alpha transparency
-
-                if (TransformedGeometry)
-                    _DeviceContext->DrawGeometry(TransformedGeometry, _SignalLineStyle._Brush, _SignalLineStyle._Thickness, _SignalStrokeStyle.Get());
-            }
-
-            _DeviceContext->EndDraw();
-        }
+        _BlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_STANDARD_DEVIATION, _State->_BlurSigma);
     }
 
-    if (SUCCEEDED(hr))
+    const size_t BitmapIndex = 1 - _PrevBitmapIndex;
+
+    // Draw the signal in the composite buffer. Keep drawing even if no signal data is available to create the blur effect.
     {
-        // Draw the grid to the window.
+        _DeviceContext->SetTarget(_Bitmaps[BitmapIndex].Get());
+
+        _DeviceContext->BeginDraw();
+
+        _DeviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+
+        _DeviceContext->Clear();
+
+        if (_State->_HasPhosphorDecay)
+        {
+            // Draw a faded and blurred version of the previous bitmap.
+            {
+                _OpacityEffect->SetInput(0, _Bitmaps[_PrevBitmapIndex].Get());
+
+                _DeviceContext->DrawImage(_BlurEffect.Get());
+            }
+
+            // Draw a faded and wide version of the signal.
+            if (TransformedGeometry)
+            {
+                FLOAT OldOpacity = _SignalLineStyle._Brush->GetOpacity();
+
+                _SignalLineStyle._Brush->SetOpacity(OldOpacity * .25f);
+
+                _DeviceContext->DrawGeometry(TransformedGeometry.Get(), _SignalLineStyle._Brush, _SignalLineStyle._Thickness * 3.f, _SignalStrokeStyle.Get());
+
+                _SignalLineStyle._Brush->SetOpacity(OldOpacity);
+            }
+        }
+
+        // Draw the new content.
+        if (TransformedGeometry)
+        {
+            _DeviceContext->DrawGeometry(TransformedGeometry.Get(), _SignalLineStyle._Brush, _SignalLineStyle._Thickness, _SignalStrokeStyle.Get());
+        }
+
+        hr = _DeviceContext->EndDraw();
+
+        if (FAILED(hr))
+            return;
+    }
+
+    {
+        // Draw the static content.
         {
             const auto Translate = D2D1::Matrix3x2F::Translation(_Rect.left + (_Size.width / 2.f), _Rect.top + (_Size.height / 2.f));
             const auto Rotate    = D2D1::Matrix3x2F::Rotation(_State->_Rotation, D2D1::Point2F(0.f, 0.f));
 
             deviceContext->SetTransform(Rotate * Translate);
 
-            deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
-
             deviceContext->DrawImage(_StaticContent.Get());
         }
 
         // Draw the composite buffer to the window.
         {
-            const auto Translate = D2D1::Matrix3x2F::Translation(_Rect.left, _Rect.top);
+            const auto Translate = D2D1::Matrix3x2F::Translation(_Rect.left + ((_Size.width - _Side) / 2.f), _Rect.top + ((_Size.height - _Side) / 2.f));
 
             deviceContext->SetTransform(Translate);
 
-            deviceContext->DrawBitmap(_CompositeBuffer);
+            deviceContext->DrawBitmap(_Bitmaps[BitmapIndex].Get());
         }
 
         deviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
+    }
 
-        std::swap(_FrontBuffer, _BackBuffer);
+    _PrevBitmapIndex = BitmapIndex;
+}
+
+/// <summary>
+/// Creates the path geometry for the signal.
+/// </summary>
+HRESULT oscilloscope_xy_t::CreateSignalGeometry(const audio_chunk_impl & chunk, ComPtr<ID2D1TransformedGeometry> & transformedGeometry) noexcept
+{
+    size_t FrameCount = chunk.get_sample_count();                                               // get_sample_count() actually returns the number of frames.
+
+    const uint32_t ChannelCount         = chunk.get_channel_count();
+    const uint32_t AvailableChannelMask = chunk.get_channel_config();                           // Mask containing the channels in the audio chunk.
+    const uint32_t ActiveChannelMask    = _GraphOptions->_ActiveChannelMask;                                // Mask containing the channels selected by the user.
+    const uint32_t PairedChannelMask    = analysis_t::ChannelPairs[(size_t) _GraphOptions->_ChannelPair];   // Mask containing the channels selected by the user as a channel pair.
+
+    const uint32_t ChannelMask = AvailableChannelMask & ActiveChannelMask & PairedChannelMask;
+
+    if ((ChannelCount < 2) || (ChannelMask == 0))
+        return S_FALSE;
+
+    const audio_sample * Frames = chunk.get_data();
+
+    if (_State->_ZeroCrossingTrigger && (FrameCount >= 4))
+    {
+        FrameCount /= 2;
+
+        const size_t CrossIndex = FindZeroCrossing(Frames, FrameCount, ChannelCount);
+        
+        Frames += CrossIndex * ChannelCount;
+    }
+
+    if (FrameCount < 2)
+        return S_FALSE;
+
+    size_t Channel1 = (size_t) std::countr_zero(ChannelMask);         // Index of the channel 1 sample in the audio chunk.
+    size_t Channel2 = (size_t) (31 - std::countl_zero(ChannelMask));  // Index of the channel 2 sample in the audio chunk.
+
+    if (_GraphOptions->_SwapChannels)
+        std::swap(Channel1, Channel2);
+
+    // Create the signal geometry.
+    {
+        ComPtr<ID2D1PathGeometry> Geometry;
+
+        HRESULT hr = _Direct2D.Factory->CreatePathGeometry(Geometry.GetAddressOf());
+
+        if (SUCCEEDED(hr))
+        {
+            ComPtr<ID2D1GeometrySink> Sink;
+
+            hr = Geometry->Open(Sink.GetAddressOf());
+
+            auto x = (FLOAT) std::clamp(Frames[Channel1] * _State->_XInputGain, -1., 1.);
+            auto y = (FLOAT) std::clamp(Frames[Channel2] * _State->_YInputGain, -1., 1.);
+
+            Sink->BeginFigure(D2D1::Point2F(x, y), D2D1_FIGURE_BEGIN_HOLLOW);
+
+            for (size_t i = ChannelCount; i < FrameCount; i += ChannelCount)
+            {
+                x = (FLOAT) std::clamp(Frames[Channel1 + i] * _State->_XInputGain, -1., 1.);
+                y = (FLOAT) std::clamp(Frames[Channel2 + i] * _State->_YInputGain, -1., 1.);
+
+                Sink->AddLine(D2D1::Point2F(x, y));
+            }
+
+            Sink->EndFigure(D2D1_FIGURE_END_OPEN);
+
+            hr = Sink->Close();
+        }
+
+        if (SUCCEEDED(hr))
+        {
+            const auto Rotate = D2D1::Matrix3x2F::Rotation(_State->_Rotation, D2D1::Point2F(0.f, 0.f));
+
+            hr = _Direct2D.Factory->CreateTransformedGeometry(Geometry.Get(), Rotate * _ScaleTransform * _TranslateTransform, transformedGeometry.GetAddressOf());
+        }
+
+        return hr;
     }
 }
 
@@ -277,11 +285,9 @@ HRESULT oscilloscope_xy_t::CreateDeviceSpecificResources(ID2D1DeviceContext * de
     if (_State->_RecreateStyles)
         DeleteDeviceSpecificResources();
 
-//  _ScaleFactor = std::min((_Size.width - 1.f) / 2.f, (_Size.height - 1.f) / 2.f);
+    oscilloscope_base_t::CreateDeviceSpecificResources(deviceContext);
 
-    Resize();
-
-    HRESULT hr = oscilloscope_base_t::CreateDeviceSpecificResources(deviceContext);
+    HRESULT hr = S_OK;
 
     if (_XAxisTextStyle._Brush == nullptr)
     {
@@ -292,7 +298,7 @@ HRESULT oscilloscope_xy_t::CreateDeviceSpecificResources(ID2D1DeviceContext * de
         // The font style is created prescaled to counter the Scale transform in the command list.
         hr = _XAxisTextStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"+0.0", _ScaleFactor);
 
-        if (!SUCCEEDED(hr))
+        if (FAILED(hr))
             return hr;
     }
 
@@ -305,7 +311,7 @@ HRESULT oscilloscope_xy_t::CreateDeviceSpecificResources(ID2D1DeviceContext * de
         // The font style is created prescaled to counter the Scale transform in the command list.
         hr = _YAxisTextStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"+0.0", _ScaleFactor);
 
-        if (!SUCCEEDED(hr))
+        if (FAILED(hr))
             return hr;
     }
 
@@ -336,7 +342,8 @@ HRESULT oscilloscope_xy_t::CreateStaticContent() noexcept
 {
     HRESULT hr = S_OK;
 
-    const auto ScaleTransform = D2D1::Matrix3x2F::Scale(D2D1::SizeF(_ScaleFactor, _ScaleFactor));
+    _TranslateTransform = D2D1::Matrix3x2F::Translation(_Side / 2.f, _Side / 2.f);
+    _ScaleTransform     = D2D1::Matrix3x2F::Scale(D2D1::SizeF(_ScaleFactor, _ScaleFactor));
 
     // Create a command list that will store the grid pattern and the axes.
     if (SUCCEEDED(hr))
@@ -350,7 +357,7 @@ HRESULT oscilloscope_xy_t::CreateStaticContent() noexcept
 
         _DeviceContext->BeginDraw();
 
-        _DeviceContext->SetTransform(ScaleTransform);
+        _DeviceContext->SetTransform(_ScaleTransform);
         _DeviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED); // Prevent line blurring
 
         // Draw the X-axis, Y-axis and the center label.

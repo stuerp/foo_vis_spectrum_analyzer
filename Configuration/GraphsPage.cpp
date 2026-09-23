@@ -56,7 +56,7 @@ BOOL graphs_page_t::OnInitDialog(CWindow w, LPARAM lParam) noexcept
         { IDC_X_AXIS_DECIMALS, "Determines the number of decimals used by the frequency labels." },
 
         // Amplitude axis
-        { IDC_Y_AXIS_MODE, "Determines the type of amY-axis." },
+        { IDC_Y_AXIS_MODE, "Determines the type of amplitude axis." },
 
         { IDC_AMPLITUDE_LO, "Sets the lowest amplitude to display." },
         { IDC_AMPLITUDE_HI, "Sets the highest amplitude to display." },
@@ -218,12 +218,17 @@ void graphs_page_t::InitializeControls() noexcept
 /// </summary>
 void graphs_page_t::UpdateControls() noexcept
 {
+    const bool IsBars         = (_State->_VisualizationType == VisualizationType::Bars);
+    const bool IsCurve        = (_State->_VisualizationType == VisualizationType::Curve);
     const bool IsSpectrogram  = (_State->_VisualizationType == VisualizationType::Spectrogram);
+
     const bool IsPeakMeter    = (_State->_VisualizationType == VisualizationType::PeakMeter);
     const bool IsLevelMeter   = (_State->_VisualizationType == VisualizationType::LevelMeter);
+
     const bool IsOscilloscope = (_State->_VisualizationType == VisualizationType::Oscilloscope);
+    const bool IsGoniometer   = (_State->_VisualizationType == VisualizationType::Goniometer);
+
     const bool IsBitMeter     = (_State->_VisualizationType == VisualizationType::BitMeter);
-//  const bool IsTester       = (_State->_VisualizationType == VisualizationType::Tester);
 
     const bool IsOscilloscopeXY = IsOscilloscope && _State->_XYMode;
 
@@ -267,13 +272,13 @@ void graphs_page_t::UpdateControls() noexcept
 
     /* Vertical layout **/
 
-    const bool SupportsVerticalLayout = !(IsOscilloscope || IsBitMeter) && (_State->_GraphOptions.size() > 1) && !_State->_OverlapGraphs;
+    const bool SupportsVerticalLayout = (_State->_GraphOptions.size() > 1) && !_State->_OverlapGraphs;
 
     GetDlgItem(IDC_VERTICAL_LAYOUT).EnableWindow(SupportsVerticalLayout);
 
     /* Overlap graphs **/
 
-    const bool SupportsOverlapGraphs = !(IsPeakMeter || IsLevelMeter || IsOscilloscope || IsBitMeter) && (_State->_GraphOptions.size() > 1);
+    const bool SupportsOverlapGraphs = (_State->_GraphOptions.size() > 1) && !(IsPeakMeter || IsLevelMeter || IsOscilloscope || IsGoniometer || IsBitMeter);
 
     GetDlgItem(IDC_OVERLAP_GRAPHS).EnableWindow(SupportsOverlapGraphs);
 
@@ -297,12 +302,12 @@ void graphs_page_t::UpdateControls() noexcept
         ((CComboBox) GetDlgItem(IDC_HORIZONTAL_ALIGNMENT)).SetCurSel((int) Options._HorizontalAlignment);
 
         CheckDlgButton(IDC_FLIP_HORIZONTALLY, Options._FlipHorizontally);
-        CheckDlgButton(IDC_FLIP_VERTICALLY, Options._FlipVertically);
+        CheckDlgButton(IDC_FLIP_VERTICALLY,   Options._FlipVertically);
 
         // Enable / Disable the required controls.
-        GetDlgItem(IDC_HORIZONTAL_ALIGNMENT).EnableWindow(!(IsPeakMeter || IsLevelMeter || IsOscilloscope));
+        GetDlgItem(IDC_HORIZONTAL_ALIGNMENT).EnableWindow(IsBars);
 
-        const bool SupportsLayout = !(IsPeakMeter || IsLevelMeter || IsOscilloscope || IsBitMeter);
+        const bool SupportsLayout = !(IsOscilloscope || IsGoniometer || IsBitMeter);
 
         for (const auto ID : { IDC_FLIP_HORIZONTALLY, IDC_FLIP_VERTICALLY })
             GetDlgItem(ID).EnableWindow(SupportsLayout);
@@ -326,10 +331,11 @@ void graphs_page_t::UpdateControls() noexcept
     {
         ((CComboBox) GetDlgItem(IDC_X_AXIS_MODE)).SetCurSel((int) Options._XAxisMode);
 
-        // Enable / Disable the required controls.
-        GetDlgItem(IDC_X_AXIS_MODE)  .EnableWindow(!(IsPeakMeter || IsLevelMeter || IsBitMeter));
-
         SetInteger(IDC_X_AXIS_DECIMALS, Options._XAxisDecimals);
+
+        // Enable / Disable the required controls.
+        GetDlgItem(IDC_X_AXIS_MODE)    .EnableWindow(IsBars || IsCurve || IsSpectrogram);
+        GetDlgItem(IDC_X_AXIS_DECIMALS).EnableWindow(IsBars || IsCurve || IsSpectrogram);
     }
 
     // Y axis
@@ -349,15 +355,17 @@ void graphs_page_t::UpdateControls() noexcept
         SetDouble(IDC_GAMMA, Options._Gamma, 0, 1);
 
         // Enable / Disable the required controls.
-        GetDlgItem(IDC_Y_AXIS_MODE) .EnableWindow(!(IsPeakMeter || IsLevelMeter || IsBitMeter));
+        const bool SupportsAmplitudeAxis = !(IsOscilloscopeXY || IsGoniometer || IsBitMeter);
+
+        GetDlgItem(IDC_Y_AXIS_MODE) .EnableWindow(SupportsAmplitudeAxis);
 
         for (const auto & Iter : { IDC_AMPLITUDE_LO, IDC_AMPLITUDE_HI, IDC_AMPLITUDE_STEP })
-            GetDlgItem(Iter).EnableWindow(Options.HasYAxis() && !(IsPeakMeter || IsLevelMeter || IsOscilloscopeXY || IsBitMeter));
+            GetDlgItem(Iter).EnableWindow(Options.HasYAxis() && SupportsAmplitudeAxis);
 
         const bool IsLinear = (Options._YAxisMode == YAxisMode::Linear);
 
         for (const auto & Iter : { IDC_USE_ABSOLUTE, IDC_GAMMA })
-            GetDlgItem(Iter).EnableWindow(IsLinear && !(IsPeakMeter || IsLevelMeter || IsOscilloscopeXY || IsBitMeter));
+            GetDlgItem(Iter).EnableWindow(IsLinear && SupportsAmplitudeAxis);
     }
 
     // Channels
@@ -375,7 +383,7 @@ void graphs_page_t::UpdateControls() noexcept
     }
 
     // Channel Pairs
-    const bool SupportsChannelPairs = IsLevelMeter || IsOscilloscopeXY;
+    const bool SupportsChannelPairs = IsLevelMeter || IsOscilloscopeXY || IsGoniometer;
 
     {
         auto w = (CComboBox) GetDlgItem(IDC_CHANNEL_PAIRS);

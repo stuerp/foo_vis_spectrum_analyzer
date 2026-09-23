@@ -1,5 +1,5 @@
 
-/** $VER: State.cpp (2026.09.22) P. Stuer **/
+/** $VER: State.cpp (2026.09.23) P. Stuer **/
 
 #include "pch.h"
 #include "State.h"
@@ -256,17 +256,17 @@ void state_t::Reset() noexcept
     // Spectrogram
     _IsScrollingSpectrogram = true;
     _IsHorizontalSpectrogram = true;
-    _UseSpectrumBarMetrics = false;
-    _SpectrogramLegend = false;
+    _UseSpectrumBarMetrics  = false;
+    _SpectrogramLegend      = false;
 
     // Peak Meter
-    _IsHorizontalPeakMeter = false;
-    _HasRMSPlus3 = false;
-    _RMSWindow = .300; // seconds
-    _BarGap = 1.f; // pixels
-    _HasCenterScale = false;
-    _HasScaleLines = true;
-    _MaxBarSize = 0.f; // pixels
+    _IsHorizontalPeakMeter  = false;
+    _HasRMSPlus3            = false;
+    _RMSWindow              = .300; // seconds
+    _BarGap                 = 1.f; // pixels
+    _HasCenterScale         = false;
+    _HasScaleLines          = true;
+    _MaxBarSize             = 0.f; // pixels
 
     // Level Meter
     _IsHorizontalLevelMeter = false;
@@ -278,7 +278,7 @@ void state_t::Reset() noexcept
     _Rotation               = 0.f;
     _HasPhosphorDecay       = true;
     _BlurSigma              = 3.f;
-    _DecayFactor            = 0.95f;
+    _Afterglow              = 100.f; // ms
     _FrameCount             = 1024;
     _Downmix                = false;
     _ZeroCrossingTrigger    = false;
@@ -575,7 +575,7 @@ state_t & state_t::operator=(const state_t & other) noexcept
     _Rotation             = other._Rotation;
     _HasPhosphorDecay     = other._HasPhosphorDecay;
     _BlurSigma            = other._BlurSigma;
-    _DecayFactor          = other._DecayFactor;
+    _Afterglow          = other._Afterglow;
     _FrameCount           = other._FrameCount;
     _Downmix              = other._Downmix;
     _ZeroCrossingTrigger  = other._ZeroCrossingTrigger;
@@ -1009,7 +1009,7 @@ void state_t::Read(stream_reader * stream, size_t size, abort_callback & abortHa
 
             stream->read_object_t(_HasPhosphorDecay, abortHandler);
             stream->read_object_t(_BlurSigma, abortHandler);
-            stream->read_object_t(_DecayFactor, abortHandler);
+            stream->read_object_t(_Afterglow, abortHandler);
         }
 
         if (Version >= 32)
@@ -1364,7 +1364,7 @@ void state_t::Write(stream_writer * stream, abort_callback & abortHandler, bool 
         stream->write_object_t(_YInputGain, abortHandler);
         stream->write_object_t(_HasPhosphorDecay, abortHandler);
         stream->write_object_t(_BlurSigma, abortHandler);
-        stream->write_object_t(_DecayFactor, abortHandler);
+        stream->write_object_t(_Afterglow, abortHandler);
 
         // Version 32, v0.9.2
         stream->write_object_t(_HasCenterScale, abortHandler);
@@ -1483,8 +1483,16 @@ void state_t::FromJSON(const char * data, size_t size, bool isPreset)
         const auto & PhosporDecay = Oscilloscope.value("phosphorDecay", json::object());
         {
             _HasPhosphorDecay = PhosporDecay.value("enabled",   _HasPhosphorDecay);
-            _BlurSigma        = std::clamp(PhosporDecay.value("blurSigma",    _BlurSigma),  MinBlurSigma,   MaxBlurSigma);
-            _DecayFactor      = std::clamp(PhosporDecay.value("decayFactor", _DecayFactor), MinDecayFactor, MaxDecayFactor);
+            _BlurSigma        = std::clamp(PhosporDecay.value("blurSigma",   _BlurSigma),   MinBlurSigma,   MaxBlurSigma);
+
+            if (SchemaVersion < 3)
+            {
+                FLOAT DecayFactor = PeakIndicators.value("decayFactor", 0.95f);
+
+                _Afterglow = msc::Map(DecayFactor, 0.f, 1.f, MinAfterGlow, 120.f);
+            }
+            else
+                _Afterglow = std::clamp(PhosporDecay.value("afterglow", _Afterglow), MinAfterGlow, MaxAfterglow);
         }
 
         _Downmix             = Oscilloscope.value("downmix", _Downmix);
@@ -1789,7 +1797,7 @@ json state_t::ToJSON(bool isPreset) const
                     ({
                         { "enabled", _HasPhosphorDecay },
                         { "blurSigma", _BlurSigma },
-                        { "decayFactor", _DecayFactor },
+                        { "afterglow", _Afterglow },
                     })
                 },
 

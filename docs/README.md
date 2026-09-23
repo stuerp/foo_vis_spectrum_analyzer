@@ -434,13 +434,13 @@ Renders the Balance / Correlation horizontally when enabled, vertically when not
 
 Enables X/Y-mode. Select a channel pair, typically Left/Right. The Left signal will be plotted on the X-axis; the Right signal will be plotted on the Y-axis.
 
-`X-gain`
+`X input gain`
 
-Specifies the gain applied to the X signal.
+Specifies the input gain applied to the X signal.
 
-`Y-gain`
+`Y input gain`
 
-Specifies the gain applied to the Y signal.
+Specifies the input gain applied to the Y signal.
 
 `Rotation`
 
@@ -458,9 +458,9 @@ Enables a phosphor afterglow effect simulation of analog oscilloscopes.
 
 Specifies the number of pixels for the Gaussian blur. Higher values increase the blurring.
 
-`Decay factor`
+`Afterglow`
 
-Specifies the color fade speed. Lower values cause a faster decay.
+Specifies the afterglow of the dispay in ms. Use lower values for a shorter afterglow. Use values between 80 and 150 ms to imitate the afterglow of an analog oscilloscope.
 
 `Downmix to mono`
 
@@ -819,6 +819,24 @@ Increasing or decreasing this value changes both the curve’s frequency progres
 `Weighting amount`
 
 Controls how strongly the selected A, B, C, D, or M acoustic weighting curve is applied. Zero disables acoustic weighting, 0.5 applies half the normal dB response, and 1.0 applies the full response. Values greater than one exaggerate the curve, while negative values invert it.
+
+#### Crossover Filter group
+
+This group contains settings to modify the triband crossover filter of the goniometer.
+
+The bands are configured as follows:
+
+- Low band: 0Hz - `Low Band Setting`
+- Mid band: `Low band Setting` - `High band setting`
+- High band: `High band setting` - Nyquist frequency
+
+`Low band`
+
+Specifies the end of the low frequency band of the crossover filter in Hz.
+
+`High band`
+
+Specifies the start of the high frequency band of the crossover filter in Hz.
 
 ---
 

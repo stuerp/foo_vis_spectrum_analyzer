@@ -1,5 +1,5 @@
 
-/** $VER: State.h (2026.09.21) P. Stuer **/
+/** $VER: State.h (2026.09.23) P. Stuer **/
 
 #pragma once
 
@@ -123,7 +123,7 @@ public:
             FLOAT _Rotation;
             bool _HasPhosphorDecay;
             FLOAT _BlurSigma;
-            FLOAT _DecayFactor;
+            FLOAT _Afterglow;                                         // ms
             uint32_t _FrameCount;
             bool _Downmix;                                              // Downmix the input audio to mono.
             bool _ZeroCrossingTrigger;                                  // Use a zero-crossing trigger.
@@ -407,7 +407,7 @@ private:
 
 private:
     static constexpr size_t _CurrentVersion = 35; // v0.10.0.0-beta1
-    static constexpr uint32_t _SchemaVersion = 2; // v0.12.0.0
+    static constexpr uint32_t _SchemaVersion = 3; // v0.13.0.0-alpha2
 };
 
 const LogLevel DefaultCfgLogLevel = LogLevel::Info;

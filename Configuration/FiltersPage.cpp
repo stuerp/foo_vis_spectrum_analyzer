@@ -31,8 +31,8 @@ BOOL filters_page_t::OnInitDialog(CWindow w, LPARAM lParam) noexcept
 
         { IDC_CROSSOVER_MODE,   "Selects the mode of the crossover filter." },
 
-        { IDC_LOW_BAND,         "Specifies the end of the low frequency band of the crossover filter." },
-        { IDC_HIGH_BAND,        "Specifies the start of the high frequency band of the crossover filter." },
+        { IDC_LOW_BAND,         "Specifies the end of the low frequency band of the crossover filter in Hz." },
+        { IDC_HIGH_BAND,        "Specifies the start of the high frequency band of the crossover filter in Hz." },
     };
 
     for (const auto & [ID, Text] : Tips)

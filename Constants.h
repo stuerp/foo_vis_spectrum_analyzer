@@ -549,11 +549,11 @@ inline constexpr FLOAT MaxRotation =  180.f;
 inline constexpr uint32_t MinFrameCount = 256;
 inline constexpr uint32_t MaxFrameCount = std::numeric_limits<uint32_t>::max();
 
-inline constexpr FLOAT MinBlurSigma =  1.f;
-inline constexpr FLOAT MaxBlurSigma = 10.f;
+inline constexpr FLOAT MinBlurSigma   =  1.f;
+inline constexpr FLOAT MaxBlurSigma   = 10.f;
 
-inline constexpr FLOAT MinDecayFactor = 0.f;
-inline constexpr FLOAT MaxDecayFactor = 1.f;
+inline constexpr FLOAT MinAfterGlow =   0.f; // ms
+inline constexpr FLOAT MaxAfterglow = 500.f; // ms
 
 inline constexpr double MinVisualGain = -12.;
 inline constexpr double MaxVisualGain = +12.;
