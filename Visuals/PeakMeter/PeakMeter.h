@@ -72,7 +72,6 @@ private:
     style_t _ScaleLineStyle;
 
     ComPtr<ID2D1Bitmap> _OpacityMask;
-
     ComPtr<ID2D1SolidColorBrush> _DebugBrush;
 
     std::vector<part_t *> _Parts;

@@ -239,30 +239,28 @@ private:
 #endif
 
     // Device-independent resources.
-    CComPtr<ID2D1Factory1> _D2DFactory;
-    CComPtr<IDXGIFactory2> _DXGIFactory;
-    CComPtr<IWICImagingFactory2> _WICImagingFactory;
-    CComPtr<IDWriteFactory> _DWriteFactory;
+    ComPtr<IDXGIFactory2> _DXGIFactory;
+
     ComPtr<IDWriteTextFormat> _TextFormat;
 
     // Device-dependent resources.
-    CComPtr<ID3D11Device> _D3DDevice;
-    CComPtr<ID3D11DeviceContext> _D3DDeviceContext;
+    ComPtr<ID3D11Device> _D3DDevice;
+    ComPtr<ID3D11DeviceContext> _D3DDeviceContext;
 
-    CComPtr<IDCompositionDevice> _DCompositionDevice;
+    ComPtr<IDCompositionDevice> _DCompositionDevice;
 
-    CComPtr<IDXGISwapChain1> _SwapChain;
+    ComPtr<IDXGISwapChain1> _SwapChain;
 
-    CComPtr<ID2D1Device> _D2DDevice;
-    CComPtr<ID2D1DeviceContext> _DeviceContext;
+    ComPtr<ID2D1Device> _D2DDevice;
+    ComPtr<ID2D1DeviceContext> _DeviceContext;
 
-    CComPtr<IDCompositionVisual>  _CompositionVisual;
-    CComPtr<IDCompositionTarget>  _CompositionTarget;
+    ComPtr<IDCompositionVisual>  _CompositionVisual;
+    ComPtr<IDCompositionTarget>  _CompositionTarget;
 
-    CComPtr<ID2D1Bitmap1> _BackBuffer;
+    ComPtr<ID2D1Bitmap1> _BackBuffer;
 
 #ifdef _DEBUG
-    CComPtr<ID2D1SolidColorBrush> _DebugBrush;
+    ComPtr<ID2D1SolidColorBrush> _DebugBrush;
 #endif
 
     visualisation_stream_v2::ptr _VisualisationStream;

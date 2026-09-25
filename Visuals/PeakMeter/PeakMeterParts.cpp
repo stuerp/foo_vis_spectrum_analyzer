@@ -850,25 +850,30 @@ void scale_t::Render() const noexcept
 /// </summary>
 HRESULT scale_t::CreateAxisCommandList() noexcept
 {
-    // BeginDraw() was already called by the graph. End drawing on the old target.
-    HRESULT hr = _DeviceContext->EndDraw();
+    HRESULT hr = S_OK;
 
-    if (!SUCCEEDED(hr))
-        return hr;
+    ComPtr<ID2D1DeviceContext> DeviceContext;
 
-    CComPtr<ID2D1Image> OldTarget;
+    {
+        ComPtr<ID2D1Device> D2DDevice;
 
-    _DeviceContext->GetTarget(&OldTarget);
+        _DeviceContext->GetDevice(D2DDevice.GetAddressOf());
 
-    hr = _DeviceContext->CreateCommandList(_AxisCommandList.GetAddressOf());
+        hr = D2DDevice->CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_ENABLE_MULTITHREADED_OPTIMIZATIONS, DeviceContext.GetAddressOf());
+
+        if (FAILED(hr))
+            return hr;
+    }
+
+    hr = DeviceContext->CreateCommandList(_AxisCommandList.GetAddressOf());
 
     if (SUCCEEDED(hr))
     {
-        _DeviceContext->SetTarget(_AxisCommandList.Get());
+        DeviceContext->SetTarget(_AxisCommandList.Get());
 
-        _DeviceContext->BeginDraw();
+        DeviceContext->BeginDraw();
 
-        _DeviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED); // Prevent line blurring
+        DeviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED); // Prevent line blurring
 
     //  _DebugBrush->SetColor(D2D1::ColorF(D2D1::ColorF::Yellow)); _DeviceContext->DrawRectangle(_Rect, _DebugBrush);
 
@@ -880,22 +885,17 @@ HRESULT scale_t::CreateAxisCommandList() noexcept
     //      _DebugBrush->SetColor(D2D1::ColorF(D2D1::ColorF::Red)); _DeviceContext->DrawRectangle(Label.Rect, _DebugBrush);
 
             if (!Label.IsHidden)
-                _DeviceContext->DrawText(Label.Text.c_str(), (UINT) Label.Text.size(), _ScaleTextStyle->_TextFormat.Get(), Label.Rect, _ScaleTextStyle->_Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_NONE);
+                DeviceContext->DrawText(Label.Text.c_str(), (UINT) Label.Text.size(), _ScaleTextStyle->_TextFormat.Get(), Label.Rect, _ScaleTextStyle->_Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_NONE);
 
             if (!IsCenter())
-                _DeviceContext->DrawLine(Label.P1, Label.P2, _ScaleLineStyle->_Brush.Get(), _ScaleLineStyle->_Thickness); // Draw the tick.
+                DeviceContext->DrawLine(Label.P1, Label.P2, _ScaleLineStyle->_Brush.Get(), _ScaleLineStyle->_Thickness); // Draw the tick.
         }
 
-        hr = _DeviceContext->EndDraw();
+        hr = DeviceContext->EndDraw();
     }
 
     if (SUCCEEDED(hr))
         hr = _AxisCommandList->Close();
-
-    // Resume drawing on the old target.
-    _DeviceContext->SetTarget(OldTarget);
-
-    _DeviceContext->BeginDraw();
 
     return hr;
 }

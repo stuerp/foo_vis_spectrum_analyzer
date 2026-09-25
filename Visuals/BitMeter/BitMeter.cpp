@@ -98,7 +98,7 @@ void bit_meter_t::Render(ID2D1DeviceContext * deviceContext, IDXGISwapChain1 * s
 {
     HRESULT hr = CreateDeviceSpecificResources(deviceContext);
 
-    if (!SUCCEEDED(hr))
+    if (FAILED(hr))
         return;
 
     // Draw the static content.
@@ -107,7 +107,7 @@ void bit_meter_t::Render(ID2D1DeviceContext * deviceContext, IDXGISwapChain1 * s
 
         deviceContext->SetTransform(Translate);
 
-        deviceContext->DrawImage(_StaticContentCommandList);
+        deviceContext->DrawImage(_StaticContentCommandList.Get());
     }
 
     const FLOAT XAxisHeight = _GraphOptions->_XAxisBottom ? YPadding + _XAxisText._Height + YPadding : 1.f;
@@ -199,7 +199,7 @@ HRESULT bit_meter_t::CreateDeviceSpecificResources(_In_ ID2D1DeviceContext * dev
         _BarExponent.DeleteDeviceSpecificResources();
         _BarMantissa.DeleteDeviceSpecificResources();
 
-        _StaticContentCommandList.Release();
+        _StaticContentCommandList.Reset();
     }
 
     if (_MeasurementCount == 0)
@@ -217,7 +217,7 @@ HRESULT bit_meter_t::CreateDeviceSpecificResources(_In_ ID2D1DeviceContext * dev
 
         hr = _BarBackground.CreateDeviceSpecificResources(deviceContext, TextSize, L"", 1.f);
 
-        if (!SUCCEEDED(hr))
+        if (FAILED(hr))
             return hr;
     }
 
@@ -229,7 +229,7 @@ HRESULT bit_meter_t::CreateDeviceSpecificResources(_In_ ID2D1DeviceContext * dev
 
         hr = _BarSign.CreateDeviceSpecificResources(deviceContext, TextSize, L"", 1.f);
 
-        if (!SUCCEEDED(hr))
+        if (FAILED(hr))
             return hr;
     }
 
@@ -241,7 +241,7 @@ HRESULT bit_meter_t::CreateDeviceSpecificResources(_In_ ID2D1DeviceContext * dev
 
         hr = _BarExponent.CreateDeviceSpecificResources(deviceContext, TextSize, L"", 1.f);
 
-        if (!SUCCEEDED(hr))
+        if (FAILED(hr))
             return hr;
     }
 
@@ -253,7 +253,7 @@ HRESULT bit_meter_t::CreateDeviceSpecificResources(_In_ ID2D1DeviceContext * dev
 
         hr = _BarMantissa.CreateDeviceSpecificResources(deviceContext, TextSize, L"", 1.f);
 
-        if (!SUCCEEDED(hr))
+        if (FAILED(hr))
             return hr;
     }
 
@@ -265,7 +265,7 @@ HRESULT bit_meter_t::CreateDeviceSpecificResources(_In_ ID2D1DeviceContext * dev
 
         hr = _XAxisText.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
 
-        if (!SUCCEEDED(hr))
+        if (FAILED(hr))
             return hr;
 
         _XAxisText.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
@@ -280,7 +280,7 @@ HRESULT bit_meter_t::CreateDeviceSpecificResources(_In_ ID2D1DeviceContext * dev
 
         hr = _YAxisText.CreateDeviceSpecificResources(deviceContext, _Size, L"WW", 1.f);
 
-        if (!SUCCEEDED(hr))
+        if (FAILED(hr))
             return hr;
 
         _YAxisText.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
@@ -288,18 +288,18 @@ HRESULT bit_meter_t::CreateDeviceSpecificResources(_In_ ID2D1DeviceContext * dev
 
 #ifdef _DEBUG
     if (_DebugBrush == nullptr)
-        (void) deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), &_DebugBrush);
+        (void) deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), _DebugBrush.GetAddressOf());
 #endif
 
     if (_DeviceContext == nullptr)
     {
-        CComPtr<ID2D1Device> D2DDevice;
+        ComPtr<ID2D1Device> D2DDevice;
 
-        deviceContext->GetDevice(&D2DDevice);
+        deviceContext->GetDevice(D2DDevice.GetAddressOf());
 
-        hr = D2DDevice->CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_ENABLE_MULTITHREADED_OPTIMIZATIONS, &_DeviceContext);
+        hr = D2DDevice->CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_ENABLE_MULTITHREADED_OPTIMIZATIONS, _DeviceContext.GetAddressOf());
 
-        if (!SUCCEEDED(hr))
+        if (FAILED(hr))
             return hr;
     }
 
@@ -307,8 +307,7 @@ HRESULT bit_meter_t::CreateDeviceSpecificResources(_In_ ID2D1DeviceContext * dev
     {
         hr = CreateStaticContentCommandList();
 
-
-        if (!SUCCEEDED(hr))
+        if (FAILED(hr))
             return hr;
     }
 
@@ -331,12 +330,12 @@ HRESULT bit_meter_t::CreateDeviceSpecificResources(_In_ ID2D1DeviceContext * dev
 /// </summary>
 void bit_meter_t::DeleteDeviceSpecificResources() noexcept
 {
-    _StaticContentCommandList.Release();
+    _StaticContentCommandList.Reset();
 
-    _DeviceContext.Release();
+    _DeviceContext.Reset();
 
 #ifdef _DEBUG
-    _DebugBrush.Release();
+    _DebugBrush.Reset();
 #endif
 
     _YAxisText.DeleteDeviceSpecificResources();
@@ -355,10 +354,10 @@ HRESULT bit_meter_t::CreateStaticContentCommandList() noexcept
 {
     HRESULT hr = _DeviceContext->CreateCommandList(&_StaticContentCommandList);
 
-    if (!SUCCEEDED(hr))
+    if (FAILED(hr))
         return hr;
 
-    _DeviceContext->SetTarget(_StaticContentCommandList);
+    _DeviceContext->SetTarget(_StaticContentCommandList.Get());
 
     _DeviceContext->BeginDraw();
 
@@ -438,7 +437,7 @@ HRESULT bit_meter_t::CreateStaticContentCommandList() noexcept
 
     hr = _DeviceContext->EndDraw();
 
-    if (!SUCCEEDED(hr))
+    if (FAILED(hr))
         return hr;
 
     hr = _StaticContentCommandList->Close();
@@ -452,5 +451,5 @@ HRESULT bit_meter_t::CreateStaticContentCommandList() noexcept
 void bit_meter_t::OnConfigurationChange(ConfigurationChanges configurationChanges) noexcept
 {
     if (!IsSet(configurationChanges, ConfigurationChanges::Layout))
-        _StaticContentCommandList.Release();
+        _StaticContentCommandList.Reset();
 }

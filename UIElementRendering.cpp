@@ -247,7 +247,7 @@ void uielement_t::Render() noexcept
 {
     HRESULT hr = CreateDeviceSpecificResources();
 
-    if (!SUCCEEDED(hr))
+    if (FAILED(hr))
         return;
 
     _DeviceContext->BeginDraw();
@@ -255,10 +255,10 @@ void uielement_t::Render() noexcept
     _DeviceContext->Clear(); // Required for alpha transparency. Do this once for all graphs. A graph can overlay a background color with a semi-transparent style.
 
     for (auto & Item : _Grid)
-        Item->Render(_DeviceContext, _Artwork, _SwapChain);
+        Item->Render(_DeviceContext.Get(), _Artwork, _SwapChain.Get());
 
     if (_UIState._ShowFrameCounter)
-        _FrameCounter.Render(_DeviceContext, _SwapChain);
+        _FrameCounter.Render(_DeviceContext.Get(), _SwapChain.Get());
 
 #ifdef _DEBUG
     RenderDebug();
@@ -332,22 +332,26 @@ HRESULT uielement_t::CreateDeviceIndependentResources() noexcept
 {
     DirectX::Initialize();
 
-    HRESULT hr = S_OK;
+    HRESULT hr = ::CreateDXGIFactory(__uuidof(IDXGIFactory2), reinterpret_cast<void **>(_DXGIFactory.GetAddressOf()));
 
-    if (SUCCEEDED(hr))
-        hr = ::CreateDXGIFactory(__uuidof(IDXGIFactory2), reinterpret_cast<void **>(&_DXGIFactory));
+    if (FAILED(hr))
+        return hr;
 
-        UINT Flags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
+    UINT Flags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
 
 #ifdef _DEBUG
         Flags |= D3D11_CREATE_DEVICE_DEBUG;
 #endif
 
-    if (SUCCEEDED(hr))
-        hr = ::D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, Flags, nullptr, 0, D3D11_SDK_VERSION, &_D3DDevice, nullptr, &_D3DDeviceContext);
+    hr = ::D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, Flags, nullptr, 0, D3D11_SDK_VERSION, &_D3DDevice, nullptr, &_D3DDeviceContext);
 
-    if (SUCCEEDED(hr))
-        hr = ::DCompositionCreateDevice(nullptr, __uuidof(IDCompositionDevice), reinterpret_cast<void **>(&_DCompositionDevice));
+    if (FAILED(hr))
+        return hr;
+
+    hr = ::DCompositionCreateDevice(nullptr, __uuidof(IDCompositionDevice), reinterpret_cast<void **>(_DCompositionDevice.GetAddressOf()));
+
+    if (FAILED(hr))
+        return hr;
 
     hr = _FrameCounter.CreateDeviceIndependentResources();
 
@@ -361,10 +365,10 @@ void uielement_t::DeleteDeviceIndependentResources() noexcept
 {
     _FrameCounter.DeleteDeviceIndependentResources();
 
-    _DCompositionDevice.Release();
-    _D3DDeviceContext.Release();
-    _D3DDevice.Release();
-    _DXGIFactory.Release();
+    _DCompositionDevice.Reset();
+    _D3DDeviceContext.Reset();
+    _D3DDevice.Reset();
+    _DXGIFactory.Reset();
 
     DirectX::Terminate();
 }
@@ -396,24 +400,24 @@ HRESULT uielement_t::CreateDeviceSpecificResources() noexcept
 
             hr = _D3DDevice->QueryInterface(DXGIDevice.GetAddressOf()); // Get a DXGI device interface from the D3D device.
 
-            if (!SUCCEEDED(hr))
+            if (FAILED(hr))
                 return hr;
 
-            hr = _Direct2D.Factory->CreateDevice(DXGIDevice.Get(), &_D2DDevice); // Create a D2D device from the DXGI device.
+            hr = _Direct2D.Factory->CreateDevice(DXGIDevice.Get(), _D2DDevice.GetAddressOf()); // Create a D2D device from the DXGI device.
 
-            if (!SUCCEEDED(hr))
+            if (FAILED(hr))
                 return hr;
 
-            hr = _D2DDevice->CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_ENABLE_MULTITHREADED_OPTIMIZATIONS, &_DeviceContext);
+            hr = _D2DDevice->CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_ENABLE_MULTITHREADED_OPTIMIZATIONS, _DeviceContext.GetAddressOf());
 
-            if (!SUCCEEDED(hr))
+            if (FAILED(hr))
                 return hr;
 
             GetDPI(m_hWnd, _DPI);
 
             _DeviceContext->SetDpi((FLOAT) _DPI, (FLOAT) _DPI);
 
-            if (!SUCCEEDED(hr))
+            if (FAILED(hr))
                 return hr;
 
             hr = _Direct2D.GetRefreshRate(DXGIDevice.Get(), _DisplayRefreshRate); // Currently not used yet.
@@ -434,9 +438,9 @@ HRESULT uielement_t::CreateDeviceSpecificResources() noexcept
                 .AlphaMode   = DXGI_ALPHA_MODE_PREMULTIPLIED, // Required for alpha transparency.
             };
 
-            hr = _DXGIFactory->CreateSwapChainForComposition(_D3DDevice, &scd, nullptr, &_SwapChain);
+            hr = _DXGIFactory->CreateSwapChainForComposition(_D3DDevice.Get(), &scd, nullptr, &_SwapChain);
 
-            if (!SUCCEEDED(hr))
+            if (FAILED(hr))
                 return hr;
         }
 
@@ -444,27 +448,27 @@ HRESULT uielement_t::CreateDeviceSpecificResources() noexcept
         {
             hr = _DCompositionDevice->CreateTargetForHwnd(m_hWnd, TRUE, &_CompositionTarget);
 
-            if (!SUCCEEDED(hr))
+            if (FAILED(hr))
                 return hr;
 
             hr = _DCompositionDevice->CreateVisual(&_CompositionVisual);
 
-            if (!SUCCEEDED(hr))
+            if (FAILED(hr))
                 return hr;
 
-            hr = _CompositionVisual->SetContent(_SwapChain);
+            hr = _CompositionVisual->SetContent(_SwapChain.Get());
 
-            if (!SUCCEEDED(hr))
+            if (FAILED(hr))
                 return hr;
 
-            hr = _CompositionTarget->SetRoot(_CompositionVisual);
+            hr = _CompositionTarget->SetRoot(_CompositionVisual.Get());
 
-            if (!SUCCEEDED(hr))
+            if (FAILED(hr))
                 return hr;
 
             hr = _DCompositionDevice->Commit();
 
-            if (!SUCCEEDED(hr))
+            if (FAILED(hr))
                 return hr;
         }
 
@@ -472,10 +476,10 @@ HRESULT uielement_t::CreateDeviceSpecificResources() noexcept
         {
             hr = CreateBackBuffer();
 
-            if (!SUCCEEDED(hr))
+            if (FAILED(hr))
                 return hr;
 
-            _DeviceContext->SetTarget(_BackBuffer);
+            _DeviceContext->SetTarget(_BackBuffer.Get());
 
             _DeviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
             _DeviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
@@ -501,7 +505,7 @@ HRESULT uielement_t::CreateDeviceSpecificResources() noexcept
     // Create the background bitmap from the artwork.
     if (!_Artwork.Bitmap())
     {
-        hr = _Artwork.CreateDeviceSpecificResources(_DeviceContext);
+        hr = _Artwork.CreateDeviceSpecificResources(_DeviceContext.Get());
 
         if (SUCCEEDED(hr))
         {
@@ -522,7 +526,7 @@ HRESULT uielement_t::CreateDeviceSpecificResources() noexcept
 void uielement_t::DeleteDeviceSpecificResources() noexcept
 {
 #ifdef _DEBUG
-    _DebugBrush.Release();
+    _DebugBrush.Reset();
 #endif
 
     for (auto & Item : _Grid)
@@ -532,13 +536,13 @@ void uielement_t::DeleteDeviceSpecificResources() noexcept
 
     _FrameCounter.DeleteDeviceSpecificResources();
 
-    _BackBuffer.Release();
-    _CompositionVisual.Release();
-    _CompositionTarget.Release();
+    _BackBuffer.Reset();
+    _CompositionVisual.Reset();
+    _CompositionTarget.Reset();
 
-    _SwapChain.Release();
-    _DeviceContext.Release();
-    _D2DDevice.Release();
+    _SwapChain.Reset();
+    _DeviceContext.Reset();
+    _D2DDevice.Reset();
 }
 
 /// <summary>
@@ -555,7 +559,7 @@ HRESULT uielement_t::ResizeSwapChain(UINT width, UINT height) noexcept
     _DeviceContext->SetTarget(nullptr);
 
     // Release the bitmap so that the swap chain can be resized.
-    _BackBuffer.Release();
+    _BackBuffer.Reset();
 
     // Resize the swap chain.
     HRESULT hr = _SwapChain->ResizeBuffers(0, width, height, DXGI_FORMAT_B8G8R8A8_UNORM, 0);
@@ -567,7 +571,7 @@ HRESULT uielement_t::ResizeSwapChain(UINT width, UINT height) noexcept
         return hr;
 
     // Set the target buffer of the device context.
-    _DeviceContext->SetTarget(_BackBuffer);
+    _DeviceContext->SetTarget(_BackBuffer.Get());
 
     return S_OK;
 }
@@ -605,12 +609,12 @@ HRESULT uielement_t::CreateBackBuffer() noexcept
     // Update the DirectComposition visual.
     if (_CompositionVisual && _CompositionTarget)
     {
-        hr = _CompositionVisual->SetContent(_SwapChain);
+        hr = _CompositionVisual->SetContent(_SwapChain.Get());
 
         if (FAILED(hr))
             return hr;
 
-        hr = _CompositionTarget->SetRoot(_CompositionVisual);
+        hr = _CompositionTarget->SetRoot(_CompositionVisual.Get());
 
         if (FAILED(hr))
             return hr;
@@ -746,7 +750,7 @@ void uielement_t::RenderDebug() noexcept
 
     HRESULT hr = _DirectWrite.Factory->CreateTextFormat(L"Segoe UI", NULL, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, FontSize, L"", TextFormat.GetAddressOf());
 
-    if (!SUCCEEDED(hr))
+    if (FAILED(hr))
         return;
 
     TextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
@@ -755,7 +759,7 @@ void uielement_t::RenderDebug() noexcept
 
     std::wstring Text = msc::FormatText(L"%.2fs", _RenderState._PlaybackTime);
 
-    _DeviceContext->DrawText(Text.c_str(), (UINT) Text.size(), TextFormat.Get(), Rect, _DebugBrush, D2D1_DRAW_TEXT_OPTIONS_NONE);
+    _DeviceContext->DrawText(Text.c_str(), (UINT) Text.size(), TextFormat.Get(), Rect, _DebugBrush.Get(), D2D1_DRAW_TEXT_OPTIONS_NONE);
 }
 
 #endif

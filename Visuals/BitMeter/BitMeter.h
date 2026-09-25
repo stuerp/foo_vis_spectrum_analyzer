@@ -38,8 +38,8 @@ private:
     HRESULT CreateStaticContentCommandList() noexcept;
 
 private:
-    size_t _MeasurementCount;
-    size_t _BitCount;
+    size_t _MeasurementCount { 0 };
+    size_t _BitCount { 0 };
 
     std::vector<std::wstring> _Labels;
 
@@ -53,17 +53,16 @@ private:
 
     std::vector<style_t *> _Styles;
 
-    CComPtr<ID2D1SolidColorBrush> _DebugBrush;
+    ComPtr<ID2D1DeviceContext> _DeviceContext;
+    ComPtr<ID2D1CommandList> _StaticContentCommandList;
+    ComPtr<ID2D1SolidColorBrush> _DebugBrush;
 
-    CComPtr<ID2D1DeviceContext> _DeviceContext;
-    CComPtr<ID2D1CommandList> _StaticContentCommandList;
-
-    const FLOAT XPadding = 2.f;
-    const FLOAT YPadding = 2.f;
+    static constexpr FLOAT XPadding = 2.f;
+    static constexpr FLOAT YPadding = 2.f;
 
     #if (audio_sample_size == 64)
-    const size_t ExponentBits = 11;
+    static constexpr size_t ExponentBits = 11;
     #else
-    const size_t ExponentBits =  8;
+    static constexpr size_t ExponentBits =  8;
     #endif
 };

@@ -325,6 +325,19 @@ HRESULT peak_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceC
 
     HRESULT hr = S_OK;
 
+    if (_OpacityMask == nullptr)
+    {
+        hr = CreateOpacityMask(deviceContext);
+
+        if (FAILED(hr))
+            return hr;
+    }
+
+#ifdef _DEBUG
+    if (_DebugBrush == nullptr)
+        (void) deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), _DebugBrush.GetAddressOf());
+#endif
+
     if (_BackgroundStyle._Brush == nullptr)
     {
         _BackgroundStyle = *_State->_StyleManager.GetStyle(VisualElement::BarBackground);
@@ -457,19 +470,6 @@ HRESULT peak_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceC
             return hr;
     }
 
-    if (_OpacityMask == nullptr)
-    {
-        hr = CreateOpacityMask(deviceContext);
-
-        if (FAILED(hr))
-            return hr;
-    }
-
-#ifdef _DEBUG
-    if (_DebugBrush == nullptr)
-        (void) deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), &_DebugBrush);
-#endif
-
     if ((_RenderedChannels != _Analysis->_PeakActiveChannelMask) || _State->_ResizeResources)
     {
         DeleteParts();
@@ -510,11 +510,11 @@ void peak_meter_t::DeleteDeviceSpecificResources() noexcept
     _ScaleTextStyle.DeleteDeviceSpecificResources();
     _ScaleLineStyle.DeleteDeviceSpecificResources();
 
-    _OpacityMask.Reset();
-
 #ifdef _DEBUG
     _DebugBrush.Reset();
 #endif
+
+    _OpacityMask.Reset();
 }
 
 /// <summary>
