@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.cpp (2026.09.23) P. Stuer - UIElement methods that run on the UI thread. **/
+/** $VER: UIElement.cpp (2026.09.25) P. Stuer - UIElement methods that run on the UI thread. **/
 
 #include "pch.h"
 
@@ -18,13 +18,6 @@
 #ifdef _DEBUG
 extern void RunTests();
 #endif
-
-/// <summary>
-/// Initializes a new instance.
-/// </summary>
-uielement_t::uielement_t(): _IsFullScreen(false), _IsVisible(true), _IsInitializing(true), _hParent(), _DPI(), _DisplayRefreshRate(), _hStopRendering(), _hThread(), _TrackingGraph(), _TrackingToolInfo(), _LastMousePos(), _LastBandIndex(~(size_t) 0)
-{
-}
 
 #pragma region User Interface
 
@@ -85,7 +78,7 @@ LRESULT uielement_t::OnCreate(LPCREATESTRUCT cs) noexcept
 
         if (_VisualisationStream.is_valid())
         {
-            _VisualisationStream->request_backlog(1.0); // Initialize the backbuffer allowing data requests up to 1s back in time.
+            _VisualisationStream->request_backlog(1.0); // Initialize the back buffer allowing data requests up to 1s back in time.
             _VisualisationStream->set_channel_mode(visualisation_stream_v2::channel_mode_default);
         }
     }
@@ -133,7 +126,7 @@ void uielement_t::OnDestroy() noexcept
     {
         msc::lock_t Lock(_CriticalSection);
 
-        _Grid.Clear();
+        _Grid.Reset();
 
         _VisualisationStream.release();
 
@@ -164,27 +157,10 @@ void uielement_t::OnPaint(CDCHandle hDC) noexcept
 /// </summary>
 void uielement_t::OnSize(UINT type, CSize size) noexcept
 {
-    if ((_DeviceContext == nullptr) || (size.cx == 0) || (size.cy == 0))
+    HRESULT hr = ResizeSwapChain((UINT) size.cx, (UINT) size.cy);
+
+    if (FAILED(hr))
         return;
-
-    msc::lock_t Lock(_CriticalSection);
-
-    // Remove the bitmap from the device context.
-    _DeviceContext->SetTarget(nullptr);
-
-    // Release the bitmap so that the swap chain can be resized.
-    _BackBuffer.Release();
-
-    // Resize the swap chain.
-    HRESULT hr = _SwapChain->ResizeBuffers(0, (UINT) size.cx, (UINT) size.cy, DXGI_FORMAT_B8G8R8A8_UNORM, 0);
-
-    // Recreate the back buffer.
-    if (SUCCEEDED(hr))
-        hr = CreateBackBuffer();
-
-    // Initialize the target buffer of the device context.
-    if (SUCCEEDED(hr))
-        _DeviceContext->SetTarget(_BackBuffer);
 
     Resize();
 
@@ -305,7 +281,7 @@ void uielement_t::OnContextMenu(CWindow wnd, CPoint position) noexcept
 
                     _UIState = NewState;
 
-                    _UIState._RecreateStyles = true;
+                    _UIState._ResizeResources = true;
 
                     UpdateState(ConfigurationChanges::All);
 
@@ -386,21 +362,21 @@ void uielement_t::Resize()
 
     DeleteTrackingToolTip();
 
-    D2D1_SIZE_F SizeF = _DeviceContext->GetSize(); // Gets the size in DPIs.
+    const D2D1_SIZE_F SizeF = _DeviceContext->GetSize(); // Gets the size in DPIs.
 
     // Reposition the frame counter.
     _FrameCounter.Resize(SizeF.width, SizeF.height);
 
     // Resize the grid.
     {
-        DeleteTools();
+        RemoveTools();
 
         {
             msc::lock_t Lock(_CriticalSection);
 
             _Grid.Resize(SizeF.width, SizeF.height);
 
-            _RenderState._RecreateStyles = true;
+            _RenderState._ResizeResources = true;
         }
 
         AddTools();
@@ -414,7 +390,7 @@ void uielement_t::OnColorsChanged() noexcept
 {
     GetColors();
 
-    _UIState._RecreateStyles = true;
+    _UIState._ResizeResources = true;
 
     {
         msc::lock_t Lock(_CriticalSection);
@@ -453,19 +429,19 @@ void uielement_t::StartRenderer() noexcept
 {
     assert(_hThread == NULL);
 
-    _ThreadId = 0;
+    DWORD ThreadId;
 
-    _hThread = ::CreateThread(nullptr, 0, CallRenderThreadProc, this, 0, &_ThreadId);
-}
+    _hThread = ::CreateThread(nullptr, 0, [](LPVOID context) noexcept -> DWORD
+    {
+        auto * This = (uielement_t *) context;
 
-/// <summary>
-/// Render thread procedure.
-/// </summary>
-DWORD WINAPI uielement_t::CallRenderThreadProc(LPVOID context) noexcept
-{
-    ((uielement_t *) context)->RenderThreadProc();
+        This->RenderThreadProc();
 
-    return 0;
+        return 0;
+    },
+    this,
+    0,
+    &ThreadId);
 }
 
 /// <summary>
@@ -517,7 +493,7 @@ void uielement_t::UpdateState(ConfigurationChanges configurationChanges) noexcep
     {
         DeleteTrackingToolTip();
 
-        DeleteTools();
+        RemoveTools();
     }
 
     {
@@ -530,7 +506,7 @@ void uielement_t::UpdateState(ConfigurationChanges configurationChanges) noexcep
             case ConfigurationChanges::All:
             {
                 _RenderState._SampleRate = 0;
-                _RenderState._RecreateStyles = true;
+                _RenderState._ResizeResources = true;
 
                 // Recreate the resources that depend on the artwork.
                 CreateArtworkDependentResources();
@@ -538,8 +514,6 @@ void uielement_t::UpdateState(ConfigurationChanges configurationChanges) noexcep
                 // Create the graphs.
                 {
                     const bool OverlapGraphs = _RenderState._OverlapGraphs && ((_RenderState._VisualizationType == VisualizationType::Bars) || (_RenderState._VisualizationType == VisualizationType::Curve) || (_RenderState._VisualizationType == VisualizationType::RadialBars) || (_RenderState._VisualizationType == VisualizationType::RadialCurve));
-
-                    _Grid.Clear();
 
                     _Grid.Initialize(_RenderState._GridRowCount, _RenderState._GridColumnCount, _RenderState._VerticalLayout, OverlapGraphs);
 
@@ -572,7 +546,7 @@ void uielement_t::UpdateState(ConfigurationChanges configurationChanges) noexcep
             case ConfigurationChanges::UserInterfaceColors:
             {
                 _RenderState._UserInterfaceColors = _UIState._UserInterfaceColors;
-                _RenderState._RecreateStyles = true;
+                _RenderState._ResizeResources = true;
                 break;
             }
 

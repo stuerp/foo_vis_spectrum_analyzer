@@ -34,15 +34,15 @@ void DirectWrite::Terminate()
 /// <summary>
 /// Creates a TextFormat object.
 /// </summary>
-HRESULT DirectWrite::CreateTextFormat(const std::wstring & fontFamilyName, FLOAT fontSize, DWRITE_TEXT_ALIGNMENT horizonalAlignment, DWRITE_PARAGRAPH_ALIGNMENT verticalAlignment, CComPtr<IDWriteTextFormat> & textFormat) const noexcept
+HRESULT DirectWrite::CreateTextFormat(const std::wstring & fontFamilyName, FLOAT fontSize, DWRITE_TEXT_ALIGNMENT horizonalAlignment, DWRITE_PARAGRAPH_ALIGNMENT verticalAlignment, IDWriteTextFormat ** textFormat) const noexcept
 {
-    HRESULT hr = Factory->CreateTextFormat(fontFamilyName.c_str(), NULL, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, fontSize, L"", &textFormat);
+    HRESULT hr = Factory->CreateTextFormat(fontFamilyName.c_str(), NULL, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, fontSize, L"", textFormat);
 
     if (SUCCEEDED(hr))
     {
-        textFormat->SetTextAlignment(horizonalAlignment);
-        textFormat->SetParagraphAlignment(verticalAlignment);
-        textFormat->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
+        (*textFormat)->SetTextAlignment(horizonalAlignment);
+        (*textFormat)->SetParagraphAlignment(verticalAlignment);
+        (*textFormat)->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
     }
 
     return hr;
@@ -51,7 +51,7 @@ HRESULT DirectWrite::CreateTextFormat(const std::wstring & fontFamilyName, FLOAT
 /// <summary>
 /// Gets metrics about the specified text.
 /// </summary>
-HRESULT DirectWrite::GetTextMetrics(CComPtr<IDWriteTextFormat> & textFormat, const std::wstring & text, FLOAT & width, FLOAT & height) const noexcept
+HRESULT DirectWrite::GetTextMetrics(IDWriteTextFormat * textFormat, const std::wstring & text, FLOAT & width, FLOAT & height) const noexcept
 {
     CComPtr<IDWriteTextLayout> TextLayout;
 

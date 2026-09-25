@@ -32,7 +32,7 @@ tester_t::~tester_t()
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void tester_t::Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, CComPtr<ID3D11Device> d3dDevice, CComPtr<ID3D11DeviceContext> d3dDeviceContext) noexcept
+void tester_t::Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept
 {
     _State = state;
     _GraphOptions = graphOptions;
@@ -46,7 +46,7 @@ void tester_t::Configure(state_t * state, graph_options_t * graphOptions, analys
 /// </summary>
 void tester_t::Move(const D2D1_RECT_F & rect) noexcept
 {
-    SetRect(rect);
+    InitializeMetrics(rect);
 }
 
 /// <summary>
@@ -82,7 +82,7 @@ void tester_t::Resize() noexcept
 /// <summary>
 /// Renders this instance.
 /// </summary>
-void tester_t::Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwapChain1> swapChain) noexcept
+void tester_t::Render(ID2D1DeviceContext * deviceContext, IDXGISwapChain1 * swapChain) noexcept
 {
     HRESULT hr = CreateDeviceSpecificResources(deviceContext);
 
@@ -183,7 +183,7 @@ void tester_t::DeleteDeviceIndependentResources() noexcept
 /// </summary>
 HRESULT tester_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept
 {
-    if (_State->_RecreateStyles)
+    if (_State->_ResizeResources)
         DeleteDeviceSpecificResources();
 
     if ((_Size.width <= 0.f) || _Size.height <= 0.f)

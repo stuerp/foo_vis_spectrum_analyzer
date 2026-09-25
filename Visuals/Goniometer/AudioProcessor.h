@@ -95,6 +95,11 @@ public:
         _PointCount = 0;
     }
 
+    double GetCorrelation() const noexcept
+    {
+        return _Correlation;
+    }
+
 private:
     HRESULT Configure(double loBand, double hiBand, double sampleRate) noexcept;
 

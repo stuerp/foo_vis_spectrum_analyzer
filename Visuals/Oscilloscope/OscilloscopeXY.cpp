@@ -10,14 +10,6 @@
 #pragma hdrstop
 
 /// <summary>
-/// Initializes a new instance.
-/// </summary>
-oscilloscope_xy_t::oscilloscope_xy_t()
-{
-    Reset();
-}
-
-/// <summary>
 /// Destroys this instance.
 /// </summary>
 oscilloscope_xy_t::~oscilloscope_xy_t() noexcept
@@ -26,9 +18,19 @@ oscilloscope_xy_t::~oscilloscope_xy_t() noexcept
 }
 
 /// <summary>
+/// Moves this instance on the canvas.
+/// </summary>
+void oscilloscope_xy_t::Move(const D2D1_RECT_F & rect) noexcept
+{
+//  Log.Write("*** " __FUNCTION__ );
+
+    InitializeMetrics(rect);
+}
+
+/// <summary>
 /// Initializes this instance.
 /// </summary>
-void oscilloscope_xy_t::Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, CComPtr<ID3D11Device> d3dDevice, CComPtr<ID3D11DeviceContext> d3dDeviceContext) noexcept
+void oscilloscope_xy_t::Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept
 {
     _State = state;
     _GraphOptions = graphOptions;
@@ -42,46 +44,9 @@ void oscilloscope_xy_t::Configure(state_t * state, graph_options_t * graphOption
 }
 
 /// <summary>
-/// Moves this instance on the canvas.
-/// </summary>
-void oscilloscope_xy_t::Move(const D2D1_RECT_F & rect) noexcept
-{
-    SetRect(rect);
-}
-
-/// <summary>
-/// Resets this instance.
-/// </summary>
-void oscilloscope_xy_t::Reset() noexcept
-{
-    if (_ForceElementToResize || (_Size.width <= 0.f) || (_Size.height <= 0.f))
-        return;
-
-    _ForceElementToResize = true;
-}
-
-/// <summary>
-/// Recalculates parameters that are render target and size-sensitive.
-/// </summary>
-void oscilloscope_xy_t::Resize() noexcept
-{
-    if (!_ForceElementToResize || (_Size.width <= 0.f) || (_Size.height <= 0.f))
-        return;
-
-    oscilloscope_base_t::Resize();
-
-    _XAxisTextStyle.DeleteDeviceSpecificResources();
-    _YAxisTextStyle.DeleteDeviceSpecificResources();
-
-    _StaticContent.Reset();
-
-    _ForceElementToResize = false;
-}
-
-/// <summary>
 /// Renders this instance.
 /// </summary>
-void oscilloscope_xy_t::Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwapChain1> swapChain) noexcept
+void oscilloscope_xy_t::Render(ID2D1DeviceContext * deviceContext, IDXGISwapChain1 * swapChain) noexcept
 {
     HRESULT hr = CreateDeviceSpecificResources(deviceContext);
 
@@ -137,7 +102,7 @@ void oscilloscope_xy_t::Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGI
 
                 _SignalLineStyle._Brush->SetOpacity(OldOpacity * .25f);
 
-                _DeviceContext->DrawGeometry(TransformedGeometry.Get(), _SignalLineStyle._Brush, _SignalLineStyle._Thickness * 3.f, _SignalStrokeStyle.Get());
+                _DeviceContext->DrawGeometry(TransformedGeometry.Get(), _SignalLineStyle._Brush.Get(), _SignalLineStyle._Thickness * 3.f, _SignalStrokeStyle.Get());
 
                 _SignalLineStyle._Brush->SetOpacity(OldOpacity);
             }
@@ -146,7 +111,7 @@ void oscilloscope_xy_t::Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGI
         // Draw the new content.
         if (TransformedGeometry)
         {
-            _DeviceContext->DrawGeometry(TransformedGeometry.Get(), _SignalLineStyle._Brush, _SignalLineStyle._Thickness, _SignalStrokeStyle.Get());
+            _DeviceContext->DrawGeometry(TransformedGeometry.Get(), _SignalLineStyle._Brush.Get(), _SignalLineStyle._Thickness, _SignalStrokeStyle.Get());
         }
 
         hr = _DeviceContext->EndDraw();
@@ -282,7 +247,7 @@ void oscilloscope_xy_t::DeleteDeviceIndependentResources() noexcept
 /// </summary>
 HRESULT oscilloscope_xy_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept
 {
-    if (_State->_RecreateStyles)
+    if (_State->_ResizeResources)
         DeleteDeviceSpecificResources();
 
     oscilloscope_base_t::CreateDeviceSpecificResources(deviceContext);
@@ -296,7 +261,7 @@ HRESULT oscilloscope_xy_t::CreateDeviceSpecificResources(ID2D1DeviceContext * de
         _XAxisTextStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
 
         // The font style is created prescaled to counter the Scale transform in the command list.
-        hr = _XAxisTextStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"+0.0", _ScaleFactor);
+        hr = _XAxisTextStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"+0.0", _HalfSide);
 
         if (FAILED(hr))
             return hr;
@@ -309,7 +274,7 @@ HRESULT oscilloscope_xy_t::CreateDeviceSpecificResources(ID2D1DeviceContext * de
         _YAxisTextStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
 
         // The font style is created prescaled to counter the Scale transform in the command list.
-        hr = _YAxisTextStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"+0.0", _ScaleFactor);
+        hr = _YAxisTextStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"+0.0", _HalfSide);
 
         if (FAILED(hr))
             return hr;
@@ -342,8 +307,8 @@ HRESULT oscilloscope_xy_t::CreateStaticContent() noexcept
 {
     HRESULT hr = S_OK;
 
-    _TranslateTransform = D2D1::Matrix3x2F::Translation(_Side / 2.f, _Side / 2.f);
-    _ScaleTransform     = D2D1::Matrix3x2F::Scale(D2D1::SizeF(_ScaleFactor, _ScaleFactor));
+    _TranslateTransform = D2D1::Matrix3x2F::Translation(_HalfSide, _HalfSide);
+    _ScaleTransform     = D2D1::Matrix3x2F::Scale(D2D1::SizeF(_HalfSide, _HalfSide));
 
     // Create a command list that will store the grid pattern and the axes.
     if (SUCCEEDED(hr))
@@ -369,14 +334,14 @@ HRESULT oscilloscope_xy_t::CreateStaticContent() noexcept
                 _XAxisTextStyle.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
                 _XAxisTextStyle.SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
 
-                _DeviceContext->DrawText(L"0.0", 3, _XAxisTextStyle._TextFormat, TextRect, _XAxisTextStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                _DeviceContext->DrawText(L"0.0", 3, _XAxisTextStyle._TextFormat.Get(), TextRect, _XAxisTextStyle._Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
             }
 
             if (_GraphOptions->HasXAxis())
-                _DeviceContext->DrawLine(D2D1::Point2F(-1.f,  0.f), D2D1::Point2F(1.f, 0.f), _XAxisLineStyle._Brush, 1.f, _StaticStrokeStyle.Get());
+                _DeviceContext->DrawLine(D2D1::Point2F(-1.f,  0.f), D2D1::Point2F(1.f, 0.f), _XAxisLineStyle._Brush.Get(), 1.f, _StaticStrokeStyle.Get());
 
             if (_GraphOptions->HasYAxis())
-                _DeviceContext->DrawLine(D2D1::Point2F( 0.f, -1.f), D2D1::Point2F(0.f, 1.f), _YAxisLineStyle._Brush, 1.f, _StaticStrokeStyle.Get());
+                _DeviceContext->DrawLine(D2D1::Point2F( 0.f, -1.f), D2D1::Point2F(0.f, 1.f), _YAxisLineStyle._Brush.Get(), 1.f, _StaticStrokeStyle.Get());
         }
 
         _XAxisTextStyle.SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
@@ -386,8 +351,8 @@ HRESULT oscilloscope_xy_t::CreateStaticContent() noexcept
             // Draw the vertical grid line.
             if (_VerticalGridLineStyle.IsEnabled())
             {
-                _DeviceContext->DrawLine(D2D1::Point2F( x, -1.f), D2D1::Point2F( x, 1.f), _VerticalGridLineStyle._Brush, 1.f, _StaticStrokeStyle.Get());
-                _DeviceContext->DrawLine(D2D1::Point2F(-x, -1.f), D2D1::Point2F(-x, 1.f), _VerticalGridLineStyle._Brush, 1.f, _StaticStrokeStyle.Get());
+                _DeviceContext->DrawLine(D2D1::Point2F( x, -1.f), D2D1::Point2F( x, 1.f), _VerticalGridLineStyle._Brush.Get(), 1.f, _StaticStrokeStyle.Get());
+                _DeviceContext->DrawLine(D2D1::Point2F(-x, -1.f), D2D1::Point2F(-x, 1.f), _VerticalGridLineStyle._Brush.Get(), 1.f, _StaticStrokeStyle.Get());
             }
 
             if (_GraphOptions->HasXAxis())
@@ -398,7 +363,7 @@ HRESULT oscilloscope_xy_t::CreateStaticContent() noexcept
                 D2D1_RECT_F TextRect = { -x + 0.01f, 0.01f, 0.f, 1.f };
 
                 ::StringCchPrintfW(Text, _countof(Text), L"%-.1f", -x);
-                _DeviceContext->DrawText(Text, (UINT32) ::wcslen(Text), _XAxisTextStyle._TextFormat, TextRect, _XAxisTextStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                _DeviceContext->DrawText(Text, (UINT32) ::wcslen(Text), _XAxisTextStyle._TextFormat.Get(), TextRect, _XAxisTextStyle._Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
 
                 // Draw the positive X label.
                 _XAxisTextStyle.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
@@ -406,12 +371,12 @@ HRESULT oscilloscope_xy_t::CreateStaticContent() noexcept
                 TextRect = { 0.f, 0.01f, x - 0.01f, 1.f };
 
                 ::StringCchPrintfW(Text, _countof(Text), L"%+.1f", x);
-                _DeviceContext->DrawText(Text, (UINT32) ::wcslen(Text), _XAxisTextStyle._TextFormat, TextRect, _XAxisTextStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                _DeviceContext->DrawText(Text, (UINT32) ::wcslen(Text), _XAxisTextStyle._TextFormat.Get(), TextRect, _XAxisTextStyle._Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
             }
         }
 
         if (!_GraphOptions->HasXAxis())
-            _DeviceContext->DrawLine(D2D1::Point2F(0.f, -1.f), D2D1::Point2F(0.f, 1.f), _VerticalGridLineStyle._Brush, 1.f, _StaticStrokeStyle.Get());
+            _DeviceContext->DrawLine(D2D1::Point2F(0.f, -1.f), D2D1::Point2F(0.f, 1.f), _VerticalGridLineStyle._Brush.Get(), 1.f, _StaticStrokeStyle.Get());
 
         _YAxisTextStyle.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
 
@@ -420,8 +385,8 @@ HRESULT oscilloscope_xy_t::CreateStaticContent() noexcept
             // Draw the horizontal grid line.
             if (_HorizontalGridLineStyle.IsEnabled())
             {
-                _DeviceContext->DrawLine(D2D1::Point2F(-1.f,  y), D2D1::Point2F(1.f,  y), _HorizontalGridLineStyle._Brush, 1.f, _StaticStrokeStyle.Get());
-                _DeviceContext->DrawLine(D2D1::Point2F(-1.f, -y), D2D1::Point2F(1.f, -y), _HorizontalGridLineStyle._Brush, 1.f, _StaticStrokeStyle.Get());
+                _DeviceContext->DrawLine(D2D1::Point2F(-1.f,  y), D2D1::Point2F(1.f,  y), _HorizontalGridLineStyle._Brush.Get(), 1.f, _StaticStrokeStyle.Get());
+                _DeviceContext->DrawLine(D2D1::Point2F(-1.f, -y), D2D1::Point2F(1.f, -y), _HorizontalGridLineStyle._Brush.Get(), 1.f, _StaticStrokeStyle.Get());
             }
 
             if (_GraphOptions->HasYAxis())
@@ -432,7 +397,7 @@ HRESULT oscilloscope_xy_t::CreateStaticContent() noexcept
                 D2D1_RECT_F TextRect = { 0.01f, y - 0.01f, 1.f, -1.f };
 
                 ::StringCchPrintfW(Text, _countof(Text), L"%-.1f", -y);
-                _DeviceContext->DrawText(Text, (UINT32) ::wcslen(Text), _YAxisTextStyle._TextFormat, TextRect, _YAxisTextStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                _DeviceContext->DrawText(Text, (UINT32) ::wcslen(Text), _YAxisTextStyle._TextFormat.Get(), TextRect, _YAxisTextStyle._Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
 
                 // Draw the positive y label.
                 _YAxisTextStyle.SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
@@ -440,12 +405,12 @@ HRESULT oscilloscope_xy_t::CreateStaticContent() noexcept
                 TextRect = { 0.01f, -y + 0.01f, 1.f, 0.f };
 
                 ::StringCchPrintfW(Text, _countof(Text), L"%+.1f", y);
-                _DeviceContext->DrawText(Text, (UINT32) ::wcslen(Text), _YAxisTextStyle._TextFormat, TextRect, _YAxisTextStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                _DeviceContext->DrawText(Text, (UINT32) ::wcslen(Text), _YAxisTextStyle._TextFormat.Get(), TextRect, _YAxisTextStyle._Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
             }
         }
 
         if (!_GraphOptions->HasYAxis())
-            _DeviceContext->DrawLine(D2D1::Point2F(-1.f, 0.f), D2D1::Point2F(1.f, 0.f), _HorizontalGridLineStyle._Brush, 1.f, _StaticStrokeStyle.Get());
+            _DeviceContext->DrawLine(D2D1::Point2F(-1.f, 0.f), D2D1::Point2F(1.f, 0.f), _HorizontalGridLineStyle._Brush.Get(), 1.f, _StaticStrokeStyle.Get());
 
         _DeviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 

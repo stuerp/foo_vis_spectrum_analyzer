@@ -1,5 +1,5 @@
 
-/** $VER: Oscilloscope.h (2026.09.09) P. Stuer - Implements an oscilloscope. **/
+/** $VER: Oscilloscope.h (2026.09.25) P. Stuer - Implements an oscilloscope. **/
 
 #pragma once
 
@@ -12,7 +12,7 @@
 class oscilloscope_t : public oscilloscope_base_t
 {
 public:
-    oscilloscope_t();
+    oscilloscope_t() = default;
 
     oscilloscope_t(const oscilloscope_t &) = delete;
     oscilloscope_t & operator=(const oscilloscope_t &) = delete;
@@ -23,12 +23,11 @@ public:
 
     // element_t
     void Move(const D2D1_RECT_F & rect) noexcept override final;
-    void Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwapChain1> swapChain) noexcept override final;
-    void Reset() noexcept override final;
+    void Render(ID2D1DeviceContext * deviceContext, IDXGISwapChain1 * swapChain) noexcept override final;
+    void Reset() noexcept override final { }
 
     // visualization_t
-    void Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, CComPtr<ID3D11Device> d3dDevice = nullptr, CComPtr<ID3D11DeviceContext> d3dDeviceContext = nullptr) noexcept override final;
-    void Resize() noexcept;
+    void Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice = nullptr, ID3D11DeviceContext * d3dDeviceContext = nullptr) noexcept override final;
 
 private:
     HRESULT CreateDeviceIndependentResources() noexcept;
@@ -46,10 +45,10 @@ private:
     struct label_t
     {
         std::wstring Text;
-        double Amplitude;
+        double Amplitude { 0. };
 
-        bool IsMin;
-        bool IsMax;
+        bool IsMin { false };
+        bool IsMax { false };
     };
 
     std::vector<label_t> _Labels;
@@ -57,8 +56,8 @@ private:
     style_t _XAxisTextStyle;
     style_t _YAxisTextStyle;
 
-    double _ChunkDuration;
+    double _ChunkDuration { 0. };
 
-    CComPtr<ID2D1CommandList> _StaticContext;
-    size_t _AxesCount;
+    ComPtr<ID2D1CommandList> _StaticContext;
+    size_t _AxesCount { 0 };
 };

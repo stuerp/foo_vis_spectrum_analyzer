@@ -1,5 +1,5 @@
 
-/** $VER: Goniometer.cpp (2026.09.22) P. Stuer - Implements a goniometer. **/
+/** $VER: Goniometer.cpp (2026.09.25) P. Stuer - Implements a goniometer. **/
 
 #include <pch.h>
 
@@ -7,17 +7,6 @@
 #include "Direct2D.h"
 
 #pragma hdrstop
-
-/// <summary>
-/// Initializes a new instance.
-/// </summary>
-goniometer_t::goniometer_t()
-{
-    _Rect = { };
-    _Size = { };
-
-    Reset();
-}
 
 /// <summary>
 /// Destroys this instance.
@@ -30,7 +19,7 @@ goniometer_t::~goniometer_t()
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void goniometer_t::Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, CComPtr<ID3D11Device>, CComPtr<ID3D11DeviceContext>) noexcept
+void goniometer_t::Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device *, ID3D11DeviceContext *) noexcept
 {
     _State        = state;
     _GraphOptions = graphOptions;
@@ -53,10 +42,8 @@ void goniometer_t::Configure(state_t * state, graph_options_t * graphOptions, an
 /// </summary>
 void goniometer_t::Move(const D2D1_RECT_F & rect) noexcept
 {
-    SetRect(rect);
+    InitializeMetrics(rect);
 
-    _Side              = std::min(_Size.width, _Size.height);
-    _ScaleFactor       = _Side / 2.f;
     _TranslationMatrix = D2D1::Matrix3x2F::Translation(_Size.width / 2.f, _Size.height / 2.f);
 }
 
@@ -65,15 +52,10 @@ void goniometer_t::Move(const D2D1_RECT_F & rect) noexcept
 /// </summary>
 void goniometer_t::Reset() noexcept
 {
-    if (_ForceElementToResize || (_Size.width <= 0.f) || (_Size.height <= 0.f))
-        return;
-
     _SpriteDestinations.resize(0);
     _SpriteSources     .resize(0);
     _SpriteColors      .resize(0);
     _SpriteTransforms  .resize(0);
-
-    _ForceElementToResize = true;
 }
 
 /// <summary>
@@ -98,23 +80,9 @@ void goniometer_t::OnConfigurationChange(ConfigurationChanges configurationChang
 }
 
 /// <summary>
-/// Recalculates parameters that are render target and size-sensitive.
-/// </summary>
-void goniometer_t::Resize() noexcept
-{
-    if (!_ForceElementToResize || (_Size.width <= 0.f) || (_Size.height <= 0.f))
-        return;
-
-    DeleteSizeDependentResources();
-
-    _ForceElementToResize = false;
-}
-
-
-/// <summary>
 /// Renders this instance.
 /// </summary>
-void goniometer_t::Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwapChain1> swapChain) noexcept
+void goniometer_t::Render(ID2D1DeviceContext * deviceContext, IDXGISwapChain1 * swapChain) noexcept
 {
     HRESULT hr = CreateDeviceSpecificResources(deviceContext);
 
@@ -171,7 +139,21 @@ void goniometer_t::Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwapC
             if (_SpriteBatch->GetSpriteCount() != 0)
                 _DeviceContext->DrawSpriteBatch(_SpriteBatch.Get(), _Sprite.Get(), D2D1_BITMAP_INTERPOLATION_MODE_LINEAR, D2D1_SPRITE_OPTIONS_NONE);
         }
+/*
+        // Draw the correlation meter.
+        {
+            ComPtr<ID2D1SolidColorBrush> WhiteBrush;
 
+            hr = _DeviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::White), &WhiteBrush);
+
+            const FLOAT x = 4.f + ((_Side - 8.f) / 2.f * (1.f + (FLOAT) _AudioProcessor.GetCorrelation()));
+            const FLOAT y = _Side - 4.f;
+
+            const auto Circle = D2D1::Ellipse(D2D1::Point2F(x, y), 4.f, 4.f);
+
+            _DeviceContext->FillEllipse(Circle, WhiteBrush.Get());
+        }
+*/
         hr = _DeviceContext->EndDraw();
 
         if (FAILED(hr))
@@ -229,7 +211,7 @@ void goniometer_t::DeleteDeviceIndependentResources() noexcept
 /// </summary>
 HRESULT goniometer_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept
 {
-    if (_State->_RecreateStyles)
+    if (_State->_ResizeResources)
         DeleteDeviceSpecificResources();
 
     HRESULT hr = S_OK;
@@ -336,7 +318,7 @@ HRESULT goniometer_t::CreateSizeDependentResources(ID2D1DeviceContext * deviceCo
 
         _SignalStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
 
-        hr = _SignalStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", _ScaleFactor);
+        hr = _SignalStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", _HalfSide);
 
         if (FAILED(hr))
             return hr;
@@ -387,8 +369,17 @@ HRESULT goniometer_t::CreateSizeDependentResources(ID2D1DeviceContext * deviceCo
 
         _StaticTextStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
 
+        // Create a temporary non-scaled version of the font.
+        {
+            (void) _StaticTextStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"L", 1.f);
+
+            _Radius = .98f - (_StaticTextStyle._Height / _HalfSide);
+
+            _StaticTextStyle.DeleteDeviceSpecificResources();
+        }
+
         // The font style is created prescaled to counter the Scale transform in the command list.
-        hr = _StaticTextStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"L", _ScaleFactor);
+        hr = _StaticTextStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"L", _HalfSide);
 
         if (FAILED(hr))
             return hr;
@@ -497,14 +488,12 @@ HRESULT goniometer_t::CreateSprites() noexcept
         std::fill(_SpriteTransforms.begin(), _SpriteTransforms.end(), D2D1::Matrix3x2F::Identity());
     }
 
-    const auto Side2 = _Side / 2.f;
-
     for (size_t i = 0; i < _AudioProcessor._PointCount; ++i)
     {
         const auto & Point = _AudioProcessor._Points[i];
 
-        const FLOAT CenterX = Side2 + (Point.x * _ScaleFactor * Radius);
-        const FLOAT CenterY = Side2 + (Point.y * _ScaleFactor * Radius);
+        const FLOAT CenterX = _HalfSide + (Point.x * _HalfSide * _Radius);
+        const FLOAT CenterY = _HalfSide + (Point.y * _HalfSide * _Radius);
 
         _SpriteDestinations[i] = D2D1::RectF(CenterX - SpriteRadius, CenterY - SpriteRadius, CenterX + SpriteRadius, CenterY + SpriteRadius);
         _SpriteColors      [i] = Point.Color;
@@ -586,9 +575,9 @@ HRESULT goniometer_t::CreatePointSprite(ComPtr<ID2D1Bitmap1> & bitmap) noexcept
 
     if (SUCCEEDED(hr))
     {
-        auto Ellipse = D2D1::Ellipse(D2D1::Point2F(SpriteRadius, SpriteRadius), SpriteRadius, SpriteRadius);
+        const auto Circle = D2D1::Ellipse(D2D1::Point2F(SpriteRadius, SpriteRadius), SpriteRadius, SpriteRadius);
 
-        _DeviceContext->FillEllipse(Ellipse, WhiteBrush.Get());
+        _DeviceContext->FillEllipse(Circle, WhiteBrush.Get());
     }
 
     hr = _DeviceContext->EndDraw();
@@ -605,7 +594,7 @@ HRESULT goniometer_t::CreatePointSprite(ComPtr<ID2D1Bitmap1> & bitmap) noexcept
 /// </summary>
 HRESULT goniometer_t::CreateStaticContent() noexcept
 {
-    const auto ScaleTransform = D2D1::Matrix3x2F::Scale(D2D1::SizeF(_ScaleFactor, _ScaleFactor));
+    const auto ScaleTransform = D2D1::Matrix3x2F::Scale(D2D1::SizeF(_HalfSide, _HalfSide));
 
     // Create a command list that will store the grid pattern and the axes.
     HRESULT hr = _DeviceContext->CreateCommandList(&_StaticContent);
@@ -627,87 +616,104 @@ HRESULT goniometer_t::CreateStaticContent() noexcept
 
     // Draw the L-axis.
     {
-        _DeviceContext->DrawLine(D2D1::Point2F(-Radius * Sin, -Radius * Cos), D2D1::Point2F(Radius * Sin, Radius * Cos), _StaticLinesStyle._Brush, 1.f, _StaticStrokeStyle.Get());
+        _DeviceContext->DrawLine(D2D1::Point2F(-_Radius * Sin, -_Radius * Cos), D2D1::Point2F(_Radius * Sin, _Radius * Cos), _StaticLinesStyle._Brush.Get(), 1.f, _StaticStrokeStyle.Get());
 
         _StaticTextStyle.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
         _StaticTextStyle.SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_FAR);
 
-        const D2D1_RECT_F TextRect = {-Sin, -Cos, -Radius * Sin, -Radius * Cos };
+        const D2D1_RECT_F TextRect = {-Sin, -Cos, -_Radius * Sin, -_Radius * Cos };
 
-        _DeviceContext->DrawText(L"L", 1u, _StaticTextStyle._TextFormat, TextRect, _StaticTextStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
+        _DeviceContext->DrawText(L"L", 1u, _StaticTextStyle._TextFormat.Get(), TextRect, _StaticTextStyle._Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_NONE);
     }
 
     // Draw the R-axis.
     {
-        _DeviceContext->DrawLine(D2D1::Point2F(-Radius * Sin, Radius * Cos), D2D1::Point2F(Radius * Sin, -Radius * Cos), _StaticLinesStyle._Brush, 1.f, _StaticStrokeStyle.Get());
+        _DeviceContext->DrawLine(D2D1::Point2F(-_Radius * Sin, _Radius * Cos), D2D1::Point2F(_Radius * Sin, -_Radius * Cos), _StaticLinesStyle._Brush.Get(), 1.f, _StaticStrokeStyle.Get());
 
         _StaticTextStyle.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
         _StaticTextStyle.SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_FAR);
 
-        const D2D1_RECT_F TextRect = { Radius * Sin, -Radius * Cos, Sin, -Cos };
+        const D2D1_RECT_F TextRect = { _Radius * Sin, -_Radius * Cos, Sin, -Cos };
 
-        _DeviceContext->DrawText(L"R", 1u, _StaticTextStyle._TextFormat, TextRect, _StaticTextStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
+        _DeviceContext->DrawText(L"R", 1u, _StaticTextStyle._TextFormat.Get(), TextRect, _StaticTextStyle._Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_NONE);
     }
 
     // Draw the S-axis.
     {
-        _DeviceContext->DrawLine(D2D1::Point2F(-Radius, 0.f), D2D1::Point2F(Radius, 0.f), _StaticLinesStyle._Brush, 1.f, _StaticStrokeStyle.Get());
+        _DeviceContext->DrawLine(D2D1::Point2F(-_Radius, 0.f), D2D1::Point2F(_Radius, 0.f), _StaticLinesStyle._Brush.Get(), 1.f, _StaticStrokeStyle.Get());
 
         {
             _StaticTextStyle.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
             _StaticTextStyle.SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
 
-            const D2D1_RECT_F TextRect = { -Radius, 0.f, -Radius, 0.f };
+            const D2D1_RECT_F TextRect = { -_Radius, 0.f, -_Radius, 0.f };
 
-            _DeviceContext->DrawText(L"+S", 2u, _StaticTextStyle._TextFormat, TextRect, _StaticTextStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
+            _DeviceContext->DrawText(L"+S", 2u, _StaticTextStyle._TextFormat.Get(), TextRect, _StaticTextStyle._Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_NONE);
         }
 
         {
             _StaticTextStyle.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
 
-            const D2D1_RECT_F TextRect = { Radius, 0.f, Radius, 0.f };
+            const D2D1_RECT_F TextRect = { _Radius, 0.f, _Radius, 0.f };
 
-            _DeviceContext->DrawText(L"-S", 2u, _StaticTextStyle._TextFormat, TextRect, _StaticTextStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
+            _DeviceContext->DrawText(L"-S", 2u, _StaticTextStyle._TextFormat.Get(), TextRect, _StaticTextStyle._Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_NONE);
         }
     }
 
     // Draw the M-axis.
     {
-        _DeviceContext->DrawLine(D2D1::Point2F(0.f, -Radius), D2D1::Point2F(0, Radius), _StaticLinesStyle._Brush, 1.f, _StaticStrokeStyle.Get());
+        _DeviceContext->DrawLine(D2D1::Point2F(0.f, -_Radius), D2D1::Point2F(0, _Radius), _StaticLinesStyle._Brush.Get(), 1.f, _StaticStrokeStyle.Get());
+
+        {
+            _StaticTextStyle.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
+            _StaticTextStyle.SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_FAR);
+
+            const D2D1_RECT_F TextRect = { 0.f, -_Radius, 0.f, -_Radius };
+
+            _DeviceContext->DrawText(L"+M", 2u, _StaticTextStyle._TextFormat.Get(), TextRect, _StaticTextStyle._Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_NONE);
+        }
+
+        {
+            _StaticTextStyle.SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
+
+            const D2D1_RECT_F TextRect = { 0.f, _Radius, 0.f, _Radius };
+
+            _DeviceContext->DrawText(L"-M", 2u, _StaticTextStyle._TextFormat.Get(), TextRect, _StaticTextStyle._Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_NONE);
+        }
 /*
         _XAxisTextStyle.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
         _XAxisTextStyle.SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
 
         const D2D1_RECT_F TextRect = {-r, 0.f, r, 0.f };
 
-        _DeviceContext->DrawText(L"L", 1u, _XAxisTextStyle._TextFormat, TextRect, _XAxisTextStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+        _DeviceContext->DrawText(L"L", 1u, _XAxisTextStyle._TextFormat.Get(), TextRect, _XAxisTextStyle._Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
 */
     }
 
     // Draw the outer circle (0 dBFS).
     {
-        auto Ellipse = D2D1::Ellipse(D2D1::Point2F(0.f, 0.f), Radius, Radius);
+        auto Ellipse = D2D1::Ellipse(D2D1::Point2F(0.f, 0.f), _Radius, _Radius);
 
-        _DeviceContext->DrawEllipse(Ellipse, _StaticLinesStyle._Brush, 1.f, _StaticStrokeStyle.Get());
+        _DeviceContext->DrawEllipse(Ellipse, _StaticLinesStyle._Brush.Get(), 1.f, _StaticStrokeStyle.Get());
     }
 
     // Draw the middle circle (-6 dBFS).
     {
-        const auto r = Radius * std::powf(10.f, -6.f / 20.f);
+        const auto r = _Radius * std::powf(10.f, -6.f / 20.f);
 
         auto Ellipse = D2D1::Ellipse(D2D1::Point2F(0.f, 0.f), r, r);
 
-        _DeviceContext->DrawEllipse(Ellipse, _StaticLinesStyle._Brush, 1.f, _StaticStrokeStyle.Get());
+        _DeviceContext->DrawEllipse(Ellipse, _StaticLinesStyle._Brush.Get(), 1.f, _StaticStrokeStyle.Get());
     }
 
     // Draw the inner circle (-12 dBFS).
     {
-        const auto r = Radius * std::powf(10.f, -12.f / 20.f);
+        const auto r = _Radius * std::powf(10.f, -12.f / 20.f);
 
         auto Ellipse = D2D1::Ellipse(D2D1::Point2F(0.f, 0.f), r, r);
 
 
-        _DeviceContext->DrawEllipse(Ellipse, _StaticLinesStyle._Brush, 1.f, _StaticStrokeStyle.Get());
+        _DeviceContext->DrawEllipse(Ellipse, _StaticLinesStyle._Brush.Get(), 1.f, _StaticStrokeStyle.Get());
     }
 
     _DeviceContext->SetTransform(D2D1::Matrix3x2F::Identity());

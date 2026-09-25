@@ -14,7 +14,7 @@
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void x_axis_t::Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, CComPtr<ID3D11Device> d3dDevice, CComPtr<ID3D11DeviceContext> d3dDeviceContext) noexcept
+void x_axis_t::Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept
 {
     _State        = state;
     _GraphOptions = graphOptions;
@@ -147,7 +147,7 @@ void x_axis_t::Configure(state_t * state, graph_options_t * graphOptions, analys
 /// </summary>
 void x_axis_t::Move(const D2D1_RECT_F & rect) noexcept
 {
-    SetRect(rect);
+    InitializeMetrics(rect);
 }
 
 /// <summary>
@@ -191,7 +191,7 @@ void x_axis_t::Resize(bool force) noexcept
         {
             CComPtr<IDWriteTextLayout> TextLayout;
 
-            HRESULT hr = _DirectWrite.Factory->CreateTextLayout(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle._TextFormat, _Size.width, _Size.height, &TextLayout);
+            HRESULT hr = _DirectWrite.Factory->CreateTextLayout(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle._TextFormat.Get(), _Size.width, _Size.height, &TextLayout);
 
             if (SUCCEEDED(hr))
             {
@@ -264,7 +264,7 @@ void x_axis_t::Resize(bool force) noexcept
 /// <summary>
 /// Renders this instance to the specified render target.
 /// </summary>
-void x_axis_t::Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwapChain1> swapChain) noexcept
+void x_axis_t::Render(ID2D1DeviceContext * deviceContext, IDXGISwapChain1 * swapChain) noexcept
 {
     auto & StyleManager = _GraphOptions->_UseLocalStyles ? _GraphOptions->_StyleManager : _State->_StyleManager;
 
@@ -283,7 +283,7 @@ void x_axis_t::Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwapChain
     {
         // Draw the vertical grid line.
         if (_LineStyle.IsEnabled())
-            deviceContext->DrawLine(Iter.PointT, Iter.PointB, _LineStyle._Brush, _LineStyle._Thickness, nullptr);
+            deviceContext->DrawLine(Iter.PointT, Iter.PointB, _LineStyle._Brush.Get(), _LineStyle._Thickness, nullptr);
 
         // Draw the text.
         if (!Iter.IsHidden && _TextStyle.IsEnabled() && (_GraphOptions->_XAxisMode != XAxisMode::None))
@@ -291,10 +291,10 @@ void x_axis_t::Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwapChain
             _TextStyle._Brush->SetOpacity(Iter.IsDimmed && (_GraphOptions->_XAxisMode == XAxisMode::Notes) ? Opacity * .5f : Opacity);
 
             if (_GraphOptions->_XAxisTop)
-                deviceContext->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle._TextFormat, Iter.RectT, _TextStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                deviceContext->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle._TextFormat.Get(), Iter.RectT, _TextStyle._Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
 
             if (_GraphOptions->_XAxisBottom)
-                deviceContext->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle._TextFormat, Iter.RectB, _TextStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                deviceContext->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle._TextFormat.Get(), Iter.RectB, _TextStyle._Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
         }
     }
 
@@ -309,7 +309,7 @@ void x_axis_t::Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwapChain
 /// </summary>
 HRESULT x_axis_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext, style_manager_t & styleManager) noexcept
 {
-    if (_State->_RecreateStyles)
+    if (_State->_ResizeResources)
         DeleteDeviceSpecificResources();
 
     HRESULT hr = S_OK;

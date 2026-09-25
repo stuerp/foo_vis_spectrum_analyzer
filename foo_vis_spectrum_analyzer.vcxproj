@@ -362,6 +362,7 @@
     <ClCompile Include="Visuals\ColorThief.cpp" />
     <ClCompile Include="Visuals\Element.cpp" />
     <ClCompile Include="Configuration\PresetManager.cpp" />
+    <ClCompile Include="Visuals\Grid.cpp" />
     <ClCompile Include="Visuals\LevelMeter\LevelMeter.cpp" />
     <ClCompile Include="Visuals\Oscilloscope\Oscilloscope.cpp" />
     <ClCompile Include="Visuals\Oscilloscope\OscilloscopeBase.cpp" />

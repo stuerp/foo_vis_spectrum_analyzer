@@ -249,7 +249,7 @@ v0.9.0.0-alpha3, 2025-10-17
 - Improved: Rendering stops when the host window gets minimized instead of the main window to improve behavior in foo_flowin.
 - Improved: Various little useability tweaks and fixes in the Configuration dialog.
 - Changed: Upgraded rendering code from render targets to device contexts.
-- Fixed: Delay between playback and visualization. The backbuffer was not initialized.
+- Fixed: Delay between playback and visualization. The back buffer was not initialized.
  
 v0.9.0.0-alpha2, 2025-10-09
 

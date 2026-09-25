@@ -1,9 +1,10 @@
 
-/** $VER: StylesPage.rc (2026.06.10) P. Stuer **/
+/** $VER: StylesPage.rc (2026.09.23) P. Stuer **/
 
 #include "Resources.h"
 
 #include <winres.h>
+#include <commctrl.h>
 
 #include "StylesPageLayout.h"
 
@@ -40,7 +41,7 @@ style DS_SETFONT | DS_CONTROL | WS_CHILD | WS_CLIPCHILDREN
     pushbutton      "Reverse",                  IDC_REVERSE,                    X_A71, Y_A71,     W_A71, H_A71
 
     edittext                                    IDC_POSITION,                   X_F01, Y_F01,     W_F01, H_F01, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
-    ltext           "%"                         IDC_POSITION_LBL,               X_F02, Y_F02 + 2, W_F02, H_F02
+    ltext           "%"                         IDC_STATIC,                     X_F02, Y_F02 + 2, W_F02, H_F02
 
     pushbutton      "Spread",                   IDC_SPREAD,                     X_F03, Y_F03,     W_F03, H_F03
 

@@ -29,7 +29,7 @@ level_meter_t::~level_meter_t() noexcept
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void level_meter_t::Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, CComPtr<ID3D11Device> d3dDevice, CComPtr<ID3D11DeviceContext> d3dDeviceContext) noexcept
+void level_meter_t::Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept
 {
     _State = state;
     _GraphOptions = graphOptions;
@@ -43,13 +43,13 @@ void level_meter_t::Configure(state_t * state, graph_options_t * graphOptions, a
 /// </summary>
 void level_meter_t::Move(const D2D1_RECT_F & rect) noexcept
 {
-    SetRect(rect);
+    InitializeMetrics(rect);
 }
 
 /// <summary>
 /// Renders this instance.
 /// </summary>
-void level_meter_t::Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwapChain1> swapChain) noexcept
+void level_meter_t::Render(ID2D1DeviceContext * deviceContext, IDXGISwapChain1 * swapChain) noexcept
 {
     HRESULT hr = CreateDeviceSpecificResources(deviceContext);
 
@@ -81,13 +81,13 @@ void level_meter_t::Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwap
             if (_LeftRightStyle.IsEnabled())
             {
                 if (!_State->_LEDMode)
-                    deviceContext->FillRectangle(Rect, _LeftRightStyle._Brush);
+                    deviceContext->FillRectangle(Rect, _LeftRightStyle._Brush.Get());
                 else
                 {
                     if (_State->_LEDIntegralSize)
                         Rect.right = std::ceil(Rect.right / LEDHeight) * LEDHeight;
 
-                    deviceContext->FillOpacityMask(_OpacityMask, _LeftRightStyle._Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
+                    deviceContext->FillOpacityMask(_OpacityMask, _LeftRightStyle._Brush.Get(), D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
                 }
             }
 
@@ -96,7 +96,7 @@ void level_meter_t::Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwap
                 Rect.left  = x - _LeftRightIndicatorStyle._Thickness;
                 Rect.right = x + _LeftRightIndicatorStyle._Thickness;
 
-                deviceContext->FillRectangle(Rect, _LeftRightIndicatorStyle._Brush);
+                deviceContext->FillRectangle(Rect, _LeftRightIndicatorStyle._Brush.Get());
             }
 
             x = (FLOAT) _Analysis->_Phase * w;
@@ -106,13 +106,13 @@ void level_meter_t::Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwap
             if (_MidSideStyle.IsEnabled())
             {
                 if (!_State->_LEDMode)
-                    deviceContext->FillRectangle(Rect, _MidSideStyle._Brush);
+                    deviceContext->FillRectangle(Rect, _MidSideStyle._Brush.Get());
                 else
                 {
                     if (_State->_LEDIntegralSize)
                         Rect.right = std::ceil(Rect.right / LEDHeight) * LEDHeight;
 
-                    deviceContext->FillOpacityMask(_OpacityMask, _MidSideStyle._Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
+                    deviceContext->FillOpacityMask(_OpacityMask, _MidSideStyle._Brush.Get(), D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
                 }
             }
 
@@ -121,25 +121,25 @@ void level_meter_t::Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwap
                 Rect.left  = x - _MidSideIndicatorStyle._Thickness;
                 Rect.right = x + _MidSideIndicatorStyle._Thickness;
 
-                deviceContext->FillRectangle(Rect, _MidSideIndicatorStyle._Brush);
+                deviceContext->FillRectangle(Rect, _MidSideIndicatorStyle._Brush.Get());
             }
         }
 
         // Render the axis.
         if (_AxisStyle.IsEnabled())
         {
-            deviceContext->DrawLine({ 2.f, CenterY }, { w - 2.f, CenterY }, _AxisStyle._Brush, _AxisStyle._Thickness);
+            deviceContext->DrawLine({ 2.f, CenterY }, { w - 2.f, CenterY }, _AxisStyle._Brush.Get(), _AxisStyle._Thickness);
 
             D2D1_RECT_F Rect = { 4.f, 2.f, w - 4.f, CenterY - 2.f };
 
             {
                 _AxisStyle.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
 
-                deviceContext->DrawText(L"L", 1, _AxisStyle._TextFormat, Rect, _AxisStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                deviceContext->DrawText(L"L", 1, _AxisStyle._TextFormat.Get(), Rect, _AxisStyle._Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
 
                 _AxisStyle.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
 
-                deviceContext->DrawText(L"R", 1, _AxisStyle._TextFormat, Rect, _AxisStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                deviceContext->DrawText(L"R", 1, _AxisStyle._TextFormat.Get(), Rect, _AxisStyle._Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
             }
 
             {
@@ -148,14 +148,14 @@ void level_meter_t::Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwap
 
                 _AxisStyle.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
 
-                deviceContext->DrawText(L"S", 1, _AxisStyle._TextFormat, Rect, _AxisStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                deviceContext->DrawText(L"S", 1, _AxisStyle._TextFormat.Get(), Rect, _AxisStyle._Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
 
                 _AxisStyle.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
 
-                deviceContext->DrawText(L"M", 1, _AxisStyle._TextFormat, Rect, _AxisStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                deviceContext->DrawText(L"M", 1, _AxisStyle._TextFormat.Get(), Rect, _AxisStyle._Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
             }
 
-            deviceContext->DrawLine({ CenterX, 2.f }, { CenterX, h - 2.f }, _AxisStyle._Brush, _AxisStyle._Thickness);
+            deviceContext->DrawLine({ CenterX, 2.f }, { CenterX, h - 2.f }, _AxisStyle._Brush.Get(), _AxisStyle._Thickness);
         }
     }
     else
@@ -169,13 +169,13 @@ void level_meter_t::Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwap
             if (_LeftRightStyle.IsEnabled())
             {
                 if (!_State->_LEDMode)
-                    deviceContext->FillRectangle(Rect, _LeftRightStyle._Brush);
+                    deviceContext->FillRectangle(Rect, _LeftRightStyle._Brush.Get());
                 else
                 {
                     if (_State->_LEDIntegralSize)
                         Rect.bottom = std::ceil(Rect.bottom / LEDHeight) * LEDHeight;
 
-                    deviceContext->FillOpacityMask(_OpacityMask, _LeftRightStyle._Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
+                    deviceContext->FillOpacityMask(_OpacityMask, _LeftRightStyle._Brush.Get(), D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
                 }
             }
 
@@ -184,7 +184,7 @@ void level_meter_t::Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwap
                 Rect.top    = y - _LeftRightIndicatorStyle._Thickness;
                 Rect.bottom = y + _LeftRightIndicatorStyle._Thickness;
 
-                deviceContext->FillRectangle(Rect, _LeftRightIndicatorStyle._Brush);
+                deviceContext->FillRectangle(Rect, _LeftRightIndicatorStyle._Brush.Get());
             }
 
             y = (FLOAT) _Analysis->_Phase * h;
@@ -194,13 +194,13 @@ void level_meter_t::Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwap
             if (_MidSideStyle.IsEnabled())
             {
                 if (!_State->_LEDMode)
-                    deviceContext->FillRectangle(Rect, _MidSideStyle._Brush);
+                    deviceContext->FillRectangle(Rect, _MidSideStyle._Brush.Get());
                 else
                 {
                     if (_State->_LEDIntegralSize)
                         Rect.bottom = std::ceil(Rect.bottom / LEDHeight) * LEDHeight;
 
-                    deviceContext->FillOpacityMask(_OpacityMask, _MidSideStyle._Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
+                    deviceContext->FillOpacityMask(_OpacityMask, _MidSideStyle._Brush.Get(), D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
                 }
             }
 
@@ -209,25 +209,25 @@ void level_meter_t::Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwap
                 Rect.top    = y - _MidSideIndicatorStyle._Thickness;
                 Rect.bottom = y + _MidSideIndicatorStyle._Thickness;
 
-                deviceContext->FillRectangle(Rect, _MidSideIndicatorStyle._Brush);
+                deviceContext->FillRectangle(Rect, _MidSideIndicatorStyle._Brush.Get());
             }
         }
 
         // Render the axis.
         if (_AxisStyle.IsEnabled())
         {
-            deviceContext->DrawLine({ CenterX, 2.f }, { CenterX, h - 2.f }, _AxisStyle._Brush, _AxisStyle._Thickness);
+            deviceContext->DrawLine({ CenterX, 2.f }, { CenterX, h - 2.f }, _AxisStyle._Brush.Get(), _AxisStyle._Thickness);
 
             D2D1_RECT_F Rect = { 2.f, 4.f, CenterX - 2.f, h - 4.f };
 
             {
                 _AxisStyle.SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
 
-                deviceContext->DrawText(L"L", 1, _AxisStyle._TextFormat, Rect, _AxisStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                deviceContext->DrawText(L"L", 1, _AxisStyle._TextFormat.Get(), Rect, _AxisStyle._Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
 
                 _AxisStyle.SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_FAR);
 
-                deviceContext->DrawText(L"R", 1, _AxisStyle._TextFormat, Rect, _AxisStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                deviceContext->DrawText(L"R", 1, _AxisStyle._TextFormat.Get(), Rect, _AxisStyle._Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
             }
 
             {
@@ -236,14 +236,14 @@ void level_meter_t::Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwap
 
                 _AxisStyle.SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
 
-                deviceContext->DrawText(L"S", 1, _AxisStyle._TextFormat, Rect, _AxisStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                deviceContext->DrawText(L"S", 1, _AxisStyle._TextFormat.Get(), Rect, _AxisStyle._Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
 
                 _AxisStyle.SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_FAR);
 
-                deviceContext->DrawText(L"M", 1, _AxisStyle._TextFormat, Rect, _AxisStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                deviceContext->DrawText(L"M", 1, _AxisStyle._TextFormat.Get(), Rect, _AxisStyle._Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
             }
 
-            deviceContext->DrawLine({ CenterX, 2.f }, { CenterX, h - 2.f }, _AxisStyle._Brush, _AxisStyle._Thickness);
+            deviceContext->DrawLine({ CenterX, 2.f }, { CenterX, h - 2.f }, _AxisStyle._Brush.Get(), _AxisStyle._Thickness);
         }
     }
 
@@ -255,7 +255,7 @@ void level_meter_t::Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwap
 /// </summary>
 HRESULT level_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept
 {
-    if (_State->_RecreateStyles)
+    if (_State->_ResizeResources)
         DeleteDeviceSpecificResources();
 
     HRESULT hr = S_OK;

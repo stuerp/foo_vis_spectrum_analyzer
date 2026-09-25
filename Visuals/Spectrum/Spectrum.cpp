@@ -26,7 +26,7 @@ spectrum_t::~spectrum_t()
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void spectrum_t::Configure(state_t * state, graph_options_t * options, analysis_t * analysis, bool isFirst, bool isLast, CComPtr<ID3D11Device> d3dDevice, CComPtr<ID3D11DeviceContext> d3dDeviceContext) noexcept
+void spectrum_t::Configure(state_t * state, graph_options_t * options, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept
 {
     _State        = state;
     _GraphOptions = options;
@@ -48,7 +48,7 @@ void spectrum_t::Configure(state_t * state, graph_options_t * options, analysis_
 /// </summary>
 void spectrum_t::Move(const D2D1_RECT_F & rect) noexcept
 {
-    SetRect(rect);
+    InitializeMetrics(rect);
 
     _OpacityMask.Release(); // Forces the opacity mask to be regenerated.
 }
@@ -79,7 +79,7 @@ void spectrum_t::Resize() noexcept
 /// <summary>
 /// Renders this instance to the specified render target.
 /// </summary>
-void spectrum_t::Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwapChain1> swapChain) noexcept
+void spectrum_t::Render(ID2D1DeviceContext * deviceContext, IDXGISwapChain1 * swapChain) noexcept
 {
     HRESULT hr = CreateDeviceSpecificResources(deviceContext);
 
@@ -284,12 +284,12 @@ void spectrum_t::RenderBarPart(ID2D1DeviceContext * deviceContext, D2D1_RECT_F &
 
         const D2D1_RECT_F Src = { rect.left, 0.f, rect.right, _ClientSize.height };
 
-        deviceContext->FillOpacityMask(_OpacityMask, style._Brush, Src, Src);
+        deviceContext->FillOpacityMask(_OpacityMask, style._Brush.Get(), Src, Src);
 
         deviceContext->PopAxisAlignedClip();
     }
     else
-        deviceContext->FillRectangle(rect, style._Brush);
+        deviceContext->FillRectangle(rect, style._Brush.Get());
 }
 
 /// <summary>
@@ -320,7 +320,7 @@ void spectrum_t::RenderCurve(ID2D1DeviceContext * deviceContext) noexcept
             hr = CreateCurve(Points, true, &Curve);
 
             if (SUCCEEDED(hr))
-                deviceContext->FillGeometry(Curve, _CurvePeakAreaStyle._Brush);
+                deviceContext->FillGeometry(Curve, _CurvePeakAreaStyle._Brush.Get());
 
             Curve.Release();
         }
@@ -331,7 +331,7 @@ void spectrum_t::RenderCurve(ID2D1DeviceContext * deviceContext) noexcept
             hr = CreateCurve(Points, false, &Curve);
 
             if (SUCCEEDED(hr))
-                deviceContext->DrawGeometry(Curve, _CurvePeakLineStyle._Brush, _CurvePeakLineStyle._Thickness);
+                deviceContext->DrawGeometry(Curve, _CurvePeakLineStyle._Brush.Get(), _CurvePeakLineStyle._Thickness);
 
             Curve.Release();
         }
@@ -349,7 +349,7 @@ void spectrum_t::RenderCurve(ID2D1DeviceContext * deviceContext) noexcept
             hr = CreateCurve(Points, true, &Curve);
 
             if (SUCCEEDED(hr))
-                deviceContext->FillGeometry(Curve, _CurveAreaStyle._Brush);
+                deviceContext->FillGeometry(Curve, _CurveAreaStyle._Brush.Get());
 
             Curve.Release();
         }
@@ -360,7 +360,7 @@ void spectrum_t::RenderCurve(ID2D1DeviceContext * deviceContext) noexcept
             hr = CreateCurve(Points, false, &Curve);
 
             if (SUCCEEDED(hr))
-                deviceContext->DrawGeometry(Curve, _CurveLineStyle._Brush, _CurveLineStyle._Thickness);
+                deviceContext->DrawGeometry(Curve, _CurveLineStyle._Brush.Get(), _CurveLineStyle._Thickness);
 
             Curve.Release();
         }
@@ -418,7 +418,7 @@ void spectrum_t::RenderRadialBars(ID2D1DeviceContext * deviceContext) noexcept
                         _BarPeakAreaStyle.SetBrushColor(Value);
                     }
 
-                    deviceContext->FillGeometry(Path, _BarPeakAreaStyle._Brush);
+                    deviceContext->FillGeometry(Path, _BarPeakAreaStyle._Brush.Get());
 
                     Path.Release();
                 }
@@ -443,7 +443,7 @@ void spectrum_t::RenderRadialBars(ID2D1DeviceContext * deviceContext) noexcept
 
                     _BarPeakTopStyle._Brush->SetOpacity(Opacity);
 
-                    deviceContext->FillGeometry(Path, _BarPeakTopStyle._Brush);
+                    deviceContext->FillGeometry(Path, _BarPeakTopStyle._Brush.Get());
 
                     Path.Release();
                 }
@@ -464,7 +464,7 @@ void spectrum_t::RenderRadialBars(ID2D1DeviceContext * deviceContext) noexcept
                         _BarAreaStyle.SetBrushColor(Value);
                     }
 
-                    deviceContext->FillGeometry(Path, _BarAreaStyle._Brush);
+                    deviceContext->FillGeometry(Path, _BarAreaStyle._Brush.Get());
 
                     Path.Release();
                 }
@@ -485,7 +485,7 @@ void spectrum_t::RenderRadialBars(ID2D1DeviceContext * deviceContext) noexcept
                         _BarTopStyle.SetBrushColor(Value);
                     }
 
-                    deviceContext->FillGeometry(Path, _BarTopStyle._Brush);
+                    deviceContext->FillGeometry(Path, _BarTopStyle._Brush.Get());
 
                     Path.Release();
                 }
@@ -528,7 +528,7 @@ void spectrum_t::RenderRadialCurve(ID2D1DeviceContext * deviceContext) noexcept
             hr = CreateRadialCurve(Points, InnerRadius, true, &Curve);
 
             if (SUCCEEDED(hr))
-                deviceContext->FillGeometry(Curve, _CurvePeakAreaStyle._Brush);
+                deviceContext->FillGeometry(Curve, _CurvePeakAreaStyle._Brush.Get());
 
             Curve.Release();
         }
@@ -539,7 +539,7 @@ void spectrum_t::RenderRadialCurve(ID2D1DeviceContext * deviceContext) noexcept
             hr = CreateRadialCurve(Points, InnerRadius, false, &Curve);
 
             if (SUCCEEDED(hr))
-                deviceContext->DrawGeometry(Curve, _CurvePeakLineStyle._Brush, _CurvePeakLineStyle._Thickness);
+                deviceContext->DrawGeometry(Curve, _CurvePeakLineStyle._Brush.Get(), _CurvePeakLineStyle._Thickness);
 
             Curve.Release();
         }
@@ -557,7 +557,7 @@ void spectrum_t::RenderRadialCurve(ID2D1DeviceContext * deviceContext) noexcept
             hr = CreateRadialCurve(Points, InnerRadius, true, &Curve);
 
             if (SUCCEEDED(hr))
-                deviceContext->FillGeometry(Curve, _CurveAreaStyle._Brush);
+                deviceContext->FillGeometry(Curve, _CurveAreaStyle._Brush.Get());
 
             Curve.Release();
         }
@@ -568,7 +568,7 @@ void spectrum_t::RenderRadialCurve(ID2D1DeviceContext * deviceContext) noexcept
             hr = CreateRadialCurve(Points, InnerRadius, false, &Curve);
 
             if (SUCCEEDED(hr))
-                deviceContext->DrawGeometry(Curve, _CurveLineStyle._Brush, _CurveLineStyle._Thickness);
+                deviceContext->DrawGeometry(Curve, _CurveLineStyle._Brush.Get(), _CurveLineStyle._Thickness);
 
             Curve.Release();
         }
@@ -606,7 +606,7 @@ void spectrum_t::RenderNyquistFrequencyMarker(ID2D1DeviceContext * deviceContext
     // Draw the line
     deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
 
-    deviceContext->DrawLine(D2D1_POINT_2F(x, 0.f), D2D1_POINT_2F(x, _ClientSize.height), _NyquistMarkerStyle._Brush, _NyquistMarkerStyle._Thickness, nullptr);
+    deviceContext->DrawLine(D2D1_POINT_2F(x, 0.f), D2D1_POINT_2F(x, _ClientSize.height), _NyquistMarkerStyle._Brush.Get(), _NyquistMarkerStyle._Thickness, nullptr);
 }
 
 /// <summary>
@@ -650,7 +650,7 @@ void spectrum_t::RenderDiagnostics(ID2D1DeviceContext * deviceContext) const noe
 
             auto p2 = D2D1_POINT_2F(msc::Map(x, -1., 1., _ClientRect.left, _ClientRect.right), msc::Map(y, 0., 1., y1, y2));
 
-            deviceContext->DrawLine(p1, p2, _WindowFunctionStyle._Brush, _WindowFunctionStyle._Thickness);
+            deviceContext->DrawLine(p1, p2, _WindowFunctionStyle._Brush.Get(), _WindowFunctionStyle._Thickness);
 
             p1 = p2;
         }
@@ -659,7 +659,7 @@ void spectrum_t::RenderDiagnostics(ID2D1DeviceContext * deviceContext) const noe
 
         auto p2 = D2D1_POINT_2F(_ClientRect.right, msc::Map(y, 0., 1., y1, y2));
 
-        deviceContext->DrawLine(p1, p2, _WindowFunctionStyle._Brush, _WindowFunctionStyle._Thickness);
+        deviceContext->DrawLine(p1, p2, _WindowFunctionStyle._Brush.Get(), _WindowFunctionStyle._Thickness);
     }
 
     // Render the weighing function.
@@ -692,7 +692,7 @@ void spectrum_t::RenderDiagnostics(ID2D1DeviceContext * deviceContext) const noe
 
             auto p2 = D2D1_POINT_2F(x, msc::Map(y, _GraphOptions->_AmplitudeLo, _GraphOptions->_AmplitudeHi, y1, y2));
 
-            deviceContext->DrawLine(p1, p2, _WeighingFunctionStyle._Brush, _WeighingFunctionStyle._Thickness);
+            deviceContext->DrawLine(p1, p2, _WeighingFunctionStyle._Brush.Get(), _WeighingFunctionStyle._Thickness);
 
             p1 = p2;
         }
@@ -704,7 +704,7 @@ void spectrum_t::RenderDiagnostics(ID2D1DeviceContext * deviceContext) const noe
 
         auto p2 = D2D1_POINT_2F(x, msc::Map(y, _GraphOptions->_AmplitudeLo, _GraphOptions->_AmplitudeHi, y1, y2));
 
-        deviceContext->DrawLine(p1, p2, _WeighingFunctionStyle._Brush, _WeighingFunctionStyle._Thickness);
+        deviceContext->DrawLine(p1, p2, _WeighingFunctionStyle._Brush.Get(), _WeighingFunctionStyle._Thickness);
     }
 }
 
@@ -714,7 +714,7 @@ void spectrum_t::RenderDiagnostics(ID2D1DeviceContext * deviceContext) const noe
 /// </summary>
 HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept
 {
-    if (_State->_RecreateStyles)
+    if (_State->_ResizeResources)
         DeleteDeviceSpecificResources();
 
     auto & StyleManager = _GraphOptions->_UseLocalStyles ? _GraphOptions->_StyleManager : _State->_StyleManager;

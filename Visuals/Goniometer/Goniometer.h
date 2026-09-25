@@ -1,5 +1,5 @@
 
-/** $VER: Goniometer.h (2026.09.23) P. Stuer - Implements a goniometer. **/
+/** $VER: Goniometer.h (2026.09.25) P. Stuer - Implements a goniometer. **/
 
 #pragma once
 
@@ -11,7 +11,7 @@
 class goniometer_t : public visualization_t
 {
 public:
-    goniometer_t();
+    goniometer_t() = default;
 
     goniometer_t(const goniometer_t &) = delete;
     goniometer_t & operator=(const goniometer_t &) = delete;
@@ -22,15 +22,14 @@ public:
 
     // element_t
     void Move(const D2D1_RECT_F & rect) noexcept override final;
-    void Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwapChain1> swapChain) noexcept override final;
+    void Render(ID2D1DeviceContext * deviceContext, IDXGISwapChain1 * swapChain) noexcept override final;
     void Reset() noexcept override final;
     void Release() noexcept override final;
 
     void OnConfigurationChange(ConfigurationChanges configurationChanges) noexcept override final;
 
     // visualization_t
-    void Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, CComPtr<ID3D11Device> d3dDevice, CComPtr<ID3D11DeviceContext> d3dDeviceContext) noexcept;
-    void Resize() noexcept;
+    void Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept;
 
 private:
     HRESULT CreateDeviceIndependentResources() noexcept;
@@ -47,19 +46,18 @@ private:
     HRESULT CreatePointSprite(ComPtr<ID2D1Bitmap1> & bitmap) noexcept;
     HRESULT CreateStaticContent() noexcept;
 
-    double _LowBand  = 0.; // Hz
-    double _HighBand = 0.; // Hz
-
-    static constexpr FLOAT Radius = .98f;
+    double _LowBand  { 0. }; // Hz
+    double _HighBand { 0. }; // Hz
 
     static constexpr FLOAT SpriteRadius = 2.5f;
     static constexpr D2D1_RECT_U SpriteRectangle = { 0u, 0u, (UINT32) (SpriteRadius * 2.f), (UINT32) (SpriteRadius * 2.f) };
 
-    size_t _PrevBitmapIndex = 1; // Start drawing in bitmap 0.
+    FLOAT _Radius { 1.f };
 
-    FLOAT _Side  = 0.f;
+    size_t _PrevBitmapIndex = { 1 }; // Start drawing in bitmap 0.
+
     D2D1_RECT_F _DestinationRectangle = { };
-    D2D1::Matrix3x2F _TranslationMatrix;
+    D2D1::Matrix3x2F _TranslationMatrix = { };
 
     style_t _SignalStyle;
     style_t _StaticTextStyle;

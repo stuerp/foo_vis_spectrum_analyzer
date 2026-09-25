@@ -1,5 +1,5 @@
 
-/** $VER: Spectrogram.h (2026.09.06) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
+/** $VER: Spectrogram.h (2026.09.25) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
 
 #pragma once
 
@@ -24,7 +24,7 @@
 class spectrogram_t : public visualization_t
 {
 public:
-    spectrogram_t();
+    spectrogram_t() = default;
 
     spectrogram_t(const spectrogram_t &) = delete;
     spectrogram_t & operator=(const spectrogram_t &) = delete;
@@ -35,11 +35,10 @@ public:
 
     // element_t
     void Move(const D2D1_RECT_F & rect) noexcept override final;
-    void Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwapChain1> swapChain) noexcept override final;
-    void Reset() noexcept override final { };
+    void Render(ID2D1DeviceContext * deviceContext, IDXGISwapChain1 * swapChain) noexcept override final;
 
     // visualization_t
-    void Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, CComPtr<ID3D11Device> d3dDevice = nullptr, CComPtr<ID3D11DeviceContext> d3dDeviceContext = nullptr) noexcept override final;
+    void Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice = nullptr, ID3D11DeviceContext * d3dDeviceContext = nullptr) noexcept override final;
 
     const D2D1_RECT_F & GetClientRect() const noexcept { return _BitmapRect; }
 
@@ -77,21 +76,21 @@ private:
     }
 
 private:
-    D2D1_RECT_F _BitmapRect;
-    D2D1_SIZE_F _BitmapSize;
+    D2D1_RECT_F _BitmapRect { };
+    D2D1_SIZE_F _BitmapSize { };
 
-    D2D1_RECT_F _LegendRect;
-    D2D1_SIZE_F _LegendSize;
+    D2D1_RECT_F _LegendRect { };
+    D2D1_SIZE_F _LegendSize { };
 
-    FLOAT _X;
-    FLOAT _Y;
+    FLOAT _X { 0.f };
+    FLOAT _Y { 0.f };
 
-    double _PlaybackTime;
-    double _TrackTime;
-    bool _RequestErase;
+    double _PlaybackTime { 0. };
+    double _TrackTime { 0. };
+    bool _RequestErase { false };
 
-    double _LoFrequency;
-    double _HiFrequency;
+    double _LoFrequency { 0. };
+    double _HiFrequency { 0. };
 
     struct time_label_t
     {
@@ -103,8 +102,8 @@ private:
         }
 
         std::wstring Text;
-        FLOAT X;
-        FLOAT Y;
+        FLOAT X { 0.f };
+        FLOAT Y { 0.f };
     };
 
     std::deque<time_label_t> _TimeLabels;
@@ -119,26 +118,26 @@ private:
         }
 
         std::wstring Text;
-        double Frequency;
-        bool IsMinor;
-        bool IsHidden;
+        double Frequency { 0. };
+        bool IsMinor { false };
+        bool IsHidden { false };
 
-        D2D1_RECT_F Rect1;
-        D2D1_RECT_F Rect2;
+        D2D1_RECT_F Rect1 { };
+        D2D1_RECT_F Rect2 { };
 
-        FLOAT Tick;
+        FLOAT Tick { 0.f };
     };
 
     std::vector<freq_label_t> _FreqLabels;
 
-    CComPtr<ID2D1BitmapRenderTarget> _BitmapRenderTarget;
-    CComPtr<ID2D1Bitmap> _Bitmap;
+    ComPtr<ID2D1BitmapRenderTarget> _BitmapRenderTarget;
+    ComPtr<ID2D1Bitmap> _Bitmap;
 
-    CComPtr<ID2D1BitmapRenderTarget> _LegendBitmapRenderTarget;
-    CComPtr<ID2D1Bitmap> _LegendBitmap;
+    ComPtr<ID2D1BitmapRenderTarget> _LegendBitmapRenderTarget;
+    ComPtr<ID2D1Bitmap> _LegendBitmap;
 
 #ifdef _DEBUG
-    CComPtr<ID2D1SolidColorBrush> _DebugBrush;
+    ComPtr<ID2D1SolidColorBrush> _DebugBrush;
 #endif
 
     style_t _SpectrogramStyle;

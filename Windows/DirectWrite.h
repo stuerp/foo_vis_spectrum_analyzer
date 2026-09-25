@@ -20,8 +20,8 @@ public:
     HRESULT Initialize();
     void Terminate();
 
-    HRESULT CreateTextFormat(const std::wstring & fontFamilyName, FLOAT fontSize, DWRITE_TEXT_ALIGNMENT horizonalAlignment, DWRITE_PARAGRAPH_ALIGNMENT verticalAlignment, CComPtr<IDWriteTextFormat> & textFormat) const noexcept;
-    HRESULT GetTextMetrics(CComPtr<IDWriteTextFormat> & textFormat, const std::wstring & text, FLOAT & width, FLOAT & height) const noexcept;
+    HRESULT CreateTextFormat(const std::wstring & fontFamilyName, FLOAT fontSize, DWRITE_TEXT_ALIGNMENT horizonalAlignment, DWRITE_PARAGRAPH_ALIGNMENT verticalAlignment, IDWriteTextFormat ** textFormat) const noexcept;
+    HRESULT GetTextMetrics(IDWriteTextFormat * textFormat, const std::wstring & text, FLOAT & width, FLOAT & height) const noexcept;
 
 public:
     CComPtr<IDWriteFactory> Factory;

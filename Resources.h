@@ -479,6 +479,7 @@
 #define IDC_COLOR_BUTTON                7508
 #define IDC_COLOR_SCHEME                7510
 
+#define IDC_GRADIENT_SLIDER             7532
 #define IDC_GRADIENT                    7534
 #define IDC_COLOR_LIST                  7536
 #define IDC_ADD                         7538

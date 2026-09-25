@@ -16,7 +16,7 @@ public:
 
     virtual ~visualization_t() noexcept {}
 
-    virtual void Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, CComPtr<ID3D11Device> d3dDevice = nullptr, CComPtr<ID3D11DeviceContext> d3dDeviceContext = nullptr) noexcept = 0;
+    virtual void Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice = nullptr, ID3D11DeviceContext * d3dDeviceContext = nullptr) noexcept = 0;
 
 protected:
 };

@@ -26,7 +26,7 @@ bit_meter_t::~bit_meter_t() noexcept
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void bit_meter_t::Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, CComPtr<ID3D11Device> d3dDevice, CComPtr<ID3D11DeviceContext> d3dDeviceContext) noexcept
+void bit_meter_t::Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept
 {
     _State = state;
     _GraphOptions = graphOptions;
@@ -56,7 +56,7 @@ void bit_meter_t::Configure(state_t * state, graph_options_t * graphOptions, ana
 /// </summary>
 void bit_meter_t::Move(const D2D1_RECT_F & rect) noexcept
 {
-    SetRect(rect);
+    InitializeMetrics(rect);
 }
 
 /// <summary>
@@ -94,7 +94,7 @@ void bit_meter_t::Resize() noexcept
 /// <summary>
 /// Renders this instance.
 /// </summary>
-void bit_meter_t::Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwapChain1> swapChain) noexcept
+void bit_meter_t::Render(ID2D1DeviceContext * deviceContext, IDXGISwapChain1 * swapChain) noexcept
 {
     HRESULT hr = CreateDeviceSpecificResources(deviceContext);
 
@@ -163,7 +163,7 @@ void bit_meter_t::Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwapCh
                         r.top = ChannelHeight - ((FLOAT) BitCount * ChannelHeight);
                     }
 
-                    deviceContext->FillRectangle(r, Style->_Brush);
+                    deviceContext->FillRectangle(r, Style->_Brush.Get());
                 }
             }
 
@@ -182,7 +182,7 @@ void bit_meter_t::Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwapCh
 /// </summary>
 HRESULT bit_meter_t::CreateDeviceSpecificResources(_In_ ID2D1DeviceContext * deviceContext) noexcept
 {
-    if (_State->_RecreateStyles)
+    if (_State->_ResizeResources)
         DeleteDeviceSpecificResources();
 
     if ((_Size.width <= 0.f) || _Size.height <= 0.f)
@@ -404,7 +404,7 @@ HRESULT bit_meter_t::CreateStaticContentCommandList() noexcept
                 r.right = r.left + _YAxisText._Width;
 
 //              _DeviceContext->DrawRectangle(r, _DebugBrush);
-                _DeviceContext->DrawText(m.ChannelName.c_str(), (UINT) m.ChannelName.size(), _YAxisText._TextFormat, r, _YAxisText._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                _DeviceContext->DrawText(m.ChannelName.c_str(), (UINT) m.ChannelName.size(), _YAxisText._TextFormat.Get(), r, _YAxisText._Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
 
                 r.left = r.right + XPadding;
             }
@@ -417,7 +417,7 @@ HRESULT bit_meter_t::CreateStaticContentCommandList() noexcept
             r.right = r.left + BarWidth - 1.f;
 
             if (_BarBackground.IsEnabled())
-                _DeviceContext->FillRectangle(r, _BarBackground._Brush);
+                _DeviceContext->FillRectangle(r, _BarBackground._Brush.Get());
 
             // Draw the bit number.
             if (_GraphOptions->_XAxisBottom && _XAxisText.IsEnabled())
@@ -427,7 +427,7 @@ HRESULT bit_meter_t::CreateStaticContentCommandList() noexcept
                 const D2D1_RECT_F cr = { r.left, r.bottom, r.right, r.bottom + XAxisHeight };
 
 //              _DeviceContext->DrawRectangle(cr, _DebugBrush);
-                _DeviceContext->DrawText(Text.c_str(), (UINT) Text.size(), _XAxisText._TextFormat, cr, _XAxisText._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                _DeviceContext->DrawText(Text.c_str(), (UINT) Text.size(), _XAxisText._TextFormat.Get(), cr, _XAxisText._Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
             }
 
             r.left = r.right + 1.f;

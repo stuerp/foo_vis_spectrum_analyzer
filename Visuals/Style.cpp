@@ -1,5 +1,5 @@
 
-/** $VER: Style.cpp (2026.08.22) P. Stuer **/
+/** $VER: Style.cpp (2026.09.25) P. Stuer **/
 
 #include "pch.h"
 #include "Style.h"
@@ -166,18 +166,18 @@ HRESULT style_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContex
 
     // Create the DirectX brush.
     if (_ColorSource != ColorSource::Gradient)
-        hr = deviceContext->CreateSolidColorBrush(_CurrentColor, (ID2D1SolidColorBrush **) &_Brush);
+        hr = deviceContext->CreateSolidColorBrush(_CurrentColor, (ID2D1SolidColorBrush **) _Brush.GetAddressOf());
     else
     {
         if (Has(style_t::Features::HorizontalGradient | style_t::Features::AmplitudeBasedColor))
         {
-            hr = deviceContext->CreateSolidColorBrush(D2D1::ColorF(0), (ID2D1SolidColorBrush **) &_Brush); // The color of the brush will be set during rendering.
+            hr = deviceContext->CreateSolidColorBrush(D2D1::ColorF(0), (ID2D1SolidColorBrush **) _Brush.GetAddressOf()); // The color of the brush will be set during rendering.
 
             if (SUCCEEDED(hr))
                 hr = CreateAmplitudeMap(_ColorScheme, _CurrentGradientStops, _AmplitudeMap);
         }
         else
-            hr = _Direct2D.CreateGradientBrush(deviceContext, _CurrentGradientStops, size, Has(style_t::Features::HorizontalGradient), (ID2D1LinearGradientBrush **) &_Brush);
+            hr = _Direct2D.CreateGradientBrush(deviceContext, _CurrentGradientStops, size, Has(style_t::Features::HorizontalGradient), (ID2D1LinearGradientBrush **) _Brush.GetAddressOf());
     }
 
     if (_Brush != nullptr)
@@ -188,7 +188,7 @@ HRESULT style_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContex
     {
         const FLOAT FontSize = ToDIPs(_FontSize) / scaleFactor; // In DIPs
 
-        hr = _DirectWrite.CreateTextFormat(_FontName, FontSize, DWRITE_TEXT_ALIGNMENT_CENTER, DWRITE_PARAGRAPH_ALIGNMENT_CENTER, _TextFormat);
+        hr = _DirectWrite.CreateTextFormat(_FontName, FontSize, DWRITE_TEXT_ALIGNMENT_CENTER, DWRITE_PARAGRAPH_ALIGNMENT_CENTER, _TextFormat.GetAddressOf());
 
         if (SUCCEEDED(hr))
             MeasureText(text);
@@ -206,18 +206,18 @@ HRESULT style_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContex
 
     // Create the DirectX brush.
     if (_ColorSource != ColorSource::Gradient)
-        hr = deviceContext->CreateSolidColorBrush(_CurrentColor, (ID2D1SolidColorBrush **) &_Brush);
+        hr = deviceContext->CreateSolidColorBrush(_CurrentColor, (ID2D1SolidColorBrush **) _Brush.GetAddressOf());
     else
     {
         if (Has(style_t::Features::HorizontalGradient | style_t::Features::AmplitudeBasedColor))
         {
-            hr = deviceContext->CreateSolidColorBrush(D2D1::ColorF(0), (ID2D1SolidColorBrush **) &_Brush); // The color of the brush will be set during rendering.
+            hr = deviceContext->CreateSolidColorBrush(D2D1::ColorF(0), (ID2D1SolidColorBrush **) _Brush.GetAddressOf()); // The color of the brush will be set during rendering.
 
             if (SUCCEEDED(hr))
                 hr = CreateAmplitudeMap(_ColorScheme, _CurrentGradientStops, _AmplitudeMap);
         }
         else
-            hr = _Direct2D.CreateRadialGradientBrush(deviceContext, _CurrentGradientStops, center, offset, rx, ry, rOffset, (ID2D1RadialGradientBrush **) &_Brush);
+            hr = _Direct2D.CreateRadialGradientBrush(deviceContext, _CurrentGradientStops, center, offset, rx, ry, rOffset, (ID2D1RadialGradientBrush **) _Brush.GetAddressOf());
     }
 
     if (_Brush != nullptr)
@@ -231,8 +231,8 @@ HRESULT style_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContex
 /// </summary>
 void style_t::DeleteDeviceSpecificResources() noexcept
 {
-    _TextFormat.Release();
-    _Brush.Release();
+    _TextFormat.Reset();
+    _Brush.Reset();
 }
 
 /// <summary>
@@ -366,5 +366,5 @@ HRESULT style_t::MeasureText(const std::wstring & text) noexcept
     if (_TextFormat == nullptr)
         return E_FAIL;
 
-    return _DirectWrite.GetTextMetrics(_TextFormat, text.c_str(), _Width, _Height);
+    return _DirectWrite.GetTextMetrics(_TextFormat.Get(), text.c_str(), _Width, _Height);
 }

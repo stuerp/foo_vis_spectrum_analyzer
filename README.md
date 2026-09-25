@@ -14,7 +14,7 @@ Click the image above to view [the gallery](docs/Gallery.md).
 
 ## Features
 
-- Spectrum Analyzer (Bars, Curve, Radial Bars, Radial Curve), Spectrogram, Peak / RMS, Balance / Correlation, Oscilloscope and Bit Meter visualizations.
+- Spectrum Analyzer (Bars, Curve, Radial Bars, Radial Curve), Spectrogram, Peak / RMS, Balance / Correlation, Oscilloscope, Goniometer and Bit Meter visualizations.
 - Fast Fourier (FFT), Constant-Q (CQT), Sliding Windowed Infinite Fourier (SWIFT) and Analog-style transforms
 - Multiple frequency range and smoothing options
 - Multiple stacked or overlapping graphs
@@ -50,7 +50,7 @@ You can find the user guide [here](docs/README.md).
 To build the code you need:
 
 - [Microsoft Visual Studio 2026 Community Edition](https://visualstudio.microsoft.com/downloads/) or later
-- [foobar2000 SDK](https://www.foobar2000.org/SDK) 2025-03-07
+- [foobar2000 SDK](https://www.foobar2000.org/SDK) 2026-09-17
 - [Windows Template Library (WTL)](https://github.com/Win32-WTL/WTL) 10.0.10320
 - [Columns UI SDK](https://yuo.be/columns-ui-sdk) 8.0.0
 
@@ -98,6 +98,7 @@ To create the component first build the x86 configuration and next the x64 confi
 
 v0.13.0.0-alpha2, 2026-10-xx
 
+- New: Compiled with foobar2000 SDK 2026-09-07.
 - Changed: `Decay Factor` is now `Afterglow`, expressed in ms, and independent of the refresh rate. Use values between 80 and 150 ms to imitate the afterglow of an analog oscilloscope.
 - Fixed: Controls on the Graphs page were not always enabled or disabled correctly when the visualization changed.
 

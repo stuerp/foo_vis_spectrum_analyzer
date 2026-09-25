@@ -1,5 +1,5 @@
 
-/** $VER: PeakMeter.cpp (2026.09.21) P. Stuer - Represents a peak meter. **/
+/** $VER: PeakMeter.cpp (2026.09.25) P. Stuer - Represents a peak meter. **/
 
 #include "pch.h"
 
@@ -26,7 +26,7 @@ peak_meter_t::~peak_meter_t() noexcept
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void peak_meter_t::Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, CComPtr<ID3D11Device> d3dDevice, CComPtr<ID3D11DeviceContext> d3dDeviceContext) noexcept
+void peak_meter_t::Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept
 {
     _State = state;
     _GraphOptions = graphOptions;
@@ -40,7 +40,7 @@ void peak_meter_t::Configure(state_t * state, graph_options_t * graphOptions, an
 /// </summary>
 void peak_meter_t::Move(const D2D1_RECT_F & rect) noexcept
 {
-    SetRect(rect);
+    InitializeMetrics(rect);
 
     _RenderedChannels = 0;
 
@@ -59,11 +59,11 @@ void peak_meter_t::Reset() noexcept
 /// <summary>
 /// Renders this instance.
 /// </summary>
-void peak_meter_t::Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwapChain1> swapChain) noexcept
+void peak_meter_t::Render(ID2D1DeviceContext * deviceContext, IDXGISwapChain1 * swapChain) noexcept
 {
     HRESULT hr = CreateDeviceSpecificResources(deviceContext);
 
-    if (!SUCCEEDED(hr))
+    if (FAILED(hr))
         return;
 
     deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED); // Required by FillOpacityMask().
@@ -195,8 +195,8 @@ void peak_meter_t::MeasureParts(ID2D1DeviceContext * deviceContext) noexcept
             &_NameStyle,
             &_ScaleTextStyle,
             &_ScaleLineStyle,
-            _DebugBrush,
-            _OpacityMask
+            _DebugBrush.Get(),
+            _OpacityMask.Get()
         );
 
         auto * Scale = dynamic_cast<scale_t *>(Part);
@@ -275,7 +275,7 @@ void peak_meter_t::MeasureParts(ID2D1DeviceContext * deviceContext) noexcept
                 NeedGap = true;
             }
 
-            Part->SetRect(Rect);
+            Part->InitializeMetrics(Rect);
 
             y += Rect.bottom - Rect.top;
         }
@@ -308,7 +308,7 @@ void peak_meter_t::MeasureParts(ID2D1DeviceContext * deviceContext) noexcept
                 NeedGap = true;
             }
 
-            Part->SetRect(Rect);
+            Part->InitializeMetrics(Rect);
 
             x += Rect.right - Rect.left;
         }
@@ -320,7 +320,7 @@ void peak_meter_t::MeasureParts(ID2D1DeviceContext * deviceContext) noexcept
 /// </summary>
 HRESULT peak_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept
 {
-    if (_State->_RecreateStyles)
+    if (_State->_ResizeResources)
         DeleteDeviceSpecificResources();
 
     HRESULT hr = S_OK;
@@ -333,7 +333,7 @@ HRESULT peak_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceC
 
         hr = _BackgroundStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
 
-        if (!SUCCEEDED(hr))
+        if (FAILED(hr))
             return hr;
     }
 
@@ -345,7 +345,7 @@ HRESULT peak_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceC
 
         hr = _PeakStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
 
-        if (!SUCCEEDED(hr))
+        if (FAILED(hr))
             return hr;
     }
 
@@ -357,7 +357,7 @@ HRESULT peak_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceC
 
         hr = _Peak0dBStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
 
-        if (!SUCCEEDED(hr))
+        if (FAILED(hr))
             return hr;
     }
 
@@ -369,7 +369,7 @@ HRESULT peak_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceC
 
         hr = _PeakTextStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"+199.9", 1.f);
 
-        if (!SUCCEEDED(hr))
+        if (FAILED(hr))
             return hr;
     }
 
@@ -381,7 +381,7 @@ HRESULT peak_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceC
 
         hr = _MaxPeakStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
 
-        if (!SUCCEEDED(hr))
+        if (FAILED(hr))
             return hr;
     }
 
@@ -393,7 +393,7 @@ HRESULT peak_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceC
 
         hr = _RMSStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
 
-        if (!SUCCEEDED(hr))
+        if (FAILED(hr))
             return hr;
     }
 
@@ -405,7 +405,7 @@ HRESULT peak_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceC
 
         hr = _RMS0dBStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
 
-        if (!SUCCEEDED(hr))
+        if (FAILED(hr))
             return hr;
     }
 
@@ -417,7 +417,7 @@ HRESULT peak_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceC
 
         hr = _RMSTextStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"+199.9", 1.f);
 
-        if (!SUCCEEDED(hr))
+        if (FAILED(hr))
             return hr;
     }
 
@@ -429,7 +429,7 @@ HRESULT peak_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceC
 
         hr = _NameStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"LFE", 1.f);
 
-        if (!SUCCEEDED(hr))
+        if (FAILED(hr))
             return hr;
     }
 
@@ -441,7 +441,7 @@ HRESULT peak_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceC
 
         hr = _ScaleTextStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"+999", 1.f);
 
-        if (!SUCCEEDED(hr))
+        if (FAILED(hr))
             return hr;
     }
 
@@ -453,7 +453,7 @@ HRESULT peak_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceC
 
         hr = _ScaleLineStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
 
-        if (!SUCCEEDED(hr))
+        if (FAILED(hr))
             return hr;
     }
 
@@ -461,7 +461,7 @@ HRESULT peak_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceC
     {
         hr = CreateOpacityMask(deviceContext);
 
-        if (!SUCCEEDED(hr))
+        if (FAILED(hr))
             return hr;
     }
 
@@ -470,7 +470,7 @@ HRESULT peak_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceC
         (void) deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), &_DebugBrush);
 #endif
 
-    if ((_RenderedChannels != _Analysis->_PeakActiveChannelMask) || _State->_RecreateStyles)
+    if ((_RenderedChannels != _Analysis->_PeakActiveChannelMask) || _State->_ResizeResources)
     {
         DeleteParts();
 
@@ -510,10 +510,10 @@ void peak_meter_t::DeleteDeviceSpecificResources() noexcept
     _ScaleTextStyle.DeleteDeviceSpecificResources();
     _ScaleLineStyle.DeleteDeviceSpecificResources();
 
-    _OpacityMask.Release();
+    _OpacityMask.Reset();
 
 #ifdef _DEBUG
-    _DebugBrush.Release();
+    _DebugBrush.Reset();
 #endif
 }
 
@@ -522,46 +522,48 @@ void peak_meter_t::DeleteDeviceSpecificResources() noexcept
 /// </summary>
 HRESULT peak_meter_t::CreateOpacityMask(ID2D1DeviceContext * deviceContext) noexcept
 {
-    CComPtr<ID2D1BitmapRenderTarget> rt;
+    ComPtr<ID2D1BitmapRenderTarget> rt;
 
-    HRESULT hr = deviceContext->CreateCompatibleRenderTarget(D2D1::SizeF(_Size.width, _Size.height), &rt);
+    HRESULT hr = deviceContext->CreateCompatibleRenderTarget(D2D1::SizeF(_Size.width, _Size.height), rt.GetAddressOf());
 
-    if (SUCCEEDED(hr))
+    if (FAILED(hr))
+        return hr;
+
+    rt->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
+
+    ComPtr<ID2D1SolidColorBrush> Brush;
+
+    hr = rt->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Black), Brush.GetAddressOf()); // Black parts will be masked out.
+
+    if (FAILED(hr))
+        return hr;
+
+    rt->BeginDraw();
+
+    rt->Clear(); // Transparent
+
+    const FLOAT LEDSize = _State->_LEDLight + _State->_LEDGap;
+
+    if (LEDSize > 0.f)
     {
-        rt->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
-
-        CComPtr<ID2D1SolidColorBrush> Brush;
-
-        hr = rt->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Black), &Brush); // Black parts will be masked out.
-
-        if (SUCCEEDED(hr))
+        if (_State->_IsHorizontalPeakMeter)
         {
-            rt->BeginDraw();
-
-            rt->Clear(); // Transparent
-
-            const FLOAT LEDSize = _State->_LEDLight + _State->_LEDGap;
-
-            if (LEDSize > 0.f)
-            {
-                if (_State->_IsHorizontalPeakMeter)
-                {
-                    for (FLOAT x = 0.f; x < _Size.width; x += LEDSize)
-                        rt->FillRectangle(D2D1::RectF(x, 0.f, x + _State->_LEDLight, _Size.height), Brush);
-                }
-                else
-                {
-                    for (FLOAT y = 0.f; y < _Size.height; y += LEDSize)
-                        rt->FillRectangle(D2D1::RectF(0.f, y, _Size.width, y + _State->_LEDLight), Brush);
-                }
-            }
-
-            hr = rt->EndDraw();
+            for (FLOAT x = 0.f; x < _Size.width; x += LEDSize)
+                rt->FillRectangle(D2D1::RectF(x, 0.f, x + _State->_LEDLight, _Size.height), Brush.Get());
         }
-
-        if (SUCCEEDED(hr))
-            hr = rt->GetBitmap(&_OpacityMask);
+        else
+        {
+            for (FLOAT y = 0.f; y < _Size.height; y += LEDSize)
+                rt->FillRectangle(D2D1::RectF(0.f, y, _Size.width, y + _State->_LEDLight), Brush.Get());
+        }
     }
+
+    hr = rt->EndDraw();
+
+    if (FAILED(hr))
+        return hr;
+
+    hr = rt->GetBitmap(_OpacityMask.GetAddressOf());
 
     return hr;
 }

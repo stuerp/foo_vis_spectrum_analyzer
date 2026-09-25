@@ -313,7 +313,7 @@ public:
 
     std::vector<D2D1_COLOR_F> _UserInterfaceColors;
 
-    bool _RecreateStyles;                                               // True if the DirectX resources of the styles need to be recreated, e.g. because the artwork colors changed.
+    bool _ResizeResources;                                               // True if the DirectX resources need to be recreated, e.g. because the artwork colors changed or the size of the back buffer changed.
 
     #pragma endregion
 

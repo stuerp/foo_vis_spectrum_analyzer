@@ -1,5 +1,5 @@
 
-/** $VER: Graph.cpp (2026.09.20) P. Stuer - Implements a graph on which the visualizations are rendered. **/
+/** $VER: Graph.cpp (2026.09.25) P. Stuer - Implements a graph on which the visualizations are rendered. **/
 
 #include "pch.h"
 
@@ -15,7 +15,6 @@
 #include "LevelMeter.h"
 #include "Oscilloscope.h"
 #include "OscilloscopeXY.h"
-
 #include "BitMeter.h"
 #include "Goniometer.h"
 
@@ -24,23 +23,27 @@
 #pragma hdrstop
 
 /// <summary>
-/// Initializes a new instance.
+/// Moves this instance on the canvas.
 /// </summary>
-graph_t::graph_t()
+void graph_t::Move(const D2D1_RECT_F & rect) noexcept
 {
-}
+    const D2D1_RECT_F Rect =
+    {
+        .left   = rect.left   + _GraphOptions->_LPadding,
+        .top    = rect.top    + _GraphOptions->_TPadding,
+        .right  = rect.right  - _GraphOptions->_RPadding,
+        .bottom = rect.bottom - _GraphOptions->_BPadding
+    };
 
-/// <summary>
-/// Destroys this instance.
-/// </summary>
-graph_t::~graph_t() noexcept
-{
+    InitializeMetrics(Rect);
+
+    _Visualization->Move(Rect);
 }
 
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void graph_t::Initialize(state_t * state, graph_options_t * graphOptions, bool isFirst, bool isLast, CComPtr<ID3D11Device> d3dDevice, CComPtr<ID3D11DeviceContext> d3dDeviceContext, CComPtr<IDXGISwapChain1> swapChain) noexcept
+void graph_t::Initialize(state_t * state, graph_options_t * graphOptions, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext, IDXGISwapChain1 * swapChain) noexcept
 {
     _State = state;
     _GraphOptions = graphOptions;
@@ -100,24 +103,6 @@ void graph_t::Initialize(state_t * state, graph_options_t * graphOptions, bool i
 }
 
 /// <summary>
-/// Moves this instance on the canvas.
-/// </summary>
-void graph_t::Move(const D2D1_RECT_F & rect) noexcept
-{
-    const D2D1_RECT_F Rect =
-    {
-        .left   = rect.left   + _GraphOptions->_LPadding,
-        .top    = rect.top    + _GraphOptions->_TPadding,
-        .right  = rect.right  - _GraphOptions->_RPadding,
-        .bottom = rect.bottom - _GraphOptions->_BPadding
-    };
-
-    SetRect(Rect);
-
-    _Visualization->Move(Rect);
-}
-
-/// <summary>
 /// Processes an audio chunk.
 /// </summary>
 void graph_t::Process(const audio_chunk & chunk) noexcept
@@ -128,11 +113,11 @@ void graph_t::Process(const audio_chunk & chunk) noexcept
 /// <summary>
 /// Renders this instance to the specified render target.
 /// </summary>
-void graph_t::Render(ID2D1DeviceContext * deviceContext, artwork_t & artwork, CComPtr<IDXGISwapChain1> swapChain) noexcept
+void graph_t::Render(ID2D1DeviceContext * deviceContext, artwork_t & artwork, IDXGISwapChain1 * swapChain) noexcept
 {
     HRESULT hr = CreateDeviceSpecificResources(deviceContext);
 
-    if (!SUCCEEDED(hr))
+    if (FAILED(hr))
         return;
 
     RenderBackground(deviceContext, artwork);
@@ -237,7 +222,7 @@ bool graph_t::GetToolTipText(FLOAT x, FLOAT y, std::wstring & toolTip, size_t & 
 void graph_t::RenderBackground(ID2D1DeviceContext * deviceContext, artwork_t & artwork) noexcept
 {
     if (_BackgroundStyle.IsEnabled())
-        deviceContext->FillRectangle(_Rect, _BackgroundStyle._Brush);
+        deviceContext->FillRectangle(_Rect, _BackgroundStyle._Brush.Get());
 
     if (!_State->_ShowArtworkOnBackground)
         return;
@@ -254,7 +239,7 @@ void graph_t::RenderBackground(ID2D1DeviceContext * deviceContext, artwork_t & a
 /// <summary>
 /// Renders the foreground.
 /// </summary>
-void graph_t::RenderForeground(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwapChain1> swapChain) noexcept
+void graph_t::RenderForeground(ID2D1DeviceContext * deviceContext, IDXGISwapChain1 * swapChain) noexcept
 {
     _Visualization->Render(deviceContext, swapChain);
 
@@ -272,21 +257,21 @@ void graph_t::RenderDescription(ID2D1DeviceContext * deviceContext) noexcept
     if (_Description.empty())
         return;
 
-    CComPtr<IDWriteTextLayout> TextLayout;
+    ComPtr<IDWriteTextLayout> TextLayout;
 
-    HRESULT hr = _DirectWrite.Factory->CreateTextLayout(_Description.c_str(), (UINT32) _Description.length(), _DescriptionTextStyle._TextFormat, _Size.width, _Size.height, &TextLayout);
+    HRESULT hr = _DirectWrite.Factory->CreateTextLayout(_Description.c_str(), (UINT32) _Description.length(), _DescriptionTextStyle._TextFormat.Get(), _Size.width, _Size.height, TextLayout.GetAddressOf());
+
+    if (FAILED(hr))
+        return;
 
     DWRITE_TEXT_METRICS TextMetrics = { };
 
-    if (!SUCCEEDED(hr))
-        return;
-
     hr = TextLayout->GetMetrics(&TextMetrics);
 
-    if (!SUCCEEDED(hr))
+    if (FAILED(hr))
         return;
 
-    const FLOAT Inset = 2.f;
+    constexpr FLOAT Inset = 2.f;
 
     D2D1_RECT_F Rect =
     {
@@ -298,10 +283,10 @@ void graph_t::RenderDescription(ID2D1DeviceContext * deviceContext) noexcept
     Rect.bottom = Rect.top  + TextMetrics.height + (Inset * 2.f);
 
     if (_DescriptionBackgroundStyle.IsEnabled())
-        deviceContext->FillRoundedRectangle(D2D1::RoundedRect(Rect, Inset, Inset), _DescriptionBackgroundStyle._Brush);
+        deviceContext->FillRoundedRectangle(D2D1::RoundedRect(Rect, Inset, Inset), _DescriptionBackgroundStyle._Brush.Get());
 
     if (_DescriptionTextStyle.IsEnabled())
-        deviceContext->DrawText(_Description.c_str(), (UINT) _Description.length(), _DescriptionTextStyle._TextFormat, Rect, _DescriptionTextStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
+        deviceContext->DrawText(_Description.c_str(), (UINT) _Description.length(), _DescriptionTextStyle._TextFormat.Get(), Rect, _DescriptionTextStyle._Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_NONE);
 }
 
 /// <summary>
@@ -309,7 +294,7 @@ void graph_t::RenderDescription(ID2D1DeviceContext * deviceContext) noexcept
 /// </summary>
 HRESULT graph_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept
 {
-    if (_State->_RecreateStyles)
+    if (_State->_ResizeResources)
         DeleteDeviceSpecificResources();
 
     HRESULT hr = S_OK;
@@ -324,7 +309,7 @@ HRESULT graph_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContex
 
         hr = _BackgroundStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
 
-        if (!SUCCEEDED(hr))
+        if (FAILED(hr))
             return hr;
     }
 
@@ -336,7 +321,7 @@ HRESULT graph_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContex
 
         hr = _DescriptionTextStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
 
-        if (!SUCCEEDED(hr))
+        if (FAILED(hr))
             return hr;
     }
 
@@ -348,13 +333,13 @@ HRESULT graph_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContex
 
         hr = _DescriptionBackgroundStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
 
-        if (!SUCCEEDED(hr))
+        if (FAILED(hr))
             return hr;
     }
 
 #ifdef _DEBUG
     if (_DebugBrush == nullptr)
-        (void) deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), &_DebugBrush);
+        (void) deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), _DebugBrush.GetAddressOf());
 #endif
 
     return hr;
@@ -372,7 +357,7 @@ void graph_t::DeleteDeviceSpecificResources() noexcept
     _BackgroundStyle.DeleteDeviceSpecificResources();
 
 #ifdef _DEBUG
-    _DebugBrush.Release();
+    _DebugBrush.Reset();
 #endif
 }
 

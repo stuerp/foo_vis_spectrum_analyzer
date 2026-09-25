@@ -27,7 +27,7 @@
 class frame_counter_t
 {
 public:
-    frame_counter_t() : _Times(), _FontFamilyName(L"Segoe UI"), _FontSize(20.f), _ClientWidth(), _ClientHeight(), _TextWidth(), _TextHeight()
+    frame_counter_t()
     {
         ::QueryPerformanceFrequency(&_Frequency);
 
@@ -42,7 +42,7 @@ public:
     void Resize(FLOAT clientWidth, FLOAT clientHeight) noexcept;
 
     void NewFrame() noexcept;
-    HRESULT Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwapChain1> swapChain) noexcept;
+    HRESULT Render(ID2D1DeviceContext * deviceContext, IDXGISwapChain1 * swapChain) noexcept;
 
     HRESULT CreateDeviceIndependentResources() noexcept;
     void DeleteDeviceIndependentResources() noexcept;
@@ -54,21 +54,21 @@ private:
     float GetFPS() const noexcept;
 
 private:
-    LARGE_INTEGER _Frequency;
+    LARGE_INTEGER _Frequency = { { 0, 0 } };
     ring_buffer_t<LONGLONG, 16> _Times;
 
-    std::wstring _FontFamilyName;
-    FLOAT _FontSize;    // In points.
+    std::wstring _FontFamilyName { L"Segoe UI" };
+    FLOAT _FontSize { 20.f };   // In points.
 
     // Parent-dependent parameters
-    FLOAT _ClientWidth;
-    FLOAT _ClientHeight;
+    FLOAT _ClientWidth  { 0.f };
+    FLOAT _ClientHeight { 0.f };
 
     // Device-independent resources
-    CComPtr<IDWriteTextFormat> _TextFormat;
-    FLOAT _TextWidth;
-    FLOAT _TextHeight;
+    ComPtr<IDWriteTextFormat> _TextFormat;
+    FLOAT _TextWidth  { 0.f };
+    FLOAT _TextHeight { 0.f };
 
     // Device-specific resources
-    CComPtr<ID2D1SolidColorBrush> _Brush;
+    ComPtr<ID2D1SolidColorBrush> _Brush;
 };

@@ -193,9 +193,9 @@ void uielement_t::AddTools() noexcept
 }
 
 /// <summary>
-/// Deletes the grid item tools from the ToolTip control.
+/// Removes the grid item tools from the ToolTip control.
 /// </summary>
-void uielement_t::DeleteTools() noexcept
+void uielement_t::RemoveTools() noexcept
 {
     for (auto & Item : _Grid)
     {

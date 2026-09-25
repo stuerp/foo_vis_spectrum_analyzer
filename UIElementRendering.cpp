@@ -1,5 +1,5 @@
 
-/** $VER: UIElementRendering.cpp (2026.08.17) P. Stuer - UIElement methods that run on the render thread. **/
+/** $VER: UIElementRendering.cpp (2026.09.25) P. Stuer - UIElement methods that run on the render thread. **/
 
 #include "pch.h"
 
@@ -152,7 +152,7 @@ void uielement_t::ProcessEvents() noexcept
         _RenderState._ArtworkGradientStops = GetBuiltInGradientStops(_Artwork.Bitmap() ? ColorScheme::Artwork : ColorScheme::Solid);
         _RenderState._ArtworkDominantColor = _RenderState._ArtworkGradientStops[0].color;
 
-        _RenderState._RecreateStyles = true;
+        _RenderState._ResizeResources = true;
 
         _IsConfigurationChanged = true;
     }
@@ -183,7 +183,7 @@ void uielement_t::ProcessEvents() noexcept
     }
 
     if (event_t::IsRaised(Flags, event_t::UserInterfaceColorsChanged))
-        _RenderState._RecreateStyles = true;
+        _RenderState._ResizeResources = true;
 }
 
 /// <summary>
@@ -273,7 +273,7 @@ void uielement_t::Render() noexcept
     if (hr == D2DERR_RECREATE_TARGET || hr == DXGI_ERROR_DEVICE_REMOVED)
         DeleteDeviceSpecificResources();
 
-    _RenderState._RecreateStyles = false;
+    _RenderState._ResizeResources = false;
 }
 
 /// <summary>
@@ -392,14 +392,14 @@ HRESULT uielement_t::CreateDeviceSpecificResources() noexcept
 
         // Create the Direct2D device and the device context and get the monitor refresh from the DXGI device.
         {
-            CComPtr<IDXGIDevice1> DXGIDevice;
+            ComPtr<IDXGIDevice1> DXGIDevice;
 
-            hr = _D3DDevice->QueryInterface(&DXGIDevice); // Get a DXGI device interface from the D3D device.
+            hr = _D3DDevice->QueryInterface(DXGIDevice.GetAddressOf()); // Get a DXGI device interface from the D3D device.
 
             if (!SUCCEEDED(hr))
                 return hr;
 
-            hr = _Direct2D.Factory->CreateDevice(DXGIDevice, &_D2DDevice); // Create a D2D device from the DXGI device.
+            hr = _Direct2D.Factory->CreateDevice(DXGIDevice.Get(), &_D2DDevice); // Create a D2D device from the DXGI device.
 
             if (!SUCCEEDED(hr))
                 return hr;
@@ -416,7 +416,7 @@ HRESULT uielement_t::CreateDeviceSpecificResources() noexcept
             if (!SUCCEEDED(hr))
                 return hr;
 
-            hr = _Direct2D.GetRefreshRate(DXGIDevice, _DisplayRefreshRate); // Currently not used yet.
+            hr = _Direct2D.GetRefreshRate(DXGIDevice.Get(), _DisplayRefreshRate); // Currently not used yet.
         }
 
         if (_SwapChain == nullptr)
@@ -481,12 +481,15 @@ HRESULT uielement_t::CreateDeviceSpecificResources() noexcept
             _DeviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
             _DeviceContext->SetTextAntialiasMode(D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE); // https://learn.microsoft.com/en-us/windows/win32/direct2d/improving-direct2d-performance
 
-            const D2D1_SIZE_F SizeF = _DeviceContext->GetSize(); // Gets the size in DPIs.
+            // Initialize the size-dependent resources.
+            {
+                const D2D1_SIZE_F SizeF = _DeviceContext->GetSize(); // Gets the size in DPIs.
 
-            _Grid.Resize(SizeF.width, SizeF.height);
-            _FrameCounter.Resize(SizeF.width, SizeF.height);
+                _Grid.Resize(SizeF.width, SizeF.height);
+                _FrameCounter.Resize(SizeF.width, SizeF.height);
 
-            _RenderState._RecreateStyles = true;
+                _RenderState._ResizeResources = true;
+            }
         }
 
     #ifdef _DEBUG
@@ -539,6 +542,37 @@ void uielement_t::DeleteDeviceSpecificResources() noexcept
 }
 
 /// <summary>
+/// Resizes the swap chain.
+/// </summary>
+HRESULT uielement_t::ResizeSwapChain(UINT width, UINT height) noexcept
+{
+    if ((_DeviceContext == nullptr) || (width == 0) || (height == 0))
+        return E_INVALIDARG;
+
+    msc::lock_t Lock(_CriticalSection);
+
+    // Remove the bitmap from the device context.
+    _DeviceContext->SetTarget(nullptr);
+
+    // Release the bitmap so that the swap chain can be resized.
+    _BackBuffer.Release();
+
+    // Resize the swap chain.
+    HRESULT hr = _SwapChain->ResizeBuffers(0, width, height, DXGI_FORMAT_B8G8R8A8_UNORM, 0);
+
+    // Recreate the Direct2D back buffer.
+    hr = CreateBackBuffer();
+
+    if (FAILED(hr))
+        return hr;
+
+    // Set the target buffer of the device context.
+    _DeviceContext->SetTarget(_BackBuffer);
+
+    return S_OK;
+}
+
+/// <summary>
 /// Creates the bitmap that will be the target of the device context.
 /// </summary>
 HRESULT uielement_t::CreateBackBuffer() noexcept
@@ -546,15 +580,15 @@ HRESULT uielement_t::CreateBackBuffer() noexcept
     HRESULT hr = E_FAIL;
 
     {
-        // Get the DXGI backbuffer from the swap chain.
-        CComPtr<IDXGISurface> Surface;
+        // Get the DXGI back buffer from the swap chain.
+        ComPtr<IDXGISurface> Surface;
 
         hr = _SwapChain->GetBuffer(0, IID_PPV_ARGS(&Surface));
 
         if (FAILED(hr))
             return hr;
 
-        // Create a bitmap pointing to the surface.
+        // Create a Direct2D bitmap from the existing swap chain back buffer so that Direct2D can render to it.
         const D2D1_BITMAP_PROPERTIES1 Properties = D2D1::BitmapProperties1
         (
             D2D1_BITMAP_OPTIONS_TARGET | D2D1_BITMAP_OPTIONS_CANNOT_DRAW,
@@ -562,13 +596,10 @@ HRESULT uielement_t::CreateBackBuffer() noexcept
             (FLOAT) _DPI, (FLOAT) _DPI
         );
 
-        // Create the Direct2D backbuffer.
-        hr = _DeviceContext->CreateBitmapFromDxgiSurface(Surface, &Properties, &_BackBuffer);
+        hr = _DeviceContext->CreateBitmapFromDxgiSurface(Surface.Get(), &Properties, &_BackBuffer);
 
         if (FAILED(hr))
             return hr;
-
-        Surface.Release();
     }
 
     // Update the DirectComposition visual.
@@ -645,7 +676,7 @@ HRESULT uielement_t::CreateArtworkDependentResources() noexcept
 //      _RenderState._StyleManager.SetArtworkDependentParameters(_RenderState._ArtworkGradientStops, _RenderState._ArtworkDominantColor);
 //      _RenderState._StyleManager.DeleteGradientBrushes(); // Force recreating the gradient brushes for the resized back buffer.
 
-        _RenderState._RecreateStyles = true;
+        _RenderState._ResizeResources = true;
         _IsConfigurationChanged = true;
     }
 
@@ -709,11 +740,11 @@ void uielement_t::RenderDebug() noexcept
 
     const D2D1_RECT_F Rect = { (FLOAT) rc.right / 2.f, (FLOAT) rc.top, (FLOAT) rc.right, (FLOAT) rc.bottom };
 
-    CComPtr<IDWriteTextFormat> TextFormat;
+    ComPtr<IDWriteTextFormat> TextFormat;
 
     const FLOAT FontSize = ToDIPs(12.f); // In DIPs
 
-    HRESULT hr = _DirectWrite.Factory->CreateTextFormat(L"Segoe UI", NULL, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, FontSize, L"", &TextFormat);
+    HRESULT hr = _DirectWrite.Factory->CreateTextFormat(L"Segoe UI", NULL, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, FontSize, L"", TextFormat.GetAddressOf());
 
     if (!SUCCEEDED(hr))
         return;
@@ -724,7 +755,7 @@ void uielement_t::RenderDebug() noexcept
 
     std::wstring Text = msc::FormatText(L"%.2fs", _RenderState._PlaybackTime);
 
-    _DeviceContext->DrawText(Text.c_str(), (UINT) Text.size(), TextFormat, Rect, _DebugBrush, D2D1_DRAW_TEXT_OPTIONS_NONE);
+    _DeviceContext->DrawText(Text.c_str(), (UINT) Text.size(), TextFormat.Get(), Rect, _DebugBrush, D2D1_DRAW_TEXT_OPTIONS_NONE);
 }
 
 #endif

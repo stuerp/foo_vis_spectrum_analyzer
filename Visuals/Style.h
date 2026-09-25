@@ -1,5 +1,5 @@
 
-/** $VER: Style.h (2026.09.08) P. Stuer - Represents the style of a visual element. **/
+/** $VER: Style.h (2026.09.25) P. Stuer - Represents the style of a visual element. **/
 
 #pragma once
 
@@ -19,7 +19,7 @@
 class style_t
 {
 public:
-    style_t() { }
+    style_t() = default;
 
     style_t(const style_t &) noexcept;
     style_t & operator=(const style_t & other) noexcept;
@@ -27,7 +27,7 @@ public:
     style_t(const style_t &&) = delete;
     style_t & operator=(const style_t && other) = delete;
 
-    virtual ~style_t() { }
+    virtual ~style_t() = default;
 
     enum class Features : uint64_t
     {
@@ -120,8 +120,8 @@ public:
     std::vector<D2D1_COLOR_F> _AmplitudeMap;
 
     // DirectX resources
-    CComPtr<ID2D1Brush> _Brush;
-    CComPtr<IDWriteTextFormat> _TextFormat;
+    ComPtr<ID2D1Brush> _Brush;
+    ComPtr<IDWriteTextFormat> _TextFormat;
 
     FLOAT _Width;
     FLOAT _Height;

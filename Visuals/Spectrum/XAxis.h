@@ -1,5 +1,5 @@
 
-/** $VER: XAxis.h (2026.08.22) P. Stuer - Implements the X axis of a graph. **/
+/** $VER: XAxis.h (2026.09.25) P. Stuer - Implements the X axis of a graph. **/
 
 #pragma once
 
@@ -25,7 +25,7 @@
 class x_axis_t : public visualization_t
 {
 public:
-    x_axis_t() : _BandCount(), _LoFrequency(), _HiFrequency() { }
+    x_axis_t() = default;
 
     x_axis_t(const x_axis_t &) = delete;
     x_axis_t & operator=(const x_axis_t &) = delete;
@@ -34,11 +34,11 @@ public:
 
     // element_t
     void Move(const D2D1_RECT_F & rect) noexcept override final;
-    void Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwapChain1> swapChain) noexcept override final;
+    void Render(ID2D1DeviceContext * deviceContext, IDXGISwapChain1 * swapChain) noexcept override final;
     void Reset() noexcept override final { }
 
     // visualization_t
-    void Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, CComPtr<ID3D11Device> d3dDevice = nullptr, CComPtr<ID3D11DeviceContext> d3dDeviceContext = nullptr) noexcept;
+    void Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice = nullptr, ID3D11DeviceContext * d3dDeviceContext = nullptr) noexcept override final;
 
     HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext, style_manager_t & styleManager) noexcept;
     void DeleteDeviceSpecificResources() noexcept;
@@ -51,22 +51,22 @@ public:
     void Resize(bool force = false) noexcept;
 
 private:
-    size_t _BandCount;
-    double _LoFrequency;
-    double _HiFrequency;
+    size_t _BandCount { 0 };
+    double _LoFrequency { 0. };
+    double _HiFrequency { 0. };
 
     struct label_t
     {
         std::wstring Text;
-        double Frequency;
-        bool IsDimmed;
-        bool IsHidden;
+        double Frequency { 0. };
+        bool IsDimmed { false };
+        bool IsHidden { false };
 
-        D2D1_POINT_2F PointT;
-        D2D1_POINT_2F PointB;
+        D2D1_POINT_2F PointT { };
+        D2D1_POINT_2F PointB { };
 
-        D2D1_RECT_F RectT;
-        D2D1_RECT_F RectB;
+        D2D1_RECT_F RectT { };
+        D2D1_RECT_F RectB { };
     };
 
     std::vector<label_t> _Labels;

@@ -34,10 +34,10 @@ public:
 
     // element_t
     void Move(const D2D1_RECT_F & rect) noexcept override final;
-    void Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwapChain1> swapChain) noexcept override final;
+    void Render(ID2D1DeviceContext * deviceContext, IDXGISwapChain1 * swapChain) noexcept override final;
     void Reset() noexcept override final;
 
-    void Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, CComPtr<ID3D11Device> d3dDevice, CComPtr<ID3D11DeviceContext> d3dDeviceContext) noexcept;
+    void Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept;
 
 private:
     HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept;
@@ -51,9 +51,9 @@ private:
     void MeasureParts(ID2D1DeviceContext * deviceContext) noexcept;
 
 private:
-    uint32_t _RenderedChannels;
+    uint32_t _RenderedChannels { 0 };
 
-    const FLOAT _TickSize = 4.f;
+    static constexpr FLOAT _TickSize = 4.f;
 
     style_t _BackgroundStyle;
 
@@ -71,9 +71,9 @@ private:
     style_t _ScaleTextStyle;
     style_t _ScaleLineStyle;
 
-    CComPtr<ID2D1Bitmap> _OpacityMask;
+    ComPtr<ID2D1Bitmap> _OpacityMask;
 
-    CComPtr<ID2D1SolidColorBrush> _DebugBrush;
+    ComPtr<ID2D1SolidColorBrush> _DebugBrush;
 
     std::vector<part_t *> _Parts;
 };

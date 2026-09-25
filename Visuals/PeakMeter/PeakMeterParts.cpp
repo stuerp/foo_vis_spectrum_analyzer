@@ -15,7 +15,7 @@
 /// <summary>
 /// Initializes the boundaries of this instance.
 /// </summary>
-void part_t::SetRect(const D2D1_RECT_F & rect) noexcept
+void part_t::InitializeMetrics(const D2D1_RECT_F & rect) noexcept
 {
     _Rect = rect;
     _Size = { rect.right - rect.left, rect.bottom - rect.top };
@@ -166,7 +166,7 @@ void part_t::Bind(ID2D1DeviceContext * deviceContext, style_t * backgroundStyle,
 /// </summary>
 void part_t::Unbind() noexcept
 {
-    _DeviceContext.Release();
+    _DeviceContext.Reset();
 
     _BackgroundStyle = nullptr;
 
@@ -184,9 +184,9 @@ void part_t::Unbind() noexcept
     _ScaleTextStyle = nullptr;
     _ScaleLineStyle = nullptr;
 
-    _DebugBrush.Release();
+    _DebugBrush.Reset();
 
-    _OpacityMask.Release();
+    _OpacityMask.Reset();
 }
 
 /// <summary>
@@ -416,8 +416,8 @@ void part_t::CreateAxis() noexcept
 /// </summary>
 void bar_t::Unbind() noexcept
 {
-    _ScaleLinesCommandList.Release();
-    _NameTextLayout.Release();
+    _ScaleLinesCommandList.Reset();
+    _NameTextLayout.Reset();
 
     __super::Unbind();
 }
@@ -425,9 +425,9 @@ void bar_t::Unbind() noexcept
 /// <summary>
 /// Initializes the boundaries of this instance and prepares the transform.
 /// </summary>
-void bar_t::SetRect(const D2D1_RECT_F & rect) noexcept
+void bar_t::InitializeMetrics(const D2D1_RECT_F & rect) noexcept
 {
-    __super::SetRect(rect);
+    __super::InitializeMetrics(rect);
 
     // Prealculate the transform.
     _Transform = D2D1::Matrix3x2F::Identity();
@@ -458,7 +458,7 @@ void bar_t::SetRect(const D2D1_RECT_F & rect) noexcept
         const FLOAT Width  = std::max(_TopNameRect.right  - _TopNameRect.left, _BottomNameRect.right  - _BottomNameRect.left);
         const FLOAT Height = std::max(_TopNameRect.bottom - _TopNameRect.top,  _BottomNameRect.bottom - _BottomNameRect.top);
 
-        hr = _DirectWrite.Factory->CreateTextLayout(_Measurement->ChannelName.c_str(), (UINT32) _Measurement->ChannelName.length(), _NameStyle->_TextFormat, Width, Height, &_NameTextLayout);
+        hr = _DirectWrite.Factory->CreateTextLayout(_Measurement->ChannelName.c_str(), (UINT32) _Measurement->ChannelName.length(), _NameStyle->_TextFormat.Get(), Width, Height, &_NameTextLayout);
     }
 
     if (SUCCEEDED(hr) && (_ScaleLinesCommandList == nullptr) && _State->_HasScaleLines)
@@ -481,17 +481,17 @@ void bar_t::Render() const noexcept
     if (_State->_HorizontalPeakMeter)
     {
         for (const label_t & Label : _Labels)
-            _DeviceContext->DrawLine(D2D1::Point2F(Label.P2.x, _Rect.top), D2D1::Point2F(Label.P2.x, _Rect.bottom), _ScaleLineStyle->_Brush, _ScaleLineStyle->_Thickness);
+            _DeviceContext->DrawLine(D2D1::Point2F(Label.P2.x, _Rect.top), D2D1::Point2F(Label.P2.x, _Rect.bottom), _ScaleLineStyle->_Brush.Get(), _ScaleLineStyle->_Thickness);
     }
     else
     {
         for (const label_t & Label : _Labels)
-            _DeviceContext->DrawLine(D2D1::Point2F(_Rect.left, Label.P1.y), D2D1::Point2F(_Rect.right, Label.P1.y), _ScaleLineStyle->_Brush, _ScaleLineStyle->_Thickness);
+            _DeviceContext->DrawLine(D2D1::Point2F(_Rect.left, Label.P1.y), D2D1::Point2F(_Rect.right, Label.P1.y), _ScaleLineStyle->_Brush.Get(), _ScaleLineStyle->_Thickness);
     }
 */
 
     if (_ScaleLinesCommandList != nullptr)
-        _DeviceContext->DrawImage(_ScaleLinesCommandList);
+        _DeviceContext->DrawImage(_ScaleLinesCommandList.Get());
 
     // Draw the bars.
     if (!_State->_IsPaused || (_State->_IsPaused && _State->_VisualizeDuringPause))
@@ -655,15 +655,15 @@ void bar_t::Render() const noexcept
             if (_GraphOptions->_XAxisTop)
             {
 //              _DeviceContext->DrawRectangle(_TopNameRect, _DebugBrush);
-//              _DeviceContext->DrawText(_Measurement->Name.c_str(), (UINT) _Measurement->Name.size(), _NameStyle->_TextFormat, _TopNameRect, _NameStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
-                _DeviceContext->DrawTextLayout(D2D1::Point2F(_TopNameRect.left, _TopNameRect.top), _NameTextLayout, _NameStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+//              _DeviceContext->DrawText(_Measurement->Name.c_str(), (UINT) _Measurement->Name.size(), _NameStyle->_TextFormat, _TopNameRect, _NameStyle->_Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                _DeviceContext->DrawTextLayout(D2D1::Point2F(_TopNameRect.left, _TopNameRect.top), _NameTextLayout.Get(), _NameStyle->_Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
             }
 
             if (_GraphOptions->_XAxisBottom)
             {
 //              _DeviceContext->DrawRectangle(_BottomNameRect, _DebugBrush);
-//              _DeviceContext->DrawText(_Measurement->Name.c_str(), (UINT) _Measurement->Name.size(), _NameStyle->_TextFormat, _BottomNameRect, _NameStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
-                _DeviceContext->DrawTextLayout(D2D1::Point2F(_BottomNameRect.left, _BottomNameRect.top), _NameTextLayout, _NameStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+//              _DeviceContext->DrawText(_Measurement->Name.c_str(), (UINT) _Measurement->Name.size(), _NameStyle->_TextFormat, _BottomNameRect, _NameStyle->_Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                _DeviceContext->DrawTextLayout(D2D1::Point2F(_BottomNameRect.left, _BottomNameRect.top), _NameTextLayout.Get(), _NameStyle->_Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
             }
         }
 
@@ -675,7 +675,7 @@ void bar_t::Render() const noexcept
             else
                 ::wcscpy_s(Text, _countof(Text), NegativeInfinity);
 
-            _DeviceContext->DrawText(Text, (UINT) ::wcslen(Text), _PeakTextStyle->_TextFormat, _PeakRect, _PeakTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+            _DeviceContext->DrawText(Text, (UINT) ::wcslen(Text), _PeakTextStyle->_TextFormat.Get(), _PeakRect, _PeakTextStyle->_Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
         }
 
         // Draw the RMS readout.
@@ -686,7 +686,7 @@ void bar_t::Render() const noexcept
             else
                 ::wcscpy_s(Text, _countof(Text), NegativeInfinity);
 
-            _DeviceContext->DrawText(Text, (UINT) ::wcslen(Text), _RMSTextStyle->_TextFormat, _RMSRect, _RMSTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+            _DeviceContext->DrawText(Text, (UINT) ::wcslen(Text), _RMSTextStyle->_TextFormat.Get(), _RMSRect, _RMSTextStyle->_Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
         }
     }
 }
@@ -702,15 +702,15 @@ HRESULT bar_t::CreateScaleLinesCommandList() noexcept
     if (!SUCCEEDED(hr))
         return hr;
 
-    CComPtr<ID2D1Image> OldTarget;
+    ComPtr<ID2D1Image> OldTarget;
 
-    _DeviceContext->GetTarget(&OldTarget);
+    _DeviceContext->GetTarget(OldTarget.GetAddressOf());
 
-    hr = _DeviceContext->CreateCommandList(&_ScaleLinesCommandList);
+    hr = _DeviceContext->CreateCommandList(_ScaleLinesCommandList.GetAddressOf());
 
     if (SUCCEEDED(hr))
     {
-        _DeviceContext->SetTarget(_ScaleLinesCommandList);
+        _DeviceContext->SetTarget(_ScaleLinesCommandList.Get());
 
         _DeviceContext->BeginDraw();
 
@@ -719,12 +719,12 @@ HRESULT bar_t::CreateScaleLinesCommandList() noexcept
         if (_State->_IsHorizontalPeakMeter)
         {
             for (const label_t & Label : _Labels)
-                _DeviceContext->DrawLine(D2D1::Point2F(Label.P2.x, _Rect.top), D2D1::Point2F(Label.P2.x, _Rect.bottom), _ScaleLineStyle->_Brush, _ScaleLineStyle->_Thickness);
+                _DeviceContext->DrawLine(D2D1::Point2F(Label.P2.x, _Rect.top), D2D1::Point2F(Label.P2.x, _Rect.bottom), _ScaleLineStyle->_Brush.Get(), _ScaleLineStyle->_Thickness);
         }
         else
         {
             for (const label_t & Label : _Labels)
-                _DeviceContext->DrawLine(D2D1::Point2F(_Rect.left, Label.P1.y), D2D1::Point2F(_Rect.right, Label.P1.y), _ScaleLineStyle->_Brush, _ScaleLineStyle->_Thickness);
+                _DeviceContext->DrawLine(D2D1::Point2F(_Rect.left, Label.P1.y), D2D1::Point2F(_Rect.right, Label.P1.y), _ScaleLineStyle->_Brush.Get(), _ScaleLineStyle->_Thickness);
         }
 
         hr = _DeviceContext->EndDraw();
@@ -734,7 +734,7 @@ HRESULT bar_t::CreateScaleLinesCommandList() noexcept
         hr = _ScaleLinesCommandList->Close();
 
     // Resume drawing on the old target.
-    _DeviceContext->SetTarget(OldTarget);
+    _DeviceContext->SetTarget(OldTarget.Get());
 
     _DeviceContext->BeginDraw();
 
@@ -760,12 +760,12 @@ void bar_t::DrawHorizontalRectangle(D2D1_RECT_F & rect, const style_t * style) c
 
         _DeviceContext->PushAxisAlignedClip(rect, D2D1_ANTIALIAS_MODE_ALIASED);
 
-        _DeviceContext->FillOpacityMask(_OpacityMask, style->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, rect, Src);
+        _DeviceContext->FillOpacityMask(_OpacityMask.Get(), style->_Brush.Get(), D2D1_OPACITY_MASK_CONTENT_GRAPHICS, rect, Src);
 
         _DeviceContext->PopAxisAlignedClip();
     }
     else
-        _DeviceContext->FillRectangle(rect, style->_Brush);
+        _DeviceContext->FillRectangle(rect, style->_Brush.Get());
 }
 
 /// <summary>
@@ -787,12 +787,12 @@ void bar_t::DrawVerticalRectangle(D2D1_RECT_F & rect, const style_t * style) con
 
         _DeviceContext->PushAxisAlignedClip(rect, D2D1_ANTIALIAS_MODE_ALIASED);
 
-        _DeviceContext->FillOpacityMask(_OpacityMask, style->_Brush, D2D1_OPACITY_MASK_CONTENT_GRAPHICS, rect, Src);
+        _DeviceContext->FillOpacityMask(_OpacityMask.Get(), style->_Brush.Get(), D2D1_OPACITY_MASK_CONTENT_GRAPHICS, rect, Src);
 
         _DeviceContext->PopAxisAlignedClip();
     }
     else
-        _DeviceContext->FillRectangle(rect, style->_Brush);
+        _DeviceContext->FillRectangle(rect, style->_Brush.Get());
 }
 
 /// <summary>
@@ -800,7 +800,7 @@ void bar_t::DrawVerticalRectangle(D2D1_RECT_F & rect, const style_t * style) con
 /// </summary>
 void scale_t::Unbind() noexcept
 {
-    _AxisCommandList.Release();
+    _AxisCommandList.Reset();
 
     __super::Unbind();
 }
@@ -808,9 +808,9 @@ void scale_t::Unbind() noexcept
 /// <summary>
 /// Initializes the boundaries of this instance and prepares the transform.
 /// </summary>
-void scale_t::SetRect(const D2D1_RECT_F & rect) noexcept
+void scale_t::InitializeMetrics(const D2D1_RECT_F & rect) noexcept
 {
-    __super::SetRect(rect);
+    __super::InitializeMetrics(rect);
 
     if (_AxisCommandList == nullptr)
         CreateAxisCommandList();
@@ -823,7 +823,7 @@ void scale_t::Render() const noexcept
 {
     _DeviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
 
-    _DeviceContext->DrawImage(_AxisCommandList);
+    _DeviceContext->DrawImage(_AxisCommandList.Get());
 /*
     _DeviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
 
@@ -837,10 +837,10 @@ void scale_t::Render() const noexcept
 //      _DebugBrush->SetColor(D2D1::ColorF(D2D1::ColorF::Red)); _DeviceContext->DrawRectangle(Label.Rect, _DebugBrush);
 
         if (!Label.IsHidden)
-            _DeviceContext->DrawText(Label.Text.c_str(), (UINT) Label.Text.size(), _ScaleTextStyle->_TextFormat, Label.Rect, _ScaleTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
+            _DeviceContext->DrawText(Label.Text.c_str(), (UINT) Label.Text.size(), _ScaleTextStyle->_TextFormat, Label.Rect, _ScaleTextStyle->_Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_NONE);
 
         if (!IsCenter())
-            _DeviceContext->DrawLine(Label.P1, Label.P2, _ScaleLineStyle->_Brush, _ScaleLineStyle->_Thickness);
+            _DeviceContext->DrawLine(Label.P1, Label.P2, _ScaleLineStyle->_Brush.Get(), _ScaleLineStyle->_Thickness);
     }
 */
 }
@@ -860,11 +860,11 @@ HRESULT scale_t::CreateAxisCommandList() noexcept
 
     _DeviceContext->GetTarget(&OldTarget);
 
-    hr = _DeviceContext->CreateCommandList(&_AxisCommandList);
+    hr = _DeviceContext->CreateCommandList(_AxisCommandList.GetAddressOf());
 
     if (SUCCEEDED(hr))
     {
-        _DeviceContext->SetTarget(_AxisCommandList);
+        _DeviceContext->SetTarget(_AxisCommandList.Get());
 
         _DeviceContext->BeginDraw();
 
@@ -880,10 +880,10 @@ HRESULT scale_t::CreateAxisCommandList() noexcept
     //      _DebugBrush->SetColor(D2D1::ColorF(D2D1::ColorF::Red)); _DeviceContext->DrawRectangle(Label.Rect, _DebugBrush);
 
             if (!Label.IsHidden)
-                _DeviceContext->DrawText(Label.Text.c_str(), (UINT) Label.Text.size(), _ScaleTextStyle->_TextFormat, Label.Rect, _ScaleTextStyle->_Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
+                _DeviceContext->DrawText(Label.Text.c_str(), (UINT) Label.Text.size(), _ScaleTextStyle->_TextFormat.Get(), Label.Rect, _ScaleTextStyle->_Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_NONE);
 
             if (!IsCenter())
-                _DeviceContext->DrawLine(Label.P1, Label.P2, _ScaleLineStyle->_Brush, _ScaleLineStyle->_Thickness); // Draw the tick.
+                _DeviceContext->DrawLine(Label.P1, Label.P2, _ScaleLineStyle->_Brush.Get(), _ScaleLineStyle->_Thickness); // Draw the tick.
         }
 
         hr = _DeviceContext->EndDraw();

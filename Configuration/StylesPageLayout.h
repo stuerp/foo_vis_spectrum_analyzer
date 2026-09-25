@@ -77,7 +77,8 @@
 #pragma endregion
 
 #pragma region Gradient
-// Label
+
+// Label: Gradient
 #define W_A67   14
 #define H_A67   100
 #define X_A67   X_A10 - W_A67 - IX

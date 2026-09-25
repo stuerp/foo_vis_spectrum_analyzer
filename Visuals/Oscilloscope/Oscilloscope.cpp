@@ -1,5 +1,5 @@
 
-/** $VER: Oscilloscope.cpp (2026.09.23) P. Stuer - Implements an oscilloscope. **/
+/** $VER: Oscilloscope.cpp (2026.09.25) P. Stuer - Implements an oscilloscope. **/
 
 #include <pch.h>
 
@@ -14,16 +14,6 @@
 #pragma hdrstop
 
 /// <summary>
-/// Initializes a new instance.
-/// </summary>
-oscilloscope_t::oscilloscope_t()
-{
-    _ChunkDuration = 0.;
-
-    Reset();
-}
-
-/// <summary>
 /// Destroys this instance.
 /// </summary>
 oscilloscope_t::~oscilloscope_t() noexcept
@@ -32,9 +22,19 @@ oscilloscope_t::~oscilloscope_t() noexcept
 }
 
 /// <summary>
+/// Moves this instance on the canvas.
+/// </summary>
+void oscilloscope_t::Move(const D2D1_RECT_F & rect) noexcept
+{
+//  Log.Write("*** " __FUNCTION__ );
+
+    InitializeMetrics(rect);
+}
+
+/// <summary>
 /// Initializes this instance.
 /// </summary>
-void oscilloscope_t::Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, CComPtr<ID3D11Device> d3dDevice, CComPtr<ID3D11DeviceContext> d3dDeviceContext) noexcept
+void oscilloscope_t::Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept
 {
     _State = state;
     _GraphOptions = graphOptions;
@@ -74,47 +74,9 @@ void oscilloscope_t::Configure(state_t * state, graph_options_t * graphOptions, 
 }
 
 /// <summary>
-/// Moves this instance on the canvas.
-/// </summary>
-void oscilloscope_t::Move(const D2D1_RECT_F & rect) noexcept
-{
-    SetRect(rect);
-}
-
-/// <summary>
-/// Resets this instance.
-/// </summary>
-void oscilloscope_t::Reset() noexcept
-{
-    if (_ForceElementToResize || (_Size.width <= 0.f) || (_Size.height <= 0.f))
-        return;
-
-    _ForceElementToResize = true;
-}
-
-/// <summary>
-/// Recalculates parameters that are render target and size-sensitive.
-/// </summary>
-void oscilloscope_t::Resize() noexcept
-{
-    if (!_ForceElementToResize || (_Size.width <= 0.f) || (_Size.height <= 0.f))
-        return;
-
-    oscilloscope_base_t::Resize();
-
-    _XAxisTextStyle.DeleteDeviceSpecificResources();
-    _YAxisTextStyle.DeleteDeviceSpecificResources();
-
-    _StaticContext.Release();
-    _AxesCount = 0;
-
-    _ForceElementToResize = false;
-}
-
-/// <summary>
 /// Renders this instance.
 /// </summary>
-void oscilloscope_t::Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwapChain1> swapChain) noexcept
+void oscilloscope_t::Render(ID2D1DeviceContext * deviceContext, IDXGISwapChain1 * swapChain) noexcept
 {
     {
         const size_t FrameCount     = _Analysis->_Chunk.get_sample_count();     // get_sample_count() actually returns the number of frames.
@@ -126,7 +88,7 @@ void oscilloscope_t::Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwa
 
         if (_GraphOptions->HasXAxis() && (_ChunkDuration != _Analysis->_Chunk.get_duration()))
         {
-            _StaticContext.Release();
+            _StaticContext.Reset();
             _AxesCount = 0;
         }
     }
@@ -211,7 +173,7 @@ void oscilloscope_t::Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwa
 
                 _SignalLineStyle._Brush->SetOpacity(OldOpacity * .25f);
 
-                _DeviceContext->DrawGeometry(Geometry.Get(), _SignalLineStyle._Brush, _SignalLineStyle._Thickness * 3.f, _SignalStrokeStyle.Get());
+                _DeviceContext->DrawGeometry(Geometry.Get(), _SignalLineStyle._Brush.Get(), _SignalLineStyle._Thickness * 3.f, _SignalStrokeStyle.Get());
 
                 _SignalLineStyle._Brush->SetOpacity(OldOpacity);
             }
@@ -220,7 +182,7 @@ void oscilloscope_t::Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwa
         // Draw a normal version of the signal.
         if (Geometry)
         {
-            _DeviceContext->DrawGeometry(Geometry.Get(), _SignalLineStyle._Brush, _SignalLineStyle._Thickness, _SignalStrokeStyle.Get());
+            _DeviceContext->DrawGeometry(Geometry.Get(), _SignalLineStyle._Brush.Get(), _SignalLineStyle._Thickness, _SignalStrokeStyle.Get());
         }
 
         hr = _DeviceContext->EndDraw();
@@ -229,7 +191,7 @@ void oscilloscope_t::Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwa
     {
         // Draw the static content.
         {
-            deviceContext->DrawImage(_StaticContext);
+            deviceContext->DrawImage(_StaticContext.Get());
         }
 
         // Draw the composite buffer to the window.
@@ -270,7 +232,7 @@ void oscilloscope_t::DeleteDeviceIndependentResources() noexcept
 /// </summary>
 HRESULT oscilloscope_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept
 {
-    if (_State->_RecreateStyles)
+    if (_State->_ResizeResources)
         DeleteDeviceSpecificResources();
 
     HRESULT hr = oscilloscope_base_t::CreateDeviceSpecificResources(deviceContext);
@@ -314,7 +276,7 @@ HRESULT oscilloscope_t::CreateDeviceSpecificResources(ID2D1DeviceContext * devic
 /// </summary>
 void oscilloscope_t::DeleteDeviceSpecificResources() noexcept
 {
-    _StaticContext.Release();
+    _StaticContext.Reset();
     _AxesCount = 0;
 
     _YAxisTextStyle.DeleteDeviceSpecificResources();
@@ -432,7 +394,7 @@ HRESULT oscilloscope_t::CreateSignalGeometry(const audio_chunk_impl & chunk, con
 /// </summary>
 HRESULT oscilloscope_t::CreateStaticContent(uint32_t axesCount) noexcept
 {
-    _StaticContext.Release();
+    _StaticContext.Reset();
 
     const FLOAT ChannelHeight = _Size.height / (FLOAT) axesCount; // Height available to one channel.
     const FLOAT YAxisWidth = _YAxisTextStyle._Width;
@@ -441,12 +403,12 @@ HRESULT oscilloscope_t::CreateStaticContent(uint32_t axesCount) noexcept
     const FLOAT x2 = _Size.width - ((_GraphOptions->HasYAxis() && _GraphOptions->_YAxisRight) ? YAxisWidth : 0.f);
 
     // Create a command list that will store the grid pattern and the axes.
-    HRESULT hr = _DeviceContext->CreateCommandList(&_StaticContext);
+    HRESULT hr = _DeviceContext->CreateCommandList(_StaticContext.GetAddressOf());
 
     if (FAILED(hr))
         return hr;
 
-    _DeviceContext->SetTarget(_StaticContext);
+    _DeviceContext->SetTarget(_StaticContext.Get());
 
     _DeviceContext->BeginDraw();
 
@@ -466,10 +428,10 @@ HRESULT oscilloscope_t::CreateStaticContent(uint32_t axesCount) noexcept
         for (uint32_t i = 0; i < axesCount; ++i)
         {
             if (_GraphOptions->_YAxisLeft)
-                _DeviceContext->DrawLine(D2D1::Point2F(YAxisWidth, y1), D2D1::Point2F(YAxisWidth, y2), _YAxisLineStyle._Brush, _YAxisLineStyle._Thickness, nullptr);
+                _DeviceContext->DrawLine(D2D1::Point2F(YAxisWidth, y1), D2D1::Point2F(YAxisWidth, y2), _YAxisLineStyle._Brush.Get(), _YAxisLineStyle._Thickness, nullptr);
 
             if (_GraphOptions->_YAxisRight)
-                _DeviceContext->DrawLine(D2D1::Point2F(_Size.width - (YAxisWidth - 1.f), y1), D2D1::Point2F(_Size.width - (YAxisWidth - 1.f), y2), _YAxisLineStyle._Brush, _YAxisLineStyle._Thickness, nullptr);
+                _DeviceContext->DrawLine(D2D1::Point2F(_Size.width - (YAxisWidth - 1.f), y1), D2D1::Point2F(_Size.width - (YAxisWidth - 1.f), y2), _YAxisLineStyle._Brush.Get(), _YAxisLineStyle._Thickness, nullptr);
 
             if (_YAxisTextStyle.IsEnabled())
             {
@@ -478,7 +440,7 @@ HRESULT oscilloscope_t::CreateStaticContent(uint32_t axesCount) noexcept
                     const FLOAT y = msc::Map(_GraphOptions->ScaleAmplitude(ToMagnitude(Label.Amplitude)), 0., 1., y2, y1);
 
                     if (_HorizontalGridLineStyle.IsEnabled())
-                        _DeviceContext->DrawLine(D2D1::Point2F(x1, y), D2D1::Point2F(x2, y), _HorizontalGridLineStyle._Brush, _HorizontalGridLineStyle._Thickness, _StaticStrokeStyle.Get());
+                        _DeviceContext->DrawLine(D2D1::Point2F(x1, y), D2D1::Point2F(x2, y), _HorizontalGridLineStyle._Brush.Get(), _HorizontalGridLineStyle._Thickness, _StaticStrokeStyle.Get());
 
                     TextRect.top    = Label.IsMin ? y - _YAxisTextStyle._Height : (Label.IsMax ? y : y - (_YAxisTextStyle._Height / 2.f));
                     TextRect.bottom = TextRect.top + _YAxisTextStyle._Height;
@@ -488,7 +450,7 @@ HRESULT oscilloscope_t::CreateStaticContent(uint32_t axesCount) noexcept
                         TextRect.left  = 0.f;
                         TextRect.right = YAxisWidth - 2.f;
 
-                        _DeviceContext->DrawText(Label.Text.c_str(), (UINT) Label.Text.size(), _YAxisTextStyle._TextFormat, TextRect, _YAxisTextStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                        _DeviceContext->DrawText(Label.Text.c_str(), (UINT) Label.Text.size(), _YAxisTextStyle._TextFormat.Get(), TextRect, _YAxisTextStyle._Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
                     }
 
                     if (_GraphOptions->_YAxisRight)
@@ -496,7 +458,7 @@ HRESULT oscilloscope_t::CreateStaticContent(uint32_t axesCount) noexcept
                         TextRect.left  = x2 + 2.f;
                         TextRect.right = _Size.width - 1.f;
 
-                        _DeviceContext->DrawText(Label.Text.c_str(), (UINT) Label.Text.size(), _YAxisTextStyle._TextFormat, TextRect, _YAxisTextStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                        _DeviceContext->DrawText(Label.Text.c_str(), (UINT) Label.Text.size(), _YAxisTextStyle._TextFormat.Get(), TextRect, _YAxisTextStyle._Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
                     }
                 }
             }
@@ -528,7 +490,7 @@ HRESULT oscilloscope_t::CreateStaticContent(uint32_t axesCount) noexcept
             int Time = dt;
 
             if (_XAxisLineStyle.IsEnabled())
-                _DeviceContext->DrawLine(D2D1::Point2F(x1, y), D2D1::Point2F(x2, y), _XAxisLineStyle._Brush, _XAxisLineStyle._Thickness, _StaticStrokeStyle.Get());
+                _DeviceContext->DrawLine(D2D1::Point2F(x1, y), D2D1::Point2F(x2, y), _XAxisLineStyle._Brush.Get(), _XAxisLineStyle._Thickness, _StaticStrokeStyle.Get());
 
             if (_XAxisTextStyle.IsEnabled())
             {
@@ -539,13 +501,13 @@ HRESULT oscilloscope_t::CreateStaticContent(uint32_t axesCount) noexcept
                 for (TextRect.left = x1 + dx; TextRect.left < x2; TextRect.left += dx)
                 {
                     if (_VerticalGridLineStyle.IsEnabled())
-                        _DeviceContext->DrawLine(D2D1::Point2F(TextRect.left, y1), D2D1::Point2F(TextRect.left, y2), _VerticalGridLineStyle._Brush, _VerticalGridLineStyle._Thickness, _StaticStrokeStyle.Get());
+                        _DeviceContext->DrawLine(D2D1::Point2F(TextRect.left, y1), D2D1::Point2F(TextRect.left, y2), _VerticalGridLineStyle._Brush.Get(), _VerticalGridLineStyle._Thickness, _StaticStrokeStyle.Get());
 
                     WCHAR Text[8] = { };
 
                     ::StringCchPrintfW(Text, _countof(Text), L"%3d ms", Time);
 
-                    _DeviceContext->DrawText(Text, (UINT32) ::wcslen(Text), _XAxisTextStyle._TextFormat, TextRect, _XAxisTextStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                    _DeviceContext->DrawText(Text, (UINT32) ::wcslen(Text), _XAxisTextStyle._TextFormat.Get(), TextRect, _XAxisTextStyle._Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
 
                     Time += dt;
                 }

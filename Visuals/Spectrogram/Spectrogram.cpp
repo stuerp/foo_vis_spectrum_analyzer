@@ -12,17 +12,6 @@
 #pragma hdrstop
 
 /// <summary>
-/// Initializes a new instance.
-/// </summary>
-spectrogram_t::spectrogram_t()
-{
-    _Rect = { };
-    _Size = { };
-
-    Reset();
-}
-
-/// <summary>
 /// Destroys this instance.
 /// </summary>
 spectrogram_t::~spectrogram_t()
@@ -33,7 +22,7 @@ spectrogram_t::~spectrogram_t()
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void spectrogram_t::Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, CComPtr<ID3D11Device> d3dDevice, CComPtr<ID3D11DeviceContext> d3dDeviceContext) noexcept
+void spectrogram_t::Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept
 {
     _State = state;
     _GraphOptions = graphOptions;
@@ -49,13 +38,13 @@ void spectrogram_t::Configure(state_t * state, graph_options_t * graphOptions, a
 /// </summary>
 void spectrogram_t::Move(const D2D1_RECT_F & rect) noexcept
 {
-    SetRect(rect);
+    InitializeMetrics(rect);
 
-    _Bitmap.Release();
-    _BitmapRenderTarget.Release();
+    _Bitmap.Reset();
+    _BitmapRenderTarget.Reset();
 
-    _LegendBitmap.Release();
-    _LegendBitmapRenderTarget.Release();
+    _LegendBitmap.Reset();
+    _LegendBitmapRenderTarget.Reset();
 
     _GradientStyle.DeleteDeviceSpecificResources();
 }
@@ -237,7 +226,7 @@ void spectrogram_t::Resize() noexcept
                 {
                     CComPtr<IDWriteTextLayout> TextLayout;
 
-                    HRESULT hr = _DirectWrite.Factory->CreateTextLayout(Label.Text.c_str(), (UINT) Label.Text.size(), _FreqTextStyle._TextFormat, _Size.width, _Size.height, &TextLayout);
+                    HRESULT hr = _DirectWrite.Factory->CreateTextLayout(Label.Text.c_str(), (UINT) Label.Text.size(), _FreqTextStyle._TextFormat.Get(), _Size.width, _Size.height, &TextLayout);
 
                     if (SUCCEEDED(hr))
                     {
@@ -311,7 +300,7 @@ void spectrogram_t::Resize() noexcept
 /// <summary>
 /// Renders the spectrum analysis as a spectrogram.
 /// </summary>
-void spectrogram_t::Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwapChain1> swapChain) noexcept
+void spectrogram_t::Render(ID2D1DeviceContext * deviceContext, IDXGISwapChain1 * swapChain) noexcept
 {
     HRESULT hr = CreateDeviceSpecificResources(deviceContext);
 
@@ -319,7 +308,7 @@ void spectrogram_t::Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwap
         return;
 
     // Update the offscreen bitmap.
-    if (!RenderSpectrum(_BitmapRenderTarget))
+    if (!RenderSpectrum(_BitmapRenderTarget.Get()))
         return;
 
     deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
@@ -337,7 +326,7 @@ void spectrogram_t::Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwap
                 auto Src = D2D1_RECT_F( _X, 0.f, _BitmapSize.width,      _BitmapSize.height);
                 auto Dst = D2D1_RECT_F(0.f, 0.f, _BitmapSize.width - _X, _BitmapSize.height);
 
-                deviceContext->DrawBitmap(_Bitmap, &Dst, _SpectrogramStyle._Opacity, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR, &Src);
+                deviceContext->DrawBitmap(_Bitmap.Get(), &Dst, _SpectrogramStyle._Opacity, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR, &Src);
 
                 Src.right = Src.left;
                 Src.left  = 0.f;
@@ -345,13 +334,13 @@ void spectrogram_t::Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwap
                 Dst.left  = Dst.right;
                 Dst.right = _BitmapSize.width;
 
-                deviceContext->DrawBitmap(_Bitmap, &Dst, _SpectrogramStyle._Opacity, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR, &Src);
+                deviceContext->DrawBitmap(_Bitmap.Get(), &Dst, _SpectrogramStyle._Opacity, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR, &Src);
             }
             else
             {
                 const auto r = D2D1_RECT_F(0.f, 0.f, _BitmapSize.width, _BitmapSize.height);
 
-                deviceContext->DrawBitmap(_Bitmap, &r, _SpectrogramStyle._Opacity, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR);
+                deviceContext->DrawBitmap(_Bitmap.Get(), &r, _SpectrogramStyle._Opacity, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR);
             }
 
             ResetTransform(deviceContext);
@@ -364,7 +353,7 @@ void spectrogram_t::Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwap
                 if (!_TimeLabels.empty())
                     RenderTimeAxis(deviceContext, true);
 
-                deviceContext->DrawLine({ _BitmapRect.left, _BitmapRect.top }, { _BitmapRect.right - 1.f, _BitmapRect.top }, _TimeLineStyle._Brush, _TimeLineStyle._Thickness);
+                deviceContext->DrawLine({ _BitmapRect.left, _BitmapRect.top }, { _BitmapRect.right - 1.f, _BitmapRect.top }, _TimeLineStyle._Brush.Get(), _TimeLineStyle._Thickness);
             }
 
             if (_GraphOptions->_XAxisBottom)
@@ -372,7 +361,7 @@ void spectrogram_t::Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwap
                 if (!_TimeLabels.empty())
                     RenderTimeAxis(deviceContext, false);
 
-                deviceContext->DrawLine({ _BitmapRect.left, _BitmapRect.bottom + 1.f }, { _BitmapRect.right - 1.f, _BitmapRect.bottom + 1.f }, _TimeLineStyle._Brush, _TimeLineStyle._Thickness);
+                deviceContext->DrawLine({ _BitmapRect.left, _BitmapRect.bottom + 1.f }, { _BitmapRect.right - 1.f, _BitmapRect.bottom + 1.f }, _TimeLineStyle._Brush.Get(), _TimeLineStyle._Thickness);
             }
         }
 
@@ -383,7 +372,7 @@ void spectrogram_t::Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwap
                 if (!_FreqLabels.empty())
                     RenderFreqAxis(deviceContext, true);
 
-                deviceContext->DrawLine({ _BitmapRect.left,  _BitmapRect.top }, { _BitmapRect.left,  _BitmapRect.bottom }, _FreqLineStyle._Brush, _FreqLineStyle._Thickness);
+                deviceContext->DrawLine({ _BitmapRect.left,  _BitmapRect.top }, { _BitmapRect.left,  _BitmapRect.bottom }, _FreqLineStyle._Brush.Get(), _FreqLineStyle._Thickness);
             }
 
             if (_GraphOptions->_YAxisRight)
@@ -391,7 +380,7 @@ void spectrogram_t::Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwap
                 if (!_FreqLabels.empty())
                     RenderFreqAxis(deviceContext, false);
 
-                deviceContext->DrawLine({ _BitmapRect.right, _BitmapRect.top }, { _BitmapRect.right, _BitmapRect.bottom }, _FreqLineStyle._Brush, _FreqLineStyle._Thickness);
+                deviceContext->DrawLine({ _BitmapRect.right, _BitmapRect.top }, { _BitmapRect.right, _BitmapRect.bottom }, _FreqLineStyle._Brush.Get(), _FreqLineStyle._Thickness);
             }
         }
     }
@@ -408,7 +397,7 @@ void spectrogram_t::Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwap
                 auto Src = D2D1_RECT_F(0.f,  _Y, _BitmapSize.width, _BitmapSize.height);
                 auto Dst = D2D1_RECT_F(0.f, 0.f, _BitmapSize.width, _BitmapSize.height - _Y);
 
-                deviceContext->DrawBitmap(_Bitmap, &Dst, _SpectrogramStyle._Opacity, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR, &Src);
+                deviceContext->DrawBitmap(_Bitmap.Get(), &Dst, _SpectrogramStyle._Opacity, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR, &Src);
 
                 // Render the old lines.
                 Src.bottom = Src.top;
@@ -417,13 +406,13 @@ void spectrogram_t::Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwap
                 Dst.top    = Dst.bottom;
                 Dst.bottom = _BitmapSize.height;
 
-                deviceContext->DrawBitmap(_Bitmap, &Dst, _SpectrogramStyle._Opacity, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR, &Src);
+                deviceContext->DrawBitmap(_Bitmap.Get(), &Dst, _SpectrogramStyle._Opacity, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR, &Src);
             }
             else
             {
                 const D2D1_RECT_F r = D2D1_RECT_F(0.f, 0.f, _BitmapSize.width, _BitmapSize.height);
 
-                deviceContext->DrawBitmap(_Bitmap, &r, _SpectrogramStyle._Opacity, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR);
+                deviceContext->DrawBitmap(_Bitmap.Get(), &r, _SpectrogramStyle._Opacity, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR);
             }
 
             ResetTransform(deviceContext);
@@ -436,7 +425,7 @@ void spectrogram_t::Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwap
                 if (!_TimeLabels.empty())
                     RenderTimeAxis(deviceContext, true);
 
-                deviceContext->DrawLine({ _BitmapRect.left,  _BitmapRect.top }, { _BitmapRect.left,  _BitmapRect.bottom }, _TimeLineStyle._Brush, _TimeLineStyle._Thickness);
+                deviceContext->DrawLine({ _BitmapRect.left,  _BitmapRect.top }, { _BitmapRect.left,  _BitmapRect.bottom }, _TimeLineStyle._Brush.Get(), _TimeLineStyle._Thickness);
             }
 
             if (_GraphOptions->_YAxisRight)
@@ -444,7 +433,7 @@ void spectrogram_t::Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwap
                 if (!_TimeLabels.empty())
                     RenderTimeAxis(deviceContext, false);
     
-                deviceContext->DrawLine({ _BitmapRect.right + 1.f, _BitmapRect.top }, { _BitmapRect.right + 1.f, _BitmapRect.bottom }, _TimeLineStyle._Brush, _TimeLineStyle._Thickness);
+                deviceContext->DrawLine({ _BitmapRect.right + 1.f, _BitmapRect.top }, { _BitmapRect.right + 1.f, _BitmapRect.bottom }, _TimeLineStyle._Brush.Get(), _TimeLineStyle._Thickness);
             }
         }
 
@@ -455,7 +444,7 @@ void spectrogram_t::Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwap
                 if (!_FreqLabels.empty())
                     RenderFreqAxis(deviceContext, true);
 
-                deviceContext->DrawLine({ _BitmapRect.left,  _BitmapRect.top }, { _BitmapRect.right,  _BitmapRect.top }, _FreqLineStyle._Brush, _FreqLineStyle._Thickness);
+                deviceContext->DrawLine({ _BitmapRect.left,  _BitmapRect.top }, { _BitmapRect.right,  _BitmapRect.top }, _FreqLineStyle._Brush.Get(), _FreqLineStyle._Thickness);
             }
 
             if (_GraphOptions->_XAxisBottom)
@@ -463,14 +452,14 @@ void spectrogram_t::Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwap
                 if (!_FreqLabels.empty())
                     RenderFreqAxis(deviceContext, false);
 
-                deviceContext->DrawLine({ _BitmapRect.left, _BitmapRect.bottom + 1.f }, { _BitmapRect.right, _BitmapRect.bottom + 1.f }, _FreqLineStyle._Brush, _FreqLineStyle._Thickness);
+                deviceContext->DrawLine({ _BitmapRect.left, _BitmapRect.bottom + 1.f }, { _BitmapRect.right, _BitmapRect.bottom + 1.f }, _FreqLineStyle._Brush.Get(), _FreqLineStyle._Thickness);
             }
         }
     }
 
     // Draw the legend.
     if (_State->_SpectrogramLegend)
-        deviceContext->DrawBitmap(_LegendBitmap, _LegendRect, 1.f);
+        deviceContext->DrawBitmap(_LegendBitmap.Get(), _LegendRect, 1.f);
 
     if (_State->_PlaybackTime != _PlaybackTime) // Not paused
     {
@@ -526,7 +515,7 @@ void spectrogram_t::RenderTimeAxis(ID2D1DeviceContext * deviceContext, bool firs
             const FLOAT x = !_GraphOptions->_FlipHorizontally ? _BitmapRect.left + Label.X : Label.X + _TimeTextStyle._Width;
 
             // Draw the tick.
-            deviceContext->DrawLine( { x, y1 }, { x, y2 }, _TimeLineStyle._Brush, _TimeLineStyle._Thickness);
+            deviceContext->DrawLine( { x, y1 }, { x, y2 }, _TimeLineStyle._Brush.Get(), _TimeLineStyle._Thickness);
 
             if (!_GraphOptions->_FlipHorizontally)
             {
@@ -540,7 +529,7 @@ void spectrogram_t::RenderTimeAxis(ID2D1DeviceContext * deviceContext, bool firs
             }
 
             // Draw the label.
-            deviceContext->DrawTextW(Label.Text.c_str(), (UINT32) Label.Text.size(), _TimeTextStyle._TextFormat, Rect, _TimeTextStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+            deviceContext->DrawTextW(Label.Text.c_str(), (UINT32) Label.Text.size(), _TimeTextStyle._TextFormat.Get(), Rect, _TimeTextStyle._Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
         }
 
         deviceContext->PopAxisAlignedClip();
@@ -561,7 +550,7 @@ void spectrogram_t::RenderTimeAxis(ID2D1DeviceContext * deviceContext, bool firs
             const FLOAT y = !_GraphOptions->_FlipVertically ? _BitmapRect.top - _TimeTextStyle._Height + Label.Y : _BitmapRect.top + Label.Y;
 
             // Draw the tick.
-            deviceContext->DrawLine( { x1, y }, { x2, y }, _TimeLineStyle._Brush, _TimeLineStyle._Thickness);
+            deviceContext->DrawLine( { x1, y }, { x2, y }, _TimeLineStyle._Brush.Get(), _TimeLineStyle._Thickness);
 
             if (!_GraphOptions->_FlipVertically)
             {
@@ -575,7 +564,7 @@ void spectrogram_t::RenderTimeAxis(ID2D1DeviceContext * deviceContext, bool firs
             }
 
             // Draw the label.
-            deviceContext->DrawTextW(Label.Text.c_str(), (UINT32) Label.Text.size(), _TimeTextStyle._TextFormat, Rect, _TimeTextStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+            deviceContext->DrawTextW(Label.Text.c_str(), (UINT32) Label.Text.size(), _TimeTextStyle._TextFormat.Get(), Rect, _TimeTextStyle._Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
         }
 
         deviceContext->PopAxisAlignedClip();
@@ -607,17 +596,17 @@ void spectrogram_t::RenderFreqAxis(ID2D1DeviceContext * deviceContext, bool left
         {
             const auto & r = Label.Rect1;
 
-            deviceContext->DrawTextW(Label.Text.c_str(), (UINT32) Label.Text.size(), _FreqTextStyle._TextFormat, r, _FreqTextStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+            deviceContext->DrawTextW(Label.Text.c_str(), (UINT32) Label.Text.size(), _FreqTextStyle._TextFormat.Get(), r, _FreqTextStyle._Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
 
-            deviceContext->DrawLine({ r.right + 1.f, Label.Tick }, { r.right + 1.f + TickSize, Label.Tick }, _FreqLineStyle._Brush);
+            deviceContext->DrawLine({ r.right + 1.f, Label.Tick }, { r.right + 1.f + TickSize, Label.Tick }, _FreqLineStyle._Brush.Get());
         }
         else
         {
             const auto & r = Label.Rect2;
 
-            deviceContext->DrawTextW(Label.Text.c_str(), (UINT32) Label.Text.size(), _FreqTextStyle._TextFormat, Label.Rect2, _FreqTextStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+            deviceContext->DrawTextW(Label.Text.c_str(), (UINT32) Label.Text.size(), _FreqTextStyle._TextFormat.Get(), Label.Rect2, _FreqTextStyle._Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
 
-            deviceContext->DrawLine({ r.left - 2.f - TickSize, Label.Tick }, { r.left - 2.f, Label.Tick }, _FreqLineStyle._Brush);
+            deviceContext->DrawLine({ r.left - 2.f - TickSize, Label.Tick }, { r.left - 2.f, Label.Tick }, _FreqLineStyle._Brush.Get());
         }
     }
 
@@ -657,7 +646,7 @@ bool spectrogram_t::RenderSpectrum(ID2D1BitmapRenderTarget * renderTarget) noexc
 
                 _SpectrogramStyle.SetBrushColor(fb.Value);
 
-                renderTarget->DrawLine({ _X, y1 }, { _X, y2 }, _SpectrogramStyle._Brush);
+                renderTarget->DrawLine({ _X, y1 }, { _X, y2 }, _SpectrogramStyle._Brush.Get());
 
                 y1  = y2;
                 y2 += Bandwidth;
@@ -715,7 +704,7 @@ bool spectrogram_t::RenderSpectrum(ID2D1BitmapRenderTarget * renderTarget) noexc
 
                 _SpectrogramStyle.SetBrushColor(fb.Value);
 
-                renderTarget->DrawLine({ x1, _Y }, { x2, _Y }, _SpectrogramStyle._Brush);
+                renderTarget->DrawLine({ x1, _Y }, { x2, _Y }, _SpectrogramStyle._Brush.Get());
 
                 x1  = x2;
                 x2 += Bandwidth;
@@ -779,13 +768,13 @@ void spectrogram_t::RenderNyquistFrequencyMarker(ID2D1BitmapRenderTarget * rende
     {
         const FLOAT y = msc::Map(Scale, MinScale, MaxScale, 0.f, _BitmapSize.height);
 
-        renderTarget->DrawLine(D2D1_POINT_2F(_X, y), D2D1_POINT_2F(_X, y + 1), _NyquistMarkerStyle._Brush, _NyquistMarkerStyle._Thickness, nullptr);
+        renderTarget->DrawLine(D2D1_POINT_2F(_X, y), D2D1_POINT_2F(_X, y + 1), _NyquistMarkerStyle._Brush.Get(), _NyquistMarkerStyle._Thickness, nullptr);
     }
     else
     {
         const FLOAT x = msc::Map(Scale, MinScale, MaxScale, 0.f, _BitmapSize.width);
 
-        renderTarget->DrawLine(D2D1_POINT_2F(x, _Y), D2D1_POINT_2F(x + 1, _Y), _NyquistMarkerStyle._Brush, _NyquistMarkerStyle._Thickness, nullptr);
+        renderTarget->DrawLine(D2D1_POINT_2F(x, _Y), D2D1_POINT_2F(x + 1, _Y), _NyquistMarkerStyle._Brush.Get(), _NyquistMarkerStyle._Thickness, nullptr);
     }
 }
 
@@ -932,7 +921,7 @@ void spectrogram_t::InitFreqAxis() noexcept
 /// </summary>
 HRESULT spectrogram_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext)
 {
-    if (_State->_RecreateStyles)
+    if (_State->_ResizeResources)
         DeleteDeviceSpecificResources();
 
     HRESULT hr = S_OK;
@@ -1079,7 +1068,7 @@ HRESULT spectrogram_t::CreateDeviceSpecificResources(ID2D1DeviceContext * device
 
         if (_LegendBitmap == nullptr)
         {
-            CreateLegend(_LegendBitmapRenderTarget);
+            CreateLegend(_LegendBitmapRenderTarget.Get());
 
             hr = _LegendBitmapRenderTarget->GetBitmap(&_LegendBitmap);
 
@@ -1097,13 +1086,13 @@ HRESULT spectrogram_t::CreateDeviceSpecificResources(ID2D1DeviceContext * device
 void spectrogram_t::DeleteDeviceSpecificResources() noexcept
 {
 #ifdef _DEBUG
-    _DebugBrush.Release();
+    _DebugBrush.Reset();
 #endif
-    _LegendBitmap.Release();
-    _LegendBitmapRenderTarget.Release();
+    _LegendBitmap.Reset();
+    _LegendBitmapRenderTarget.Reset();
 
-    _Bitmap.Release();
-    _BitmapRenderTarget.Release();
+    _Bitmap.Reset();
+    _BitmapRenderTarget.Reset();
 
     _NyquistMarkerStyle.DeleteDeviceSpecificResources();
     _FreqTextStyle.DeleteDeviceSpecificResources();
@@ -1133,8 +1122,8 @@ void spectrogram_t::CreateLegend(ID2D1BitmapRenderTarget * renderTarget) const n
         // Draw the colors.
         const D2D1_RECT_F r1 = { 8.f, 8.f, r1.left + GradientSize, _LegendSize.height - 8.f };
 
-        renderTarget->FillRectangle(r1, _GradientStyle._Brush);
-        renderTarget->DrawRectangle(r1, _FreqTextStyle._Brush, 1.f, nullptr);
+        renderTarget->FillRectangle(r1, _GradientStyle._Brush.Get());
+        renderTarget->DrawRectangle(r1, _FreqTextStyle._Brush.Get(), 1.f, nullptr);
 
         // Draw the labels.
         _FreqTextStyle.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
@@ -1152,9 +1141,9 @@ void spectrogram_t::CreateLegend(ID2D1BitmapRenderTarget * renderTarget) const n
             r2.top    = y - _FreqTextStyle._Height / 2.f;
             r2.bottom = r2.top + _FreqTextStyle._Height;
 
-            renderTarget->DrawLine({ r2.left, y }, { r2.left + TickSize, y }, _FreqTextStyle._Brush);
+            renderTarget->DrawLine({ r2.left, y }, { r2.left + TickSize, y }, _FreqTextStyle._Brush.Get());
 
-            renderTarget->DrawTextW(Text, (UINT32) ::wcslen(Text), _FreqTextStyle._TextFormat, r2, _FreqTextStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+            renderTarget->DrawTextW(Text, (UINT32) ::wcslen(Text), _FreqTextStyle._TextFormat.Get(), r2, _FreqTextStyle._Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
         }
     }
     else
@@ -1162,8 +1151,8 @@ void spectrogram_t::CreateLegend(ID2D1BitmapRenderTarget * renderTarget) const n
         // Draw the colors.
         const D2D1_RECT_F r1 = { std::max(8.f, _FreqTextStyle._Width / 2.f), 8.f, _LegendSize.width - std::max(8.f, _FreqTextStyle._Width / 2.f), r1.top + GradientSize };
 
-        renderTarget->FillRectangle(r1, _GradientStyle._Brush);
-        renderTarget->DrawRectangle(r1, _FreqTextStyle._Brush, 1.f, nullptr);
+        renderTarget->FillRectangle(r1, _GradientStyle._Brush.Get());
+        renderTarget->DrawRectangle(r1, _FreqTextStyle._Brush.Get(), 1.f, nullptr);
 
         // Draw the labels.
         _FreqTextStyle.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
@@ -1181,9 +1170,9 @@ void spectrogram_t::CreateLegend(ID2D1BitmapRenderTarget * renderTarget) const n
             r2.left  = x - _FreqTextStyle._Width / 2.f;
             r2.right = r2.left + _FreqTextStyle._Width;
 
-            renderTarget->DrawLine({ x, r2.top}, { x, r2.top + TickSize }, _FreqTextStyle._Brush);
+            renderTarget->DrawLine({ x, r2.top}, { x, r2.top + TickSize }, _FreqTextStyle._Brush.Get());
 
-            renderTarget->DrawTextW(Text, (UINT32) ::wcslen(Text), _FreqTextStyle._TextFormat, r2, _FreqTextStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+            renderTarget->DrawTextW(Text, (UINT32) ::wcslen(Text), _FreqTextStyle._TextFormat.Get(), r2, _FreqTextStyle._Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
         }
     }
 

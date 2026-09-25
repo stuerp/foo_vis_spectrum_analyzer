@@ -26,15 +26,15 @@
 class part_t
 {
 public:
-    part_t(const state_t * state, const graph_options_t * settings) noexcept : _Rect()
+    part_t(const state_t * state, const graph_options_t * settings) noexcept
     {
-        _State    = state;
+        _State        = state;
         _GraphOptions = settings;
     }
 
     virtual ~part_t() = default;
 
-    virtual void SetRect(const D2D1_RECT_F & rect) noexcept;
+    virtual void InitializeMetrics(const D2D1_RECT_F & rect) noexcept;
 
     virtual void Bind(ID2D1DeviceContext * deviceContext, style_t * backgroundStyle, style_t * peakStyle, style_t * peak0dBStyle, style_t * maxPeakStyle, style_t * peakTextStyle, style_t * rmsStyle, style_t * rms0dBStyle, style_t * rmsTextStyle, style_t * nameStyle, style_t * scaleTextStyle, style_t * scaleLineStyle, ID2D1SolidColorBrush * debugBrush, ID2D1Bitmap * opacityMask) noexcept;
     virtual void Unbind() noexcept;
@@ -51,54 +51,54 @@ protected:
     const state_t * _State;
     const graph_options_t * _GraphOptions;
 
-    D2D1_RECT_F _Rect;
-    D2D1_SIZE_F _Size;
+    D2D1_RECT_F _Rect { };
+    D2D1_SIZE_F _Size { };
 
-    D2D1_RECT_F _TopNameRect;
-    D2D1_RECT_F _BottomNameRect;
-    D2D1_RECT_F _PeakRect;
-    D2D1_RECT_F _RMSRect;
+    D2D1_RECT_F _TopNameRect { };
+    D2D1_RECT_F _BottomNameRect { };
+    D2D1_RECT_F _PeakRect { };
+    D2D1_RECT_F _RMSRect { };
 
     struct label_t
     {
         std::wstring Text;
-        double Amplitude;
-        bool IsHidden;
+        double Amplitude { };
+        bool IsHidden { false };
 
-        D2D1_POINT_2F P1; // Start coord. of left tick
-        D2D1_POINT_2F P2; // End coord. of left tick
-        D2D1_RECT_F Rect;
+        D2D1_POINT_2F P1 { }; // Start coord. of left tick
+        D2D1_POINT_2F P2 { }; // End coord. of left tick
+        D2D1_RECT_F Rect { };
     };
 
     std::vector<label_t> _Labels;
 
-    DWRITE_TEXT_ALIGNMENT _TextAlignment;
-    DWRITE_PARAGRAPH_ALIGNMENT _ParagraphAlignment;
+    DWRITE_TEXT_ALIGNMENT _TextAlignment { };
+    DWRITE_PARAGRAPH_ALIGNMENT _ParagraphAlignment { };
 
-    CComPtr<ID2D1DeviceContext> _DeviceContext;
+    ComPtr<ID2D1DeviceContext> _DeviceContext;
 
-    CComPtr<IDWriteTextLayout> _NameTextLayout;
+    ComPtr<IDWriteTextLayout> _NameTextLayout;
 
-    CComPtr<ID2D1SolidColorBrush> _DebugBrush;
-    CComPtr<ID2D1Bitmap> _OpacityMask;
+    ComPtr<ID2D1SolidColorBrush> _DebugBrush;
+    ComPtr<ID2D1Bitmap> _OpacityMask;
 
-    const FLOAT _TickSize = 4.f;
+    static constexpr FLOAT _TickSize = 4.f;
 
-    style_t * _BackgroundStyle;
+    style_t * _BackgroundStyle { };
 
-    style_t * _PeakStyle;
-    style_t * _Peak0dBStyle;
-    style_t * _MaxPeakStyle;
-    style_t * _PeakTextStyle;
+    style_t * _PeakStyle { };
+    style_t * _Peak0dBStyle { };
+    style_t * _MaxPeakStyle { };
+    style_t * _PeakTextStyle { };
 
-    style_t * _RMSStyle;
-    style_t * _RMS0dBStyle;
-    style_t * _RMSTextStyle;
+    style_t * _RMSStyle { };
+    style_t * _RMS0dBStyle { };
+    style_t * _RMSTextStyle { };
 
-    style_t * _NameStyle;
+    style_t * _NameStyle { };
 
-    style_t * _ScaleTextStyle;
-    style_t * _ScaleLineStyle;
+    style_t * _ScaleTextStyle { };
+    style_t * _ScaleLineStyle { };
 };
 
 /// <summary>
@@ -121,7 +121,7 @@ public:
 
     void Unbind() noexcept override final;
 
-    void SetRect(const D2D1_RECT_F & rect) noexcept override final;
+    void InitializeMetrics(const D2D1_RECT_F & rect) noexcept override final;
     void Render() const noexcept override final;
 
 private:
@@ -131,14 +131,14 @@ private:
     void DrawVerticalRectangle(D2D1_RECT_F & rect, const style_t * style) const noexcept;
 
 private:
-    const peak_measurement_t * _Measurement;
-    double _dBFSZeroNormalized;
+    const peak_measurement_t * _Measurement { };
+    double _dBFSZeroNormalized { };
 
-    D2D1_MATRIX_3X2_F _Transform;
+    D2D1_MATRIX_3X2_F _Transform { };
 
-    FLOAT _LEDSize;
+    FLOAT _LEDSize { };
 
-    CComPtr<ID2D1CommandList> _ScaleLinesCommandList;
+    ComPtr<ID2D1CommandList> _ScaleLinesCommandList;
 };
 
 /// <summary>
@@ -160,11 +160,8 @@ public:
 
     virtual void Unbind() noexcept override final;
 
-    void SetRect(const D2D1_RECT_F & rect) noexcept override final;
+    void InitializeMetrics(const D2D1_RECT_F & rect) noexcept override final;
     void Render() const noexcept override final;
-
-    virtual FLOAT Width() const noexcept { return _Size.width; }
-    virtual FLOAT Height() const noexcept { return _Size.height; }
 
     bool IsCenter() const noexcept { return (_TextAlignment == DWRITE_TEXT_ALIGNMENT_CENTER) && (_ParagraphAlignment == DWRITE_PARAGRAPH_ALIGNMENT_CENTER); } // True if this scale is drawn between the bars.
 
@@ -172,5 +169,5 @@ private:
     HRESULT CreateAxisCommandList() noexcept;
 
 private:
-    CComPtr<ID2D1CommandList> _AxisCommandList;
+    ComPtr<ID2D1CommandList> _AxisCommandList;
 };

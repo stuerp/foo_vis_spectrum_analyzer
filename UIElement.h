@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.h (2026.08.17) P. Stuer **/
+/** $VER: UIElement.h (2026.09.25) P. Stuer **/
 
 #pragma once
 
@@ -20,12 +20,14 @@
 class uielement_t : public CWindowImpl<uielement_t>, private play_callback_impl_base
 {
 public:
-    uielement_t();
+    uielement_t() = default;
 
     uielement_t(const uielement_t &) = delete;
     uielement_t & operator=(const uielement_t &) = delete;
     uielement_t(uielement_t &&) = delete;
     uielement_t & operator=(uielement_t &&) = delete;
+
+    virtual ~uielement_t() = default;
 
     #pragma region CWindowImpl
 
@@ -95,8 +97,6 @@ private:
     void StartRenderer() noexcept;
     void StopRenderer() noexcept;
 
-    static DWORD WINAPI CallRenderThreadProc(LPVOID context) noexcept;
-
     void ToggleFrameCounter() noexcept;
 
     void Configure() noexcept;
@@ -107,7 +107,7 @@ private:
     void DeleteTrackingToolTip() noexcept;
 
     void AddTools() noexcept;
-    void DeleteTools() noexcept;
+    void RemoveTools() noexcept;
 
     graph_t * GetGraph(const CPoint & pt) noexcept;
 
@@ -161,6 +161,7 @@ private:
     HRESULT CreateDeviceSpecificResources() noexcept;
     void DeleteDeviceSpecificResources() noexcept;
 
+    HRESULT ResizeSwapChain(UINT width, UINT height) noexcept;
     HRESULT CreateBackBuffer() noexcept;
     HRESULT CreateArtworkDependentResources() noexcept;
 
@@ -178,26 +179,58 @@ protected:
     configuration_dialog_t _ConfigurationDialog;
     configuration_dialog_t _NewConfigurationDialog;
 
-    RECT _OldRect;
-    bool _IsFullScreen;
-    bool _IsVisible;                // True if the component is visible.
-    bool _IsInitializing;
+    RECT _OldRect { };
+
+    bool _IsFullScreen { false };
+    bool _IsVisible { true };       // True if the component is visible.
+    bool _IsInitializing { true };
 
     event_t _Event;
 
 private:
-    HWND _hParent;
+    #pragma region Accessed by UI and render thread
 
-    #pragma region Shared
+    HWND _hParent { nullptr };
 
     artwork_t _Artwork;
 
     #pragma endregion
 
+    #pragma region UI thread
+
+    enum
+    {
+        IDM_TOGGLE_FULLSCREEN = 1,
+        IDM_TOGGLE_FRAME_COUNTER,
+
+        IDM_REFRESH_RATE_LIMIT = 1000,
+
+        IDM_CONFIGURE = 2000,
+        IDM_FREEZE,
+
+        IDM_PRESET_NAME,
+    };
+
+    HANDLE _hThread { nullptr };
+    HANDLE _hStopRendering { nullptr };
+
+    CToolTipCtrl _ToolTipControl;
+
+    graph_t * _TrackingGraph { nullptr };
+    TTTOOLINFOW _TrackingToolInfo { };
+    POINT _LastMousePos { };
+    size_t _LastBandIndex { ~(size_t) 0 };
+
+    bool _IsConfigurationChanged { false }; // True when the render thread has changed the configuration (e.g. because a change in artwork).
+
+    fb2k::CCoreDarkModeHooks _DarkMode;
+
+    #pragma endregion
+
     #pragma region Render thread
 
-    UINT _DPI;
-    double _DisplayRefreshRate;
+    UINT _DPI { 96 };
+    double _DisplayRefreshRate = { 0. };
 
 #ifdef _DEBUG
     static constexpr int64_t RefreshRates[] = { 1, 5, 20, 30, 60, 100, 200 };
@@ -210,7 +243,7 @@ private:
     CComPtr<IDXGIFactory2> _DXGIFactory;
     CComPtr<IWICImagingFactory2> _WICImagingFactory;
     CComPtr<IDWriteFactory> _DWriteFactory;
-    CComPtr<IDWriteTextFormat> _TextFormat;
+    ComPtr<IDWriteTextFormat> _TextFormat;
 
     // Device-dependent resources.
     CComPtr<ID3D11Device> _D3DDevice;
@@ -233,42 +266,10 @@ private:
 #endif
 
     visualisation_stream_v2::ptr _VisualisationStream;
-    bool _IsFrozen;                 // True if the component should stop rendering.
+    bool _IsFrozen { false };   // True if the component should stop rendering.
 
     frame_counter_t _FrameCounter;
     grid_t _Grid;
-
-    #pragma endregion
-
-    #pragma region UI thread
-
-    enum
-    {
-        IDM_TOGGLE_FULLSCREEN = 1,
-        IDM_TOGGLE_FRAME_COUNTER,
-
-        IDM_REFRESH_RATE_LIMIT = 1000,
-
-        IDM_CONFIGURE = 2000,
-        IDM_FREEZE,
-
-        IDM_PRESET_NAME,
-    };
-
-    HANDLE _hStopRendering;
-    DWORD _ThreadId;
-    HANDLE _hThread;
-
-    CToolTipCtrl _ToolTipControl;
-
-    graph_t * _TrackingGraph;
-    TTTOOLINFOW _TrackingToolInfo;
-    POINT _LastMousePos;
-    size_t _LastBandIndex;
-
-    bool _IsConfigurationChanged;   // True when the render thread has changed the configuration (e.g. because a change in artwork).
-
-    fb2k::CCoreDarkModeHooks _DarkMode;
 
     #pragma endregion
 };

@@ -1,5 +1,5 @@
 
-/** $VER: OscilloscopeBase.h (2026.09.23) P. Stuer - Implements a base class for an oscilloscope. **/
+/** $VER: OscilloscopeBase.h (2026.09.25) P. Stuer - Implements a base class for an oscilloscope. **/
 
 #pragma once
 
@@ -10,7 +10,7 @@
 class oscilloscope_base_t : public visualization_t
 {
 public:
-    oscilloscope_base_t();
+    oscilloscope_base_t() = default;
 
     oscilloscope_base_t(const oscilloscope_base_t &) = delete;
     oscilloscope_base_t & operator=(const oscilloscope_base_t &) = delete;
@@ -21,10 +21,8 @@ public:
 
     // element_t
     virtual void Move(const D2D1_RECT_F & rect) noexcept = 0;
-    virtual void Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwapChain1> swapChain) noexcept = 0;
+    virtual void Render(ID2D1DeviceContext * deviceContext, IDXGISwapChain1 * swapChain) noexcept = 0;
     virtual void Reset() noexcept = 0;
-
-    virtual void Resize() noexcept;
 
 protected:
     HRESULT CreateDeviceIndependentResources() noexcept;
@@ -44,7 +42,6 @@ protected:
     size_t _PrevBitmapIndex = 1; // Start drawing in bitmap 0.
 
     bool _SquareBitmaps = false;
-    FLOAT _Side  = 0.f;
     D2D1_RECT_F _DestinationRectangle = { };
 
     style_t _SignalLineStyle;

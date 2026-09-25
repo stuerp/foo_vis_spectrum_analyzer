@@ -1,5 +1,5 @@
 
-/** $VER: FrameCounter.cpp (2024.03.31) P. Stuer **/
+/** $VER: FrameCounter.cpp (2026.09.25) P. Stuer **/
 
 #include "pch.h"
 #include "FrameCounter.h"
@@ -40,7 +40,7 @@ void frame_counter_t::Resize(FLOAT clientWidth, FLOAT clientHeight) noexcept
 /// <summary>
 /// Renders this instance to the specified render target.
 /// </summary>
-HRESULT frame_counter_t::Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwapChain1> swapChain) noexcept
+HRESULT frame_counter_t::Render(ID2D1DeviceContext * deviceContext, IDXGISwapChain1 * swapChain) noexcept
 {
     HRESULT hr = CreateDeviceSpecificResources(deviceContext);
 
@@ -62,14 +62,14 @@ HRESULT frame_counter_t::Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXG
     {
         _Brush->SetColor(D2D1::ColorF(1.0f, 1.0f, 1.0f, 0.2f));
 
-        deviceContext->FillRoundedRectangle(D2D1::RoundedRect(Rect, Inset, Inset), _Brush);
+        deviceContext->FillRoundedRectangle(D2D1::RoundedRect(Rect, Inset, Inset), _Brush.Get());
     }
 
     // Draw the text.
     {
         _Brush->SetColor(D2D1::ColorF(D2D1::ColorF::White));
 
-        deviceContext->DrawText(Text, (UINT) ::wcsnlen(Text, _countof(Text)), _TextFormat, Rect, _Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
+        deviceContext->DrawText(Text, (UINT) ::wcsnlen(Text, _countof(Text)), _TextFormat.Get(), Rect, _Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_NONE);
     }
 
     return hr;
@@ -85,7 +85,7 @@ HRESULT frame_counter_t::CreateDeviceIndependentResources() noexcept
 
     const FLOAT FontSize = ToDIPs(_FontSize); // In DIPs
 
-    HRESULT hr = _DirectWrite.Factory->CreateTextFormat(_FontFamilyName.c_str(), NULL, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, FontSize, L"", &_TextFormat);
+    HRESULT hr = _DirectWrite.Factory->CreateTextFormat(_FontFamilyName.c_str(), NULL, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, FontSize, L"", _TextFormat.GetAddressOf());
 
     if (SUCCEEDED(hr))
     {
@@ -95,9 +95,9 @@ HRESULT frame_counter_t::CreateDeviceIndependentResources() noexcept
 
         const WCHAR Text[] = L"999.99 fps";
 
-        CComPtr<IDWriteTextLayout> TextLayout;
+        ComPtr<IDWriteTextLayout> TextLayout;
 
-        hr = _DirectWrite.Factory->CreateTextLayout(Text, (UINT32) ::wcslen(Text), _TextFormat, 1920.f, 1080.f, &TextLayout);
+        hr = _DirectWrite.Factory->CreateTextLayout(Text, (UINT32) ::wcslen(Text), _TextFormat.Get(), 1920.f, 1080.f, TextLayout.GetAddressOf());
 
         if (SUCCEEDED(hr))
         {
@@ -121,7 +121,7 @@ HRESULT frame_counter_t::CreateDeviceIndependentResources() noexcept
 /// </summary>
 void frame_counter_t::DeleteDeviceIndependentResources() noexcept
 {
-    _TextFormat.Release();
+    _TextFormat.Reset();
 }
 
 /// <summary>
@@ -133,7 +133,7 @@ HRESULT frame_counter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * devi
     if (_Brush != nullptr)
         return S_OK;
 
-    HRESULT hr = deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::White), &_Brush);
+    HRESULT hr = deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::White), _Brush.GetAddressOf());
 
     return hr;
 }
@@ -143,5 +143,5 @@ HRESULT frame_counter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * devi
 /// </summary>
 void frame_counter_t::DeleteDeviceSpecificResources() noexcept
 {
-    _Brush.Release();
+    _Brush.Reset();
 }

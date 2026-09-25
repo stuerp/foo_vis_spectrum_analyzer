@@ -10,31 +10,11 @@
 #pragma hdrstop
 
 /// <summary>
-/// Initializes a new instance.
-/// </summary>
-oscilloscope_base_t::oscilloscope_base_t()
-{
-}
-
-/// <summary>
 /// Destroys this instance.
 /// </summary>
 oscilloscope_base_t::~oscilloscope_base_t() noexcept
 {
     DeleteDeviceSpecificResources();
-}
-
-/// <summary>
-/// Recalculates parameters that are render target and size-sensitive.
-/// </summary>
-void oscilloscope_base_t::Resize() noexcept
-{
-    if (!_ForceElementToResize || (_Size.width <= 0.f) || (_Size.height <= 0.f))
-        return;
-
-    DeleteSizeDependentResources();
-
-    _ForceElementToResize = false;
 }
 
 /// <summary>
@@ -82,7 +62,7 @@ void oscilloscope_base_t::DeleteDeviceIndependentResources() noexcept
 /// </summary>
 HRESULT oscilloscope_base_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept
 {
-    if (_State->_RecreateStyles)
+    if (_State->_ResizeResources)
         DeleteDeviceSpecificResources();
 
     HRESULT hr = S_OK;
@@ -229,7 +209,7 @@ HRESULT oscilloscope_base_t::CreateSizeDependentResources(ID2D1DeviceContext * d
 
         if (_SquareBitmaps)
         {
-            _Side = std::min(_Size.width, _Size.height);
+//          _Side = std::min(_Size.width, _Size.height);
 
             const FLOAT x = (_Size.width  - _Side) / 2.f;
             const FLOAT y = (_Size.height - _Side) / 2.f;

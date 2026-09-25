@@ -25,7 +25,7 @@
 class y_axis_t : public visualization_t
 {
 public:
-    y_axis_t() { }
+    y_axis_t() = default;
 
     y_axis_t(const y_axis_t &) = delete;
     y_axis_t & operator=(const y_axis_t &) = delete;
@@ -34,11 +34,11 @@ public:
 
     // element_t
     void Move(const D2D1_RECT_F & rect) noexcept override final;
-    void Render(ID2D1DeviceContext * deviceContext, CComPtr<IDXGISwapChain1> swapChain) noexcept override final;
+    void Render(ID2D1DeviceContext * deviceContext, IDXGISwapChain1 * swapChain) noexcept override final;
     void Reset() noexcept override final { }
 
     // visualization_t
-    void Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, CComPtr<ID3D11Device> d3dDevice = nullptr, CComPtr<ID3D11DeviceContext> d3dDeviceContext = nullptr) noexcept override final;
+    void Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice = nullptr, ID3D11DeviceContext * d3dDeviceContext = nullptr) noexcept override final;
 
     HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext, style_manager_t & styleManager) noexcept;
     void DeleteDeviceSpecificResources() noexcept;
@@ -57,14 +57,14 @@ private:
     struct label_t
     {
         std::wstring Text;
-        double Amplitude;
-        bool IsHidden;
+        double Amplitude { 0. };
+        bool IsHidden { false };
 
-        D2D1_POINT_2F PointL;
-        D2D1_POINT_2F PointR;
+        D2D1_POINT_2F PointL { };
+        D2D1_POINT_2F PointR { };
 
-        D2D1_RECT_F RectL;
-        D2D1_RECT_F RectR;
+        D2D1_RECT_F RectL { };
+        D2D1_RECT_F RectR { };
     };
 
     std::vector<label_t> _Labels;
