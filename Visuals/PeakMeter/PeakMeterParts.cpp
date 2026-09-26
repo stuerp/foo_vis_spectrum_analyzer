@@ -458,7 +458,7 @@ void bar_t::InitializeMetrics(const D2D1_RECT_F & rect) noexcept
         const FLOAT Width  = std::max(_TopNameRect.right  - _TopNameRect.left, _BottomNameRect.right  - _BottomNameRect.left);
         const FLOAT Height = std::max(_TopNameRect.bottom - _TopNameRect.top,  _BottomNameRect.bottom - _BottomNameRect.top);
 
-        hr = _DirectWrite.Factory->CreateTextLayout(_Measurement->ChannelName.c_str(), (UINT32) _Measurement->ChannelName.length(), _NameStyle->_TextFormat.Get(), Width, Height, &_NameTextLayout);
+        hr = DirectWriteFactory::Get()->CreateTextLayout(_Measurement->ChannelName.c_str(), (UINT32) _Measurement->ChannelName.length(), _NameStyle->_TextFormat.Get(), Width, Height, &_NameTextLayout);
     }
 
     if (SUCCEEDED(hr) && (_ScaleLinesCommandList == nullptr) && _State->_HasScaleLines)

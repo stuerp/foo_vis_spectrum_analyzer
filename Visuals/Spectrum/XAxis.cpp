@@ -189,9 +189,9 @@ void x_axis_t::Resize(bool force) noexcept
         Iter.PointB = D2D1_POINT_2F(x, yb);
 
         {
-            CComPtr<IDWriteTextLayout> TextLayout;
+            ComPtr<IDWriteTextLayout> TextLayout;
 
-            HRESULT hr = _DirectWrite.Factory->CreateTextLayout(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle._TextFormat.Get(), _Size.width, _Size.height, &TextLayout);
+            HRESULT hr = DirectWriteFactory::Get()->CreateTextLayout(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle._TextFormat.Get(), _Size.width, _Size.height, TextLayout.GetAddressOf());
 
             if (SUCCEEDED(hr))
             {

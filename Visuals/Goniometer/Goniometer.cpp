@@ -189,7 +189,7 @@ HRESULT goniometer_t::CreateDeviceIndependentResources() noexcept
 
         StrokeStyleProperties.transformType = D2D1_STROKE_TRANSFORM_TYPE_FIXED; // Prevent stroke scaling
 
-        hr = _Direct2D.Factory->CreateStrokeStyle(StrokeStyleProperties, nullptr, 0, _StaticStrokeStyle.GetAddressOf());
+        hr = Direct2DFactory::Get()->CreateStrokeStyle(StrokeStyleProperties, nullptr, 0, _StaticStrokeStyle.GetAddressOf());
 
         if (FAILED(hr))
             return hr;

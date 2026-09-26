@@ -29,8 +29,6 @@ public:
     void Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept;
     void Resize() noexcept;
 
-    static D2D1_COLOR_F ColorFromHSLA(FLOAT h, FLOAT s, FLOAT l, FLOAT a) noexcept;
-
 private:
     HRESULT CreateDeviceIndependentResources() noexcept;
     void DeleteDeviceIndependentResources() noexcept;
@@ -39,5 +37,5 @@ private:
     void DeleteDeviceSpecificResources() noexcept;
 
 private:
-    CComPtr<ID2D1SolidColorBrush> _Brush;
+    ComPtr<ID2D1SolidColorBrush> _Brush;
 };

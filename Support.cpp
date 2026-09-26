@@ -38,11 +38,11 @@ HRESULT GetDPI(_In_ HWND hWnd, _Out_ UINT & dpi) noexcept
         dpi = GetDpiForWindow_(hWnd);
     else
     {
-        CComPtr<ID2D1Factory2> D2DFactory;
+        ComPtr<ID2D1Factory2> D2DFactory;
 
         D2D1_FACTORY_OPTIONS const Options = { D2D1_DEBUG_LEVEL_NONE };
 
-        HRESULT hr = ::D2D1CreateFactory(D2D1_FACTORY_TYPE_MULTI_THREADED, Options, &D2DFactory);
+        HRESULT hr = ::D2D1CreateFactory(D2D1_FACTORY_TYPE_MULTI_THREADED, Options, D2DFactory.GetAddressOf());
 
         if (SUCCEEDED(hr))
         {

@@ -680,7 +680,12 @@ bool uielement_t::GetArtworkFromTrack(const metadb_handle_ptr & track, abort_cal
         }
 
         if (ArtworkData.is_valid())
-            _Artwork.CreateWICResources((uint8_t *) ArtworkData->data(), ArtworkData->size());
+        {
+            HRESULT hr = _Artwork.CreateWICResources((uint8_t *) ArtworkData->data(), ArtworkData->size());
+
+            if (FAILED(hr))
+                Log.AtWarn().Write(STR_COMPONENT_BASENAME " failed to get WIC resources: %08X", (DWORD) hr);
+        }
     }
     catch (const std::exception & e) // exception_aborted, exception_album_art_not_found
     {

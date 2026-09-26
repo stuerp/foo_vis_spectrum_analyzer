@@ -35,6 +35,6 @@ public:
     UINT BitsPerPixel;
 
 private:
-    CComPtr<IWICBitmap> _Bitmap;
-    CComPtr<IWICBitmapLock> _Lock;
+    ComPtr<IWICBitmap> _Bitmap;
+    ComPtr<IWICBitmapLock> _Lock;
 };

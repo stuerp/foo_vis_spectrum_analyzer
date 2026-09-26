@@ -259,7 +259,7 @@ void graph_t::RenderDescription(ID2D1DeviceContext * deviceContext) noexcept
 
     ComPtr<IDWriteTextLayout> TextLayout;
 
-    HRESULT hr = _DirectWrite.Factory->CreateTextLayout(_Description.c_str(), (UINT32) _Description.length(), _DescriptionTextStyle._TextFormat.Get(), _Size.width, _Size.height, TextLayout.GetAddressOf());
+    HRESULT hr = DirectWriteFactory::Get()->CreateTextLayout(_Description.c_str(), (UINT32) _Description.length(), _DescriptionTextStyle._TextFormat.Get(), _Size.width, _Size.height, TextLayout.GetAddressOf());
 
     if (FAILED(hr))
         return;

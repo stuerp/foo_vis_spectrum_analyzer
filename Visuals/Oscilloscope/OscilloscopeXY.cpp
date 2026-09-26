@@ -187,7 +187,7 @@ HRESULT oscilloscope_xy_t::CreateSignalGeometry(const audio_chunk_impl & chunk, 
     {
         ComPtr<ID2D1PathGeometry> Geometry;
 
-        HRESULT hr = _Direct2D.Factory->CreatePathGeometry(Geometry.GetAddressOf());
+        HRESULT hr = Direct2DFactory::Get()->CreatePathGeometry(Geometry.GetAddressOf());
 
         if (SUCCEEDED(hr))
         {
@@ -217,7 +217,7 @@ HRESULT oscilloscope_xy_t::CreateSignalGeometry(const audio_chunk_impl & chunk, 
         {
             const auto Rotate = D2D1::Matrix3x2F::Rotation(_State->_Rotation, D2D1::Point2F(0.f, 0.f));
 
-            hr = _Direct2D.Factory->CreateTransformedGeometry(Geometry.Get(), Rotate * _ScaleTransform * _TranslateTransform, transformedGeometry.GetAddressOf());
+            hr = Direct2DFactory::Get()->CreateTransformedGeometry(Geometry.Get(), Rotate * _ScaleTransform * _TranslateTransform, transformedGeometry.GetAddressOf());
         }
 
         return hr;

@@ -265,6 +265,7 @@
     <ClInclude Include="Visuals\Visualization.h" />
     <ClInclude Include="Windows\Chrono.h" />
     <ClInclude Include="Windows\Direct3D.h" />
+    <ClInclude Include="Windows\DXGI.h" />
     <ClInclude Include="Windows\Event.h" />
     <ClInclude Include="Configuration\CColorButton.h" />
     <ClInclude Include="Configuration\CColorDialogEx.h" />
@@ -292,7 +293,6 @@
     <ClInclude Include="pch.h" />
     <ClInclude Include="Analyzers\FrequencyBand.h" />
     <ClInclude Include="Log.h" />
-    <ClInclude Include="Windows\DirectX.h" />
     <ClInclude Include="Windows\Raster.h" />
     <ClInclude Include="Windows\Module.h" />
     <ClInclude Include="Visuals\Spectrum\BezierSpline.h" />
@@ -381,7 +381,6 @@
     <ClCompile Include="Windows\DirectWrite.cpp" />
     <ClCompile Include="DUIElement.cpp" />
     <ClCompile Include="Log.cpp" />
-    <ClCompile Include="Windows\DirectX.cpp" />
     <ClCompile Include="Windows\Raster.cpp" />
     <ClCompile Include="UIElementRendering.cpp" />
     <ClCompile Include="Analyzers\FFTAnalyzer.cpp" />

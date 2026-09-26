@@ -768,7 +768,7 @@ LRESULT styles_page_t::OnChanged(LPNMHDR nmhd) noexcept
                 style->_CurrentGradientStops = style->_CustomGradientStops;
             }
             else
-                _Direct2D.CreateGradientStops(Colors, style->_CustomGradientStops);
+                Direct2D::CreateGradientStops(Colors, style->_CustomGradientStops);
 
             // Update the controls.
             ((CComboBox) GetDlgItem(IDC_COLOR_SCHEME)).SetCurSel((int) style->_ColorScheme);

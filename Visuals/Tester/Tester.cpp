@@ -97,12 +97,12 @@ void tester_t::Render(ID2D1DeviceContext * deviceContext, IDXGISwapChain1 * swap
 
         _Brush->SetColor(D2D1::ColorF(RGB(87, 123, 197), 1.0f));
 
-        deviceContext->DrawLine({ 0, _Size.height / 2 }, { _Size.width, _Size.height / 2 }, _Brush);
+        deviceContext->DrawLine({ 0, _Size.height / 2 }, { _Size.width, _Size.height / 2 }, _Brush.Get());
 
         _Brush->SetColor(D2D1::ColorF(RGB(87, 123, 197), 0.5f));
 
-        deviceContext->DrawLine({ 0, _Size.height * 0.25f }, { _Size.width, _Size.height * 0.25f }, _Brush);
-        deviceContext->DrawLine({ 0, _Size.height * 0.75f }, { _Size.width, _Size.height * 0.75f }, _Brush);
+        deviceContext->DrawLine({ 0, _Size.height * 0.25f }, { _Size.width, _Size.height * 0.25f }, _Brush.Get());
+        deviceContext->DrawLine({ 0, _Size.height * 0.75f }, { _Size.width, _Size.height * 0.75f }, _Brush.Get());
     }
 
     // Waveform
@@ -134,7 +134,7 @@ void tester_t::Render(ID2D1DeviceContext * deviceContext, IDXGISwapChain1 * swap
             {
                 p2 = { x, y };
 
-                deviceContext->DrawLine(p1, p2, _Brush, 3.f);
+                deviceContext->DrawLine(p1, p2, _Brush.Get(), 3.f);
 
                 p1 = p2;
             }
@@ -153,7 +153,7 @@ void tester_t::Render(ID2D1DeviceContext * deviceContext, IDXGISwapChain1 * swap
             {
                 p2 = { x, y };
 
-                deviceContext->DrawLine(p1, p2, _Brush, 1.f);
+                deviceContext->DrawLine(p1, p2, _Brush.Get(), 1.f);
 
                 p1 = p2;
             }
@@ -195,7 +195,7 @@ HRESULT tester_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceConte
 
 #ifdef _DEBUG
     if (_Brush == nullptr)
-        (void) deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), &_Brush);
+        (void) deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), _Brush.GetAddressOf());
 #endif
 
     return hr;
@@ -207,6 +207,6 @@ HRESULT tester_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceConte
 void tester_t::DeleteDeviceSpecificResources() noexcept
 {
 #ifdef _DEBUG
-    _Brush.Release();
+    _Brush.Reset();
 #endif
 }

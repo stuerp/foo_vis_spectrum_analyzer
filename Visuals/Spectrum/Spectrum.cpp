@@ -1169,7 +1169,7 @@ HRESULT spectrum_t::CreateCurve(const geometry_points_t & gp, bool isFilled, ID2
     if (gp.p0.size() < 2)
         return E_FAIL;
 
-    HRESULT hr = _Direct2D.Factory->CreatePathGeometry(curve);
+    HRESULT hr = Direct2DFactory::Get()->CreatePathGeometry(curve);
 
     CComPtr<ID2D1GeometrySink> Sink;
 
@@ -1319,7 +1319,7 @@ HRESULT spectrum_t::CreateRadialCurve(const geometry_points_t & gp, FLOAT innerR
     if (gp.p0.size() < 2)
         return E_FAIL;
 
-    HRESULT hr = _Direct2D.Factory->CreatePathGeometry(curve);
+    HRESULT hr = Direct2DFactory::Get()->CreatePathGeometry(curve);
 
     CComPtr<ID2D1GeometrySink> Sink;
 
@@ -1372,7 +1372,7 @@ HRESULT spectrum_t::CreateRadialCurve(const geometry_points_t & gp, FLOAT innerR
 /// </summary>
 HRESULT spectrum_t::CreateSegment(FLOAT a1, FLOAT a2, FLOAT r1, FLOAT r2, ID2D1PathGeometry ** pathGeometry) const noexcept
 {
-    HRESULT hr = _Direct2D.Factory->CreatePathGeometry(pathGeometry);
+    HRESULT hr = Direct2DFactory::Get()->CreatePathGeometry(pathGeometry);
 
     if (!SUCCEEDED(hr))
         return hr;

@@ -164,20 +164,45 @@ HRESULT style_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContex
 {
     HRESULT hr = S_OK;
 
+    ComPtr<ID2D1SolidColorBrush> SolidColorBrush;
+
     // Create the DirectX brush.
     if (_ColorSource != ColorSource::Gradient)
-        hr = deviceContext->CreateSolidColorBrush(_CurrentColor, (ID2D1SolidColorBrush **) _Brush.GetAddressOf());
+    {
+        hr = deviceContext->CreateSolidColorBrush(_CurrentColor, SolidColorBrush.GetAddressOf());
+
+        if (FAILED(hr))
+            return hr;
+
+        _Brush = SolidColorBrush;
+    }
     else
     {
         if (Has(style_t::Features::HorizontalGradient | style_t::Features::AmplitudeBasedColor))
         {
-            hr = deviceContext->CreateSolidColorBrush(D2D1::ColorF(0), (ID2D1SolidColorBrush **) _Brush.GetAddressOf()); // The color of the brush will be set during rendering.
+            hr = deviceContext->CreateSolidColorBrush(D2D1::ColorF(0), SolidColorBrush.GetAddressOf()); // The color of the brush will be set during rendering.
 
-            if (SUCCEEDED(hr))
-                hr = CreateAmplitudeMap(_ColorScheme, _CurrentGradientStops, _AmplitudeMap);
+            if (FAILED(hr))
+                return hr;
+
+            _Brush = SolidColorBrush;
+
+            hr = CreateAmplitudeMap(_ColorScheme, _CurrentGradientStops, _AmplitudeMap);
+
+            if (FAILED(hr))
+                return hr;
         }
         else
-            hr = _Direct2D.CreateGradientBrush(deviceContext, _CurrentGradientStops, size, Has(style_t::Features::HorizontalGradient), (ID2D1LinearGradientBrush **) _Brush.GetAddressOf());
+        {
+            ComPtr<ID2D1LinearGradientBrush> LinearGradientBrush;
+
+            hr = Direct2D::CreateGradientBrush(deviceContext, _CurrentGradientStops, size, Has(style_t::Features::HorizontalGradient), LinearGradientBrush.GetAddressOf());
+
+            if (FAILED(hr))
+                return hr;
+
+            _Brush = LinearGradientBrush;
+        }
     }
 
     if (_Brush != nullptr)
@@ -188,10 +213,12 @@ HRESULT style_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContex
     {
         const FLOAT FontSize = ToDIPs(_FontSize) / scaleFactor; // In DIPs
 
-        hr = _DirectWrite.CreateTextFormat(_FontName, FontSize, DWRITE_TEXT_ALIGNMENT_CENTER, DWRITE_PARAGRAPH_ALIGNMENT_CENTER, _TextFormat.GetAddressOf());
+        hr = DirectWrite::CreateTextFormat(_FontName, FontSize, DWRITE_TEXT_ALIGNMENT_CENTER, DWRITE_PARAGRAPH_ALIGNMENT_CENTER, _TextFormat.GetAddressOf());
 
-        if (SUCCEEDED(hr))
-            MeasureText(text);
+        if (FAILED(hr))
+            return hr;
+
+        MeasureText(text);
     }
 
     return hr;
@@ -204,20 +231,45 @@ HRESULT style_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContex
 {
     HRESULT hr = S_OK;
 
+    ComPtr<ID2D1SolidColorBrush> SolidColorBrush;
+
     // Create the DirectX brush.
     if (_ColorSource != ColorSource::Gradient)
-        hr = deviceContext->CreateSolidColorBrush(_CurrentColor, (ID2D1SolidColorBrush **) _Brush.GetAddressOf());
+    {
+        hr = deviceContext->CreateSolidColorBrush(_CurrentColor, SolidColorBrush.GetAddressOf());
+
+        if (FAILED(hr))
+            return hr;
+
+        _Brush = SolidColorBrush;
+    }
     else
     {
         if (Has(style_t::Features::HorizontalGradient | style_t::Features::AmplitudeBasedColor))
         {
-            hr = deviceContext->CreateSolidColorBrush(D2D1::ColorF(0), (ID2D1SolidColorBrush **) _Brush.GetAddressOf()); // The color of the brush will be set during rendering.
+            hr = deviceContext->CreateSolidColorBrush(D2D1::ColorF(0), SolidColorBrush.GetAddressOf()); // The color of the brush will be set during rendering.
 
-            if (SUCCEEDED(hr))
-                hr = CreateAmplitudeMap(_ColorScheme, _CurrentGradientStops, _AmplitudeMap);
+            if (FAILED(hr))
+                return hr;
+
+            _Brush = SolidColorBrush;
+
+            hr = CreateAmplitudeMap(_ColorScheme, _CurrentGradientStops, _AmplitudeMap);
+
+            if (FAILED(hr))
+                return hr;
         }
         else
-            hr = _Direct2D.CreateRadialGradientBrush(deviceContext, _CurrentGradientStops, center, offset, rx, ry, rOffset, (ID2D1RadialGradientBrush **) _Brush.GetAddressOf());
+        {
+            ComPtr<ID2D1RadialGradientBrush> RadialGradientBrush;
+
+            hr = Direct2D::CreateRadialGradientBrush(deviceContext, _CurrentGradientStops, center, offset, rx, ry, rOffset, RadialGradientBrush.GetAddressOf());
+
+            if (FAILED(hr))
+                return hr;
+
+            _Brush = RadialGradientBrush;
+        }
     }
 
     if (_Brush != nullptr)
@@ -243,18 +295,16 @@ HRESULT style_t::SetBrushColor(double value) noexcept
     if (_AmplitudeMap.empty())
         return E_FAIL;
 
-    ID2D1SolidColorBrush * ColorBrush = nullptr;
+    ComPtr<ID2D1SolidColorBrush> SolidColorBrush;
 
-    HRESULT hr = _Brush->QueryInterface(IID_PPV_ARGS(&ColorBrush));
+    HRESULT hr = _Brush.As(&SolidColorBrush);
 
-    if (!SUCCEEDED(hr))
+    if (FAILED(hr))
         return hr;
 
     const size_t Index = msc::Map(value, 0., 1., (size_t) 0, _AmplitudeMap.size() - 1);
 
-    ColorBrush->SetColor(_AmplitudeMap[Index]);
-
-    ColorBrush->Release();
+    SolidColorBrush->SetColor(_AmplitudeMap[Index]);
 
     return hr;
 }
@@ -366,5 +416,5 @@ HRESULT style_t::MeasureText(const std::wstring & text) noexcept
     if (_TextFormat == nullptr)
         return E_FAIL;
 
-    return _DirectWrite.GetTextMetrics(_TextFormat.Get(), text.c_str(), _Width, _Height);
+    return DirectWrite::GetTextMetrics(_TextFormat.Get(), text.c_str(), _Width, _Height);
 }

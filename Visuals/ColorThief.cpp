@@ -1,5 +1,5 @@
 
-/** $VER: ColorThief.cpp (2024.03.09) P. Stuer - Based on Fast ColorThief, https://github.com/bedapisl/fast-colorthief **/
+/** $VER: ColorThief.cpp (2026.09.26) P. Stuer - Based on Fast ColorThief, https://github.com/bedapisl/fast-colorthief **/
 
 #include "pch.h"
 #include "ColorThief.h"
@@ -15,7 +15,7 @@
 
 namespace ColorThief
 {
-std::vector<color_t> GetPaletteInternal(const uint8_t * pixels, uint32_t width, uint32_t height, uint32_t stride, uint32_t colorCount, uint32_t quality, bool ignoreLightColors, uint8_t lightnessThreshold, uint8_t transparancyThreshold) noexcept;
+static std::vector<color_t> GetPaletteInternal(const uint8_t * pixels, uint32_t width, uint32_t height, uint32_t stride, uint32_t colorCount, uint32_t quality, bool ignoreLightColors, uint8_t lightnessThreshold, uint8_t transparancyThreshold) noexcept;
 
 /// <summary>
 /// Use the median cut algorithm to cluster similar colors.
@@ -30,20 +30,26 @@ HRESULT GetPalette(IWICBitmapSource * bitmapSource, std::vector<color_t> & palet
     if ((bitmapSource == nullptr) || (colorCount < 2) || (colorCount > 256) || (quality == 0))
         return E_INVALIDARG;
 
-    CComPtr<IWICFormatConverter> Converter;
+    ComPtr<IWICFormatConverter> Converter;
 
-    HRESULT hr = _WIC.Factory->CreateFormatConverter(&Converter);
+    HRESULT hr = WICFactory::Get()->CreateFormatConverter(Converter.GetAddressOf());
 
-    if (SUCCEEDED(hr))
-        hr = Converter->Initialize(bitmapSource, GUID_WICPixelFormat32bppPRGBA, WICBitmapDitherTypeNone, nullptr, 0.f, WICBitmapPaletteTypeMedianCut);
+    if (FAILED(hr))
+        return hr;
+
+    hr = Converter->Initialize(bitmapSource, GUID_WICPixelFormat32bppPRGBA, WICBitmapDitherTypeNone, nullptr, 0.f, WICBitmapPaletteTypeMedianCut);
+
+    if (FAILED(hr))
+        return hr;
 
     raster_t r;
 
-    if (SUCCEEDED(hr))
-        hr = r.Initialize(Converter);
+    hr = r.Initialize(Converter.Get());
 
-    if (SUCCEEDED(hr))
-        palette = GetPaletteInternal(r.Data, r.Width, r.Height, r.Stride, colorCount, quality, ignoreLightColors, lightnessThreshold, transparancyThreshold);
+    if (FAILED(hr))
+        return hr;
+
+    palette = GetPaletteInternal(r.Data, r.Width, r.Height, r.Stride, colorCount, quality, ignoreLightColors, lightnessThreshold, transparancyThreshold);
 
     return hr;
 }
@@ -61,8 +67,10 @@ HRESULT GetDominantColor(IWICBitmapSource * bitmapSource, color_t & color, uint3
 
     HRESULT hr = GetPalette(bitmapSource, Palette, DefaultColorCount, quality, ignoreLightColors, lightnessThreshold, transparancyThreshold);
 
-    if (SUCCEEDED(hr))
-        color = Palette[0];
+    if (FAILED(hr))
+        return hr;
+
+    color = Palette[0];
 
     return S_OK;
 }

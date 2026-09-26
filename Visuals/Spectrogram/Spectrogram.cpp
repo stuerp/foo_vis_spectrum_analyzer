@@ -224,9 +224,9 @@ void spectrogram_t::Resize() noexcept
                 const FLOAT x = msc::Map(Scale, MinScale, MaxScale, 0.f, _BitmapSize.width);
 
                 {
-                    CComPtr<IDWriteTextLayout> TextLayout;
+                    ComPtr<IDWriteTextLayout> TextLayout;
 
-                    HRESULT hr = _DirectWrite.Factory->CreateTextLayout(Label.Text.c_str(), (UINT) Label.Text.size(), _FreqTextStyle._TextFormat.Get(), _Size.width, _Size.height, &TextLayout);
+                    HRESULT hr = DirectWriteFactory::Get()->CreateTextLayout(Label.Text.c_str(), (UINT) Label.Text.size(), _FreqTextStyle._TextFormat.Get(), _Size.width, _Size.height, TextLayout.GetAddressOf());
 
                     if (SUCCEEDED(hr))
                     {

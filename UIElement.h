@@ -239,8 +239,6 @@ private:
 #endif
 
     // Device-independent resources.
-    ComPtr<IDXGIFactory2> _DXGIFactory;
-
     ComPtr<IDWriteTextFormat> _TextFormat;
 
     // Device-dependent resources.

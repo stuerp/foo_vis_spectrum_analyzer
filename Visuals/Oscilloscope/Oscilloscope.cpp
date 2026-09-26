@@ -332,7 +332,7 @@ HRESULT oscilloscope_t::CreateSignalGeometry(const audio_chunk_impl & chunk, con
                 break;
         }
 
-        HRESULT hr = _Direct2D.Factory->CreatePathGeometry(geometry.GetAddressOf());
+        HRESULT hr = Direct2DFactory::Get()->CreatePathGeometry(geometry.GetAddressOf());
 
         if (FAILED(hr))
             return hr;

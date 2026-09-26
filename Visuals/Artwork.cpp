@@ -1,5 +1,5 @@
 
-/** $VER: Artwork.cpp (2026.08.27) P. Stuer **/
+/** $VER: Artwork.cpp (2026.09.26) P. Stuer **/
 
 #include "pch.h"
 
@@ -30,25 +30,30 @@ HRESULT artwork_t::CreateWICResources(const uint8_t * data, size_t size) noexcep
         _Raster.assign(data, data + size);
         _FilePath.clear();
 
-        _FormatConverter.Release();
-        _Frame.Release();
+        _FormatConverter.Reset();
+        _Frame.Reset();
     }
 
     HRESULT hr = S_OK;
 
     if (_Frame == nullptr)
-        hr = _WIC.Load(_Raster.data(), _Raster.size(), &_Frame);
-
-    // Create a format converter to 32bppPBGRA.
-    if (SUCCEEDED(hr) && (_FormatConverter == nullptr))
     {
-        hr = _WIC.Factory->CreateFormatConverter(&_FormatConverter);
+        hr = WIC::Load(_Raster.data(), _Raster.size(), _Frame.GetAddressOf());
 
-        if (SUCCEEDED(hr))
-            hr = _FormatConverter->Initialize(_Frame, GUID_WICPixelFormat32bppPBGRA, WICBitmapDitherTypeNone, nullptr, 0.f, WICBitmapPaletteTypeCustom);
+        if (FAILED(hr))
+            return hr;
+
+        // Create a format converter to 32bppPBGRA.
+        if (_FormatConverter == nullptr)
+        {
+            hr = WICFactory::Get()->CreateFormatConverter(_FormatConverter.GetAddressOf());
+
+            if (FAILED(hr))
+                return hr;
+        }
+
+        hr = _FormatConverter->Initialize(_Frame.Get(), GUID_WICPixelFormat32bppPBGRA, WICBitmapDitherTypeNone, nullptr, 0.f, WICBitmapPaletteTypeCustom);
     }
-
-//  SetStatus(Initialized);
 
     return hr;
 }
@@ -67,24 +72,29 @@ HRESULT artwork_t::CreateWICResources(const std::wstring & filePath) noexcept
     _FilePath = filePath;
     _Raster.clear();
 
-    _FormatConverter.Release();
-    _Frame.Release();
+    _FormatConverter.Reset();
+    _Frame.Reset();
 
     HRESULT hr = S_OK;
 
     if (_Frame == nullptr)
-        hr = _WIC.Load(_FilePath, &_Frame);
-
-    // Create a format converter to 32bppPBGRA.
-    if (SUCCEEDED(hr) && (_FormatConverter == nullptr))
     {
-        hr = _WIC.Factory->CreateFormatConverter(&_FormatConverter);
+        hr = WIC::Load(_FilePath, _Frame.GetAddressOf());
 
-        if (SUCCEEDED(hr))
-            hr = _FormatConverter->Initialize(_Frame, GUID_WICPixelFormat32bppPBGRA, WICBitmapDitherTypeNone, nullptr, 0.f, WICBitmapPaletteTypeCustom);
+        if (FAILED(hr))
+            return hr;
+
+        // Create a format converter to 32bppPBGRA.
+        if (_FormatConverter == nullptr)
+        {
+            hr = WICFactory::Get()->CreateFormatConverter(_FormatConverter.GetAddressOf());
+
+            if (FAILED(hr))
+                return hr;
+        }
+
+        hr = _FormatConverter->Initialize(_Frame.Get(), GUID_WICPixelFormat32bppPBGRA, WICBitmapDitherTypeNone, nullptr, 0.f, WICBitmapPaletteTypeCustom);
     }
-
-//  SetStatus(Initialized);
 
     return S_OK;
 }
@@ -100,16 +110,14 @@ HRESULT artwork_t::DeleteWICResources() noexcept
 
     DeleteDeviceSpecificResources();
 
-    _FormatConverter.Release();
-    _Frame.Release();
+    _FormatConverter.Reset();
+    _Frame.Reset();
 
     _FilePath.clear();
 
     std::vector<uint8_t> Empty;
 
     _Raster.swap(Empty);
-
-//  SetStatus(Idle);
 
     return S_OK;
 }
@@ -121,7 +129,7 @@ HRESULT artwork_t::GetColors(std::vector<D2D1_COLOR_F> & colors, uint32_t colorC
 {
     msc::lock_t Lock(_CriticalSection);
 
-    HRESULT hr = E_FAIL;
+    HRESULT hr = S_OK;
 
     if (_FormatConverter != nullptr)
     {
@@ -129,17 +137,19 @@ HRESULT artwork_t::GetColors(std::vector<D2D1_COLOR_F> & colors, uint32_t colorC
 
         hr = _FormatConverter->GetSize(&Width, &Height);
 
+        if (FAILED(hr))
+            return hr;
+
         std::vector<ColorThief::color_t> Palette;
 
-        if (SUCCEEDED(hr))
-        {
-            const uint32_t Quality = std::clamp((Width * Height * ColorThief::DefaultQuality) / (640 * 480), 1U, 16U); // Reference: 640 x 480 => Quality = 10
+        const uint32_t Quality = std::clamp((Width * Height * ColorThief::DefaultQuality) / (640 * 480), 1U, 16U); // Reference: 640 x 480 => Quality = 10
 
-            hr = ColorThief::GetPalette(_FormatConverter, Palette, colorCount, Quality, true, (uint8_t) (lightnessThreshold * 255.f), (uint8_t) (transparencyThreshold * 255.f));
-        }
+        hr = ColorThief::GetPalette(_FormatConverter.Get(), Palette, colorCount, Quality, true, (uint8_t) (lightnessThreshold * 255.f), (uint8_t) (transparencyThreshold * 255.f));
+
+        if (FAILED(hr))
+            return hr;
 
         // Convert to Direct2D colors.
-        if (SUCCEEDED(hr))
         {
             size_t i = 0;
 
@@ -156,8 +166,6 @@ HRESULT artwork_t::GetColors(std::vector<D2D1_COLOR_F> & colors, uint32_t colorC
         colors.push_back(D2D1::ColorF(1.f, 0.f, 0.f));
     }
 
-//  SetStatus(GotColors);
-
     return hr;
 }
 
@@ -168,7 +176,7 @@ void artwork_t::Render(ID2D1DeviceContext * deviceContext, const D2D1_RECT_F & r
 {
     HRESULT hr = CreateDeviceSpecificResources(deviceContext);
 
-    if (!SUCCEEDED(hr))
+    if (FAILED(hr))
         return;
 
     msc::lock_t Lock(_CriticalSection);
@@ -183,7 +191,7 @@ void artwork_t::Render(ID2D1DeviceContext * deviceContext, const D2D1_RECT_F & r
 
     if (state->_ArtworkBlurSigma == 0.f)
     {
-        deviceContext->DrawBitmap(_Bitmap, Rect, state->_ArtworkOpacity, D2D1_BITMAP_INTERPOLATION_MODE::D2D1_BITMAP_INTERPOLATION_MODE_LINEAR);
+        deviceContext->DrawBitmap(_Bitmap.Get(), Rect, state->_ArtworkOpacity, D2D1_BITMAP_INTERPOLATION_MODE::D2D1_BITMAP_INTERPOLATION_MODE_LINEAR);
     }
     else
     {
@@ -193,7 +201,7 @@ void artwork_t::Render(ID2D1DeviceContext * deviceContext, const D2D1_RECT_F & r
 
         const FLOAT DPIScale = DPIX / 96.f;
 
-        _ScaleEffect->SetInput(0, _Bitmap);
+        _ScaleEffect->SetInput(0, _Bitmap.Get());
         _ScaleEffect->SetValue(D2D1_SCALE_PROP_SCALE, D2D1::Vector2F(Scalar * DPIScale, Scalar * DPIScale));
 
         _BlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_STANDARD_DEVIATION, state->_ArtworkBlurSigma);
@@ -202,7 +210,7 @@ void artwork_t::Render(ID2D1DeviceContext * deviceContext, const D2D1_RECT_F & r
 
         const D2D1_POINT_2F Offset = { Rect.left, Rect.top };
 
-        deviceContext->DrawImage(_OpacityEffect, Offset);
+        deviceContext->DrawImage(_OpacityEffect.Get(), Offset);
     }
 }
 
@@ -258,53 +266,51 @@ HRESULT artwork_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCont
 
         // No format converter means no artwork.
         if (_FormatConverter == nullptr)
-            return E_FAIL;
+            return S_FALSE;
 
         // Create a Direct2D bitmap from the WIC bitmap source.
         if (_Bitmap == nullptr)
         {
-            hr = deviceContext->CreateBitmapFromWicBitmap(_FormatConverter, nullptr, &_Bitmap);
+            hr = deviceContext->CreateBitmapFromWicBitmap(_FormatConverter.Get(), nullptr, _Bitmap.GetAddressOf());
 
-            if (!SUCCEEDED(hr))
+            if (FAILED(hr))
             {
                 Log.AtWarn().Write(STR_COMPONENT_BASENAME " failed to create Direct2D bitmap from WIC bitmap: 0x%08X", hr);
 
                 return hr;
             }
-
-//          SetStatus(GotBitmap);
         }
     }
 
     if (_ScaleEffect == nullptr)
     {
-        hr = deviceContext->CreateEffect(CLSID_D2D1Scale, &_ScaleEffect);
+        hr = deviceContext->CreateEffect(CLSID_D2D1Scale, _ScaleEffect.GetAddressOf());
 
-        if (!SUCCEEDED(hr))
+        if (FAILED(hr))
             return hr;
     }
 
     if (_BlurEffect == nullptr)
     {
-        hr = deviceContext->CreateEffect(CLSID_D2D1GaussianBlur, &_BlurEffect);
+        hr = deviceContext->CreateEffect(CLSID_D2D1GaussianBlur, _BlurEffect.GetAddressOf());
 
-        if (!SUCCEEDED(hr))
+        if (FAILED(hr))
             return hr;
 
         _BlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_OPTIMIZATION, D2D1_DIRECTIONALBLUR_OPTIMIZATION_BALANCED);
         _BlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_BORDER_MODE, D2D1_BORDER_MODE_HARD);
 
-        _BlurEffect->SetInputEffect(0, _ScaleEffect);
+        _BlurEffect->SetInputEffect(0, _ScaleEffect.Get());
     }
 
     if (_OpacityEffect == nullptr)
     {
-        hr = deviceContext->CreateEffect(CLSID_D2D1Opacity, &_OpacityEffect);
+        hr = deviceContext->CreateEffect(CLSID_D2D1Opacity, _OpacityEffect.GetAddressOf());
 
-        if (!SUCCEEDED(hr))
+        if (FAILED(hr))
             return hr;
 
-        _OpacityEffect->SetInputEffect(0, _BlurEffect);
+        _OpacityEffect->SetInputEffect(0, _BlurEffect.Get());
     }
 
     return hr;
@@ -315,15 +321,13 @@ HRESULT artwork_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCont
 /// </summary>
 void artwork_t::DeleteDeviceSpecificResources() noexcept
 {
-    _OpacityEffect.Release();
-    _BlurEffect.Release();
-    _ScaleEffect.Release();
+    _OpacityEffect.Reset();
+    _BlurEffect.Reset();
+    _ScaleEffect.Reset();
 
     {
         msc::lock_t Lock(_CriticalSection);
 
-        _Bitmap.Release();
-
-//      SetStatus(Initialized);
+        _Bitmap.Reset();
     }
 }

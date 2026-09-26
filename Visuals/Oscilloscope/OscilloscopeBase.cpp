@@ -29,7 +29,7 @@ HRESULT oscilloscope_base_t::CreateDeviceIndependentResources() noexcept
     {
         const D2D1_STROKE_STYLE_PROPERTIES StrokeStyleProperties = D2D1::StrokeStyleProperties(D2D1_CAP_STYLE_FLAT, D2D1_CAP_STYLE_FLAT, D2D1_CAP_STYLE_FLAT, D2D1_LINE_JOIN_BEVEL);
 
-        hr = _Direct2D.Factory->CreateStrokeStyle(StrokeStyleProperties, nullptr, 0, _SignalStrokeStyle.GetAddressOf());
+        hr = Direct2DFactory::Get()->CreateStrokeStyle(StrokeStyleProperties, nullptr, 0, _SignalStrokeStyle.GetAddressOf());
 
         if (FAILED(hr))
             return hr;
@@ -42,7 +42,7 @@ HRESULT oscilloscope_base_t::CreateDeviceIndependentResources() noexcept
 
         StrokeStyleProperties.transformType = D2D1_STROKE_TRANSFORM_TYPE_FIXED; // Prevent stroke scaling
 
-        hr = _Direct2D.Factory->CreateStrokeStyle(StrokeStyleProperties, nullptr, 0, _StaticStrokeStyle.GetAddressOf());
+        hr = Direct2DFactory::Get()->CreateStrokeStyle(StrokeStyleProperties, nullptr, 0, _StaticStrokeStyle.GetAddressOf());
     }
 
     return hr;
@@ -74,9 +74,9 @@ HRESULT oscilloscope_base_t::CreateDeviceSpecificResources(ID2D1DeviceContext * 
 
     if (_DeviceContext == nullptr)
     {
-        CComPtr<ID2D1Device> D2DDevice;
+        ComPtr<ID2D1Device> D2DDevice;
 
-        deviceContext->GetDevice(&D2DDevice);
+        deviceContext->GetDevice(D2DDevice.GetAddressOf());
 
         hr = D2DDevice->CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_ENABLE_MULTITHREADED_OPTIMIZATIONS, _DeviceContext.GetAddressOf());
 

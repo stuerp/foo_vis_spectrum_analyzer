@@ -1,58 +1,40 @@
 
-/** $VER: WIC.cpp (2024.01.29) P. Stuer **/
+/** $VER: WIC.cpp (2026.09.26) P. Stuer **/
 
 #include "pch.h"
-#include "WIC.h"
 
-#include <Win32Exception.h>
+#include "WIC.h"
 
 #pragma comment(lib, "windowscodecs")
 
 /// <summary>
-/// Initializes this instance.
-/// </summary>
-HRESULT WIC::Initialize()
-{
-    HRESULT hr = ::CoInitialize(nullptr);
-
-    hr = ::CoCreateInstance(CLSID_WICImagingFactory, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&Factory));
-
-    if (!SUCCEEDED(hr))
-        throw msc::win32_exception("Unable to create WIC factory.", (DWORD) hr);
-
-    return hr;
-}
-
-/// <summary>
-/// Terminates this instance.
-/// </summary>
-void WIC::Terminate()
-{
-    Factory.Release();
-}
-
-/// <summary>
 /// Creates a WIC bitmap frame from raw image data.
 /// </summary>
-HRESULT WIC::Load(const uint8_t * data, size_t size, IWICBitmapFrameDecode ** frame) const noexcept
+HRESULT WIC::Load(const uint8_t * data, size_t size, IWICBitmapFrameDecode ** frame) noexcept
 {
     if ((data == nullptr) || (size == 0))
         return E_FAIL;
 
-    CComPtr<IWICStream> Stream;
+    ComPtr<IWICStream> Stream;
 
-    HRESULT hr = Factory->CreateStream(&Stream);
+    HRESULT hr = WICFactory::Get()->CreateStream(Stream.GetAddressOf());
 
-    if (SUCCEEDED(hr))
-        hr = Stream->InitializeFromMemory((BYTE *) data, (DWORD) size);
+    if (FAILED(hr))
+        return hr;
 
-    CComPtr<IWICBitmapDecoder> Decoder;
+    hr = Stream->InitializeFromMemory((BYTE *) data, (DWORD) size);
 
-    if (SUCCEEDED(hr))
-        hr = Factory->CreateDecoderFromStream(Stream, nullptr, WICDecodeMetadataCacheOnDemand, &Decoder);
+    if (FAILED(hr))
+        return hr;
 
-    if (SUCCEEDED(hr))
-        hr = Decoder->GetFrame(0, frame);
+    ComPtr<IWICBitmapDecoder> Decoder;
+
+    hr = WICFactory::Get()->CreateDecoderFromStream(Stream.Get(), nullptr, WICDecodeMetadataCacheOnDemand, Decoder.GetAddressOf());
+
+    if (FAILED(hr))
+        return hr;
+
+    hr = Decoder->GetFrame(0, frame);
 
     return hr;
 }
@@ -60,17 +42,19 @@ HRESULT WIC::Load(const uint8_t * data, size_t size, IWICBitmapFrameDecode ** fr
 /// <summary>
 /// Creates a WIC bitmap frame from a file.
 /// </summary>
-HRESULT WIC::Load(const std::wstring & filePath, IWICBitmapFrameDecode ** frame) const noexcept
+HRESULT WIC::Load(const std::wstring & filePath, IWICBitmapFrameDecode ** frame) noexcept
 {
     if (filePath.empty())
         return E_FAIL;
 
-    CComPtr<IWICBitmapDecoder> Decoder;
+    ComPtr<IWICBitmapDecoder> Decoder;
 
-    HRESULT hr = Factory->CreateDecoderFromFilename(filePath.c_str(), nullptr, GENERIC_READ, WICDecodeMetadataCacheOnDemand, &Decoder);
+    HRESULT hr = WICFactory::Get()->CreateDecoderFromFilename(filePath.c_str(), nullptr, GENERIC_READ, WICDecodeMetadataCacheOnDemand, Decoder.GetAddressOf());
 
-    if (SUCCEEDED(hr))
-        hr = Decoder->GetFrame(0, frame);
+    if (FAILED(hr))
+        return hr;
+
+    hr = Decoder->GetFrame(0, frame);
 
     return hr;
 }
@@ -78,19 +62,23 @@ HRESULT WIC::Load(const std::wstring & filePath, IWICBitmapFrameDecode ** frame)
 /// <summary>
 /// Gets the number of bits per pixel for the specified pixel format.
 /// </summary>
-HRESULT WIC::GetBitsPerPixel(const WICPixelFormatGUID & pixelFormat, UINT & bitsPerPixel) const noexcept
+HRESULT WIC::GetBitsPerPixel(const WICPixelFormatGUID & pixelFormat, UINT & bitsPerPixel) noexcept
 {
-    CComPtr<IWICComponentInfo> ComponentInfo;
+    ComPtr<IWICComponentInfo> ComponentInfo;
 
-    HRESULT hr = Factory->CreateComponentInfo(pixelFormat, &ComponentInfo);
+    HRESULT hr = WICFactory::Get()->CreateComponentInfo(pixelFormat, ComponentInfo.GetAddressOf());
 
-    CComPtr<IWICPixelFormatInfo> PixelFormatInfo;
+    if (FAILED(hr))
+        return hr;
 
-    if (SUCCEEDED(hr))
-        hr = ComponentInfo->QueryInterface(__uuidof(IWICPixelFormatInfo), (void **) &PixelFormatInfo);
+    ComPtr<IWICPixelFormatInfo> PixelFormatInfo;
 
-    if (SUCCEEDED(hr))
-        hr = PixelFormatInfo->GetBitsPerPixel(&bitsPerPixel);
+    hr = ComponentInfo.As(&PixelFormatInfo);
+
+    if (FAILED(hr))
+        return hr;
+
+    hr = PixelFormatInfo->GetBitsPerPixel(&bitsPerPixel);
 
     return hr;
 }
@@ -98,15 +86,15 @@ HRESULT WIC::GetBitsPerPixel(const WICPixelFormatGUID & pixelFormat, UINT & bits
 /// <summary>
 /// Creates a format converter to convert a WIC frame to the specfied format.
 /// </summary>
-HRESULT WIC::GetFormatConverter(IWICBitmapFrameDecode * frame, IWICFormatConverter ** formatConverter) const noexcept
+HRESULT WIC::GetFormatConverter(IWICBitmapFrameDecode * frame, IWICFormatConverter ** formatConverter) noexcept
 {
-    // Convert the format of the frame to 32bppPBGRA.
-    HRESULT hr = Factory->CreateFormatConverter(formatConverter);
+    HRESULT hr = WICFactory::Get()->CreateFormatConverter(formatConverter);
 
-    if (SUCCEEDED(hr))
-        hr = (*formatConverter)->Initialize(frame, GUID_WICPixelFormat32bppPBGRA, WICBitmapDitherTypeNone, nullptr, 0.f, WICBitmapPaletteTypeCustom);
+    if (FAILED(hr))
+        return hr;
+
+    // Convert the format of the frame to 32bppPBGRA.
+    hr = (*formatConverter)->Initialize(frame, GUID_WICPixelFormat32bppPBGRA, WICBitmapDitherTypeNone, nullptr, 0.f, WICBitmapPaletteTypeCustom);
 
     return hr;
 }
-
-WIC _WIC;

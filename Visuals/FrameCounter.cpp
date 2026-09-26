@@ -85,7 +85,7 @@ HRESULT frame_counter_t::CreateDeviceIndependentResources() noexcept
 
     const FLOAT FontSize = ToDIPs(_FontSize); // In DIPs
 
-    HRESULT hr = _DirectWrite.Factory->CreateTextFormat(_FontFamilyName.c_str(), NULL, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, FontSize, L"", _TextFormat.GetAddressOf());
+    HRESULT hr = DirectWriteFactory::Get()->CreateTextFormat(_FontFamilyName.c_str(), NULL, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, FontSize, L"", _TextFormat.GetAddressOf());
 
     if (SUCCEEDED(hr))
     {
@@ -97,7 +97,7 @@ HRESULT frame_counter_t::CreateDeviceIndependentResources() noexcept
 
         ComPtr<IDWriteTextLayout> TextLayout;
 
-        hr = _DirectWrite.Factory->CreateTextLayout(Text, (UINT32) ::wcslen(Text), _TextFormat.Get(), 1920.f, 1080.f, TextLayout.GetAddressOf());
+        hr = DirectWriteFactory::Get()->CreateTextLayout(Text, (UINT32) ::wcslen(Text), _TextFormat.Get(), 1920.f, 1080.f, TextLayout.GetAddressOf());
 
         if (SUCCEEDED(hr))
         {
