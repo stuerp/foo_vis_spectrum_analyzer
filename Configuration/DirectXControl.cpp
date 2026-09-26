@@ -1,43 +1,38 @@
 
-/** $VER: CDirectXControl.cpp (2026.02.22) P. Stuer - Implements a base class for DirectX rendered controls. **/
+/** $VER: CDirectXControl.cpp (2026.09.26) P. Stuer - Implements a base class for DirectX rendered controls. **/
 
 #include "pch.h"
-#include "CDirectXControl.h"
 
-#include "Support.h"
+#include "DirectXControl.h"
 
 #pragma comment(lib, "d2d1")
 #pragma comment(lib, "comdlg32")
+
+#include <Direct2D.h>
 
 #pragma hdrstop
 
 /// <summary>
 /// Creates resources which are not bound to any D3D device. Their lifetime effectively extends for the duration of the window.
 /// </summary>
-HRESULT CDirectXControl::CreateDeviceIndependentResources() noexcept
+HRESULT directx_control_t::CreateDeviceIndependentResources() noexcept
 {
-    HRESULT hr = ::D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, &_Direct2D);
-
-    return hr;
+    return S_OK;
 }
 
 /// <summary>
 /// Deletes the resources which are not bound to any D3D device.
 /// </summary>
-void CDirectXControl::DeleteDeviceIndependentResources() noexcept
+void directx_control_t::DeleteDeviceIndependentResources() noexcept
 {
-    _Direct2D.Release();
 }
 
 /// <summary>
 /// Creates resources which are bound to a particular D3D device.
 /// It's all centralized here, in case the resources need to be recreated in case of D3D device loss (eg. display change, remoting, removal of video card, etc).
 /// </summary>
-HRESULT CDirectXControl::CreateDeviceSpecificResources() noexcept
+HRESULT directx_control_t::CreateDeviceSpecificResources() noexcept
 {
-    if (_Direct2D == nullptr)
-        return E_FAIL;
-
     HRESULT hr = S_OK;
 
     // Create the render target.
@@ -52,7 +47,7 @@ HRESULT CDirectXControl::CreateDeviceSpecificResources() noexcept
         D2D1_RENDER_TARGET_PROPERTIES RenderTargetProperties = D2D1::RenderTargetProperties(_UseHardwareRendering ? D2D1_RENDER_TARGET_TYPE_DEFAULT : D2D1_RENDER_TARGET_TYPE_SOFTWARE);
         D2D1_HWND_RENDER_TARGET_PROPERTIES WindowRenderTargetProperties = D2D1::HwndRenderTargetProperties(_hWnd, Size);
 
-        hr = _Direct2D->CreateHwndRenderTarget(RenderTargetProperties, WindowRenderTargetProperties, &_RenderTarget);
+        hr = Direct2DFactory::Get()->CreateHwndRenderTarget(RenderTargetProperties, WindowRenderTargetProperties, &_RenderTarget);
 
         if (SUCCEEDED(hr))
             _RenderTarget->SetAntialiasMode(_UseAntialiasing ? D2D1_ANTIALIAS_MODE_PER_PRIMITIVE : D2D1_ANTIALIAS_MODE_ALIASED);
@@ -64,7 +59,7 @@ HRESULT CDirectXControl::CreateDeviceSpecificResources() noexcept
 /// <summary>
 /// Releases the device specific resources.
 /// </summary>
-void CDirectXControl::DeleteDeviceSpecificResources() noexcept
+void directx_control_t::DeleteDeviceSpecificResources() noexcept
 {
-    _RenderTarget.Release();
+    _RenderTarget.Reset();
 }

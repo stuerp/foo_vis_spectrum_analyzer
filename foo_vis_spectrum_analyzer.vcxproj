@@ -267,18 +267,18 @@
     <ClInclude Include="Windows\Direct3D.h" />
     <ClInclude Include="Windows\DXGI.h" />
     <ClInclude Include="Windows\Event.h" />
-    <ClInclude Include="Configuration\CColorButton.h" />
-    <ClInclude Include="Configuration\CColorDialogEx.h" />
-    <ClInclude Include="Configuration\CColorListBox.h" />
-    <ClInclude Include="Configuration\CDirectXControl.h" />
-    <ClInclude Include="Configuration\CMenuListBox.h" />
-    <ClInclude Include="Configuration\CNumericEdit.h" />
+    <ClInclude Include="Configuration\ColorButton.h" />
+    <ClInclude Include="Configuration\ColorDialog.h" />
+    <ClInclude Include="Configuration\ColorListBox.h" />
+    <ClInclude Include="Configuration\DirectXControl.h" />
+    <ClInclude Include="Configuration\MenuListBox.h" />
+    <ClInclude Include="Configuration\NumericEdit.h" />
     <ClInclude Include="Constants.h" />
     <ClInclude Include="Windows\Error.h" />
     <ClInclude Include="Windows\Path.h" />
     <ClInclude Include="Visuals\GraphOptions.h" />
     <ClInclude Include="State.h" />
-    <ClInclude Include="Configuration\COwnerDrawnListBox.h" />
+    <ClInclude Include="Configuration\OwnerDrawnListBox.h" />
     <ClInclude Include="Analyzers\CQTAnalyzer.h" />
     <ClInclude Include="Visuals\Artwork.h" />
     <ClInclude Include="Visuals\Element.h" />
@@ -344,11 +344,11 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">pch.h</PrecompiledHeaderFile>
     </ClCompile>
-    <ClCompile Include="Configuration\CColorButton.cpp" />
-    <ClCompile Include="Configuration\CColorDialogEx.cpp" />
-    <ClCompile Include="Configuration\CColorListBox.cpp" />
-    <ClCompile Include="Configuration\CDirectXControl.cpp" />
-    <ClCompile Include="Configuration\CMenuListBox.cpp" />
+    <ClCompile Include="Configuration\ColorButton.cpp" />
+    <ClCompile Include="Configuration\ColorDialog.cpp" />
+    <ClCompile Include="Configuration\ColorListBox.cpp" />
+    <ClCompile Include="Configuration\DirectXControl.cpp" />
+    <ClCompile Include="Configuration\MenuListBox.cpp" />
     <ClCompile Include="Tests.cpp" />
     <ClCompile Include="UIElementToolTips.cpp" />
     <ClCompile Include="Visuals\BitMeter\BitMeter.cpp" />
@@ -418,7 +418,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="Configuration\CColorDialogEx.rc" />
+    <ResourceCompile Include="Configuration\ColorDialog.rc" />
     <ResourceCompile Include="Configuration\CommonPage.rc" />
     <ResourceCompile Include="Configuration\FiltersPage.rc" />
     <ResourceCompile Include="Configuration\FrequenciesPage.rc" />

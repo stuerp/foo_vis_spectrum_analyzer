@@ -105,8 +105,8 @@ private:
     chrono_t _Chrono;
 
     // Device-dependent resources
-    CComPtr<ID2D1SolidColorBrush> _DebugBrush;
-    CComPtr<ID2D1Bitmap> _OpacityMask;
+    ComPtr<ID2D1SolidColorBrush> _DebugBrush;
+    ComPtr<ID2D1Bitmap> _OpacityMask;
 
     style_t _BarAreaStyle;
     style_t _BarTopStyle;

@@ -1,5 +1,5 @@
 
-/** $VER: CColorButton.h (2026.02.22) P. Stuer **/
+/** $VER: ColorButton.h (2026.09.26) P. Stuer **/
 
 #pragma once
 
@@ -11,33 +11,24 @@
 #include <WinSock2.h>
 #include <Windows.h>
 
-#include <atlbase.h>
-#include <atltypes.h>
-#include <atlstr.h>
-#include <atlapp.h>
-#include <atlctrls.h>
-#include <atlwin.h>
-#include <atlcom.h>
-#include <atlcrack.h>
-
 #include <vector>
 
-#include "CDirectXControl.h"
+#include "DirectXControl.h"
 
 /// <summary>
 /// Implements a color control that can display gradients.
 /// </summary>
-class CColorButton : public CWindowImpl<CColorButton>, public CDirectXControl
+class color_button_t : public CWindowImpl<color_button_t>, public directx_control_t
 {
 public:
-    CColorButton() : _Color() { }
+    color_button_t() = default;
 
-    CColorButton(const CColorButton &) = delete;
-    CColorButton & operator=(const CColorButton &) = delete;
-    CColorButton(CColorButton &&) = delete;
-    CColorButton & operator=(CColorButton &&) = delete;
+    color_button_t(const color_button_t &) = delete;
+    color_button_t & operator=(const color_button_t &) = delete;
+    color_button_t(color_button_t &&) = delete;
+    color_button_t & operator=(color_button_t &&) = delete;
 
-    virtual ~CColorButton() { }
+    virtual ~color_button_t() = default;
 
     void Initialize(HWND hWnd) noexcept;
     void Terminate() noexcept;
@@ -56,7 +47,7 @@ private:
 
     DECLARE_WND_CLASS_EX(NULL, 0, COLOR_3DFACE)
 
-    BEGIN_MSG_MAP(CColorButton)
+    BEGIN_MSG_MAP(color_button_t)
         MSG_WM_SIZE(OnSize)
         MSG_WM_PAINT(OnPaint)
         MSG_WM_LBUTTONDOWN(OnLButtonDown)
@@ -70,11 +61,11 @@ private:
 
 private:
     // Device-specific resources
-    CComPtr<ID2D1SolidColorBrush> _BackgroundBrush;
-    CComPtr<ID2D1Brush> _Brush;
-    CComPtr<ID2D1BitmapBrush> _PatternBrush;
+    ComPtr<ID2D1SolidColorBrush> _BackgroundBrush;
+    ComPtr<ID2D1Brush> _Brush;
+    ComPtr<ID2D1BitmapBrush> _PatternBrush;
 
 private:
-    D2D1_COLOR_F _Color;
+    D2D1_COLOR_F _Color { };
     std::vector<D2D1_GRADIENT_STOP> _GradientStops;
 };

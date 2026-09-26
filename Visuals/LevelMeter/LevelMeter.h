@@ -15,8 +15,6 @@
 
 #include <d2d1_2.h>
 
-#include <atlbase.h>
-
 #include "Visualization.h"
 
 class level_meter_t : public visualization_t
@@ -46,7 +44,7 @@ private:
     HRESULT CreateOpacityMask(ID2D1DeviceContext * deviceContext) noexcept;
 
 private:
-    CComPtr<ID2D1Bitmap> _OpacityMask;
+    ComPtr<ID2D1Bitmap> _OpacityMask;
 
     style_t _LeftRightStyle;
     style_t _LeftRightIndicatorStyle;
@@ -55,6 +53,6 @@ private:
     style_t _AxisStyle;
 
 #ifdef _DEBUG
-    CComPtr<ID2D1SolidColorBrush> _DebugBrush;
+    ComPtr<ID2D1SolidColorBrush> _DebugBrush;
 #endif
 };

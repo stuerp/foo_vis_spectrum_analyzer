@@ -100,7 +100,7 @@ void common_page_t::InitializeControls() noexcept
             { 3, 10 },
         };
 
-        auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_ARTWORK_OPACITY)); _NumericEdits.push_back(ne); SetInteger(IDC_ARTWORK_OPACITY, (int64_t) (_State->_ArtworkOpacity * 100.f));
+        auto ne = std::make_shared<numeric_edit_t>(); ne->Initialize(GetDlgItem(IDC_ARTWORK_OPACITY)); _NumericEdits.push_back(ne); SetInteger(IDC_ARTWORK_OPACITY, (int64_t) (_State->_ArtworkOpacity * 100.f));
 
         auto w = CUpDownCtrl(GetDlgItem(IDC_ARTWORK_OPACITY_SPIN));
 
@@ -127,7 +127,7 @@ void common_page_t::InitializeControls() noexcept
             { 4, 16 },
         };
 
-        auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_NUM_ARTWORK_COLORS)); _NumericEdits.push_back(ne); SetInteger(IDC_NUM_ARTWORK_COLORS, _State->_NumArtworkColors);
+        auto ne = std::make_shared<numeric_edit_t>(); ne->Initialize(GetDlgItem(IDC_NUM_ARTWORK_COLORS)); _NumericEdits.push_back(ne); SetInteger(IDC_NUM_ARTWORK_COLORS, _State->_NumArtworkColors);
 
         auto w = CUpDownCtrl(GetDlgItem(IDC_NUM_ARTWORK_COLORS_SPIN));
 
@@ -143,7 +143,7 @@ void common_page_t::InitializeControls() noexcept
             { 3, 10 },
         };
 
-        auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_LIGHTNESS_THRESHOLD)); _NumericEdits.push_back(ne); SetInteger(IDC_LIGHTNESS_THRESHOLD, (int64_t) (_State->_LightnessThreshold * 100.f));
+        auto ne = std::make_shared<numeric_edit_t>(); ne->Initialize(GetDlgItem(IDC_LIGHTNESS_THRESHOLD)); _NumericEdits.push_back(ne); SetInteger(IDC_LIGHTNESS_THRESHOLD, (int64_t) (_State->_LightnessThreshold * 100.f));
 
         auto w = CUpDownCtrl(GetDlgItem(IDC_LIGHTNESS_THRESHOLD_SPIN));
 

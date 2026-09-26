@@ -1,5 +1,5 @@
 
-/** $VER: CNumericEdit.h (2023.11.30) P. Stuer - Implements a numeric edit box using WTL. **/
+/** $VER: numeric_edit_t.h (2023.11.30) P. Stuer - Implements a numeric edit box using WTL. **/
 
 #pragma once
 
@@ -22,12 +22,10 @@
 
 #undef SubclassWindow
 
-class CNumericEdit: public CWindowImpl<CNumericEdit, CEdit>
+class numeric_edit_t: public CWindowImpl<numeric_edit_t, CEdit>
 {
 public:
-    CNumericEdit() : _IsSubclassed(false)
-    {
-    }
+    numeric_edit_t() = default;
 
     /// <summary>
     /// Initializes the control.
@@ -64,11 +62,11 @@ public:
         return 0;
     }
 
-    BEGIN_MSG_MAP(CNumericEdit)
+    BEGIN_MSG_MAP(numeric_edit_t)
         MESSAGE_HANDLER(EM_SETSEL, OnSetSel)
     END_MSG_MAP()
 
 private:
-    bool _IsSubclassed;
-    int _Value;
+    bool _IsSubclassed { false };
+    int _Value { 0 };
 };

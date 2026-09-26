@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.h (2026.06.29) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.h (2026.09.26) P. Stuer - Implements the configuration dialog. **/
 
 #pragma once
 
@@ -11,7 +11,7 @@
 #include "Resources.h"
 #include "State.h"
 
-#include "CMenuListBox.h"
+#include "MenuListBox.h"
 
 #include "Page.h"
 
@@ -50,7 +50,7 @@ public:
 
         MESSAGE_HANDLER_EX(UM_CONFIGURATION_CHANGED, OnConfigurationChanged)
 
-        REFLECT_NOTIFICATIONS() // Required for CMenuListBBox and CColorListBox
+        REFLECT_NOTIFICATIONS() // Required for CMenuListBBox and color_list_box_t
 
         CHAIN_MSG_MAP(CDialogResize<configuration_dialog_t>)
     END_MSG_MAP()
@@ -70,7 +70,6 @@ private:
 
     void ConfigurationChanged(ConfigurationChanges settings) const noexcept;
 
-    void UpdatePages(size_t index) const noexcept;
     void ResizePages() noexcept;
 
 public:
@@ -86,7 +85,7 @@ private:
     bool _IsInitializing;
     bool _IgnoreNotifications;
 
-    CMenuListBox _MenuList;
+    menu_list_box_t _MenuList;
     std::vector<std::shared_ptr<page_t>> _Pages;
     CToolTipCtrl _ToolTipControl;
 

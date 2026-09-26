@@ -67,7 +67,7 @@ void frequencies_page_t::InitializeControls() noexcept
             { 3, 50 },
         };
 
-        auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_NUM_BANDS)); _NumericEdits.push_back(ne); SetInteger(IDC_NUM_BANDS, (int64_t) _State->_BandCount);
+        auto ne = std::make_shared<numeric_edit_t>(); ne->Initialize(GetDlgItem(IDC_NUM_BANDS)); _NumericEdits.push_back(ne); SetInteger(IDC_NUM_BANDS, (int64_t) _State->_BandCount);
 
         auto w = CUpDownCtrl(GetDlgItem(IDC_NUM_BANDS_SPIN));
 
@@ -85,7 +85,7 @@ void frequencies_page_t::InitializeControls() noexcept
             { 3, 64 },
         };
 
-        auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_NUM_MEL_BANDS)); _NumericEdits.push_back(ne); SetInteger(IDC_NUM_MEL_BANDS, (int64_t) _State->_MelBandCount);
+        auto ne = std::make_shared<numeric_edit_t>(); ne->Initialize(GetDlgItem(IDC_NUM_MEL_BANDS)); _NumericEdits.push_back(ne); SetInteger(IDC_NUM_MEL_BANDS, (int64_t) _State->_MelBandCount);
 
         auto w = CUpDownCtrl(GetDlgItem(IDC_NUM_MEL_BANDS_SPIN));
 
@@ -108,7 +108,7 @@ void frequencies_page_t::InitializeControls() noexcept
         };
 
         {
-            auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_LO_FREQUENCY)); _NumericEdits.push_back(ne); SetDouble(IDC_LO_FREQUENCY, _State->_LoFrequency);
+            auto ne = std::make_shared<numeric_edit_t>(); ne->Initialize(GetDlgItem(IDC_LO_FREQUENCY)); _NumericEdits.push_back(ne); SetDouble(IDC_LO_FREQUENCY, _State->_LoFrequency);
 
             auto w = CUpDownCtrl(GetDlgItem(IDC_LO_FREQUENCY_SPIN));
 
@@ -119,7 +119,7 @@ void frequencies_page_t::InitializeControls() noexcept
         }
 
         {
-            auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_HI_FREQUENCY)); _NumericEdits.push_back(ne); SetDouble(IDC_HI_FREQUENCY, _State->_HiFrequency);
+            auto ne = std::make_shared<numeric_edit_t>(); ne->Initialize(GetDlgItem(IDC_HI_FREQUENCY)); _NumericEdits.push_back(ne); SetDouble(IDC_HI_FREQUENCY, _State->_HiFrequency);
 
             auto w = CUpDownCtrl(GetDlgItem(IDC_HI_FREQUENCY_SPIN));
 
@@ -131,7 +131,7 @@ void frequencies_page_t::InitializeControls() noexcept
     }
 
     {
-        auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_MIN_NOTE)); _NumericEdits.push_back(ne); SetNote(IDC_MIN_NOTE, _State->_LoNote);
+        auto ne = std::make_shared<numeric_edit_t>(); ne->Initialize(GetDlgItem(IDC_MIN_NOTE)); _NumericEdits.push_back(ne); SetNote(IDC_MIN_NOTE, _State->_LoNote);
 
         auto w = CUpDownCtrl(GetDlgItem(IDC_MIN_NOTE_SPIN));
 
@@ -140,7 +140,7 @@ void frequencies_page_t::InitializeControls() noexcept
     }
 
     {
-        auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_MAX_NOTE)); _NumericEdits.push_back(ne); SetNote(IDC_MAX_NOTE, _State->_HiNote);
+        auto ne = std::make_shared<numeric_edit_t>(); ne->Initialize(GetDlgItem(IDC_MAX_NOTE)); _NumericEdits.push_back(ne); SetNote(IDC_MAX_NOTE, _State->_HiNote);
 
         auto w = CUpDownCtrl(GetDlgItem(IDC_MAX_NOTE_SPIN));
 
@@ -149,7 +149,7 @@ void frequencies_page_t::InitializeControls() noexcept
     }
 
     {
-        auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_BANDS_PER_OCTAVE)); _NumericEdits.push_back(ne); SetInteger(IDC_BANDS_PER_OCTAVE, (int64_t) _State->_BandsPerOctave);
+        auto ne = std::make_shared<numeric_edit_t>(); ne->Initialize(GetDlgItem(IDC_BANDS_PER_OCTAVE)); _NumericEdits.push_back(ne); SetInteger(IDC_BANDS_PER_OCTAVE, (int64_t) _State->_BandsPerOctave);
 
         auto w = CUpDownCtrl(GetDlgItem(IDC_BANDS_PER_OCTAVE_SPIN));
 
@@ -168,7 +168,7 @@ void frequencies_page_t::InitializeControls() noexcept
             { 6, 10000 }, // 100.0
         };
 
-        auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_PITCH)); _NumericEdits.push_back(ne); SetDouble(IDC_PITCH, _State->_TuningPitch);
+        auto ne = std::make_shared<numeric_edit_t>(); ne->Initialize(GetDlgItem(IDC_PITCH)); _NumericEdits.push_back(ne); SetDouble(IDC_PITCH, _State->_TuningPitch);
 
         auto w = CUpDownCtrl(GetDlgItem(IDC_PITCH_SPIN));
 
@@ -179,7 +179,7 @@ void frequencies_page_t::InitializeControls() noexcept
     }
 
     {
-        auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_TRANSPOSE)); _NumericEdits.push_back(ne); SetInteger(IDC_TRANSPOSE, _State->_Transpose);
+        auto ne = std::make_shared<numeric_edit_t>(); ne->Initialize(GetDlgItem(IDC_TRANSPOSE)); _NumericEdits.push_back(ne); SetInteger(IDC_TRANSPOSE, _State->_Transpose);
 
         auto w = CUpDownCtrl(GetDlgItem(IDC_TRANSPOSE_SPIN));
 
@@ -206,7 +206,7 @@ void frequencies_page_t::InitializeControls() noexcept
             { 3,   10 }, // 0.10
         };
 
-        auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_SKEW_FACTOR)); _NumericEdits.push_back(ne); SetDouble(IDC_SKEW_FACTOR, _State->_SkewFactor);
+        auto ne = std::make_shared<numeric_edit_t>(); ne->Initialize(GetDlgItem(IDC_SKEW_FACTOR)); _NumericEdits.push_back(ne); SetDouble(IDC_SKEW_FACTOR, _State->_SkewFactor);
 
         auto w = CUpDownCtrl(GetDlgItem(IDC_SKEW_FACTOR_SPIN));
 
@@ -225,7 +225,7 @@ void frequencies_page_t::InitializeControls() noexcept
             { 4,  50 }, //  5.0
         };
 
-        auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_BANDWIDTH)); _NumericEdits.push_back(ne); SetDouble(IDC_BANDWIDTH, _State->_Bandwidth, 0, 1);
+        auto ne = std::make_shared<numeric_edit_t>(); ne->Initialize(GetDlgItem(IDC_BANDWIDTH)); _NumericEdits.push_back(ne); SetDouble(IDC_BANDWIDTH, _State->_Bandwidth, 0, 1);
 
         auto w = CUpDownCtrl(GetDlgItem(IDC_BANDWIDTH_SPIN));
 

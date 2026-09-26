@@ -72,13 +72,13 @@ private:
     void UpdateGradientStopPositons(style_t * style, size_t index) const noexcept;
 
 private:
-    std::vector<std::shared_ptr<CNumericEdit>> _NumericEdits;
+    std::vector<std::shared_ptr<numeric_edit_t>> _NumericEdits;
     std::vector<VisualElement> _ActiveStyles;   // The styles that are relevant for the current visualization.
     size_t _SelectedStyle;                      // Index of the selected style in the listbox.
 
-    CColorButton _Color;
-    CColorButton _Gradient;
-    CColorListBox _Colors;
+    color_button_t _Color;
+    color_button_t _Gradient;
+    color_list_box_t _Colors;
 
     style_manager_t * _StyleManager;
 

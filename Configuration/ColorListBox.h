@@ -1,5 +1,5 @@
 
-/** $VER: CColorListBox.h (2026.02.21) P. Stuer - Implements a list box that displays colors using WTL. **/
+/** $VER: color_list_box_t.h (2026.02.21) P. Stuer - Implements a list box that displays colors using WTL. **/
 
 #pragma once
 
@@ -22,21 +22,20 @@
 
 #include <vector>
 
-#include "CDirectXControl.h"
-#include "COwnerDrawnListBox.h"
-#include "Support.h"
+#include "DirectXControl.h"
+#include "OwnerDrawnListbox.h"
 
-class CColorListBox : public COwnerDrawnListBox<CColorListBox>, public CDirectXControl
+class color_list_box_t : public owner_drawn_listbox_t<color_list_box_t>, public directx_control_t
 {
 public:
-    CColorListBox() { }
+    color_list_box_t() { }
 
-    CColorListBox(const CColorListBox &) = delete;
-    CColorListBox & operator=(const CColorListBox &) = delete;
-    CColorListBox(CColorListBox &&) = delete;
-    CColorListBox & operator=(CColorListBox &&) = delete;
+    color_list_box_t(const color_list_box_t &) = delete;
+    color_list_box_t & operator=(const color_list_box_t &) = delete;
+    color_list_box_t(color_list_box_t &&) = delete;
+    color_list_box_t & operator=(color_list_box_t &&) = delete;
 
-    virtual ~CColorListBox() noexcept { }
+    virtual ~color_list_box_t() noexcept { }
 
     void Initialize(HWND hWnd) noexcept;
     void Terminate() noexcept;
@@ -52,12 +51,12 @@ private:
 
     void SendChangedNotification() const noexcept;
 
-    BEGIN_MSG_MAP(CColorListBox)
+    BEGIN_MSG_MAP(color_list_box_t)
         MSG_WM_SIZE(OnSize)
 
         REFLECTED_COMMAND_CODE_HANDLER(LBN_DBLCLK, OnDblClick)
 
-        CHAIN_MSG_MAP(COwnerDrawnListBox<CColorListBox>)
+        CHAIN_MSG_MAP(owner_drawn_listbox_t<color_list_box_t>)
     END_MSG_MAP()
 
 private:

@@ -12,6 +12,8 @@
 
 #include <wrl/client.h>
 
+using Microsoft::WRL::ComPtr;
+
 #include <Win32Exception.h>
 
 class DXGIFactory

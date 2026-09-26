@@ -39,7 +39,7 @@ private:
     void UpdateSelectedChannels() noexcept;
 
 private:
-    std::vector<std::shared_ptr<CNumericEdit>> _NumericEdits;
+    std::vector<std::shared_ptr<numeric_edit_t>> _NumericEdits;
 
     size_t _SelectedGraph;                      // Index of the selected graph in the listbox.
 };

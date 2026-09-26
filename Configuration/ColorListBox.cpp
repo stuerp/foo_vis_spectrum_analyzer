@@ -1,10 +1,10 @@
 
-/** $VER: CColorListBox.cpp (2026.02.22) P. Stuer - Implements a list box that displays colors using WTL. **/
+/** $VER: ColorListBox.cpp (2026.02.22) P. Stuer - Implements a list box that displays colors using WTL. **/
 
 #include "pch.h"
 
-#include "CColorListBox.h"
-#include "CColorDialogEx.h"
+#include "ColorListBox.h"
+#include "ColorDialog.h"
 
 #include "Theme.h"
 #include "Color.h"
@@ -15,7 +15,7 @@
 /// <summary>
 /// Initializes the control.
 /// </summary>
-void CColorListBox::Initialize(HWND hWnd) noexcept
+void color_list_box_t::Initialize(HWND hWnd) noexcept
 {
     if (_IsSubclassed)
         return;
@@ -36,7 +36,7 @@ void CColorListBox::Initialize(HWND hWnd) noexcept
 /// Terminates the control.
 /// </summary>
 /// <remarks>This is necessary to release the DirectX resources in case the control gets recreated later on.</remarks>
-void CColorListBox::Terminate() noexcept
+void color_list_box_t::Terminate() noexcept
 {
     if (!IsWindow() || !_IsSubclassed)
         return;
@@ -51,7 +51,7 @@ void CColorListBox::Terminate() noexcept
 /// <summary>
 /// Draws an item.
 /// </summary>
-void CColorListBox::DrawItem(LPDRAWITEMSTRUCT dis) noexcept
+void color_list_box_t::DrawItem(LPDRAWITEMSTRUCT dis) noexcept
 {
     HDC hDC = dis->hDC;
 
@@ -117,7 +117,7 @@ void CColorListBox::DrawItem(LPDRAWITEMSTRUCT dis) noexcept
 /// <summary>
 /// Measures the size of an item.
 /// </summary>
-void CColorListBox::MeasureItem(LPMEASUREITEMSTRUCT lpMeasureItemStruct) noexcept
+void color_list_box_t::MeasureItem(LPMEASUREITEMSTRUCT lpMeasureItemStruct) noexcept
 {
     lpMeasureItemStruct->itemHeight = 20;
 }
@@ -125,7 +125,7 @@ void CColorListBox::MeasureItem(LPMEASUREITEMSTRUCT lpMeasureItemStruct) noexcep
 /// <summary>
 /// Gets the colors.
 /// </summary>
-void CColorListBox::GetColors(std::vector<D2D1_COLOR_F> & colors) const noexcept
+void color_list_box_t::GetColors(std::vector<D2D1_COLOR_F> & colors) const noexcept
 {
     colors = _Colors;
 }
@@ -133,7 +133,7 @@ void CColorListBox::GetColors(std::vector<D2D1_COLOR_F> & colors) const noexcept
 /// <summary>
 /// Sets the colors.
 /// </summary>
-void CColorListBox::SetColors(const std::vector<D2D1_COLOR_F> & colors) noexcept
+void color_list_box_t::SetColors(const std::vector<D2D1_COLOR_F> & colors) noexcept
 {
     _Colors = colors;
 
@@ -150,7 +150,7 @@ void CColorListBox::SetColors(const std::vector<D2D1_COLOR_F> & colors) noexcept
 /// <summary>
 /// Handles a double-click on an item.
 /// </summary>
-LRESULT CColorListBox::OnDblClick(WORD, WORD, HWND, BOOL & handled) noexcept
+LRESULT color_list_box_t::OnDblClick(WORD, WORD, HWND, BOOL & handled) noexcept
 {
     const int Index = GetCurSel();
 
@@ -159,7 +159,7 @@ LRESULT CColorListBox::OnDblClick(WORD, WORD, HWND, BOOL & handled) noexcept
 
     D2D1_COLOR_F Color = _Colors[(size_t) Index];
 
-    CColorDialogEx cd;
+    color_dialog_t cd;
 
     if (cd.SelectColor(m_hWnd, Color))
     {
@@ -174,7 +174,7 @@ LRESULT CColorListBox::OnDblClick(WORD, WORD, HWND, BOOL & handled) noexcept
 /// <summary>
 /// Sends a notification to the parent that the content has changed.
 /// </summary>
-void CColorListBox::SendChangedNotification() const noexcept
+void color_list_box_t::SendChangedNotification() const noexcept
 {
     const NMHDR nmhdr = { m_hWnd, (UINT_PTR) GetDlgCtrlID(), (UINT) NM_RETURN };
 

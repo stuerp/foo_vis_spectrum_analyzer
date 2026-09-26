@@ -87,7 +87,7 @@ void level_meter_t::Render(ID2D1DeviceContext * deviceContext, IDXGISwapChain1 *
                     if (_State->_LEDIntegralSize)
                         Rect.right = std::ceil(Rect.right / LEDHeight) * LEDHeight;
 
-                    deviceContext->FillOpacityMask(_OpacityMask, _LeftRightStyle._Brush.Get(), D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
+                    deviceContext->FillOpacityMask(_OpacityMask.Get(), _LeftRightStyle._Brush.Get(), D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
                 }
             }
 
@@ -112,7 +112,7 @@ void level_meter_t::Render(ID2D1DeviceContext * deviceContext, IDXGISwapChain1 *
                     if (_State->_LEDIntegralSize)
                         Rect.right = std::ceil(Rect.right / LEDHeight) * LEDHeight;
 
-                    deviceContext->FillOpacityMask(_OpacityMask, _MidSideStyle._Brush.Get(), D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
+                    deviceContext->FillOpacityMask(_OpacityMask.Get(), _MidSideStyle._Brush.Get(), D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
                 }
             }
 
@@ -175,7 +175,7 @@ void level_meter_t::Render(ID2D1DeviceContext * deviceContext, IDXGISwapChain1 *
                     if (_State->_LEDIntegralSize)
                         Rect.bottom = std::ceil(Rect.bottom / LEDHeight) * LEDHeight;
 
-                    deviceContext->FillOpacityMask(_OpacityMask, _LeftRightStyle._Brush.Get(), D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
+                    deviceContext->FillOpacityMask(_OpacityMask.Get(), _LeftRightStyle._Brush.Get(), D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
                 }
             }
 
@@ -200,7 +200,7 @@ void level_meter_t::Render(ID2D1DeviceContext * deviceContext, IDXGISwapChain1 *
                     if (_State->_LEDIntegralSize)
                         Rect.bottom = std::ceil(Rect.bottom / LEDHeight) * LEDHeight;
 
-                    deviceContext->FillOpacityMask(_OpacityMask, _MidSideStyle._Brush.Get(), D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
+                    deviceContext->FillOpacityMask(_OpacityMask.Get(), _MidSideStyle._Brush.Get(), D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
                 }
             }
 
@@ -344,7 +344,7 @@ HRESULT level_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * device
 void level_meter_t::DeleteDeviceSpecificResources() noexcept
 {
 #ifdef _DEBUG
-    _DebugBrush.Release();
+    _DebugBrush.Reset();
 #endif
 
     _AxisStyle.DeleteDeviceSpecificResources();
@@ -353,7 +353,7 @@ void level_meter_t::DeleteDeviceSpecificResources() noexcept
     _LeftRightIndicatorStyle.DeleteDeviceSpecificResources();
     _LeftRightStyle.DeleteDeviceSpecificResources();
 
-    _OpacityMask.Release();
+    _OpacityMask.Reset();
 }
 
 /// <summary>
@@ -363,57 +363,58 @@ HRESULT level_meter_t::CreateOpacityMask(ID2D1DeviceContext * deviceContext) noe
 {
     D2D1_SIZE_F Size = deviceContext->GetSize();
 
-    CComPtr<ID2D1BitmapRenderTarget> rt;
+    ComPtr<ID2D1BitmapRenderTarget> rt;
 
-    HRESULT hr = deviceContext->CreateCompatibleRenderTarget(D2D1::SizeF(Size.width, Size.height), &rt);
+    HRESULT hr = deviceContext->CreateCompatibleRenderTarget(Size, rt.GetAddressOf());
 
-    if (SUCCEEDED(hr))
+    if (FAILED(hr))
+        return hr;
+
+    rt->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
+
+    ComPtr<ID2D1SolidColorBrush> Brush;
+
+    hr = rt->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Black), Brush.GetAddressOf()); // Black parts will be masked out.
+
+    if (FAILED(hr))
+        return hr;
+
+    rt->BeginDraw();
+
+    rt->Clear(); // Transparent
+
+    const FLOAT LEDSize = _State->_LEDLight + _State->_LEDGap;
+
+    if (LEDSize > 0.f)
     {
-        rt->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
-
-        CComPtr<ID2D1SolidColorBrush> Brush;
-
-//      hr = rt->CreateSolidColorBrush(D2D1::ColorF(0.f, 0.f, 0.f, 1.f), &Brush);
-        hr = rt->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Black), &Brush); // Black parts will be masked out.
-
-        if (SUCCEEDED(hr))
+        if (_State->_IsHorizontalLevelMeter)
         {
-            rt->BeginDraw();
+            FLOAT w = Size.width;
 
-            rt->Clear(); // Transparent
+            if (_State->_LEDIntegralSize)
+                w = std::ceil(w / LEDSize) * LEDSize;
 
-            const FLOAT LEDSize = _State->_LEDLight + _State->_LEDGap;
-
-            if (LEDSize > 0.f)
-            {
-                if (_State->_IsHorizontalLevelMeter)
-                {
-                    FLOAT w = Size.width;
-
-                    if (_State->_LEDIntegralSize)
-                        w = std::ceil(w / LEDSize) * LEDSize;
-
-                    for (FLOAT x = ((Size.width - w) / 2.f) + _State->_LEDGap; x < w; x += LEDSize)
-                        rt->FillRectangle(D2D1::RectF(x, 0.f, x + _State->_LEDLight, Size.height), Brush);
-                }
-                else
-                {
-                    FLOAT h = Size.height;
-
-                    if (_State->_LEDIntegralSize)
-                        h = std::ceil(h / LEDSize) * LEDSize;
-
-                    for (FLOAT y = ((Size.height - h) / 2.f) + _State->_LEDGap; y < h; y += LEDSize)
-                        rt->FillRectangle(D2D1::RectF(0.f, y, Size.width, y + _State->_LEDLight), Brush);
-                }
-            }
-
-            hr = rt->EndDraw();
+            for (FLOAT x = ((Size.width - w) / 2.f) + _State->_LEDGap; x < w; x += LEDSize)
+                rt->FillRectangle(D2D1::RectF(x, 0.f, x + _State->_LEDLight, Size.height), Brush.Get());
         }
+        else
+        {
+            FLOAT h = Size.height;
 
-        if (SUCCEEDED(hr))
-            hr = rt->GetBitmap(&_OpacityMask);
+            if (_State->_LEDIntegralSize)
+                h = std::ceil(h / LEDSize) * LEDSize;
+
+            for (FLOAT y = ((Size.height - h) / 2.f) + _State->_LEDGap; y < h; y += LEDSize)
+                rt->FillRectangle(D2D1::RectF(0.f, y, Size.width, y + _State->_LEDLight), Brush.Get());
+        }
     }
+
+    hr = rt->EndDraw();
+
+    if (FAILED(hr))
+        return hr;
+
+    hr = rt->GetBitmap(_OpacityMask.GetAddressOf());
 
     return hr;
 }

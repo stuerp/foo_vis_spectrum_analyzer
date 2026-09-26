@@ -63,7 +63,7 @@ void filters_page_t::InitializeControls() noexcept
             { 1,     100 }, //     1.0
         };
 
-        auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_FREQ_SHIFT)); _NumericEdits.push_back(ne); SetDouble(IDC_FREQ_SHIFT, _State->_FrequencyShift);
+        auto ne = std::make_shared<numeric_edit_t>(); ne->Initialize(GetDlgItem(IDC_FREQ_SHIFT)); _NumericEdits.push_back(ne); SetDouble(IDC_FREQ_SHIFT, _State->_FrequencyShift);
 
         auto w = CUpDownCtrl(GetDlgItem(IDC_FREQ_SHIFT_SPIN));
 
@@ -79,7 +79,7 @@ void filters_page_t::InitializeControls() noexcept
             { 1,     100 }, //     1.0
         };
 
-        auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_FREQ_TILT)); _NumericEdits.push_back(ne); SetDouble(IDC_FREQ_TILT, _State->_FrequencyTilt);
+        auto ne = std::make_shared<numeric_edit_t>(); ne->Initialize(GetDlgItem(IDC_FREQ_TILT)); _NumericEdits.push_back(ne); SetDouble(IDC_FREQ_TILT, _State->_FrequencyTilt);
 
         auto w = CUpDownCtrl(GetDlgItem(IDC_FREQ_TILT_SPIN));
 
@@ -101,7 +101,7 @@ void filters_page_t::InitializeControls() noexcept
             { 7, 1000000 }, // 10000.0
         };
 
-        auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_FREQ_TILT_PIVOT)); _NumericEdits.push_back(ne); SetDouble(IDC_FREQ_TILT_PIVOT, _State->_FrequencyTiltPivot);
+        auto ne = std::make_shared<numeric_edit_t>(); ne->Initialize(GetDlgItem(IDC_FREQ_TILT_PIVOT)); _NumericEdits.push_back(ne); SetDouble(IDC_FREQ_TILT_PIVOT, _State->_FrequencyTiltPivot);
 
         auto w = CUpDownCtrl(GetDlgItem(IDC_FREQ_TILT_PIVOT_SPIN));
 
@@ -117,7 +117,7 @@ void filters_page_t::InitializeControls() noexcept
             { 1,     100 }, //     1.0
         };
 
-        auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_EQ_AMT)); _NumericEdits.push_back(ne); SetDouble(IDC_EQ_AMT, _State->_EqualizationAmount);
+        auto ne = std::make_shared<numeric_edit_t>(); ne->Initialize(GetDlgItem(IDC_EQ_AMT)); _NumericEdits.push_back(ne); SetDouble(IDC_EQ_AMT, _State->_EqualizationAmount);
 
         auto w = CUpDownCtrl(GetDlgItem(IDC_EQ_AMT_SPIN));
 
@@ -139,7 +139,7 @@ void filters_page_t::InitializeControls() noexcept
             { 7, 1000000 }, // 10000.0
         };
 
-        auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_EQ_OFFS)); _NumericEdits.push_back(ne); SetDouble(IDC_EQ_OFFS, _State->_EqualizationFreqScale);
+        auto ne = std::make_shared<numeric_edit_t>(); ne->Initialize(GetDlgItem(IDC_EQ_OFFS)); _NumericEdits.push_back(ne); SetDouble(IDC_EQ_OFFS, _State->_EqualizationFreqScale);
 
         auto w = CUpDownCtrl(GetDlgItem(IDC_EQ_OFFS_SPIN));
 
@@ -161,7 +161,7 @@ void filters_page_t::InitializeControls() noexcept
             { 7, 1000000 }, // 10000.0
         };
 
-        auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_EQ_DEPTH)); _NumericEdits.push_back(ne); SetDouble(IDC_EQ_DEPTH, _State->_EqualizationDepth);
+        auto ne = std::make_shared<numeric_edit_t>(); ne->Initialize(GetDlgItem(IDC_EQ_DEPTH)); _NumericEdits.push_back(ne); SetDouble(IDC_EQ_DEPTH, _State->_EqualizationDepth);
 
         auto w = CUpDownCtrl(GetDlgItem(IDC_EQ_DEPTH_SPIN));
 
@@ -179,7 +179,7 @@ void filters_page_t::InitializeControls() noexcept
             { 3, 10 }, // 0.10
         };
 
-        auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_WT_AMT)); _NumericEdits.push_back(ne); SetDouble(IDC_WT_AMT, _State->_WeightingAmount);
+        auto ne = std::make_shared<numeric_edit_t>(); ne->Initialize(GetDlgItem(IDC_WT_AMT)); _NumericEdits.push_back(ne); SetDouble(IDC_WT_AMT, _State->_WeightingAmount);
 
         auto w = CUpDownCtrl(GetDlgItem(IDC_WT_AMT_SPIN));
 
@@ -201,11 +201,11 @@ void filters_page_t::InitializeControls() noexcept
     }
 
     {
-        auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_LOW_BAND)); _NumericEdits.push_back(ne); SetDouble(IDC_LOW_BAND, _State->_LowBand);
+        auto ne = std::make_shared<numeric_edit_t>(); ne->Initialize(GetDlgItem(IDC_LOW_BAND)); _NumericEdits.push_back(ne); SetDouble(IDC_LOW_BAND, _State->_LowBand);
     }
 
     {
-        auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_HIGH_BAND)); _NumericEdits.push_back(ne); SetDouble(IDC_HIGH_BAND, _State->_HighBand);
+        auto ne = std::make_shared<numeric_edit_t>(); ne->Initialize(GetDlgItem(IDC_HIGH_BAND)); _NumericEdits.push_back(ne); SetDouble(IDC_HIGH_BAND, _State->_HighBand);
     }
 
     UpdateControls();

@@ -50,7 +50,7 @@ void spectrum_t::Move(const D2D1_RECT_F & rect) noexcept
 {
     InitializeMetrics(rect);
 
-    _OpacityMask.Release(); // Forces the opacity mask to be regenerated.
+    _OpacityMask.Reset(); // Forces the opacity mask to be regenerated.
 }
 
 /// <summary>
@@ -284,7 +284,7 @@ void spectrum_t::RenderBarPart(ID2D1DeviceContext * deviceContext, D2D1_RECT_F &
 
         const D2D1_RECT_F Src = { rect.left, 0.f, rect.right, _ClientSize.height };
 
-        deviceContext->FillOpacityMask(_OpacityMask, style._Brush.Get(), Src, Src);
+        deviceContext->FillOpacityMask(_OpacityMask.Get(), style._Brush.Get(), Src, Src);
 
         deviceContext->PopAxisAlignedClip();
     }
@@ -306,34 +306,35 @@ void spectrum_t::RenderCurve(ID2D1DeviceContext * deviceContext) noexcept
     deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
     geometry_points_t Points;
-    CComPtr<ID2D1PathGeometry> Curve;
+
+    ComPtr<ID2D1PathGeometry> Curve;
 
     if ((_State->_PeakMode != PeakMode::None) && (_CurvePeakAreaStyle.IsEnabled() || _CurvePeakLineStyle.IsEnabled()))
     {
-    //  Points.Clear();
+        Points.Clear();
 
         hr = CreateGeometryPointsFromAmplitude(Points, true);
 
         // Draw the area with the peak values.
         if (SUCCEEDED(hr) && _CurvePeakAreaStyle.IsEnabled())
         {
-            hr = CreateCurve(Points, true, &Curve);
+            hr = CreateCurve(Points, true, Curve.GetAddressOf());
 
             if (SUCCEEDED(hr))
-                deviceContext->FillGeometry(Curve, _CurvePeakAreaStyle._Brush.Get());
+                deviceContext->FillGeometry(Curve.Get(), _CurvePeakAreaStyle._Brush.Get());
 
-            Curve.Release();
+            Curve.Reset();
         }
 
         // Draw the line with the peak values.
         if (SUCCEEDED(hr) && _CurvePeakLineStyle.IsEnabled())
         {
-            hr = CreateCurve(Points, false, &Curve);
+            hr = CreateCurve(Points, false, Curve.GetAddressOf());
 
             if (SUCCEEDED(hr))
-                deviceContext->DrawGeometry(Curve, _CurvePeakLineStyle._Brush.Get(), _CurvePeakLineStyle._Thickness);
+                deviceContext->DrawGeometry(Curve.Get(), _CurvePeakLineStyle._Brush.Get(), _CurvePeakLineStyle._Thickness);
 
-            Curve.Release();
+            Curve.Reset();
         }
     }
 
@@ -346,23 +347,23 @@ void spectrum_t::RenderCurve(ID2D1DeviceContext * deviceContext) noexcept
         // Draw the area with the current values.
         if (SUCCEEDED(hr) && _CurveAreaStyle.IsEnabled())
         {
-            hr = CreateCurve(Points, true, &Curve);
+            hr = CreateCurve(Points, true, Curve.GetAddressOf());
 
             if (SUCCEEDED(hr))
-                deviceContext->FillGeometry(Curve, _CurveAreaStyle._Brush.Get());
+                deviceContext->FillGeometry(Curve.Get(), _CurveAreaStyle._Brush.Get());
 
-            Curve.Release();
+            Curve.Reset();
         }
 
         // Draw the line with the current values.
         if (SUCCEEDED(hr) && _CurveLineStyle.IsEnabled())
         {
-            hr = CreateCurve(Points, false, &Curve);
+            hr = CreateCurve(Points, false, Curve.GetAddressOf());
 
             if (SUCCEEDED(hr))
-                deviceContext->DrawGeometry(Curve, _CurveLineStyle._Brush.Get(), _CurveLineStyle._Thickness);
+                deviceContext->DrawGeometry(Curve.Get(), _CurveLineStyle._Brush.Get(), _CurveLineStyle._Thickness);
 
-            Curve.Release();
+            Curve.Reset();
         }
     }
 }
@@ -395,7 +396,7 @@ void spectrum_t::RenderRadialBars(ID2D1DeviceContext * deviceContext) noexcept
     size_t i = 0;
     double n = (double) (_Analysis->_FrequencyBands.size() - 1);
 
-    CComPtr<ID2D1PathGeometry> Path;
+    ComPtr<ID2D1PathGeometry> Path;
 
     for (const auto & fb : _Analysis->_FrequencyBands)
     {
@@ -409,7 +410,7 @@ void spectrum_t::RenderRadialBars(ID2D1DeviceContext * deviceContext) noexcept
                 const FLOAT r1 = InnerRadius;
                 const FLOAT r2 = InnerRadius + (MaxSegmentHeight * (FLOAT) fb.PeakValue);
 
-                if (SUCCEEDED(CreateSegment(a, a - da, r1, r2, &Path)))
+                if (SUCCEEDED(CreateSegment(a, a - da, r1, r2, Path.GetAddressOf())))
                 {
                     if (_BarPeakAreaStyle.Has(style_t::Features::HorizontalGradient))
                     {
@@ -418,9 +419,9 @@ void spectrum_t::RenderRadialBars(ID2D1DeviceContext * deviceContext) noexcept
                         _BarPeakAreaStyle.SetBrushColor(Value);
                     }
 
-                    deviceContext->FillGeometry(Path, _BarPeakAreaStyle._Brush.Get());
+                    deviceContext->FillGeometry(Path.Get(), _BarPeakAreaStyle._Brush.Get());
 
-                    Path.Release();
+                    Path.Reset();
                 }
             }
 
@@ -430,7 +431,7 @@ void spectrum_t::RenderRadialBars(ID2D1DeviceContext * deviceContext) noexcept
                 const FLOAT r1 = InnerRadius + (MaxSegmentHeight * (FLOAT) fb.PeakValue) - _BarPeakTopStyle._Thickness / 2.f;
                 const FLOAT r2 = InnerRadius + (MaxSegmentHeight * (FLOAT) fb.PeakValue) + _BarPeakTopStyle._Thickness;
 
-                if (SUCCEEDED(CreateSegment(a, a - da, r1, r2, &Path)))
+                if (SUCCEEDED(CreateSegment(a, a - da, r1, r2, Path.GetAddressOf())))
                 {
                     if (_BarPeakTopStyle.Has(style_t::Features::HorizontalGradient))
                     {
@@ -443,9 +444,9 @@ void spectrum_t::RenderRadialBars(ID2D1DeviceContext * deviceContext) noexcept
 
                     _BarPeakTopStyle._Brush->SetOpacity(Opacity);
 
-                    deviceContext->FillGeometry(Path, _BarPeakTopStyle._Brush.Get());
+                    deviceContext->FillGeometry(Path.Get(), _BarPeakTopStyle._Brush.Get());
 
-                    Path.Release();
+                    Path.Reset();
                 }
             }
 
@@ -455,7 +456,7 @@ void spectrum_t::RenderRadialBars(ID2D1DeviceContext * deviceContext) noexcept
                 const FLOAT r1 = InnerRadius;
                 const FLOAT r2 = InnerRadius + (MaxSegmentHeight * (FLOAT) fb.Value);
 
-                if (SUCCEEDED(CreateSegment(a, a - da, r1, r2, &Path)))
+                if (SUCCEEDED(CreateSegment(a, a - da, r1, r2, Path.GetAddressOf())))
                 {
                     if (_BarAreaStyle.Has(style_t::Features::HorizontalGradient))
                     {
@@ -464,9 +465,9 @@ void spectrum_t::RenderRadialBars(ID2D1DeviceContext * deviceContext) noexcept
                         _BarAreaStyle.SetBrushColor(Value);
                     }
 
-                    deviceContext->FillGeometry(Path, _BarAreaStyle._Brush.Get());
+                    deviceContext->FillGeometry(Path.Get(), _BarAreaStyle._Brush.Get());
 
-                    Path.Release();
+                    Path.Reset();
                 }
             }
 
@@ -476,7 +477,7 @@ void spectrum_t::RenderRadialBars(ID2D1DeviceContext * deviceContext) noexcept
                 const FLOAT r1 = InnerRadius + (MaxSegmentHeight * (FLOAT) fb.Value) - _BarTopStyle._Thickness / 2.f;
                 const FLOAT r2 = InnerRadius + (MaxSegmentHeight * (FLOAT) fb.Value) + _BarTopStyle._Thickness;
 
-                if (SUCCEEDED(CreateSegment(a, a - da, r1, r2, &Path)))
+                if (SUCCEEDED(CreateSegment(a, a - da, r1, r2, Path.GetAddressOf())))
                 {
                     if (_BarTopStyle.Has(style_t::Features::HorizontalGradient))
                     {
@@ -485,9 +486,9 @@ void spectrum_t::RenderRadialBars(ID2D1DeviceContext * deviceContext) noexcept
                         _BarTopStyle.SetBrushColor(Value);
                     }
 
-                    deviceContext->FillGeometry(Path, _BarTopStyle._Brush.Get());
+                    deviceContext->FillGeometry(Path.Get(), _BarTopStyle._Brush.Get());
 
-                    Path.Release();
+                    Path.Reset();
                 }
             }
         }
@@ -511,7 +512,8 @@ void spectrum_t::RenderRadialCurve(ID2D1DeviceContext * deviceContext) noexcept
     deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
     geometry_points_t Points;
-    CComPtr<ID2D1PathGeometry> Curve;
+
+    ComPtr<ID2D1PathGeometry> Curve;
 
     const FLOAT Side = std::min(_ClientSize.width / 2.f, _ClientSize.height / 2.f);
     const FLOAT InnerRadius = Side * _State->_InnerRadius;
@@ -525,23 +527,23 @@ void spectrum_t::RenderRadialCurve(ID2D1DeviceContext * deviceContext) noexcept
         // Draw the area with the peak values.
         if (SUCCEEDED(hr) && _CurvePeakAreaStyle.IsEnabled())
         {
-            hr = CreateRadialCurve(Points, InnerRadius, true, &Curve);
+            hr = CreateRadialCurve(Points, InnerRadius, true, Curve.GetAddressOf());
 
             if (SUCCEEDED(hr))
-                deviceContext->FillGeometry(Curve, _CurvePeakAreaStyle._Brush.Get());
+                deviceContext->FillGeometry(Curve.Get(), _CurvePeakAreaStyle._Brush.Get());
 
-            Curve.Release();
+            Curve.Reset();
         }
 
         // Draw the line with the peak values.
         if (SUCCEEDED(hr) && _CurvePeakLineStyle.IsEnabled())
         {
-            hr = CreateRadialCurve(Points, InnerRadius, false, &Curve);
+            hr = CreateRadialCurve(Points, InnerRadius, false, Curve.GetAddressOf());
 
             if (SUCCEEDED(hr))
-                deviceContext->DrawGeometry(Curve, _CurvePeakLineStyle._Brush.Get(), _CurvePeakLineStyle._Thickness);
+                deviceContext->DrawGeometry(Curve.Get(), _CurvePeakLineStyle._Brush.Get(), _CurvePeakLineStyle._Thickness);
 
-            Curve.Release();
+            Curve.Reset();
         }
     }
 
@@ -554,23 +556,23 @@ void spectrum_t::RenderRadialCurve(ID2D1DeviceContext * deviceContext) noexcept
         // Draw the area with the current values.
         if (SUCCEEDED(hr) && _CurveAreaStyle.IsEnabled())
         {
-            hr = CreateRadialCurve(Points, InnerRadius, true, &Curve);
+            hr = CreateRadialCurve(Points, InnerRadius, true, Curve.GetAddressOf());
 
             if (SUCCEEDED(hr))
-                deviceContext->FillGeometry(Curve, _CurveAreaStyle._Brush.Get());
+                deviceContext->FillGeometry(Curve.Get(), _CurveAreaStyle._Brush.Get());
 
-            Curve.Release();
+            Curve.Reset();
         }
 
         // Draw the line with the current values.
         if (SUCCEEDED(hr) && _CurveLineStyle.IsEnabled())
         {
-            hr = CreateRadialCurve(Points, InnerRadius, false, &Curve);
+            hr = CreateRadialCurve(Points, InnerRadius, false, Curve.GetAddressOf());
 
             if (SUCCEEDED(hr))
-                deviceContext->DrawGeometry(Curve, _CurveLineStyle._Brush.Get(), _CurveLineStyle._Thickness);
+                deviceContext->DrawGeometry(Curve.Get(), _CurveLineStyle._Brush.Get(), _CurveLineStyle._Thickness);
 
-            Curve.Release();
+            Curve.Reset();
         }
     }
 }
@@ -1052,8 +1054,8 @@ void spectrum_t::DeleteDeviceSpecificResources() noexcept
 
     _NyquistMarkerStyle.DeleteDeviceSpecificResources();
 
-    _OpacityMask.Release();
-    _DebugBrush.Release();
+    _OpacityMask.Reset();
+    _DebugBrush.Reset();
 }
 
 /// <summary>
@@ -1061,38 +1063,40 @@ void spectrum_t::DeleteDeviceSpecificResources() noexcept
 /// </summary>
 HRESULT spectrum_t::CreateOpacityMask(ID2D1DeviceContext * deviceContext) noexcept
 {
-    CComPtr<ID2D1BitmapRenderTarget> rt;
+    ComPtr<ID2D1BitmapRenderTarget> rt;
 
-    HRESULT hr = deviceContext->CreateCompatibleRenderTarget(D2D1::SizeF(1.f, _ClientSize.height), &rt);
+    HRESULT hr = deviceContext->CreateCompatibleRenderTarget(D2D1::SizeF(1.f, _ClientSize.height), rt.GetAddressOf());
 
-    if (SUCCEEDED(hr))
+    if (FAILED(hr))
+        return hr;
+
+    rt->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
+
+    ComPtr<ID2D1SolidColorBrush> Brush;
+
+    hr = rt->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Black), Brush.GetAddressOf());
+
+    if (FAILED(hr))
+        return hr;
+
+    rt->BeginDraw();
+
+    rt->Clear(); // Transparent
+
+    const FLOAT LEDSize = _State->_LEDLight + _State->_LEDGap;
+
+    if (LEDSize > 0.f)
     {
-        rt->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
-
-        CComPtr<ID2D1SolidColorBrush> Brush;
-
-        hr = rt->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Black), &Brush);
-
-        if (SUCCEEDED(hr))
-        {
-            rt->BeginDraw();
-
-            rt->Clear(); // Transparent
-
-            const FLOAT LEDSize = _State->_LEDLight + _State->_LEDGap;
-
-            if (LEDSize > 0.f)
-            {
-                for (FLOAT y = 0.f; y < _ClientSize.height; y += LEDSize)
-                    rt->FillRectangle(D2D1::RectF(0.f, y, 1.f, y + _State->_LEDLight), Brush);
-            }
-
-            hr = rt->EndDraw();
-        }
-
-        if (SUCCEEDED(hr))
-            hr = rt->GetBitmap(&_OpacityMask);
+        for (FLOAT y = 0.f; y < _ClientSize.height; y += LEDSize)
+            rt->FillRectangle(D2D1::RectF(0.f, y, 1.f, y + _State->_LEDLight), Brush.Get());
     }
+
+    hr = rt->EndDraw();
+
+    if (FAILED(hr))
+        return hr;
+
+    hr = rt->GetBitmap(_OpacityMask.GetAddressOf());
 
     return hr;
 }
@@ -1171,35 +1175,37 @@ HRESULT spectrum_t::CreateCurve(const geometry_points_t & gp, bool isFilled, ID2
 
     HRESULT hr = Direct2DFactory::Get()->CreatePathGeometry(curve);
 
-    CComPtr<ID2D1GeometrySink> Sink;
+    if (FAILED(hr))
+        return hr;
 
-    if (SUCCEEDED(hr))
-        hr = (*curve)->Open(&Sink);
+    ComPtr<ID2D1GeometrySink> Sink;
 
-    if (SUCCEEDED(hr))
+    hr = (*curve)->Open(Sink.GetAddressOf());
+
+    if (FAILED(hr))
+        return hr;
+
+    Sink->SetFillMode(D2D1_FILL_MODE_WINDING);
+
+    if (isFilled)
     {
-        Sink->SetFillMode(D2D1_FILL_MODE_WINDING);
-
-        if (isFilled)
-        {
-            Sink->BeginFigure(D2D1::Point2F(0.f, 0.f), D2D1_FIGURE_BEGIN_FILLED); // Start with a vertical line going up.
-            Sink->AddLine(D2D1::Point2F(0.f, gp.p0[0].y));
-        }
-        else
-            Sink->BeginFigure(D2D1::Point2F(0.f, gp.p0[0].y), D2D1_FIGURE_BEGIN_HOLLOW);
-
-        const size_t n = gp.p1.size();
-
-        for (size_t i = 0; i < n; ++i)
-            Sink->AddBezier(D2D1::BezierSegment(gp.p1[i], gp.p2[i], gp.p0[i + 1]));
-
-        if (isFilled)
-            Sink->AddLine(D2D1::Point2F(gp.p0[n].x, 0.f)); // End with a vertical line going down.
-
-        Sink->EndFigure(D2D1_FIGURE_END_OPEN);
-
-        hr = Sink->Close();
+        Sink->BeginFigure(D2D1::Point2F(0.f, 0.f), D2D1_FIGURE_BEGIN_FILLED); // Start with a vertical line going up.
+        Sink->AddLine(D2D1::Point2F(0.f, gp.p0[0].y));
     }
+    else
+        Sink->BeginFigure(D2D1::Point2F(0.f, gp.p0[0].y), D2D1_FIGURE_BEGIN_HOLLOW);
+
+    const size_t n = gp.p1.size();
+
+    for (size_t i = 0; i < n; ++i)
+        Sink->AddBezier(D2D1::BezierSegment(gp.p1[i], gp.p2[i], gp.p0[i + 1]));
+
+    if (isFilled)
+        Sink->AddLine(D2D1::Point2F(gp.p0[n].x, 0.f)); // End with a vertical line going down.
+
+    Sink->EndFigure(D2D1_FIGURE_END_OPEN);
+
+    hr = Sink->Close();
 
     return hr;
 }
@@ -1321,47 +1327,50 @@ HRESULT spectrum_t::CreateRadialCurve(const geometry_points_t & gp, FLOAT innerR
 
     HRESULT hr = Direct2DFactory::Get()->CreatePathGeometry(curve);
 
-    CComPtr<ID2D1GeometrySink> Sink;
+    if (FAILED(hr))
+        return hr;
 
-    if (SUCCEEDED(hr))
-        hr = (*curve)->Open(&Sink);
+    ComPtr<ID2D1GeometrySink> Sink;
 
-    if (SUCCEEDED(hr))
+    hr = (*curve)->Open(Sink.GetAddressOf());
+
+    if (FAILED(hr))
+        return hr;
+
+    D2D1_FIGURE_BEGIN BeginMode = D2D1_FIGURE_BEGIN_HOLLOW;
+
+    if (isFilled)
     {
-        D2D1_FIGURE_BEGIN BeginMode = D2D1_FIGURE_BEGIN_HOLLOW;
+        BeginMode = D2D1_FIGURE_BEGIN_FILLED;
+
+        Sink->SetFillMode(D2D1_FILL_MODE_ALTERNATE); // Even-odd fill
+    }
+
+    // Add the curve.
+    {
+        Sink->BeginFigure(D2D1::Point2F(gp.p0[0].x, gp.p0[0].y), BeginMode);
+
+        const size_t n = gp.p1.size();
+
+        for (size_t i = 0; i < n; ++i)
+            Sink->AddBezier(D2D1::BezierSegment(gp.p1[i], gp.p2[i], gp.p0[i + 1]));
 
         if (isFilled)
-        {
-            BeginMode = D2D1_FIGURE_BEGIN_FILLED;
-            Sink->SetFillMode(D2D1_FILL_MODE_ALTERNATE); // Even-odd fill
-        }
-
-        // Add the curve.
-        {
-            Sink->BeginFigure(D2D1::Point2F(gp.p0[0].x, gp.p0[0].y), BeginMode);
-
-            const size_t n = gp.p1.size();
-
-            for (size_t i = 0; i < n; ++i)
-                Sink->AddBezier(D2D1::BezierSegment(gp.p1[i], gp.p2[i], gp.p0[i + 1]));
-
-            if (isFilled)
-                Sink->EndFigure(D2D1_FIGURE_END_CLOSED);
-            else
-                Sink->EndFigure(D2D1_FIGURE_END_OPEN);
-        }
-
-        // Add the inner circle.
-        {
-            Sink->BeginFigure(D2D1::Point2F(innerRadius, 0.f), BeginMode);
-
-            Sink->AddArc(D2D1::ArcSegment(D2D1::Point2F(-innerRadius, 0.f), D2D1::SizeF(innerRadius, innerRadius), 0.0f, D2D1_SWEEP_DIRECTION_CLOCKWISE, D2D1_ARC_SIZE_LARGE));
-            Sink->AddArc(D2D1::ArcSegment(D2D1::Point2F( innerRadius, 0.f), D2D1::SizeF(innerRadius, innerRadius), 0.0f, D2D1_SWEEP_DIRECTION_CLOCKWISE, D2D1_ARC_SIZE_LARGE));
-
             Sink->EndFigure(D2D1_FIGURE_END_CLOSED);
+        else
+            Sink->EndFigure(D2D1_FIGURE_END_OPEN);
+    }
 
-            hr = Sink->Close();
-        }
+    // Add the inner circle.
+    {
+        Sink->BeginFigure(D2D1::Point2F(innerRadius, 0.f), BeginMode);
+
+        Sink->AddArc(D2D1::ArcSegment(D2D1::Point2F(-innerRadius, 0.f), D2D1::SizeF(innerRadius, innerRadius), 0.0f, D2D1_SWEEP_DIRECTION_CLOCKWISE, D2D1_ARC_SIZE_LARGE));
+        Sink->AddArc(D2D1::ArcSegment(D2D1::Point2F( innerRadius, 0.f), D2D1::SizeF(innerRadius, innerRadius), 0.0f, D2D1_SWEEP_DIRECTION_CLOCKWISE, D2D1_ARC_SIZE_LARGE));
+
+        Sink->EndFigure(D2D1_FIGURE_END_CLOSED);
+
+        hr = Sink->Close();
     }
 
     return hr;
@@ -1374,51 +1383,49 @@ HRESULT spectrum_t::CreateSegment(FLOAT a1, FLOAT a2, FLOAT r1, FLOAT r2, ID2D1P
 {
     HRESULT hr = Direct2DFactory::Get()->CreatePathGeometry(pathGeometry);
 
-    if (!SUCCEEDED(hr))
+    if (FAILED(hr))
         return hr;
 
-    CComPtr<ID2D1GeometrySink> Sink;
+    ComPtr<ID2D1GeometrySink> Sink;
 
-    hr = (*pathGeometry)->Open(&Sink);
+    hr = (*pathGeometry)->Open(Sink.GetAddressOf());
 
-    if (SUCCEEDED(hr))
-    {
-        FLOAT Sin, Cos;
+    if (FAILED(hr))
+        return hr;
 
-        // Inner arc
-        ::D2D1SinCos(a1, &Sin, &Cos);
+    FLOAT Sin, Cos;
 
-        auto x = (FLOAT) (Cos * r1);
-        auto y = (FLOAT) (Sin * r1);
+    // Inner arc
+    ::D2D1SinCos(a1, &Sin, &Cos);
 
-        Sink->BeginFigure(D2D1::Point2F(x, y), D2D1_FIGURE_BEGIN_FILLED);
+    auto x = (FLOAT) (Cos * r1);
+    auto y = (FLOAT) (Sin * r1);
 
-        // Vertical from inner to outer arc.
-        x = (FLOAT) (Cos * r2);
-        y = (FLOAT) (Sin * r2);
+    Sink->BeginFigure(D2D1::Point2F(x, y), D2D1_FIGURE_BEGIN_FILLED);
 
-        Sink->AddLine(D2D1::Point2F(x, y));
+    // Vertical from inner to outer arc.
+    x = (FLOAT) (Cos * r2);
+    y = (FLOAT) (Sin * r2);
 
-        // Outer arc
-        ::D2D1SinCos(a2, &Sin, &Cos);
+    Sink->AddLine(D2D1::Point2F(x, y));
 
-        x = (FLOAT) (Cos * r2);
-        y = (FLOAT) (Sin * r2);
+    // Outer arc
+    ::D2D1SinCos(a2, &Sin, &Cos);
 
-        Sink->AddArc(D2D1::ArcSegment(D2D1::Point2F(x, y), D2D1::SizeF(r2, r2), 0.0f, D2D1_SWEEP_DIRECTION_COUNTER_CLOCKWISE, D2D1_ARC_SIZE_SMALL));      
+    x = (FLOAT) (Cos * r2);
+    y = (FLOAT) (Sin * r2);
 
-        // Vertical from outer to inner arc.
-        x = (FLOAT) (Cos * r1);
-        y = (FLOAT) (Sin * r1);
+    Sink->AddArc(D2D1::ArcSegment(D2D1::Point2F(x, y), D2D1::SizeF(r2, r2), 0.0f, D2D1_SWEEP_DIRECTION_COUNTER_CLOCKWISE, D2D1_ARC_SIZE_SMALL));      
 
-        Sink->AddLine(D2D1::Point2F(x, y));
+    // Vertical from outer to inner arc.
+    x = (FLOAT) (Cos * r1);
+    y = (FLOAT) (Sin * r1);
 
-        Sink->EndFigure(D2D1_FIGURE_END_CLOSED);
+    Sink->AddLine(D2D1::Point2F(x, y));
 
-        Sink->Close();
+    Sink->EndFigure(D2D1_FIGURE_END_CLOSED);
 
-        Sink.Release();
-    }
+    Sink->Close();
 
     return hr;
 }

@@ -163,7 +163,7 @@ void visualization_page_t::InitializeControls() noexcept
         SendDlgItemMessageW(IDC_SCALE_LINES, BM_SETCHECK, _State->_HasScaleLines);
 
         {
-            auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_RMS_WINDOW)); _NumericEdits.push_back(ne);
+            auto ne = std::make_shared<numeric_edit_t>(); ne->Initialize(GetDlgItem(IDC_RMS_WINDOW)); _NumericEdits.push_back(ne);
 
             auto w = ::CUpDownCtrl(GetDlgItem(IDC_RMS_WINDOW_SPIN));
 
@@ -182,12 +182,12 @@ void visualization_page_t::InitializeControls() noexcept
             ((::CUpDownCtrl) GetDlgItem(IDC_RMS_WINDOW_SPIN)).SetPos32((int) (_State->_RMSWindow * 1000.));
         }
         {
-            auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_BAR_GAP)); _NumericEdits.push_back(ne);
+            auto ne = std::make_shared<numeric_edit_t>(); ne->Initialize(GetDlgItem(IDC_BAR_GAP)); _NumericEdits.push_back(ne);
 
             SetInteger(IDC_BAR_GAP, (int64_t) _State->_BarGap);
         }
         {
-            auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_MAX_BAR_SIZE)); _NumericEdits.push_back(ne);
+            auto ne = std::make_shared<numeric_edit_t>(); ne->Initialize(GetDlgItem(IDC_MAX_BAR_SIZE)); _NumericEdits.push_back(ne);
 
             SetInteger(IDC_MAX_BAR_SIZE, (int64_t) _State->_MaxBarSize);
         }
@@ -203,24 +203,24 @@ void visualization_page_t::InitializeControls() noexcept
         SendDlgItemMessageW(IDC_XY_MODE, BM_SETCHECK, _State->_XYMode);
 
         {
-            auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_X_GAIN)); _NumericEdits.push_back(ne); SetDouble(IDC_X_GAIN, _State->_XInputGain);
+            auto ne = std::make_shared<numeric_edit_t>(); ne->Initialize(GetDlgItem(IDC_X_GAIN)); _NumericEdits.push_back(ne); SetDouble(IDC_X_GAIN, _State->_XInputGain);
         }
         {
-            auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_Y_GAIN)); _NumericEdits.push_back(ne); SetDouble(IDC_Y_GAIN, _State->_YInputGain);
+            auto ne = std::make_shared<numeric_edit_t>(); ne->Initialize(GetDlgItem(IDC_Y_GAIN)); _NumericEdits.push_back(ne); SetDouble(IDC_Y_GAIN, _State->_YInputGain);
         }
         {
-            auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_ROTATION)); _NumericEdits.push_back(ne); SetDouble(IDC_ROTATION, _State->_Rotation);
+            auto ne = std::make_shared<numeric_edit_t>(); ne->Initialize(GetDlgItem(IDC_ROTATION)); _NumericEdits.push_back(ne); SetDouble(IDC_ROTATION, _State->_Rotation);
         }
         {
-            auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_FRAME_COUNT)); _NumericEdits.push_back(ne); SetInteger(IDC_FRAME_COUNT, _State->_FrameCount);
+            auto ne = std::make_shared<numeric_edit_t>(); ne->Initialize(GetDlgItem(IDC_FRAME_COUNT)); _NumericEdits.push_back(ne); SetInteger(IDC_FRAME_COUNT, _State->_FrameCount);
         }
 
         SendDlgItemMessageW(IDC_PHOSPHOR_DECAY, BM_SETCHECK, _State->_HasPhosphorDecay);
         {
-            auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_BLUR_SIGMA)); _NumericEdits.push_back(ne); SetDouble(IDC_BLUR_SIGMA, _State->_BlurSigma);
+            auto ne = std::make_shared<numeric_edit_t>(); ne->Initialize(GetDlgItem(IDC_BLUR_SIGMA)); _NumericEdits.push_back(ne); SetDouble(IDC_BLUR_SIGMA, _State->_BlurSigma);
         }
         {
-            auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_AFTERGLOW)); _NumericEdits.push_back(ne); SetDouble(IDC_AFTERGLOW, _State->_Afterglow);
+            auto ne = std::make_shared<numeric_edit_t>(); ne->Initialize(GetDlgItem(IDC_AFTERGLOW)); _NumericEdits.push_back(ne); SetDouble(IDC_AFTERGLOW, _State->_Afterglow);
         }
 
         SendDlgItemMessageW(IDC_DOWNMIX,       BM_SETCHECK, _State->_Downmix);
@@ -237,13 +237,13 @@ void visualization_page_t::InitializeControls() noexcept
             w.SetCurSel((int) _State->_GoniometerColorMode);
         }
         {
-            auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_LOW_VISUAL_GAIN)); _NumericEdits.push_back(ne); SetDouble(IDC_LOW_VISUAL_GAIN, _State->_LowVisualGain);
+            auto ne = std::make_shared<numeric_edit_t>(); ne->Initialize(GetDlgItem(IDC_LOW_VISUAL_GAIN)); _NumericEdits.push_back(ne); SetDouble(IDC_LOW_VISUAL_GAIN, _State->_LowVisualGain);
         }
         {
-            auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_MID_VISUAL_GAIN)); _NumericEdits.push_back(ne); SetDouble(IDC_MID_VISUAL_GAIN, _State->_MidVisualGain);
+            auto ne = std::make_shared<numeric_edit_t>(); ne->Initialize(GetDlgItem(IDC_MID_VISUAL_GAIN)); _NumericEdits.push_back(ne); SetDouble(IDC_MID_VISUAL_GAIN, _State->_MidVisualGain);
         }
         {
-            auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_HIGH_VISUAL_GAIN)); _NumericEdits.push_back(ne); SetDouble(IDC_HIGH_VISUAL_GAIN, _State->_HighVisualGain);
+            auto ne = std::make_shared<numeric_edit_t>(); ne->Initialize(GetDlgItem(IDC_HIGH_VISUAL_GAIN)); _NumericEdits.push_back(ne); SetDouble(IDC_HIGH_VISUAL_GAIN, _State->_HighVisualGain);
         }
     }
 

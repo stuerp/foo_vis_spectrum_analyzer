@@ -1,13 +1,18 @@
 
-/** $VER: Support.cpp (2026.03.01) P. Stuer **/
+/** $VER: Support.cpp (2026.09.26) P. Stuer **/
 
 #include "pch.h"
 
 #include "Support.h"
 #include "CustomTitleformatHook.h"
 
-#include "Direct2D.h"
 #include "Module.h"
+
+#include <d2d1_2.h>
+
+#include <wrl/client.h>
+
+using Microsoft::WRL::ComPtr;
 
 #include <shellscalingapi.h>
 
@@ -26,11 +31,11 @@ HRESULT InitializeDpiAwareness() noexcept
 /// <summary>
 /// Gets the DPI setting of the specified window.
 /// </summary>
-HRESULT GetDPI(_In_ HWND hWnd, _Out_ UINT & dpi) noexcept
+HRESULT GetDPI(HWND hWnd, UINT & dpi) noexcept
 {
     auto Module = module_t(L"user32.dll");
 
-    typedef UINT (WINAPI * GetDpiForWindow_t)(_In_ HWND hwnd);
+    typedef UINT (WINAPI * GetDpiForWindow_t)(HWND hwnd);
 
     const auto GetDpiForWindow_ = (GetDpiForWindow_t) Module.GetFunctionAddress("GetDpiForWindow"); // Windows 10 or higher
 
@@ -64,7 +69,7 @@ HRESULT GetDPI(_In_ HWND hWnd, _Out_ UINT & dpi) noexcept
 /// <summary>
 /// Evaluates a foobar2000 Title Format script.
 /// </summary>
-HRESULT EvaluateTitleFormatScript(_In_ const std::wstring & script, _Out_ pfc::string & result) noexcept
+HRESULT EvaluateTitleFormatScript(const std::wstring & script, pfc::string & result) noexcept
 {
     service_ptr_t<titleformat_object> tfo;
 

@@ -9,6 +9,9 @@
 #include <windows.h>
 
 #include <cmath>
+#include <filesystem>
+
+namespace fs = std::filesystem;
 
 namespace msc
 {

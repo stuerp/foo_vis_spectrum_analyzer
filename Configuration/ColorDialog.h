@@ -1,5 +1,5 @@
 
-/** $VER: CColorDialogEx.h (2026.02.21) P. Stuer - Implements a color dialog with alpha channel support using WTL. **/
+/** $VER: color_dialog_t.h (2026.09.26) P. Stuer - Implements a color dialog with alpha channel support using WTL. **/
 
 #pragma once
 
@@ -11,28 +11,19 @@
 #include <WinSock2.h>
 #include <Windows.h>
 
-#include <atlbase.h>
-#include <atltypes.h>
-#include <atlstr.h>
-#include <atlapp.h>
-#include <atlctrls.h>
-#include <atlwin.h>
-#include <atlcom.h>
-#include <atlcrack.h>
+#include "ColorButton.h"
 
-#include "CColorButton.h"
-
-class CColorDialogEx
+class color_dialog_t
 {
 public:
-    CColorDialogEx() { }
+    color_dialog_t() { }
 
-    CColorDialogEx(const CColorDialogEx &) = delete;
-    CColorDialogEx & operator=(const CColorDialogEx &) = delete;
-    CColorDialogEx(CColorDialogEx &&) = delete;
-    CColorDialogEx & operator=(CColorDialogEx &&) = delete;
+    color_dialog_t(const color_dialog_t &) = delete;
+    color_dialog_t & operator=(const color_dialog_t &) = delete;
+    color_dialog_t(color_dialog_t &&) = delete;
+    color_dialog_t & operator=(color_dialog_t &&) = delete;
 
-    virtual ~CColorDialogEx() noexcept { }
+    virtual ~color_dialog_t() noexcept { }
 
     bool SelectColor(HWND hWnd, D2D1_COLOR_F & color) noexcept;
 
@@ -52,7 +43,7 @@ private:
 private:
     D2D1_COLOR_F _Color;
 
-    CColorButton _Alpha;
+    color_button_t _Alpha;
     RECT _SliderRect;
 
     const LONG ArrowSize = 6;

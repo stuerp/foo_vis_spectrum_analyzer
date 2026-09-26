@@ -1,19 +1,17 @@
 
-/** $VER: CMenuListBox.cpp (2026.02.21) P. Stuer - Implements a list box acts like a menu using WTL. **/
+/** $VER: MenuListBox.cpp (2026.02.21) P. Stuer - Implements a list box acts like a menu using WTL. **/
 
 #include "pch.h"
-#include "CMenuListBox.h"
 
+#include "MenuListBox.h"
 #include "Theme.h"
-
-#include "Log.h"
 
 #pragma hdrstop
 
 /// <summary>
 /// Initializes the control.
 /// </summary>
-void CMenuListBox::Initialize(HWND hWnd) noexcept
+void menu_list_box_t::Initialize(HWND hWnd) noexcept
 {
     if (_IsSubclassed)
         return;
@@ -27,7 +25,7 @@ void CMenuListBox::Initialize(HWND hWnd) noexcept
 /// Terminates the control.
 /// </summary>
 /// <remarks>This is necessary to release the DirectX resources in case the control gets recreated later on.</remarks>
-void CMenuListBox::Terminate() noexcept
+void menu_list_box_t::Terminate() noexcept
 {
     if (!IsWindow() || !_IsSubclassed)
         return;
@@ -39,7 +37,7 @@ void CMenuListBox::Terminate() noexcept
 /// <summary>
 /// Draws an item.
 /// </summary>
-void CMenuListBox::DrawItem(LPDRAWITEMSTRUCT dis) noexcept
+void menu_list_box_t::DrawItem(LPDRAWITEMSTRUCT dis) noexcept
 {
     HDC hDC = dis->hDC;
 
@@ -98,7 +96,7 @@ void CMenuListBox::DrawItem(LPDRAWITEMSTRUCT dis) noexcept
 /// <summary>
 /// Measures the size of an item.
 /// </summary>
-void CMenuListBox::MeasureItem(LPMEASUREITEMSTRUCT lpMeasureItemStruct) noexcept
+void menu_list_box_t::MeasureItem(LPMEASUREITEMSTRUCT lpMeasureItemStruct) noexcept
 {
     lpMeasureItemStruct->itemHeight = 32;
 }

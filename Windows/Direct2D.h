@@ -8,9 +8,11 @@
 #pragma warning(disable: 4100 4625 4626 4710 4711 5045 ALL_CPPCORECHECK_WARNINGS)
 
 #include <SDKDDKVer.h>
-
 #include <d2d1_2.h>
+
 #include <wrl/client.h>
+
+using Microsoft::WRL::ComPtr;
 
 #include "Gradients.h"
 #include <Win32Exception.h>

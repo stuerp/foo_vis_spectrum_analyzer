@@ -7,7 +7,7 @@
 #include "Support.h"
 
 #include "Direct2D.h"
-#include "CColorDialogEx.h"
+#include "ColorDialog.h"
 
 /// <summary>
 /// Initializes the page.
@@ -128,7 +128,7 @@ void styles_page_t::InitializeControls() noexcept
         _Gradient.Initialize(GetDlgItem(IDC_GRADIENT));
         _Colors.Initialize(GetDlgItem(IDC_COLOR_LIST));
 
-        auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_POSITION)); _NumericEdits.push_back(ne);
+        auto ne = std::make_shared<numeric_edit_t>(); ne->Initialize(GetDlgItem(IDC_POSITION)); _NumericEdits.push_back(ne);
     }
 
     {
@@ -139,7 +139,7 @@ void styles_page_t::InitializeControls() noexcept
             { 3, 10 },
         };
 
-        auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_OPACITY)); _NumericEdits.push_back(ne);
+        auto ne = std::make_shared<numeric_edit_t>(); ne->Initialize(GetDlgItem(IDC_OPACITY)); _NumericEdits.push_back(ne);
 
         auto w = CUpDownCtrl(GetDlgItem(IDC_OPACITY_SPIN));
 
@@ -155,7 +155,7 @@ void styles_page_t::InitializeControls() noexcept
             { 2, 5 }, //  0.5
         };
 
-        auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_THICKNESS)); _NumericEdits.push_back(ne);
+        auto ne = std::make_shared<numeric_edit_t>(); ne->Initialize(GetDlgItem(IDC_THICKNESS)); _NumericEdits.push_back(ne);
 
         auto w = CUpDownCtrl(GetDlgItem(IDC_THICKNESS_SPIN));
 
@@ -164,7 +164,7 @@ void styles_page_t::InitializeControls() noexcept
     }
 
     {
-        auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_FONT_SIZE)); _NumericEdits.push_back(ne);
+        auto ne = std::make_shared<numeric_edit_t>(); ne->Initialize(GetDlgItem(IDC_FONT_SIZE)); _NumericEdits.push_back(ne);
     }
 
     UpdateControls();
@@ -544,7 +544,7 @@ void styles_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
 
             D2D1_COLOR_F Color = style->_CurrentGradientStops[SelectedIndex].color;
 
-            CColorDialogEx cd;
+            color_dialog_t cd;
 
             if (!cd.SelectColor(m_hWnd, Color))
                 return;

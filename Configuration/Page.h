@@ -1,5 +1,5 @@
 
-/** $VER: Page.h (2026.06.08) P. Stuer - Implements a configuration dialog page. **/
+/** $VER: Page.h (2026.09.26) P. Stuer - Implements a configuration dialog page. **/
 
 #pragma once
 
@@ -12,9 +12,9 @@
 #include "State.h"
 #include "Resources.h"
 
-#include "CNumericEdit.h"
-#include "CColorButton.h"
-#include "CColorListBox.h"
+#include "NumericEdit.h"
+#include "ColorButton.h"
+#include "ColorListBox.h"
 
 class page_t : public CDialogImpl<page_t>
 {
@@ -88,7 +88,7 @@ private:
 
         MESSAGE_HANDLER_EX(WM_HSCROLL, OnHScroll)
 
-        REFLECT_NOTIFICATIONS() // Required for CColorListBox
+        REFLECT_NOTIFICATIONS() // Required for color_list_box_t
     END_MSG_MAP()
 
 public:

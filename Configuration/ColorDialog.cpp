@@ -1,11 +1,10 @@
 
-/** $VER: CColorDialogEx.cpp (2026.02.21) P. Stuer - Implements a color dialog with alpha channel support using WTL. **/
+/** $VER: color_dialog_t.cpp (2026.09.26) P. Stuer - Implements a color dialog with alpha channel support using WTL. **/
 
 #include "pch.h"
-#include "CColorDialogEx.h"
+#include "ColorDialog.h"
 
 #include "Resources.h"
-#include "Support.h"
 #include "Color.h"
 
 #include <colordlg.h>
@@ -15,7 +14,7 @@
 /// <summary>
 /// Shows the Color dialog.
 /// </summary>
-bool CColorDialogEx::SelectColor(HWND hWnd, D2D1_COLOR_F & color) noexcept
+bool color_dialog_t::SelectColor(HWND hWnd, D2D1_COLOR_F & color) noexcept
 {
     _Color = color;
 
@@ -27,17 +26,18 @@ bool CColorDialogEx::SelectColor(HWND hWnd, D2D1_COLOR_F & color) noexcept
         RGB(0xFF,0xFF,0xFF), RGB(0xFF,0xFF,0xFF), RGB(0xFF,0xFF,0xFF), RGB(0xFF,0xFF,0xFF),
     };
 
-    CHOOSECOLORW cc = { sizeof(CHOOSECOLORW) };
-
-    cc.hwndOwner = hWnd;
-
-    cc.lpCustColors = (LPDWORD) CustomColors;
-    cc.rgbResult = color_t::ToCOLORREF(color);
-    cc.Flags = CC_RGBINIT | CC_FULLOPEN | CC_ENABLEHOOK | CC_ENABLETEMPLATE | CC_SOLIDCOLOR;
-    cc.lpfnHook = (LPCCHOOKPROC) Hook;
-    cc.hInstance = (HWND) msc::GetCurrentModule();//::GetModuleHandleW(TEXT(STR_COMPONENT_FILENAME));
-    cc.lpTemplateName = MAKEINTRESOURCE(IDD_CHOOSECOLOR);
-    cc.lCustData = (LPARAM) this;
+    CHOOSECOLORW cc =
+    {
+        .lStructSize    = sizeof(CHOOSECOLORW),
+        .hwndOwner      = hWnd,
+        .hInstance      = (HWND) msc::GetCurrentModule(), //::GetModuleHandleW(TEXT(STR_COMPONENT_FILENAME));
+        .rgbResult      = color_t::ToCOLORREF(color),
+        .lpCustColors   = (LPDWORD) CustomColors,
+        .Flags          = CC_RGBINIT | CC_FULLOPEN | CC_ENABLEHOOK | CC_ENABLETEMPLATE | CC_SOLIDCOLOR,
+        .lCustData      = (LPARAM) this,
+        .lpfnHook       = (LPCCHOOKPROC) Hook,
+        .lpTemplateName = MAKEINTRESOURCE(IDD_CHOOSECOLOR),
+    };
 
     if (!::ChooseColorW(&cc))
         return false;
@@ -50,20 +50,20 @@ bool CColorDialogEx::SelectColor(HWND hWnd, D2D1_COLOR_F & color) noexcept
 /// <summary>
 /// Hooks the standard Color dialog procedure.
 /// </summary>
-UINT_PTR CALLBACK CColorDialogEx::Hook(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam) noexcept
+UINT_PTR CALLBACK color_dialog_t::Hook(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam) noexcept
 {
-    CColorDialogEx * This;
+    color_dialog_t * This;
 
     if (msg == WM_INITDIALOG)
     {
         CHOOSECOLORW * cc = (CHOOSECOLORW *) lParam;
 
-        This = (CColorDialogEx *) cc->lCustData;
+        This = (color_dialog_t *) cc->lCustData;
 
         ::SetWindowLongPtrW(hDlg, GWLP_USERDATA, LONG_PTR(This));
     }
 
-    This = (CColorDialogEx *) ::GetWindowLongPtrW(hDlg, GWLP_USERDATA);
+    This = (color_dialog_t *) ::GetWindowLongPtrW(hDlg, GWLP_USERDATA);
 
     if (This != nullptr)
         return This->ProcessMessage(hDlg, msg, wParam, lParam);
@@ -71,7 +71,7 @@ UINT_PTR CALLBACK CColorDialogEx::Hook(HWND hDlg, UINT msg, WPARAM wParam, LPARA
     return 0;
 }
 
-UINT_PTR CColorDialogEx::ProcessMessage(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam) noexcept
+UINT_PTR color_dialog_t::ProcessMessage(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam) noexcept
 {
     switch (msg)
     {
@@ -229,7 +229,7 @@ UINT_PTR CColorDialogEx::ProcessMessage(HWND hDlg, UINT msg, WPARAM wParam, LPAR
 /// <summary>
 /// Draws the alpha slider cursor.
 /// </summary>
-void CColorDialogEx::DrawAlphaSliderCursor(HWND hDlg) noexcept
+void color_dialog_t::DrawAlphaSliderCursor(HWND hDlg) noexcept
 {
     // Calculate the background rectangle.
     RECT BackRect = _SliderRect;
@@ -269,7 +269,7 @@ void CColorDialogEx::DrawAlphaSliderCursor(HWND hDlg) noexcept
 /// <summary>
 /// Updates the color gradient of the alpha slider.
 /// </summary>
-void CColorDialogEx::UpdateAlphaSlider() noexcept
+void color_dialog_t::UpdateAlphaSlider() noexcept
 {
     std::vector<D2D1_GRADIENT_STOP> GradientStops =
     {

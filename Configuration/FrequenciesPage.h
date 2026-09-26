@@ -38,5 +38,5 @@ private:
     void TerminateControls() noexcept override;
 
 private:
-    std::vector<std::shared_ptr<CNumericEdit>> _NumericEdits;
+    std::vector<std::shared_ptr<numeric_edit_t>> _NumericEdits;
 };

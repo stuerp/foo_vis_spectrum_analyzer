@@ -136,7 +136,7 @@ void graphs_page_t::InitializeControls() noexcept
         };
 
         {
-            auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_AMPLITUDE_LO)); _NumericEdits.push_back(ne);
+            auto ne = std::make_shared<numeric_edit_t>(); ne->Initialize(GetDlgItem(IDC_AMPLITUDE_LO)); _NumericEdits.push_back(ne);
 
             auto w = CUpDownCtrl(GetDlgItem(IDC_AMPLITUDE_LO_SPIN));
 
@@ -148,7 +148,7 @@ void graphs_page_t::InitializeControls() noexcept
         }
 
         {
-            auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_AMPLITUDE_HI)); _NumericEdits.push_back(ne);
+            auto ne = std::make_shared<numeric_edit_t>(); ne->Initialize(GetDlgItem(IDC_AMPLITUDE_HI)); _NumericEdits.push_back(ne);
 
             auto w = CUpDownCtrl(GetDlgItem(IDC_AMPLITUDE_HI_SPIN));
 
@@ -160,7 +160,7 @@ void graphs_page_t::InitializeControls() noexcept
         }
 
         {
-            auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_AMPLITUDE_STEP)); _NumericEdits.push_back(ne);
+            auto ne = std::make_shared<numeric_edit_t>(); ne->Initialize(GetDlgItem(IDC_AMPLITUDE_STEP)); _NumericEdits.push_back(ne);
 
             auto w = CUpDownCtrl(GetDlgItem(IDC_AMPLITUDE_STEP_SPIN));
 
@@ -176,7 +176,7 @@ void graphs_page_t::InitializeControls() noexcept
     {
         SendDlgItemMessageW(IDC_USE_ABSOLUTE, BM_SETCHECK, Options._UseAbsolute);
 
-        auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_GAMMA)); _NumericEdits.push_back(ne);
+        auto ne = std::make_shared<numeric_edit_t>(); ne->Initialize(GetDlgItem(IDC_GAMMA)); _NumericEdits.push_back(ne);
         SetDouble(IDC_GAMMA, Options._Gamma, 0, 1);
     }
 
