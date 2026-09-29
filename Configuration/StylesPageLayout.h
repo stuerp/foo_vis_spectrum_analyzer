@@ -90,37 +90,37 @@
 #define X_A68   X_A10
 #define Y_A68   Y_A67
 
-// Button
+// Button: Add
 #define W_A69   W_BTN
 #define H_A69   H_BTN
 #define X_A69   X_A68 + W_A68 + IY
 #define Y_A69   Y_A68
 
-// Button
+// Button: Remove
 #define W_A70   W_BTN
 #define H_A70   H_BTN
 #define X_A70   X_A69
 #define Y_A70   Y_A69 + H_A69 + IY
 
-// Button
+// Button: Reverse
 #define W_A71   W_BTN
 #define H_A71   H_BTN
 #define X_A71   X_A70
 #define Y_A71   Y_A70 + H_A70 + IY
 
-// Position
+// Editbox: Position
 #define W_F01   40
 #define H_F01   H_TBX
 #define X_F01   X_A71
 #define Y_F01   Y_A71 + H_A71 + IY
 
-// Position Label
+// Label: Position unit
 #define W_F02   10
 #define H_F02   H_LBL
 #define X_F02   X_F01 + W_F01 + IX
 #define Y_F02   Y_F01
 
-// Spread
+// Button: Spread
 #define W_F03   W_BTN
 #define H_F03   H_BTN
 #define X_F03   X_F01
@@ -137,6 +137,30 @@
 #define H_C14    H_CHB
 #define X_C14    X_C13 + W_C13 + IX
 #define Y_C14    Y_C13
+
+// Label: Gradient Stop Source
+#define W_I20    82
+#define H_I20    H_LBL
+#define X_I20    X_A69 + W_A69 + IX
+#define Y_I20    Y_A69
+
+// Combobox: Gradient Stop Source
+#define W_I21    82
+#define H_I21    H_CBX
+#define X_I21    X_I20
+#define Y_I21    Y_I20 + H_I20 + IY
+
+// Label: Gradient Stop Index
+#define W_I22    W_I20
+#define H_I22    H_LBL
+#define X_I22    X_I21
+#define Y_I22    Y_I21 + H_I21 + IY
+
+// Combobox: Gradient Stop Index
+#define W_I23    W_I21
+#define H_I23    H_CBX
+#define X_I23    X_I22
+#define Y_I23    Y_I22 + H_I22 + IY
 
 #pragma endregion
 

@@ -1,5 +1,5 @@
 
-/** $VER: StylesPage.rc (2026.09.23) P. Stuer **/
+/** $VER: StylesPage.rc (2026.09.27) P. Stuer **/
 
 #include "Resources.h"
 
@@ -34,7 +34,7 @@ style DS_SETFONT | DS_CONTROL | WS_CHILD | WS_CLIPCHILDREN
 
     ltext           "",                         IDC_GRADIENT,                   X_A67, Y_A67,     W_A67, H_A67, SS_NOTIFY, WS_EX_STATICEDGE
 
-    listbox                                     IDC_COLOR_LIST,                 X_A68, Y_A68,     W_A68, H_A68, LBS_OWNERDRAWVARIABLE | LBS_NOINTEGRALHEIGHT | LBS_WANTKEYBOARDINPUT | LBS_NOTIFY | WS_VSCROLL | WS_TABSTOP
+    listbox                                     IDC_GRADIENT_COLORS,            X_A68, Y_A68,     W_A68, H_A68, LBS_OWNERDRAWVARIABLE | LBS_NOINTEGRALHEIGHT | LBS_WANTKEYBOARDINPUT | LBS_NOTIFY | WS_VSCROLL | WS_TABSTOP
 
     pushbutton      "Add",                      IDC_ADD,                        X_A69, Y_A69,     W_A69, H_A69
     pushbutton      "Remove",                   IDC_REMOVE,                     X_A70, Y_A70,     W_A70, H_A70
@@ -47,6 +47,12 @@ style DS_SETFONT | DS_CONTROL | WS_CHILD | WS_CLIPCHILDREN
 
     control         "Horizontal gradient",      IDC_HORIZONTAL_GRADIENT,        "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C13, Y_C13, W_C13, H_C13
     control         "Amplitude-based",          IDC_AMPLITUDE_BASED,            "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C14, Y_C14, W_C14, H_C14
+
+    ltext           "Gradient stop source:",    IDC_STATIC,                     X_I20, Y_I20 + 2, W_I20, H_I20
+    combobox                                    IDC_GRADIENT_STOP_SOURCE,       X_I21, Y_I21,     W_I21, H_I21, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+
+    ltext           "Gradient stop index:",     IDC_STATIC,                     X_I22, Y_I22 + 2, W_I22, H_I22
+    combobox                                    IDC_GRADIENT_STOP_INDEX,        X_I23, Y_I23,     W_I23, H_I23, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
 
     rtext           "Opacity:"                  IDC_OPACITY_LBL,                X_I08, Y_I08 + 2, W_I08, H_I08
     edittext                                    IDC_OPACITY,                    X_I09, Y_I09,     W_I09, H_I09, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP

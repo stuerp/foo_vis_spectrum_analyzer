@@ -479,25 +479,28 @@
 #define IDC_COLOR_BUTTON                7508
 #define IDC_COLOR_SCHEME                7510
 
-#define IDC_GRADIENT_SLIDER             7532
-#define IDC_GRADIENT                    7534
-#define IDC_COLOR_LIST                  7536
-#define IDC_ADD                         7538
-#define IDC_REMOVE                      7540
-#define IDC_REVERSE                     7542
+#define IDC_GRADIENT_SLIDER             7512
+#define IDC_GRADIENT                    7514
+#define IDC_GRADIENT_COLORS             7516
+#define IDC_ADD                         7518
+#define IDC_REMOVE                      7520
+#define IDC_REVERSE                     7522
 
-#define IDC_OPACITY_LBL                 7514
-#define IDC_OPACITY                     7516
-#define IDC_OPACITY_SPIN                7518
-#define IDC_OPACITY_UNIT                7520
+#define IDC_GRADIENT_STOP_SOURCE        7524
+#define IDC_GRADIENT_STOP_INDEX         7526
 
-#define IDC_THICKNESS_LBL               7522
-#define IDC_THICKNESS                   7524
-#define IDC_THICKNESS_SPIN              7526
+#define IDC_OPACITY_LBL                 7528
+#define IDC_OPACITY                     7530
+#define IDC_OPACITY_SPIN                7532
+#define IDC_OPACITY_UNIT                7534
 
-#define IDC_POSITION                    7544
-#define IDC_POSITION_LBL                7546
-#define IDC_SPREAD                      7548
+#define IDC_THICKNESS_LBL               7536
+#define IDC_THICKNESS                   7538
+#define IDC_THICKNESS_SPIN              7540
+
+#define IDC_POSITION                    7542
+#define IDC_POSITION_LBL                7544
+#define IDC_SPREAD                      7546
 
 #define IDC_HORIZONTAL_GRADIENT         7550
 #define IDC_AMPLITUDE_BASED             7552

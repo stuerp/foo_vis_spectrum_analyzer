@@ -1,5 +1,5 @@
 
-/** $VER: StylesPage.h (2026.06.15) P. Stuer - Declares a configuration dialog page. **/
+/** $VER: StylesPage.h (2026.09.29) P. Stuer - Declares a configuration dialog page. **/
 
 #pragma once
 
@@ -12,7 +12,7 @@
 class styles_page_t : public CDialogResize<styles_page_t>, public page_t
 {
 public:
-    styles_page_t(int id) : page_t(id), _SelectedStyle() { }
+    styles_page_t(int id) : page_t(id) { }
 
     styles_page_t(const styles_page_t &) = delete;
     styles_page_t & operator=(const styles_page_t &) = delete;
@@ -43,7 +43,7 @@ public:
         DLGRESIZE_CONTROL(IDC_STYLES, DLSZ_SIZE_Y)
 
         DLGRESIZE_CONTROL(IDC_GRADIENT, DLSZ_SIZE_Y)
-        DLGRESIZE_CONTROL(IDC_COLOR_LIST, DLSZ_SIZE_Y | DLSZ_REPAINT)
+        DLGRESIZE_CONTROL(IDC_GRADIENT_COLORS, DLSZ_SIZE_Y | DLSZ_REPAINT)
 
         DLGRESIZE_CONTROL(IDC_OPACITY_LBL, DLSZ_MOVE_Y)
         DLGRESIZE_CONTROL(IDC_OPACITY, DLSZ_MOVE_Y)
@@ -69,16 +69,18 @@ private:
 
     void InitializeStyles() noexcept;
     void UpdateColorControls() noexcept;
-    void UpdateGradientStopPositons(style_t * style, size_t index) const noexcept;
+    void InitializeGradientStopColor(state_t * state, gradient_stop_t & gs) noexcept;
+    void UpdateGradientStopPositons(std::vector<gradient_stop_t> & gs, size_t index) const noexcept;
+    void InitializeGradientStopControls(style_t * style, int colorIndex) noexcept;
 
 private:
     std::vector<std::shared_ptr<numeric_edit_t>> _NumericEdits;
     std::vector<VisualElement> _ActiveStyles;   // The styles that are relevant for the current visualization.
-    size_t _SelectedStyle;                      // Index of the selected style in the listbox.
+    size_t _SelectedStyle { };                  // Index of the selected style in the listbox.
 
-    color_button_t _Color;
-    color_button_t _Gradient;
-    color_list_box_t _Colors;
+    color_button_t _ColorButton;
+    color_button_t _GradientButton;
+    color_list_box_t _ColorListBox;
 
     style_manager_t * _StyleManager;
 

@@ -4,6 +4,7 @@
 #include "pch.h"
 
 #include "Page.h"
+#include "Toggle.h"
 
 #include "Theme.h"
 
@@ -40,11 +41,9 @@ void page_t::OnShowWindow(BOOL isBeingShown, INT status) noexcept
 {
     if (isBeingShown)
     {
-        _IsInitializing = true;
+        auto Scope = toggle_t(_IsInitializing, true);
 
         InitializeControls();
-
-        _IsInitializing = false;
     }
 }
 
@@ -76,11 +75,9 @@ LRESULT page_t::OnConfigurationChanged(UINT msg, WPARAM wParam, LPARAM lParam) n
     {
         case CC_PRESET_LOADED:
         {
-            _IsInitializing = true;
+            auto Scope = toggle_t(_IsInitializing, true);
 
             InitializeControls();
-
-            _IsInitializing = false;
             break;
         }
 

@@ -1,5 +1,5 @@
 
-/** $VER: Style.cpp (2026.09.25) P. Stuer **/
+/** $VER: Style.cpp (2026.09.29) P. Stuer - Represents the style of a visual element. **/
 
 #include "pch.h"
 #include "Style.h"
@@ -34,7 +34,7 @@ style_t & style_t::operator=(const style_t & other) noexcept
     _ColorScheme          = other._ColorScheme;
 
     _CustomColor          = other._CustomColor;
-    _CustomGradientStops  = other._CustomGradientStops;
+    _CustomGradient       = other._CustomGradient;
 
     _Opacity              = other._Opacity;
     _Thickness            = other._Thickness;
@@ -42,6 +42,7 @@ style_t & style_t::operator=(const style_t & other) noexcept
     _FontName             = other._FontName;
     _FontSize             = other._FontSize;
 
+    // Non-serialized
     _CurrentColor         = other._CurrentColor;
     _CurrentGradientStops = other._CurrentGradientStops;
 
@@ -56,7 +57,7 @@ style_t & style_t::operator=(const style_t & other) noexcept
 /// <summary>
 /// Initializes an instance.
 /// </summary>
-style_t::style_t(const std::wstring & name, VisualizationTypes usedBy, style_t::Features flags, ColorSource colorSource, D2D1_COLOR_F customColor, uint32_t colorIndex, ColorScheme colorScheme, gradient_stops_t customGradientStops, FLOAT opacity, FLOAT thickness, const wchar_t * fontName, FLOAT fontSize) noexcept
+style_t::style_t(const std::wstring & name, VisualizationTypes usedBy, style_t::Features flags, ColorSource colorSource, D2D1_COLOR_F customColor, uint32_t colorIndex, ColorScheme colorScheme, std::vector<D2D1_GRADIENT_STOP> customGradientStops, FLOAT opacity, FLOAT thickness, const wchar_t * fontName, FLOAT fontSize) noexcept
 {
     _Name                 = name;
     _UsedBy               = usedBy;
@@ -68,7 +69,7 @@ style_t::style_t(const std::wstring & name, VisualizationTypes usedBy, style_t::
     _ColorScheme          = colorScheme;
 
     _CustomColor          = customColor;
-    _CustomGradientStops  = customGradientStops;
+    _CustomGradient       = Gradient::ConvertFormat(customGradientStops);
 
     _Opacity              = opacity;
     _Thickness            = thickness;
@@ -76,8 +77,9 @@ style_t::style_t(const std::wstring & name, VisualizationTypes usedBy, style_t::
     _FontName             = fontName;
     _FontSize             = fontSize;
 
+    // Non-serialized
     _CurrentColor         = customColor;
-    _CurrentGradientStops = (_ColorScheme == ColorScheme::Custom) ? _CustomGradientStops : GetBuiltInGradientStops(_ColorScheme);
+    _CurrentGradientStops = customGradientStops;
 
     _Width                = 0.f;
     _Height               = 0.f;
@@ -86,7 +88,7 @@ style_t::style_t(const std::wstring & name, VisualizationTypes usedBy, style_t::
 /// <summary>
 /// sets the current color based on the color source.
 /// </summary>
-void style_t::SetColor(const D2D1_COLOR_F & artworkDominantColor, const gradient_stops_t & artworkGradientStops, const std::vector<D2D1_COLOR_F> & userInterfaceColors) noexcept
+void style_t::SetColor(const D2D1_COLOR_F & artworkDominantColor, const std::vector<D2D1_GRADIENT_STOP> & artworkGradientStops, const std::vector<D2D1_COLOR_F> & userInterfaceColors) noexcept
 {
     switch (_ColorSource)
     {
@@ -113,12 +115,18 @@ void style_t::SetColor(const D2D1_COLOR_F & artworkDominantColor, const gradient
             _CurrentColor = D2D1::ColorF(0, 0.f);
 
             if (_ColorScheme == ColorScheme::Artwork)
+            {
                 _CurrentGradientStops = artworkGradientStops;
+            }
             else
             if (_ColorScheme == ColorScheme::Custom)
-                _CurrentGradientStops = _CustomGradientStops;
+            {
+                _CurrentGradientStops = Gradient::ConvertFormat(_CustomGradient);
+            }
             else
-                _CurrentGradientStops = GetBuiltInGradientStops(_ColorScheme);
+            {
+                _CurrentGradientStops = Gradient::GetBuiltIn(_ColorScheme);
+            }
             break;
         }
 
@@ -313,7 +321,7 @@ HRESULT style_t::SetBrushColor(double value) noexcept
 /// Creates a color table to map the amplitudes to.
 /// </summary>
 /// <remarks>Assumes a sane gradient collection with position running from 0 to 1 in ascending order.</remarks>
-HRESULT style_t::CreateAmplitudeMap(ColorScheme colorScheme, const gradient_stops_t & gradientStops, std::vector<D2D1_COLOR_F> & colors) noexcept
+HRESULT style_t::CreateAmplitudeMap(ColorScheme colorScheme, const std::vector<D2D1_GRADIENT_STOP> & gradientStops, std::vector<D2D1_COLOR_F> & colors) noexcept
 {
     if (gradientStops.empty())
         return E_FAIL;

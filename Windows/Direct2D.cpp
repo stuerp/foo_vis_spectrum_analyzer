@@ -252,12 +252,12 @@ HRESULT Direct2D::CreateGradientStops(const std::vector<D2D1_COLOR_F> & colors, 
 /// <summary>
 /// Creates a gradient brush.
 /// </summary>
-HRESULT Direct2D::CreateGradientBrush(ID2D1DeviceContext * deviceContext, const gradient_stops_t & gradientStops, const D2D1_SIZE_F & size, bool isHorizontal, ID2D1LinearGradientBrush ** gradientBrush) noexcept
+HRESULT Direct2D::CreateGradientBrush(ID2D1DeviceContext * deviceContext, const std::vector<D2D1_GRADIENT_STOP> & gradientStops, const D2D1_SIZE_F & size, bool isHorizontal, ID2D1LinearGradientBrush ** gradientBrush) noexcept
 {
     if (gradientStops.empty())
         return E_FAIL;
 
-    gradient_stops_t gs = gradientStops;
+    std::vector<D2D1_GRADIENT_STOP> gs = gradientStops;
 
     // Because the graph is always rendered in a (0,0) top-left coordinate system, the gradient brush has to be created upside-down to compensate for a vertical flip during rendering.
     std::reverse(gs.begin(), gs.end());
@@ -283,12 +283,12 @@ HRESULT Direct2D::CreateGradientBrush(ID2D1DeviceContext * deviceContext, const 
 /// <summary>
 /// Creates a radial gradient brush.
 /// </summary>
-HRESULT Direct2D::CreateRadialGradientBrush(ID2D1DeviceContext * deviceContext, const gradient_stops_t & gradientStops, const D2D1_POINT_2F & center, const D2D1_POINT_2F & offset, FLOAT rx, FLOAT ry, FLOAT rOffset, ID2D1RadialGradientBrush ** gradientBrush) noexcept
+HRESULT Direct2D::CreateRadialGradientBrush(ID2D1DeviceContext * deviceContext, const std::vector<D2D1_GRADIENT_STOP> & gradientStops, const D2D1_POINT_2F & center, const D2D1_POINT_2F & offset, FLOAT rx, FLOAT ry, FLOAT rOffset, ID2D1RadialGradientBrush ** gradientBrush) noexcept
 {
     if (gradientStops.empty())
         return E_FAIL;
 
-    gradient_stops_t gs = gradientStops;
+    std::vector<D2D1_GRADIENT_STOP> gs = gradientStops;
 
     // Recalculate the stop offsets to take into account the inner radius.
     if (rOffset != 0.f)

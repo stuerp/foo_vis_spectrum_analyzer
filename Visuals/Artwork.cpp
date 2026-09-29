@@ -266,7 +266,7 @@ HRESULT artwork_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCont
 
         // No format converter means no artwork.
         if (_FormatConverter == nullptr)
-            return S_FALSE;
+            return E_FAIL;
 
         // Create a Direct2D bitmap from the WIC bitmap source.
         if (_Bitmap == nullptr)

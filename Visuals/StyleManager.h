@@ -46,14 +46,13 @@ public:
     }
 
 private:
-    static json ToJSON(const gradient_stops_t & gradientStops) noexcept;
-    static gradient_stops_t FromJSONGradientStops(const json::array_t & array) noexcept;
-
-    static json ToJSON(const D2D1_GRADIENT_STOP & gs) noexcept;
-    static D2D1_GRADIENT_STOP FromJSONGradientStop(const json & object) noexcept;
-
+    static json ToJSON(const std::vector<gradient_stop_t> & gradientStops) noexcept;
+    static json ToJSON(const gradient_stop_t & gradientStop) noexcept;
     static json ToJSON(const D2D1_COLOR_F & color) noexcept;
-    static D2D1_COLOR_F FromJSONColor(const json & object) noexcept;
+
+    static std::vector<gradient_stop_t>    FromJSONGradientStops(const json::array_t & array) noexcept;
+    static gradient_stop_t                 FromJSONGradientStop(const json & object) noexcept;
+    static D2D1_COLOR_F                    FromJSONColor(const json & object) noexcept;
 
 private:
     std::unordered_map<VisualElement, style_t> _Styles;

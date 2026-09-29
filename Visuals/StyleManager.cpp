@@ -1,5 +1,5 @@
 
-/** $VER: StyleManager.cpp (2026.09.23) P. Stuer - Creates and manages the DirectX resources of the styles. **/
+/** $VER: StyleManager.cpp (2026.09.27) P. Stuer - Creates and manages the DirectX resources of the styles. **/
 
 #include "pch.h"
 
@@ -50,7 +50,7 @@ void style_manager_t::Reset() noexcept
     for (auto & [ID, Style] : _Styles)
     {
         Style._CurrentColor         = Style._CustomColor;
-        Style._CurrentGradientStops = GetBuiltInGradientStops(Style._ColorScheme);
+        Style._CurrentGradientStops = Gradient::GetBuiltIn(Style._ColorScheme);
     }
 }
 
@@ -98,19 +98,21 @@ void style_manager_t::Read(stream_reader * reader, size_t size, abort_callback &
             reader->read_object_t(Style._ColorIndex, abortHandler);
             reader->read_object_t(Integer, abortHandler); Style._ColorScheme = (ColorScheme) Integer;
 
-            gradient_stops_t gs;
-
-            size_t GradientStopCount; reader->read_object_t(GradientStopCount, abortHandler);
-
-            for (size_t j = 0; j < GradientStopCount; ++j)
             {
-                FLOAT Position; reader->read_object_t(Position, abortHandler);
-                D2D1_COLOR_F Color; reader->read_object(&Color, sizeof(Color), abortHandler);
+                std::vector<D2D1_GRADIENT_STOP> gs;
 
-                gs.push_back({ Position, Color });
+                size_t GradientStopCount; reader->read_object_t(GradientStopCount, abortHandler);
+
+                for (size_t j = 0; j < GradientStopCount; ++j)
+                {
+                    FLOAT Position; reader->read_object_t(Position, abortHandler);
+                    D2D1_COLOR_F Color; reader->read_object(&Color, sizeof(Color), abortHandler);
+
+                    gs.push_back({ Position, Color });
+                }
+
+                Style._CustomGradient = Gradient::ConvertFormat(gs);
             }
-
-            Style._CustomGradientStops = gs;
 
             reader->read_object_t(Style._Opacity, abortHandler);
             reader->read_object_t(Style._Thickness, abortHandler);
@@ -178,11 +180,11 @@ void style_manager_t::Write(stream_writer * writer, abort_callback & abortHandle
                 writer->write_object_t(Style._ColorIndex, abortHandler);
                 writer->write_object(&Style._ColorScheme, sizeof(Style._ColorScheme), abortHandler);
 
-                Size = Style._CustomGradientStops.size();
+                Size = Style._CustomGradient.size();
 
                 writer->write_object_t(Size, abortHandler);
 
-                for (const auto & gs : Style._CustomGradientStops)
+                for (const auto & gs : Style._CustomGradient)
                 {
                     writer->write_object_t(gs.position, abortHandler);
                     writer->write_object(&gs.color, sizeof(gs.color), abortHandler);
@@ -222,14 +224,17 @@ json style_manager_t::ToJSON() const noexcept
                 ({
                     { "id", (uint32_t) Iter.first },
 
-                    { "flags", Style._Flags },
-                    { "colorSource", Style._ColorSource },
-                    { "customColor", style_manager_t::ToJSON(Style._CustomColor) },
-                    { "colorIndex", Style._ColorIndex },
-                    { "colorScheme", Style._ColorScheme },
-                    { "customGradientStops", style_manager_t::ToJSON(Style._CustomGradientStops) },
-                    { "opacity", Style._Opacity },
-                    { "thickness", Style._Thickness },
+                    { "flags",               Style._Flags },
+                    { "colorSource",         Style._ColorSource },
+
+                    { "colorIndex",          Style._ColorIndex },
+                    { "colorScheme",         Style._ColorScheme },
+
+                    { "customColor",         style_manager_t::ToJSON(Style._CustomColor) },
+                    { "customGradientStops", style_manager_t::ToJSON(Style._CustomGradient) },
+
+                    { "opacity",             Style._Opacity },
+                    { "thickness",           Style._Thickness },
                     { "font", json::object_t
                         ({
                             { "name", msc::WideToUTF8(Style._FontName) },
@@ -270,16 +275,18 @@ void style_manager_t::FromJSON(const json & array) noexcept
             Style._Flags       = std::clamp(Iter.value("flags", Style._Flags), style_t::Features::Min, style_t::Features::Max);
             Style._ColorSource = std::clamp(Iter.value("colorSource", ColorSource::None), ColorSource::Min, ColorSource::Max);
 
-            const auto & Color = Iter.value("customColor", json::object());
-
-            Style._CustomColor = style_manager_t::FromJSONColor(Color);
-
             Style._ColorIndex  = Iter.value("colorIndex", Style._ColorIndex);
             Style._ColorScheme = std::clamp(Iter.value("colorScheme", Style._ColorScheme), ColorScheme::Min, ColorScheme::Max);
 
-            const auto & Array = Iter.value("customGradientStops", json::array());
+            const auto & Color = Iter.value("customColor", json::object());
+            {
+                Style._CustomColor = style_manager_t::FromJSONColor(Color);
+            }
 
-            Style._CustomGradientStops = style_manager_t::FromJSONGradientStops(Array);
+            const auto & Array = Iter.value("customGradientStops", json::array());
+            {
+                Style._CustomGradient = style_manager_t::FromJSONGradientStops(Array);
+            }
 
             Style._Opacity     = std::clamp(Iter.value("opacity", Style._Opacity), 0.f, 1.f);
             Style._Thickness   = std::clamp(Iter.value("thickness", Style._Thickness), (FLOAT) MinThickness, (FLOAT) MaxThickness);
@@ -311,10 +318,11 @@ void style_manager_t::FromJSON(const json & array) noexcept
     }
 }
 
+/*
 /// <summary>
-/// Serializes a gradient_stops_t type to JSON.
+/// Serializes a std::vector<D2D1_GRADIENT_STOP> type to JSON.
 /// </summary>
-json style_manager_t::ToJSON(const gradient_stops_t & gradientStops) noexcept
+json style_manager_t::ToJSON(const std::vector<D2D1_GRADIENT_STOP> & gradientStops) noexcept
 {
     json::array_t Array;
 
@@ -322,19 +330,6 @@ json style_manager_t::ToJSON(const gradient_stops_t & gradientStops) noexcept
         Array.push_back(ToJSON(gs));
 
     return Array;
-}
-
-/// <summary>
-/// Deserializes a gradient_stops_t type from JSON.
-/// </summary>
-gradient_stops_t style_manager_t::FromJSONGradientStops(const json::array_t & array) noexcept
-{
-    gradient_stops_t gradientStops;
-
-    for (const auto & Iter : array)
-        gradientStops.push_back(FromJSONGradientStop(Iter));
-
-    return gradientStops;
 }
 
 /// <summary>
@@ -350,6 +345,19 @@ json style_manager_t::ToJSON(const D2D1_GRADIENT_STOP & gs) noexcept
 }
 
 /// <summary>
+/// Deserializes a std::vector<D2D1_GRADIENT_STOP> type from JSON.
+/// </summary>
+std::vector<D2D1_GRADIENT_STOP> style_manager_t::FromJSONGradientStops(const json::array_t & array) noexcept
+{
+    std::vector<D2D1_GRADIENT_STOP> GradientStops;
+
+    for (const auto & Iter : array)
+        GradientStops.push_back(FromJSONGradientStop(Iter));
+
+    return GradientStops;
+}
+
+/// <summary>
 /// Deserializes a D2D1_GRADIENT_STOP type from JSON.
 /// </summary>
 D2D1_GRADIENT_STOP style_manager_t::FromJSONGradientStop(const json & object) noexcept
@@ -362,6 +370,34 @@ D2D1_GRADIENT_STOP style_manager_t::FromJSONGradientStop(const json & object) no
 
     return gs;
 }   
+*/
+
+/// <summary>
+/// Serializes a std::vector<gradient_stop_t> type to JSON.
+/// </summary>
+json style_manager_t::ToJSON(const std::vector<gradient_stop_t> & gradientStops) noexcept
+{
+    json::array_t Array;
+
+    for (const auto & gs : gradientStops)
+        Array.push_back(ToJSON(gs));
+
+    return Array;
+}
+
+/// <summary>
+/// Serializes a gradient_stop_t structure to JSON.
+/// </summary>
+json style_manager_t::ToJSON(const gradient_stop_t & gradientStop) noexcept
+{
+    return json::object_t
+    ({
+        { "position", gradientStop.position },
+        { "color",    ToJSON(gradientStop.color) },
+        { "stopSoure", gradientStop.StopSource },
+        { "stopIndex", gradientStop.StopIndex },
+    });
+}
 
 /// <summary>
 /// Serializes a D2D1_COLOR_F structure to JSON.
@@ -375,6 +411,35 @@ json style_manager_t::ToJSON(const D2D1_COLOR_F & color) noexcept
         { "blue", color.b },
         { "alpha", color.a },
     });
+}
+
+/// <summary>
+/// Deserializes a std::vector<gradient_stop_t> type from JSON.
+/// </summary>
+std::vector<gradient_stop_t> style_manager_t::FromJSONGradientStops(const json::array_t & array) noexcept
+{
+    std::vector<gradient_stop_t> Gradient;
+
+    for (const auto & Iter : array)
+        Gradient.push_back(FromJSONGradientStop(Iter));
+
+    return Gradient;
+}
+
+/// <summary>
+/// Deserializes a gradient_stop_t structure from JSON.
+/// </summary>
+gradient_stop_t style_manager_t::FromJSONGradientStop(const json & object) noexcept
+{
+    return gradient_stop_t
+    {
+        {
+            .position = std::clamp(object.value("position", 0.f), 0.f, 1.f),
+            .color    = FromJSONColor(object.value("color", json::object()))
+        },
+        std::clamp(object.value("stopSoure", GradientStopSource::Solid), GradientStopSource::Min, GradientStopSource::Max),
+        object.value("stopIndex", 0u)
+    };
 }
 
 /// <summary>
@@ -406,7 +471,7 @@ std::unordered_map<VisualElement, style_t> style_manager_t::_DefaultStyles
             /* CustomColor         */ D2D1::ColorF(D2D1::ColorF::Black),
             /* ColorIndex          */ 0,
             /* ColorScheme         */ ColorScheme::Solid,
-            /* CustomGradientStops */ GetBuiltInGradientStops(ColorScheme::Custom),
+            /* CustomGradientStops */ Gradient::GetBuiltIn(ColorScheme::Custom),
             /* Opacity             */ 1.f,
             /* Thickness           */ 0.f,
             /* FontName            */ L"",
@@ -425,7 +490,7 @@ std::unordered_map<VisualElement, style_t> style_manager_t::_DefaultStyles
             /* CustomColor         */ D2D1::ColorF(D2D1::ColorF::White),
             /* ColorIndex          */ 0,
             /* ColorScheme         */ ColorScheme::Solid,
-            /* CustomGradientStops */ GetBuiltInGradientStops(ColorScheme::Custom),
+            /* CustomGradientStops */ Gradient::GetBuiltIn(ColorScheme::Custom),
             /* Opacity             */ 1.f,
             /* Thickness           */ 0.f,
             /* FontName            */ L"Segoe UI",
@@ -443,7 +508,7 @@ std::unordered_map<VisualElement, style_t> style_manager_t::_DefaultStyles
             /* ColorSource         */ ColorSource::Solid,
             /* CustomColor         */ D2D1::ColorF(1.f, 1.f, 1.f, .25f),
             /* ColorIndex          */ 0,
-            /* CustomGradientStops */ ColorScheme::Solid, GetBuiltInGradientStops(ColorScheme::Custom),
+            /* CustomGradientStops */ ColorScheme::Solid, Gradient::GetBuiltIn(ColorScheme::Custom),
             /* Opacity             */ 1.f,
             /* Thickness           */ 0.f,
             /* FontName            */ L"",
@@ -462,7 +527,7 @@ std::unordered_map<VisualElement, style_t> style_manager_t::_DefaultStyles
             /* CustomColor         */ D2D1::ColorF(D2D1::ColorF::White),
             /* ColorIndex          */ 0,
             /* ColorScheme         */ ColorScheme::Solid,
-            /* CustomGradientStops */ GetBuiltInGradientStops(ColorScheme::Custom),
+            /* CustomGradientStops */ Gradient::GetBuiltIn(ColorScheme::Custom),
             /* Opacity             */ 1.f,
             /* Thickness           */ 0.f,
             /* FontName            */ L"Segoe UI",
@@ -481,7 +546,7 @@ std::unordered_map<VisualElement, style_t> style_manager_t::_DefaultStyles
             /* CustomColor         */ D2D1::ColorF(.25f, .25f, .25f, 1.f),
             /* ColorIndex          */ 0,
             /* ColorScheme         */ ColorScheme::Solid,
-            /* CustomGradientStops */ GetBuiltInGradientStops(ColorScheme::Custom),
+            /* CustomGradientStops */ Gradient::GetBuiltIn(ColorScheme::Custom),
             /* Opacity             */ 1.f,
             /* Thickness           */ 1.f,
             /* FontName            */ L"",
@@ -500,7 +565,7 @@ std::unordered_map<VisualElement, style_t> style_manager_t::_DefaultStyles
             /* CustomColor         */ D2D1::ColorF(D2D1::ColorF::White),
             /* ColorIndex          */ 0,
             /* ColorScheme         */ ColorScheme::Solid,
-            /* CustomGradientStops */ GetBuiltInGradientStops(ColorScheme::Custom),
+            /* CustomGradientStops */ Gradient::GetBuiltIn(ColorScheme::Custom),
             /* Opacity             */ 1.f,
             /* Thickness           */ 0.f,
             /* FontName            */ L"Segoe UI",
@@ -519,7 +584,7 @@ std::unordered_map<VisualElement, style_t> style_manager_t::_DefaultStyles
             /* CustomColor         */ D2D1::ColorF(.25f, .25f, .25f, 1.f),
             /* ColorIndex          */ 0,
             /* ColorScheme         */ ColorScheme::Solid,
-            /* CustomGradientStops */ GetBuiltInGradientStops(ColorScheme::Custom),
+            /* CustomGradientStops */ Gradient::GetBuiltIn(ColorScheme::Custom),
             /* Opacity             */ 1.f,
             /* Thickness           */ 1.f,
             /* FontName            */ L"Segoe UI",
@@ -538,7 +603,7 @@ std::unordered_map<VisualElement, style_t> style_manager_t::_DefaultStyles
             D2D1::ColorF(.25f, .25f, .25f, 1.f),
             0,
             ColorScheme::Solid,
-            GetBuiltInGradientStops(ColorScheme::Custom),
+            Gradient::GetBuiltIn(ColorScheme::Custom),
             1.f,
             1.f,
             L"",
@@ -557,7 +622,7 @@ std::unordered_map<VisualElement, style_t> style_manager_t::_DefaultStyles
             D2D1::ColorF(.25f, .25f, .25f, 1.f),
             0,
             ColorScheme::Solid,
-            GetBuiltInGradientStops(ColorScheme::Custom),
+            Gradient::GetBuiltIn(ColorScheme::Custom),
             1.f,
             1.f,
             L"",
@@ -576,7 +641,7 @@ std::unordered_map<VisualElement, style_t> style_manager_t::_DefaultStyles
             D2D1::ColorF(D2D1::ColorF::Red),
             0,
             ColorScheme::Solid,
-            GetBuiltInGradientStops(ColorScheme::Custom),
+            Gradient::GetBuiltIn(ColorScheme::Custom),
             1.f,
             1.f,
             L"",
@@ -597,7 +662,7 @@ std::unordered_map<VisualElement, style_t> style_manager_t::_DefaultStyles
             D2D1::ColorF(D2D1::ColorF::Black),
             0,
             ColorScheme::Prism1,
-            GetBuiltInGradientStops(ColorScheme::Custom),
+            Gradient::GetBuiltIn(ColorScheme::Custom),
             1.f,
             0.f,
             L"",
@@ -612,7 +677,7 @@ std::unordered_map<VisualElement, style_t> style_manager_t::_DefaultStyles
             /* Name                */ L"Bar Top",
             /* UsedBy              */ VisualizationTypes::Bars | VisualizationTypes::RadialBars,
             /* Flags               */ style_t::Features::SupportsOpacity | style_t::Features::SupportsThickness,
-            /* CustomColor         */ ColorSource::None, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Prism1, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 5.f, L"", 0.f
+            /* CustomColor         */ ColorSource::None, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Prism1, Gradient::GetBuiltIn(ColorScheme::Custom), 1.f, 5.f, L"", 0.f
         )
     },
 
@@ -623,7 +688,7 @@ std::unordered_map<VisualElement, style_t> style_manager_t::_DefaultStyles
             /* Name                */ L"Bar Peak Area",
             /* UsedBy              */ VisualizationTypes::Bars | VisualizationTypes::RadialBars,
             style_t::Features::SupportsOpacity | style_t::Features::AmplitudeAware,
-            ColorSource::None, D2D1::ColorF(D2D1::ColorF::Black), 0, ColorScheme::Prism1, GetBuiltInGradientStops(ColorScheme::Custom), 0.25f, 0.f, L"", 0.f
+            ColorSource::None, D2D1::ColorF(D2D1::ColorF::Black), 0, ColorScheme::Prism1, Gradient::GetBuiltIn(ColorScheme::Custom), 0.25f, 0.f, L"", 0.f
         )
     },
 
@@ -634,7 +699,7 @@ std::unordered_map<VisualElement, style_t> style_manager_t::_DefaultStyles
             /* Name                */ L"Bar Peak Top",
             /* UsedBy              */ VisualizationTypes::Bars | VisualizationTypes::RadialBars,
             style_t::Features::SupportsOpacity | style_t::Features::SupportsThickness,
-            ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Solid, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 1.f, L"", 0.f
+            ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Solid, Gradient::GetBuiltIn(ColorScheme::Custom), 1.f, 1.f, L"", 0.f
         )
     },
 
@@ -645,7 +710,7 @@ std::unordered_map<VisualElement, style_t> style_manager_t::_DefaultStyles
             /* Name                */ L"Bar Dark Background",
             /* UsedBy              */ VisualizationTypes::Bars,
             style_t::Features::SupportsOpacity,
-            ColorSource::Solid, D2D1::ColorF(.2f, .2f, .2f, .7f), 0, ColorScheme::Solid, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 0.f, L"", 0.f
+            ColorSource::Solid, D2D1::ColorF(.2f, .2f, .2f, .7f), 0, ColorScheme::Solid, Gradient::GetBuiltIn(ColorScheme::Custom), 1.f, 0.f, L"", 0.f
         )
     },
 
@@ -656,7 +721,7 @@ std::unordered_map<VisualElement, style_t> style_manager_t::_DefaultStyles
             /* Name                */ L"Bar Light Background",
             /* UsedBy              */ VisualizationTypes::Bars,
             style_t::Features::SupportsOpacity,
-            ColorSource::Solid, D2D1::ColorF(.2f, .2f, .2f, .7f), 0, ColorScheme::Solid, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 0.f, L"", 0.f
+            ColorSource::Solid, D2D1::ColorF(.2f, .2f, .2f, .7f), 0, ColorScheme::Solid, Gradient::GetBuiltIn(ColorScheme::Custom), 1.f, 0.f, L"", 0.f
         )
     },
     #pragma endregion
@@ -673,7 +738,7 @@ std::unordered_map<VisualElement, style_t> style_manager_t::_DefaultStyles
             /* CustomColor         */ D2D1::ColorF(D2D1::ColorF::Black),
             /* ColorIndex          */ 0,
             /* ColorScheme         */ ColorScheme::Artwork,
-            /* CustomGradientStops */ GetBuiltInGradientStops(ColorScheme::Custom),
+            /* CustomGradientStops */ Gradient::GetBuiltIn(ColorScheme::Custom),
             /* Opacity             */ 1.f,
             /* Thickness           */ 2.f,
             /* FontName            */ L"",
@@ -689,7 +754,7 @@ std::unordered_map<VisualElement, style_t> style_manager_t::_DefaultStyles
             /* Name                */ L"Curve Area",
             /* UsedBy              */ VisualizationTypes::Curve | VisualizationTypes::RadialCurve,
             style_t::Features::SupportsOpacity,
-            ColorSource::Gradient, D2D1::ColorF(D2D1::ColorF::Black), 0, ColorScheme::Artwork, GetBuiltInGradientStops(ColorScheme::Custom), .5f, 0.f, L"", 0.f
+            ColorSource::Gradient, D2D1::ColorF(D2D1::ColorF::Black), 0, ColorScheme::Artwork, Gradient::GetBuiltIn(ColorScheme::Custom), .5f, 0.f, L"", 0.f
         )
     },
 
@@ -700,7 +765,7 @@ std::unordered_map<VisualElement, style_t> style_manager_t::_DefaultStyles
             /* Name                */ L"Curve Peak Line",
             /* UsedBy              */ VisualizationTypes::Curve | VisualizationTypes::RadialCurve,
             style_t::Features::SupportsOpacity | style_t::Features::SupportsThickness,
-            ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Artwork, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 2.f, L"", 0.f
+            ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Artwork, Gradient::GetBuiltIn(ColorScheme::Custom), 1.f, 2.f, L"", 0.f
         )
     },
 
@@ -711,7 +776,7 @@ std::unordered_map<VisualElement, style_t> style_manager_t::_DefaultStyles
             /* Name                */ L"Curve Peak Area",
             /* UsedBy              */ VisualizationTypes::Curve | VisualizationTypes::RadialCurve,
             style_t::Features::SupportsOpacity,
-            ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Artwork, GetBuiltInGradientStops(ColorScheme::Custom), .25f, 0.f, L"", 0.f
+            ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Artwork, Gradient::GetBuiltIn(ColorScheme::Custom), .25f, 0.f, L"", 0.f
         )
     },
     #pragma endregion
@@ -728,7 +793,7 @@ std::unordered_map<VisualElement, style_t> style_manager_t::_DefaultStyles
             /* CustomColor         */ D2D1::ColorF(D2D1::ColorF::Black),
             /* ColorIndex          */ 0,
             /* ColorScheme         */ ColorScheme::SoX,
-            /* CustomGradientStops */ GetBuiltInGradientStops(ColorScheme::Custom),
+            /* CustomGradientStops */ Gradient::GetBuiltIn(ColorScheme::Custom),
             /* Opacity             */ 1.f,
             /* Thickness           */ 0.f,
             /* FontName            */ L"",
@@ -749,7 +814,7 @@ std::unordered_map<VisualElement, style_t> style_manager_t::_DefaultStyles
             /* CustomColor         */ D2D1::ColorF(.2f, .2f, .2f, 1.f),
             /* ColorIndex          */ 0,
             /* ColorScheme         */ ColorScheme::Solid,
-            /* CustomGradientStops */ GetBuiltInGradientStops(ColorScheme::Custom),
+            /* CustomGradientStops */ Gradient::GetBuiltIn(ColorScheme::Custom),
             /* Opacity             */ 1.f,
             /* Thickness           */ 0.f,
             /* FontName            */ L"",
@@ -768,7 +833,7 @@ std::unordered_map<VisualElement, style_t> style_manager_t::_DefaultStyles
             D2D1::ColorF(D2D1::ColorF::Black),
             0,
             ColorScheme::Prism1,
-            GetBuiltInGradientStops(ColorScheme::Custom),
+            Gradient::GetBuiltIn(ColorScheme::Custom),
             1.f,
             0.f,
             L"",
@@ -783,7 +848,7 @@ std::unordered_map<VisualElement, style_t> style_manager_t::_DefaultStyles
             /* Name                */ L"Peak Level (> 0dB)",
             /* UsedBy              */ VisualizationTypes::PeakMeter,
             style_t::Features::SupportsOpacity,
-            ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::Red), 0, ColorScheme::Prism1, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 0.f, L"", 0.f
+            ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::Red), 0, ColorScheme::Prism1, Gradient::GetBuiltIn(ColorScheme::Custom), 1.f, 0.f, L"", 0.f
         )
     },
 
@@ -794,7 +859,7 @@ std::unordered_map<VisualElement, style_t> style_manager_t::_DefaultStyles
             /* Name                */ L"Peak Level (Max)",
             /* UsedBy              */ VisualizationTypes::PeakMeter,
             style_t::Features::SupportsOpacity | style_t::Features::SupportsThickness,
-            ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Solid, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 1.f, L"", 0.f
+            ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Solid, Gradient::GetBuiltIn(ColorScheme::Custom), 1.f, 1.f, L"", 0.f
         )
     },
 
@@ -805,7 +870,7 @@ std::unordered_map<VisualElement, style_t> style_manager_t::_DefaultStyles
             /* Name                */ L"Peak Level Read Out",
             /* UsedBy              */ VisualizationTypes::PeakMeter,
             style_t::Features::SupportsOpacity | style_t::Features::SupportsFont,
-            ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Solid, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 0.f, L"Segoe UI", 10.f
+            ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Solid, Gradient::GetBuiltIn(ColorScheme::Custom), 1.f, 0.f, L"Segoe UI", 10.f
         )
     },
 
@@ -817,7 +882,7 @@ std::unordered_map<VisualElement, style_t> style_manager_t::_DefaultStyles
             /* Name                */ L"RMS Level",
             /* UsedBy              */ VisualizationTypes::PeakMeter,
             style_t::Features::SupportsOpacity,
-            ColorSource::Gradient, D2D1::ColorF(D2D1::ColorF::Black), 0, ColorScheme::Prism1, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 0.f, L"", 0.f
+            ColorSource::Gradient, D2D1::ColorF(D2D1::ColorF::Black), 0, ColorScheme::Prism1, Gradient::GetBuiltIn(ColorScheme::Custom), 1.f, 0.f, L"", 0.f
         )
     },
 
@@ -828,7 +893,7 @@ std::unordered_map<VisualElement, style_t> style_manager_t::_DefaultStyles
             /* Name                */ L"RMS Level (> 0dB)",
             /* UsedBy              */ VisualizationTypes::PeakMeter,
             style_t::Features::SupportsOpacity,
-            ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::Red), 0, ColorScheme::Prism1, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 0.f, L"", 0.f
+            ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::Red), 0, ColorScheme::Prism1, Gradient::GetBuiltIn(ColorScheme::Custom), 1.f, 0.f, L"", 0.f
         )
     },
 
@@ -839,7 +904,7 @@ std::unordered_map<VisualElement, style_t> style_manager_t::_DefaultStyles
             /* Name                */ L"RMS Level Read Out",
             /* UsedBy              */ VisualizationTypes::PeakMeter,
             style_t::Features::SupportsOpacity | style_t::Features::SupportsFont,
-            ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Solid, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 0.f, L"Segoe UI", 10.f
+            ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Solid, Gradient::GetBuiltIn(ColorScheme::Custom), 1.f, 0.f, L"Segoe UI", 10.f
         )
     },
     #pragma endregion
@@ -852,7 +917,7 @@ std::unordered_map<VisualElement, style_t> style_manager_t::_DefaultStyles
             /* Name                */ L"Left/Right Level",
             /* UsedBy              */ VisualizationTypes::LevelMeter,
             style_t::Features::SupportsOpacity | style_t::Features::SupportsThickness,
-            ColorSource::Gradient, D2D1::ColorF(D2D1::ColorF::Black), 0, ColorScheme::Prism1, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 1.f, L"", 0.f
+            ColorSource::Gradient, D2D1::ColorF(D2D1::ColorF::Black), 0, ColorScheme::Prism1, Gradient::GetBuiltIn(ColorScheme::Custom), 1.f, 1.f, L"", 0.f
         )
     },
 
@@ -863,7 +928,7 @@ std::unordered_map<VisualElement, style_t> style_manager_t::_DefaultStyles
             /* Name                */ L"Left/Right Level Indicator",
             /* UsedBy              */ VisualizationTypes::LevelMeter,
             style_t::Features::SupportsOpacity | style_t::Features::SupportsThickness,
-            ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Prism1, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 1.f, L"", 0.f
+            ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Prism1, Gradient::GetBuiltIn(ColorScheme::Custom), 1.f, 1.f, L"", 0.f
         )
     },
 
@@ -874,7 +939,7 @@ std::unordered_map<VisualElement, style_t> style_manager_t::_DefaultStyles
             /* Name                */ L"Mid/Side Level",
             /* UsedBy              */ VisualizationTypes::LevelMeter,
             style_t::Features::SupportsOpacity | style_t::Features::SupportsThickness,
-            ColorSource::Gradient, D2D1::ColorF(D2D1::ColorF::Black), 0, ColorScheme::Prism1, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 1.f, L"", 0.f
+            ColorSource::Gradient, D2D1::ColorF(D2D1::ColorF::Black), 0, ColorScheme::Prism1, Gradient::GetBuiltIn(ColorScheme::Custom), 1.f, 1.f, L"", 0.f
         )
     },
 
@@ -885,7 +950,7 @@ std::unordered_map<VisualElement, style_t> style_manager_t::_DefaultStyles
             /* Name                */ L"Mid/Side Level Indicator",
             /* UsedBy              */ VisualizationTypes::LevelMeter,
             style_t::Features::SupportsOpacity | style_t::Features::SupportsThickness,
-            ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Prism1, GetBuiltInGradientStops(ColorScheme::Custom), 1.f, 1.f, L"", 0.f
+            ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Prism1, Gradient::GetBuiltIn(ColorScheme::Custom), 1.f, 1.f, L"", 0.f
         )
     },
 
@@ -896,7 +961,7 @@ std::unordered_map<VisualElement, style_t> style_manager_t::_DefaultStyles
             /* Name                */ L"Left/Side Axis",
             /* UsedBy              */ VisualizationTypes::LevelMeter,
             style_t::Features::SupportsOpacity | style_t::Features::SupportsThickness | style_t::Features::SupportsFont,
-            ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Prism1, GetBuiltInGradientStops(ColorScheme::Custom), 0.5f, 1.f, L"Segoe UI", 10.f
+            ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Prism1, Gradient::GetBuiltIn(ColorScheme::Custom), 0.5f, 1.f, L"Segoe UI", 10.f
         )
     },
     #pragma endregion
@@ -913,7 +978,7 @@ std::unordered_map<VisualElement, style_t> style_manager_t::_DefaultStyles
             /* CustomColor         */ D2D1::ColorF(D2D1::ColorF::LightGreen),
             /* ColorIndex          */ 0,
             /* ColorScheme         */ ColorScheme::Solid,
-            /* CustomGradientStops */ GetBuiltInGradientStops(ColorScheme::Solid),
+            /* CustomGradientStops */ Gradient::GetBuiltIn(ColorScheme::Solid),
             /* Opacity             */ 1.f,
             /* Thickness           */ 1.f,
             /* FontName            */ L"",
@@ -934,7 +999,7 @@ std::unordered_map<VisualElement, style_t> style_manager_t::_DefaultStyles
             /* CustomColor         */ D2D1::ColorF(D2D1::ColorF::White),
             /* ColorIndex          */ 0,
             /* ColorScheme         */ ColorScheme::Solid,
-            /* CustomGradientStops */ GetBuiltInGradientStops(ColorScheme::Custom),
+            /* CustomGradientStops */ Gradient::GetBuiltIn(ColorScheme::Custom),
             /* Opacity             */ 1.f,
             /* Thickness           */ 0.f,
             /* FontName            */ L"Segoe UI",
@@ -953,7 +1018,7 @@ std::unordered_map<VisualElement, style_t> style_manager_t::_DefaultStyles
             /* CustomColor         */ D2D1::ColorF(.25f, .25f, .25f, 1.f),
             /* ColorIndex          */ 0,
             /* ColorScheme         */ ColorScheme::Solid,
-            /* CustomGradientStops */ GetBuiltInGradientStops(ColorScheme::Custom),
+            /* CustomGradientStops */ Gradient::GetBuiltIn(ColorScheme::Custom),
             /* Opacity             */ 1.f,
             /* Thickness           */ 1.f,
             /* FontName            */ L"",
@@ -974,7 +1039,7 @@ std::unordered_map<VisualElement, style_t> style_manager_t::_DefaultStyles
             /* CustomColor         */ D2D1::ColorF((UINT32) RGB(192, 192, 192)),
             /* ColorIndex          */ 0,
             /* ColorScheme         */ ColorScheme::Prism1,
-            /* CustomGradientStops */ GetBuiltInGradientStops(ColorScheme::Prism1),
+            /* CustomGradientStops */ Gradient::GetBuiltIn(ColorScheme::Prism1),
             /* Opacity             */ 1.f,
             /* Thickness           */ 0.f,
             /* FontName            */ L"",
@@ -992,7 +1057,7 @@ std::unordered_map<VisualElement, style_t> style_manager_t::_DefaultStyles
             /* CustomColor         */ D2D1::ColorF((UINT32) RGB(86, 156, 214)),
             /* ColorIndex          */ 0,
             /* ColorScheme         */ ColorScheme::Prism1,
-            /* CustomGradientStops */ GetBuiltInGradientStops(ColorScheme::Prism1),
+            /* CustomGradientStops */ Gradient::GetBuiltIn(ColorScheme::Prism1),
             /* Opacity             */ 1.f,
             /* Thickness           */ 0.f,
             /* FontName            */ L"",
@@ -1010,7 +1075,7 @@ std::unordered_map<VisualElement, style_t> style_manager_t::_DefaultStyles
             /* CustomColor         */ D2D1::ColorF((UINT32) RGB(214, 156, 86)),
             /* ColorIndex          */ 0,
             /* ColorScheme         */ ColorScheme::Prism1,
-            /* CustomGradientStops */ GetBuiltInGradientStops(ColorScheme::Prism1),
+            /* CustomGradientStops */ Gradient::GetBuiltIn(ColorScheme::Prism1),
             /* Opacity             */ 1.f,
             /* Thickness           */ 0.f,
             /* FontName            */ L"",
@@ -1031,7 +1096,7 @@ std::unordered_map<VisualElement, style_t> style_manager_t::_DefaultStyles
             /* CustomColor         */ D2D1::ColorF((UINT32) RGB(0, 255, 0)),
             /* ColorIndex          */ 0,
             /* ColorScheme         */ ColorScheme::Solid,
-            /* CustomGradientStops */ GetBuiltInGradientStops(ColorScheme::Solid),
+            /* CustomGradientStops */ Gradient::GetBuiltIn(ColorScheme::Solid),
             /* Opacity             */ 1.f,
             /* Thickness           */ 2.f,
             /* FontName            */ L"",
@@ -1049,7 +1114,7 @@ std::unordered_map<VisualElement, style_t> style_manager_t::_DefaultStyles
             /* CustomColor         */ D2D1::ColorF((UINT32) RGB(0, 255, 255)),
             /* ColorIndex          */ 0,
             /* ColorScheme         */ ColorScheme::Solid,
-            /* CustomGradientStops */ GetBuiltInGradientStops(ColorScheme::Solid),
+            /* CustomGradientStops */ Gradient::GetBuiltIn(ColorScheme::Solid),
             /* Opacity             */ 1.f,
             /* Thickness           */ 2.f,
             /* FontName            */ L"",

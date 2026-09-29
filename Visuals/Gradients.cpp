@@ -1,34 +1,35 @@
 
-/** $VER: Gradients.cpp (2026.09.20) P. Stuer - Built-in gradients. **/
+/** $VER: Gradients.cpp (2026.09.28) P. Stuer - Built-in gradients. **/
 
 #include "pch.h"
 
 #include "Gradients.h"
+#include "Constants.h"
 
 #include <map>
 
 // Solid
-static const gradient_stops_t Solid =
+static const std::vector<D2D1_GRADIENT_STOP> Solid =
 {
     { 1.f, D2D1::ColorF(0x1E90FF, 1.f) },
 };
 
 // Custom (default colors)
-static const gradient_stops_t Custom =
+static const std::vector<D2D1_GRADIENT_STOP> Custom =
 {
     { 0.f / 1.f, D2D1::ColorF(0xbdc3c7, 1.f) },
     { 1.f / 1.f, D2D1::ColorF(0x2c3e50, 1.f) },
 };
 
 // Artwork (default colors)
-static const gradient_stops_t Artwork =
+static const std::vector<D2D1_GRADIENT_STOP> Artwork =
 {
     { 0.f / 1.f, D2D1::ColorF(D2D1::ColorF::Black) },
     { 1.f / 1.f, D2D1::ColorF(D2D1::ColorF::White) },
 };
 
 // Prism / foo_musical_spectrum
-static const gradient_stops_t Prism1 =
+static const std::vector<D2D1_GRADIENT_STOP> Prism1 =
 {
     { 0.f / 5.f, D2D1::ColorF(0xFD0000, 1.f) },
     { 1.f / 5.f, D2D1::ColorF(0xFF8000, 1.f) },
@@ -39,7 +40,7 @@ static const gradient_stops_t Prism1 =
 };
 
 // Prism 2
-static const gradient_stops_t Prism2 =
+static const std::vector<D2D1_GRADIENT_STOP> Prism2 =
 {
     { 0.f / 9.f, D2D1::ColorF(0xAA3355, 1.f) },
     { 1.f / 9.f, D2D1::ColorF(0xCC6666, 1.f) },
@@ -54,7 +55,7 @@ static const gradient_stops_t Prism2 =
 };
 
 // Prism 3
-static const gradient_stops_t Prism3 =
+static const std::vector<D2D1_GRADIENT_STOP> Prism3 =
 {
     { 0.f / 4.f, D2D1::ColorF(0xFF0000, 1.f) }, // hsl(  0, 100%, 50%)
     { 1.f / 4.f, D2D1::ColorF(0xFFFF00, 1.f) }, // hsl( 60, 100%, 50%)
@@ -64,21 +65,21 @@ static const gradient_stops_t Prism3 =
 };
 
 // foobar2000
-static const gradient_stops_t foobar2000 =
+static const std::vector<D2D1_GRADIENT_STOP> foobar2000 =
 {
     { 0.f / 1.f, D2D1::ColorF(0x0066CC, 1.f) }, 
     { 1.f / 1.f, D2D1::ColorF(0x000000, 1.f) },
 };
 
 // foobar2000 Dark Mode
-static const gradient_stops_t foobar2000DarkMode =
+static const std::vector<D2D1_GRADIENT_STOP> foobar2000DarkMode =
 {
     { 0.f / 1.f, D2D1::ColorF(0x0080FF, 1.f) },
     { 1.f / 1.f, D2D1::ColorF(0xFFFFFF, 1.f) },
 };
 
 // Fire (https://www.schemecolor.com/fire-gradient.php)
-static const gradient_stops_t Fire =
+static const std::vector<D2D1_GRADIENT_STOP> Fire =
 {
     { 0.f,  D2D1::ColorF(0xFFF75D, 1.f) },
     { 0.6f, D2D1::ColorF(0xFFC11F, 1.f) },
@@ -88,7 +89,7 @@ static const gradient_stops_t Fire =
     { 1.f,  D2D1::ColorF(0xA10100, 1.f) },
 };
 
-static const gradient_stops_t Rainbow =
+static const std::vector<D2D1_GRADIENT_STOP> Rainbow =
 {
     {  0.f / 11.f, D2D1::ColorF(0x881177, 1.f) },
     {  1.f / 11.f, D2D1::ColorF(0xAA3355, 1.f) },
@@ -105,7 +106,7 @@ static const gradient_stops_t Rainbow =
 };
 
 // SoX (https://sourceforge.net/p/sox/code/ci/master/tree/)
-static const gradient_stops_t SoX =
+static const std::vector<D2D1_GRADIENT_STOP> SoX =
 {
 /*
     { 0.00f, D2D1::ColorF(1.00f, 1.00f, 1.00f, 1.f) },
@@ -125,7 +126,7 @@ static const gradient_stops_t SoX =
 };
 
 // Turbo (https://research.google/blog/turbo-an-improved-rainbow-colormap-for-visualization/), Classic spectrum analyzer appearance
-static const gradient_stops_t Turbo =
+static const std::vector<D2D1_GRADIENT_STOP> Turbo =
 {
     { 0.000f, D2D1::ColorF(0.480f, 0.016f, 0.011f) },
     { 0.032f, D2D1::ColorF(0.572f, 0.045f, 0.005f) },
@@ -162,7 +163,7 @@ static const gradient_stops_t Turbo =
 };
 
 // Viridis (https://matplotlib.org/stable/users/explain/colors/colormaps.html), Best quantitative interpretation
-static const gradient_stops_t Viridis =
+static const std::vector<D2D1_GRADIENT_STOP> Viridis =
 {
     { 0.000f, D2D1::ColorF(0.993f, 0.906f, 0.144f) },
     { 0.032f, D2D1::ColorF(0.983f, 0.904f, 0.225f) },
@@ -199,7 +200,7 @@ static const gradient_stops_t Viridis =
 };
 
 // Plasma (https://matplotlib.org/stable/users/explain/colors/colormaps.html), Very vibrant, good contrast
-static const gradient_stops_t Plasma =
+static const std::vector<D2D1_GRADIENT_STOP> Plasma =
 {
     { 0.000f, D2D1::ColorF(0.940f, 0.975f, 0.131f) },
     { 0.032f, D2D1::ColorF(0.997f, 0.967f, 0.420f) },
@@ -236,7 +237,7 @@ static const gradient_stops_t Plasma =
 };
 
 // Inferno (https://matplotlib.org/stable/users/explain/colors/colormaps.html), Best weak-signal visibility
-static const gradient_stops_t Inferno =
+static const std::vector<D2D1_GRADIENT_STOP> Inferno =
 {
     { 0.000f, D2D1::ColorF(0.988f, 0.998f, 0.645f) },
     { 0.032f, D2D1::ColorF(0.993f, 0.988f, 0.470f) },
@@ -273,7 +274,7 @@ static const gradient_stops_t Inferno =
 };
 
 // Magma (https://matplotlib.org/stable/users/explain/colors/colormaps.html), Similar to Inferno but slightly softer
-static const gradient_stops_t Magma =
+static const std::vector<D2D1_GRADIENT_STOP> Magma =
 {
     { 0.000f, D2D1::ColorF(0.987f, 0.991f, 0.750f) },
     { 0.032f, D2D1::ColorF(0.997f, 0.991f, 0.549f) },
@@ -310,7 +311,7 @@ static const gradient_stops_t Magma =
 };
 
 // Cividis (https://matplotlib.org/stable/users/explain/colors/colormaps.html), Best color-blind accessibility
-static const gradient_stops_t Cividis =
+static const std::vector<D2D1_GRADIENT_STOP> Cividis =
 {
     { 0.000f, D2D1::ColorF(0.996f, 0.909f, 0.218f) },
     { 0.032f, D2D1::ColorF(0.956f, 0.827f, 0.279f) },
@@ -347,7 +348,7 @@ static const gradient_stops_t Cividis =
 };
 
 // Gold
-static const gradient_stops_t Gold =
+static const std::vector<D2D1_GRADIENT_STOP> Gold =
 {
     { 0.f / 3.f, D2D1::ColorF(255.f / 255.f, 204.f / 255.f,   0.f / 255.f) },
     { 1.f / 3.f, D2D1::ColorF(212.f / 255.f, 175.f / 255.f,  55.f / 255.f) },
@@ -356,14 +357,14 @@ static const gradient_stops_t Gold =
 };
 
 // Triband
-static const gradient_stops_t Triband =
+static const std::vector<D2D1_GRADIENT_STOP> Triband =
 {
     { 0.f / 2.f, D2D1::ColorF(1.00f,  .12f,  .04f) },
     { 1.f / 2.f, D2D1::ColorF( .08f, 1.00f,  .25f) },
     { 2.f / 2.f, D2D1::ColorF( .08f,  .35f, 1.00f) },
 };
 
-static const std::map<ColorScheme, const gradient_stops_t *> ColorMaps
+static const std::map<ColorScheme, const std::vector<D2D1_GRADIENT_STOP> *> ColorMaps
 {
     { ColorScheme::Solid,               &Solid },
     { ColorScheme::Custom,              &Custom },
@@ -399,10 +400,61 @@ static const std::map<ColorScheme, const gradient_stops_t *> ColorMaps
 /// <summary>
 /// Gets a gradient stop vector.
 /// </summary>
-const gradient_stops_t & GetBuiltInGradientStops(ColorScheme colorScheme) noexcept
+const std::vector<D2D1_GRADIENT_STOP> & Gradient::GetBuiltIn(ColorScheme colorScheme) noexcept
 {
     if (auto Iter = ColorMaps.find(colorScheme); Iter != ColorMaps.end())
         return *Iter->second;
 
     return Solid;
+}
+
+/// <summary>
+/// Converts to a gradient_stop_t vector.
+/// </summary>
+std::vector<gradient_stop_t> Gradient::ConvertFormat(const std::vector<D2D1_GRADIENT_STOP> & gssIn)
+{
+    std::vector<gradient_stop_t> gssOut;
+
+    gssOut.resize(gssIn.size());
+
+    size_t i = 0;
+
+    for (auto & gs : gssIn)
+        gssOut[i++] = { gs, GradientStopSource::Solid, 0 };
+
+    return gssOut;
+}
+
+/// <summary>
+/// Converts to a D2D1_GRADIENT_STOP vector.
+/// </summary>
+std::vector<D2D1_GRADIENT_STOP> Gradient::ConvertFormat(const std::vector<gradient_stop_t> & gssIn)
+{
+    std::vector<D2D1_GRADIENT_STOP> gssOut;
+
+    gssOut.resize(gssIn.size());
+
+    size_t i = 0;
+
+    for (auto & gs : gssIn)
+        gssOut[i++] = { gs.position, gs.color };
+
+    return gssOut;
+}
+
+/// <summary>
+/// Converts to a gradient_stop_t vector.
+/// </summary>
+static std::vector<gradient_stop_t> ConvertFormat(const std::vector<D2D1_COLOR_F> & gssIn)
+{
+    std::vector<gradient_stop_t> gssOut;
+
+    gssOut.resize(gssIn.size());
+
+    size_t i = 0;
+
+    for (auto & gs : gssIn)
+        gssOut[i++] = { { 0.f, gs }, GradientStopSource::Solid, 0 };
+
+    return gssOut;
 }

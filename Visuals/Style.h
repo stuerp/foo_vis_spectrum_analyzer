@@ -1,5 +1,5 @@
 
-/** $VER: Style.h (2026.09.25) P. Stuer - Represents the style of a visual element. **/
+/** $VER: Style.h (2026.09.29) P. Stuer - Represents the style of a visual element. **/
 
 #pragma once
 
@@ -51,7 +51,7 @@ public:
         Max = Global,
     };
 
-    style_t(const std::wstring & name, VisualizationTypes usedBy, Features flags, ColorSource colorSource, D2D1_COLOR_F customColor, uint32_t colorIndex, ColorScheme colorScheme, gradient_stops_t customGradientStops, FLOAT opacity, FLOAT thickness, const wchar_t * fontName, FLOAT fontSize) noexcept;
+    style_t(const std::wstring & name, VisualizationTypes usedBy, Features flags, ColorSource colorSource, D2D1_COLOR_F customColor, uint32_t colorIndex, ColorScheme colorScheme, std::vector<D2D1_GRADIENT_STOP> customGradientStops, FLOAT opacity, FLOAT thickness, const wchar_t * fontName, FLOAT fontSize) noexcept;
 
     bool IsEnabled() const noexcept
     {
@@ -63,7 +63,7 @@ public:
         return IsSet(_Flags, feature);
     }
 
-    void SetColor(const D2D1_COLOR_F & dominantColor, const gradient_stops_t & artworkGradientStops, const std::vector<D2D1_COLOR_F> & userInterfaceColors) noexcept;
+    void SetColor(const D2D1_COLOR_F & dominantColor, const std::vector<D2D1_GRADIENT_STOP> & artworkGradientStops, const std::vector<D2D1_COLOR_F> & userInterfaceColors) noexcept;
 
     HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext, const D2D1_SIZE_F & size, const std::wstring & text, FLOAT scaleFactor = 1.f) noexcept;
     HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext, const D2D1_SIZE_F & size, const D2D1_POINT_2F & center, const D2D1_POINT_2F & offset, FLOAT rx, FLOAT ry, FLOAT rOffset) noexcept;
@@ -87,27 +87,28 @@ public:
 
     bool IsAmplitudeBased() const noexcept { return (_ColorSource == ColorSource::Gradient) && Has(style_t::Features::HorizontalGradient | style_t::Features::AmplitudeBasedColor); }
 
-    static HRESULT CreateAmplitudeMap(ColorScheme colorScheme, const gradient_stops_t & gradientStops, std::vector<D2D1_COLOR_F> & colors) noexcept;
+    static HRESULT CreateAmplitudeMap(ColorScheme colorScheme, const std::vector<D2D1_GRADIENT_STOP> & gradientStops, std::vector<D2D1_COLOR_F> & colors) noexcept;
 
 private:
     static D2D1_COLOR_F GetWindowsColor(uint32_t index) noexcept;
 
 public:
     std::wstring _Name;
-    VisualizationTypes _UsedBy;              // Determines which visualization uses the style.
+    VisualizationTypes _UsedBy;                     // Determines which visualization uses the style.
 
 #pragma region Serialized
 
     Features _Flags;
 
-    ColorSource _ColorSource;               // Determines the source of the color
-    D2D1_COLOR_F _CustomColor;              // User-specified color
-    uint32_t _ColorIndex;                   // User-specified color index in Windows / DUI / CUI list
-    ColorScheme _ColorScheme;               // User-specified color scheme
-    gradient_stops_t _CustomGradientStops;  // User-specified gradient stops
+    ColorSource _ColorSource;                       // The source of the color
+    uint32_t _ColorIndex;                           // The index in the Windows or user interface color list
+    ColorScheme _ColorScheme;                       // The selected gradient color scheme
 
-    FLOAT _Opacity;                         // Opacity of the brush or area
-    FLOAT _Thickness;                       // Line thickness
+    D2D1_COLOR_F _CustomColor;                      // User-specified color
+    std::vector<gradient_stop_t> _CustomGradient;   // User-specified gradient stops
+
+    FLOAT _Opacity;                                 // Opacity of the brush or area
+    FLOAT _Thickness;                               // Line thickness
 
     std::wstring _FontName;
     FLOAT _FontSize;
@@ -116,7 +117,7 @@ public:
 
     // Current input value for the DirectX resources
     D2D1_COLOR_F _CurrentColor;
-    gradient_stops_t _CurrentGradientStops;
+    std::vector<D2D1_GRADIENT_STOP> _CurrentGradientStops;
     std::vector<D2D1_COLOR_F> _AmplitudeMap;
 
     // DirectX resources

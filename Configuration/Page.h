@@ -70,6 +70,19 @@ protected:
         return true;
     }
 
+    /// <summary>
+    /// Set the value of a property. Returns true if the property value actually changed.
+    /// </summary>
+    bool SetProperty(std::wstring & propertyValue, std::wstring newValue)
+    {
+        if (propertyValue == newValue)
+            return false;
+
+        propertyValue = newValue;
+
+        return true;
+    }
+
 private:
     BEGIN_MSG_MAP(page_t)
         MSG_WM_INITDIALOG(OnInitDialog)

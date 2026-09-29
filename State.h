@@ -309,7 +309,7 @@ public:
     #pragma region UI + Render thread
 
     D2D1_COLOR_F _ArtworkDominantColor;                                 // The current dominant color extracted from the artwork bitmap.
-    gradient_stops_t _ArtworkGradientStops;                             // The current gradient stops extracted from the artwork bitmap.
+    std::vector<D2D1_GRADIENT_STOP> _ArtworkGradientStops;              // The current gradient stops extracted from the artwork bitmap.
 
     std::vector<D2D1_COLOR_F> _UserInterfaceColors;
 
@@ -401,7 +401,7 @@ private:
     bool _DrawBandBackground_Deprecated;                                // True if the background for each band should be drawn.
     bool _HorizontalGradient_Deprecated;                                // True if the gradient will be used to paint horizontally.
 
-    const gradient_stops_t SelectGradientStops_Deprecated(ColorScheme colorScheme) const noexcept;
+    const std::vector<D2D1_GRADIENT_STOP> SelectGradientStops_Deprecated(ColorScheme colorScheme) const noexcept;
 
     #pragma endregion
 

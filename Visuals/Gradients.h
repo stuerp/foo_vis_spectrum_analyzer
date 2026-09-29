@@ -1,5 +1,5 @@
 
-/** $VER: Gradients.h (2026.08.23) P. Stuer - Built-in gradients. **/
+/** $VER: Gradients.h (2026.09.29) P. Stuer - Built-in gradients. **/
 
 #pragma once
 
@@ -13,6 +13,19 @@
 
 #include "Constants.h"
 
-typedef std::vector<D2D1_GRADIENT_STOP> gradient_stops_t;
+struct gradient_stop_t : D2D1_GRADIENT_STOP
+{
+    GradientStopSource StopSource; // The source of the color
+    uint32_t StopIndex;            // The index in the Windows or user interface color list
+};
 
-const gradient_stops_t & GetBuiltInGradientStops(ColorScheme colorScheme) noexcept;
+class Gradient
+{
+public:
+    static const std::vector<D2D1_GRADIENT_STOP> & GetBuiltIn(ColorScheme colorScheme) noexcept;
+
+    static std::vector<gradient_stop_t> ConvertFormat(const std::vector<D2D1_GRADIENT_STOP> & gssIn);
+    static std::vector<D2D1_GRADIENT_STOP> ConvertFormat(const std::vector<gradient_stop_t> & gssIn);
+
+    static std::vector<gradient_stop_t> ConvertFormat(const std::vector<D2D1_COLOR_F> & gssIn);
+};

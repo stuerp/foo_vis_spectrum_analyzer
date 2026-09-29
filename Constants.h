@@ -1,5 +1,5 @@
 
-/** $VER: Constants.h (2026.09.23) P. Stuer **/
+/** $VER: Constants.h (2026.09.29) P. Stuer **/
 
 #pragma once
 
@@ -448,6 +448,17 @@ enum class ColorSource : uint32_t
     UserInterface,
 
     Min = None,
+    Max = UserInterface,
+};
+
+enum class GradientStopSource : uint32_t
+{
+    Solid,
+    DominantColor,
+    Windows,
+    UserInterface,
+
+    Min = Solid,
     Max = UserInterface,
 };
 

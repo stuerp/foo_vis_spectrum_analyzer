@@ -149,7 +149,7 @@ void uielement_t::ProcessEvents() noexcept
         _RenderState._IsPaused = false;
 
         // Set the default dominant color and gradient for the artwork color scheme.
-        _RenderState._ArtworkGradientStops = GetBuiltInGradientStops(_Artwork.Bitmap() ? ColorScheme::Artwork : ColorScheme::Solid);
+        _RenderState._ArtworkGradientStops = Gradient::GetBuiltIn(_Artwork.Bitmap() ? ColorScheme::Artwork : ColorScheme::Solid);
         _RenderState._ArtworkDominantColor = _RenderState._ArtworkGradientStops[0].color;
 
         _RenderState._ResizeResources = true;
