@@ -79,15 +79,24 @@ private:
     /// <summary>
     /// Expands the environment variables in the specified string.
     /// </summary>
-    const std::string ExpandEnvironmentStrings(const char * src) noexcept
+    std::string ExpandEnvironmentStrings(const char * src) noexcept
     {
-        const DWORD Size = ::ExpandEnvironmentStringsA(src, nullptr, 0) + 1;
+        if (src == nullptr)
+            return { };
 
-        std::string Dst;
+        const DWORD Size = ::ExpandEnvironmentStringsA(src, nullptr, 0);
 
-        Dst.resize(Size);
+        if (Size == 0)
+            return { };
 
-        ::ExpandEnvironmentStringsA(src, (LPSTR) Dst.data(), (DWORD) Dst.size());
+        std::string Dst(Size, '\0');
+
+        DWORD BytesStored = ::ExpandEnvironmentStringsA(src, (LPSTR) Dst.data(), (DWORD) Dst.size());
+
+        if ((BytesStored == 0) || (BytesStored > Size))
+            return {};
+
+        Dst.resize(BytesStored - 1);
 
         return Dst;
     }

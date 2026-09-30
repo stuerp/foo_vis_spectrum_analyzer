@@ -83,7 +83,7 @@ void spectrum_t::Render(ID2D1DeviceContext * deviceContext, IDXGISwapChain1 * sw
 {
     HRESULT hr = CreateDeviceSpecificResources(deviceContext);
 
-    if (!SUCCEEDED(hr))
+    if (FAILED(hr))
         return;
 
     switch (_State->_VisualizationType)
@@ -723,12 +723,12 @@ HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCon
 
     HRESULT hr = _XAxis.CreateDeviceSpecificResources(deviceContext, StyleManager);
 
-    if (!SUCCEEDED(hr))
+    if (FAILED(hr))
         return hr;
 
     hr = _YAxis.CreateDeviceSpecificResources(deviceContext, StyleManager);
 
-    if (!SUCCEEDED(hr))
+    if (FAILED(hr))
         return hr;
 
     Resize();
@@ -751,7 +751,7 @@ HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCon
 
                 hr = _BarAreaStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, L"", 1.f);
 
-                if (!SUCCEEDED(hr))
+                if (FAILED(hr))
                     return hr;
             }
 
@@ -763,7 +763,7 @@ HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCon
 
                 hr = _BarTopStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, L"", 1.f);
 
-                if (!SUCCEEDED(hr))
+                if (FAILED(hr))
                     return hr;
             }
 
@@ -775,7 +775,7 @@ HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCon
 
                 hr = _BarPeakAreaStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, L"", 1.f);
 
-                if (!SUCCEEDED(hr))
+                if (FAILED(hr))
                     return hr;
             }
 
@@ -787,7 +787,7 @@ HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCon
 
                 hr = _BarPeakTopStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, L"", 1.f);
 
-                if (!SUCCEEDED(hr))
+                if (FAILED(hr))
                     return hr;
             }
 
@@ -799,7 +799,7 @@ HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCon
 
                 hr = _DarkBackgroundStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, L"", 1.f);
 
-                if (!SUCCEEDED(hr))
+                if (FAILED(hr))
                     return hr;
             }
 
@@ -811,7 +811,7 @@ HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCon
 
                 hr = _LightBackgroundStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, L"", 1.f);
 
-                if (!SUCCEEDED(hr))
+                if (FAILED(hr))
                     return hr;
             }
 
@@ -819,7 +819,7 @@ HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCon
             {
                 hr = CreateOpacityMask(deviceContext);
 
-                if (!SUCCEEDED(hr))
+                if (FAILED(hr))
                     return hr;
             }
             break;
@@ -835,7 +835,7 @@ HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCon
 
                 hr = _CurveLineStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, L"", 1.f);
 
-                if (!SUCCEEDED(hr))
+                if (FAILED(hr))
                     return hr;
             }
 
@@ -847,7 +847,7 @@ HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCon
 
                 hr = _CurveAreaStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, L"", 1.f);
 
-                if (!SUCCEEDED(hr))
+                if (FAILED(hr))
                     return hr;
             }
 
@@ -859,7 +859,7 @@ HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCon
 
                 hr = _CurvePeakLineStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, L"", 1.f);
 
-                if (!SUCCEEDED(hr))
+                if (FAILED(hr))
                     return hr;
             }
 
@@ -871,7 +871,7 @@ HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCon
 
                 hr = _CurvePeakAreaStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, L"", 1.f);
 
-                if (!SUCCEEDED(hr))
+                if (FAILED(hr))
                     return hr;
             }
             break;
@@ -893,7 +893,7 @@ HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCon
 
                 hr = _BarAreaStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, Center, Offset, rx, ry, _State->_InnerRadius);
 
-                if (!SUCCEEDED(hr))
+                if (FAILED(hr))
                     return hr;
             }
 
@@ -905,7 +905,7 @@ HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCon
 
                 hr = _BarTopStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, Center, Offset, rx, ry, _State->_InnerRadius);
 
-                if (!SUCCEEDED(hr))
+                if (FAILED(hr))
                     return hr;
             }
 
@@ -917,7 +917,7 @@ HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCon
 
                 hr = _BarPeakAreaStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, Center, Offset, rx, ry, _State->_InnerRadius);
 
-                if (!SUCCEEDED(hr))
+                if (FAILED(hr))
                     return hr;
             }
 
@@ -929,7 +929,7 @@ HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCon
 
                 hr = _BarPeakTopStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, Center, Offset, rx, ry, _State->_InnerRadius);
 
-                if (!SUCCEEDED(hr))
+                if (FAILED(hr))
                     return hr;
             }
 
@@ -952,7 +952,7 @@ HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCon
 
                 hr = _CurveLineStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, Center, Offset, rx, ry, _State->_InnerRadius);
 
-                if (!SUCCEEDED(hr))
+                if (FAILED(hr))
                     return hr;
             }
 
@@ -964,7 +964,7 @@ HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCon
 
                 hr = _CurveAreaStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, Center, Offset, rx, ry, _State->_InnerRadius);
 
-                if (!SUCCEEDED(hr))
+                if (FAILED(hr))
                     return hr;
             }
 
@@ -976,7 +976,7 @@ HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCon
 
                 hr = _CurvePeakLineStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, Center, Offset, rx, ry, _State->_InnerRadius);
 
-                if (!SUCCEEDED(hr))
+                if (FAILED(hr))
                     return hr;
             }
 
@@ -988,7 +988,7 @@ HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCon
 
                 hr = _CurvePeakAreaStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, Center, Offset, rx, ry, _State->_InnerRadius);
 
-                if (!SUCCEEDED(hr))
+                if (FAILED(hr))
                     return hr;
             }
 
@@ -1013,7 +1013,7 @@ HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCon
 
         hr = _WindowFunctionStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, L"", 1.f);
 
-        if (!SUCCEEDED(hr))
+        if (FAILED(hr))
             return hr;
     }
 
@@ -1025,7 +1025,7 @@ HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCon
 
         hr = _WeighingFunctionStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, L"", 1.f);
 
-        if (!SUCCEEDED(hr))
+        if (FAILED(hr))
             return hr;
     }
 

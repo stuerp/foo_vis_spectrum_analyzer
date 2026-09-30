@@ -125,48 +125,83 @@ HRESULT artwork_t::DeleteWICResources() noexcept
 /// <summary>
 /// Creates a palette from the WIC bitmap source.
 /// </summary>
-HRESULT artwork_t::GetColors(std::vector<D2D1_COLOR_F> & colors, uint32_t colorCount, FLOAT lightnessThreshold, FLOAT transparencyThreshold) noexcept
+HRESULT artwork_t::GetColors(uint32_t colorCount, FLOAT lightnessThreshold, FLOAT transparencyThreshold, std::vector<D2D1_COLOR_F> & colors) noexcept
 {
     msc::lock_t Lock(_CriticalSection);
 
-    HRESULT hr = S_OK;
-
-    if (_FormatConverter != nullptr)
+    try
     {
+        const auto SetErrorColor = [&colors]()
+        {
+            colors.assign(1, D2D1::ColorF(D2D1::ColorF::Red)); // Makes an error easier to detect.
+        };
+
+        if (_FormatConverter == nullptr)
+        {
+            SetErrorColor();
+
+            return S_FALSE;
+        }
+
         UINT Width = 0, Height = 0;
 
-        hr = _FormatConverter->GetSize(&Width, &Height);
+        HRESULT hr = _FormatConverter->GetSize(&Width, &Height);
 
         if (FAILED(hr))
             return hr;
 
+        if (Width == 0 || Height == 0 || colorCount == 0)
+        {
+            SetErrorColor();
+
+            return S_FALSE;
+        }
+
+        constexpr uint64_t ReferencePixelCount = 640ULL * 480ULL; // Reference: 640 x 480 => Quality = 10
+        constexpr uint32_t MinimumQuality      =  1;
+        constexpr uint32_t MaximumQuality      = 16;
+
+        const uint64_t PixelCount    = (uint64_t) Width * (uint64_t) Height;
+        const uint64_t ScaledQuality = PixelCount * (uint64_t) (ColorThief::DefaultQuality) / ReferencePixelCount;
+
+        const uint32_t Quality = (uint32_t) std::clamp<uint64_t>(ScaledQuality, MinimumQuality, MaximumQuality);
+
+        const auto ToByte = [](const FLOAT value) noexcept -> uint8_t
+        {
+            const FLOAT Normalized = std::clamp(value, 0.f, 1.f);
+
+            return static_cast<uint8_t>(Normalized * 255.f + 0.5f);
+        };
+
         std::vector<ColorThief::color_t> Palette;
 
-        const uint32_t Quality = std::clamp((Width * Height * ColorThief::DefaultQuality) / (640 * 480), 1U, 16U); // Reference: 640 x 480 => Quality = 10
-
-        hr = ColorThief::GetPalette(_FormatConverter.Get(), Palette, colorCount, Quality, true, (uint8_t) (lightnessThreshold * 255.f), (uint8_t) (transparencyThreshold * 255.f));
+        hr = ColorThief::GetPalette(_FormatConverter.Get(), colorCount, Quality, true, ToByte(lightnessThreshold), ToByte(transparencyThreshold), Palette);
 
         if (FAILED(hr))
             return hr;
 
         // Convert to Direct2D colors.
         {
+            std::vector<D2D1_COLOR_F> Result(Palette.size());
+
             size_t i = 0;
 
-            colors.resize(Palette.size());
+            for (const auto & Color : Palette)
+                Result[i++] = D2D1::ColorF(Color[0] / 255.f, Color[1] / 255.f, Color[2] / 255.f);
 
-            for (const auto & p : Palette)
-                colors[i++] = D2D1::ColorF(p[0] / 255.f, p[1] / 255.f, p[2] / 255.f);
+            colors = std::move(Result); // Atomic update
         }
+
+        return S_OK;
     }
-    else
+    catch (const std::bad_alloc&)
     {
-        colors.clear();
-
-        colors.push_back(D2D1::ColorF(D2D1::ColorF::Red));
+        return E_OUTOFMEMORY;
     }
-
-    return hr;
+    catch (...)
+    {
+        return E_FAIL;
+    }
 }
 
 /// <summary>
@@ -217,14 +252,17 @@ void artwork_t::Render(ID2D1DeviceContext * deviceContext, const D2D1_RECT_F & r
 /// <summary>
 /// Adjusts the bitmap destination rectangle depending on the selected fit mode.
 /// </summary>
-void artwork_t::AdjustRect(_In_ const FitMode fitMode, _Out_ FLOAT & scalar, _Inout_ D2D1_RECT_F & rect) const noexcept
+void artwork_t::AdjustRect(const FitMode fitMode, FLOAT & scalar, D2D1_RECT_F & rect) const noexcept
 {
+    D2D1_SIZE_F Size = _Bitmap->GetSize();
+
+    if ((Size.width == 0) || (Size.height == 0))
+        return;
+
     const FLOAT MaxWidth  = rect.right  - rect.left;
     const FLOAT MaxHeight = rect.bottom - rect.top;
 
     FLOAT WScalar = 1.f, HScalar = 1.f;
-
-    D2D1_SIZE_F Size = _Bitmap->GetSize();
 
     if (fitMode != FitMode::Fill)
     {

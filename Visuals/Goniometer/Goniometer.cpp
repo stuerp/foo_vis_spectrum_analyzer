@@ -314,7 +314,7 @@ HRESULT goniometer_t::CreateSizeDependentResources(ID2D1DeviceContext * deviceCo
 
     if (_SignalStyle._Brush == nullptr)
     {
-        _SignalStyle = *_State->_StyleManager.GetStyle(VisualElement::SignalLine);
+        _SignalStyle = *_State->_StyleManager.GetStyle(VisualElement::Signal);
 
         _SignalStyle.SetColor(_State);
 

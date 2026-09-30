@@ -699,7 +699,7 @@ HRESULT bar_t::CreateScaleLinesCommandList() noexcept
     // BeginDraw() was already called by the graph. End drawing on the old target.
     HRESULT hr = _DeviceContext->EndDraw();
 
-    if (!SUCCEEDED(hr))
+    if (FAILED(hr))
         return hr;
 
     ComPtr<ID2D1Image> OldTarget;

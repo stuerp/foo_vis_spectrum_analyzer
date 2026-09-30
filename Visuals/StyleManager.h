@@ -1,5 +1,5 @@
 
-/** $VER: StyleManager.h (2026.06.17) P. Stuer - Creates and manages the DirectX resources of the styles. **/
+/** $VER: StyleManager.h (2026.09.30) P. Stuer - Creates and manages the DirectX resources of the styles. **/
 
 #pragma once
 

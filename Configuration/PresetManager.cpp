@@ -149,9 +149,9 @@ bool PresetManager::GetPresetNames(const path_t & rootPath, std::vector<std::wst
     {
         pfc::string Result;
 
-        HRESULT hResult = EvaluateTitleFormatScript(rootPath, Result);
+        HRESULT hr = EvaluateTitleFormatScript(rootPath, Result);
 
-        if (!SUCCEEDED(hResult))
+        if (FAILED(hr))
             return false;
 
         PresetsDirectoryPath = msc::UTF8ToWide(Result.c_str());
@@ -165,7 +165,7 @@ bool PresetManager::GetPresetNames(const path_t & rootPath, std::vector<std::wst
 
     HRESULT hr = path_t::Combine(SearchPath, L"*.fvsa", SearchPath);
 
-    if (!SUCCEEDED(hr))
+    if (FAILED(hr))
         return false;
 
     WIN32_FIND_DATAW ffd;

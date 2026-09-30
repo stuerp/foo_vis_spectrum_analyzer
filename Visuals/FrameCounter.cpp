@@ -44,7 +44,7 @@ HRESULT frame_counter_t::Render(ID2D1DeviceContext * deviceContext, IDXGISwapCha
 {
     HRESULT hr = CreateDeviceSpecificResources(deviceContext);
 
-    if (!SUCCEEDED(hr))
+    if (FAILED(hr))
         return hr;
 
     const FLOAT Inset = 4.f;
@@ -53,7 +53,7 @@ HRESULT frame_counter_t::Render(ID2D1DeviceContext * deviceContext, IDXGISwapCha
 
     hr = ::StringCchPrintfW(Text, _countof(Text), L"%.2f fps", GetFPS());
 
-    if (!SUCCEEDED(hr))
+    if (FAILED(hr))
         return hr;
 
     const D2D1_RECT_F Rect = { _ClientWidth - 2.f - (Inset + _TextWidth + Inset), 2.f, _ClientWidth - 2.f, 2.f + _TextHeight };

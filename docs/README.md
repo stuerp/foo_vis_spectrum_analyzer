@@ -243,6 +243,12 @@ This visualization uses the following settings:
 
 <sup>Oscilloscope in X/Y mode displaying a Lissajous figure</sup>
 
+##### Goniometer
+
+The goniometer is a specialized version of the oscilloscope in X/Y mode. It uses points instead of lines. The input signal can be filtered into a woofer, mid and tweeter frequency band.
+
+![Screenshot](assets/Goniometer.png?raw=true "Screenshot")
+
 ##### Bit Meter
 
 The Bit Meter visualization is a specialized tool used to analyze the digital precision (bit depth) of an audio signal in real-time. It displays which bits in the digital data are being actively used.
@@ -428,7 +434,7 @@ Set the visualization type to **Balance / Correlation** to enable these settings
 
 Renders the Balance / Correlation horizontally when enabled, vertically when not.
 
-#### Oscilloscope group
+#### Oscilloscope / Goniometer group
 
 `X/Y mode`
 
@@ -469,6 +475,20 @@ When enabled the input signals to the oscilloscope will be downmix to a mono sig
 `Zero-crossing trigger`
 
 Enables a zero trigger to synchronize the oscilloscope display to the signal's zero crossings, creating a stable and readable waveform display.
+
+`Goniometer meter`
+
+Determines the mode of the goniometer.
+
+- `Mono` uses one color for all signal samples.
+- `RGB` uses the band power of an signal to generate a color for the sample: low band power for the red channel, mid band power for the green channel and high band power for the blue channel.
+- `Triband` uses the band power to determine the color of the signal sample. The `Signal` style should be set to a gradient Color Source. The colors of the gradient will be used to select the color.
+
+`Visual Gain (dB)`
+
+These settings allows you to specify a gain in decibel (dB) to the low, mid and high frequencies of the input signal.
+
+Refer to the [Crossover Filters](#crossover-filter-group) on the [Filters](#filters-page) page to specify the cutoff frequencies for the bands.
 
 ---
 
@@ -543,29 +563,29 @@ Allows you to select the Time to Frequency domain transform. The following trans
 
 Selects the window function that will be applied to the samples (Time domain).
 
-| Name                   | Description |
-| ---------------------- | |
-| Box Car                | Bin-centered tones. Sharpest time edges, highest sidelobes (~13 dB). Use when you need perfect time localization and don’t care about leakage. (Rectangular, Dirichlet) |
-| Hann                   | General FFT and STFT work. Sidelobes ~31 dB, good compromise. Use with speech, audio, general-purpose. (Hanning, cosine squared, raised cosine) |
-| Hamming,               | Lower first sidelobe than Hann, but unlike Hann its endpoints do not reach zero. Suitable when reduced spectral leakage is preferred over exact endpoint continuity. (Raised cosine) |
-| Blackman               | High-dynamic-range measurements. Provides stronger sidelobe suppression (~58 dB) than Hann and Hamming at the cost of a wider main lobe. Use when a high dynamic range is needed. |
-| Nuttall                | Provides strong sidelobe suppression at the cost of a wider main lobe. |
-| Flat Top               | Tone-level measurement. Provides high amplitude accuracy and low scalloping loss at the cost of a significantly wider main lobe. |
-| Bartlett               | Basic leakage reduction. Reaches its maximum at the center and decreases linearly to zero at both endpoints. (Triangular) |
-| Parzen                 | Suppressing distant leakage. Useful for detecting weak frequency components near stronger ones. |
-| Welch                  | Smooth, parabolic taper. Useful for general spectral analysis. |
-| Power-Of-Sine          | The power controls the shape of the window. A power of 1 produces a sine window, while a power of 2 produces a Hann window. |
-| Power-Of-Circle        | The power controls the curvature of the window. A power of 1 produces the standard Welch window. |
-| Gaussian               | No sidelobes at all (theoretically), but infinite support. Use when you can afford a longer window. |
-| Tukey                  | Alpha controls the proportion of the window occupied by the cosine tapers. An alpha of 0 produces a BoxCar window, while an alpha of 1 produces a Hann window. (Tapered cosine) |
-| Kaiser                 | Beta controls the shape of the window. A beta of zero produces a BoxCar window, while larger values increase sidelobe suppression at the cost of a wider main lobe. |
-| Poisson                | Exponential, Decaying transients, impulse responses, reverberation, and modal analysis. |
-| Hyperbolic Secant      | Beta controls the concentration of the window. A beta of zero produces a BoxCar window, while larger values increase attenuation toward the endpoints. |
-| Quadratic Spline       | General spectral analysis, Smooth polynomial taper and faster distant roll-off. (Quadratic B-spline window) |
-| Ogg Vorbis             | Supports transitions between short and long blocks. Helps control leakage and transient coding artifacts. |
-| Cascaded Sine          | Sine taper. |
-| Galss                  | [Discussion](https://hydrogenaud.io/index.php/topic,125031.msg1036200.html#msg1036200) |
-| Lanczos                | Smooth taper. Balanced resolution and leakage. Only moderate sidelobe suppression. |
+| Name | Description |
+| --- | --- |
+| Box Car | Bin-centered tones. Sharpest time edges, highest sidelobes (~13 dB). Use when you need perfect time localization and don’t care about leakage. (Rectangular, Dirichlet) |
+| Hann | General FFT and STFT work. Sidelobes ~31 dB, good compromise. Use with speech, audio, general-purpose. (Hanning, cosine squared, raised cosine) |
+| Hamming | Lower first sidelobe than Hann, but unlike Hann its endpoints do not reach zero. Suitable when reduced spectral leakage is preferred over exact endpoint continuity. (Raised cosine) |
+| Blackman | High-dynamic-range measurements. Provides stronger sidelobe suppression (~58 dB) than Hann and Hamming at the cost of a wider main lobe. Use when a high dynamic range is needed. |
+| Nuttall | Provides strong sidelobe suppression at the cost of a wider main lobe. |
+| Flat Top | Tone-level measurement. Provides high amplitude accuracy and low scalloping loss at the cost of a significantly wider main lobe. |
+| Bartlett | Basic leakage reduction. Reaches its maximum at the center and decreases linearly to zero at both endpoints. (Triangular) |
+| Parzen | Suppressing distant leakage. Useful for detecting weak frequency components near stronger ones. |
+| Welch | Smooth, parabolic taper. Useful for general spectral analysis. |
+| Power-Of-Sine | The power controls the shape of the window. A power of 1 produces a sine window, while a power of 2 produces a Hann window. |
+| Power-Of-Circle | The power controls the curvature of the window. A power of 1 produces the standard Welch window. |
+| Gaussian | No sidelobes at all (theoretically), but infinite support. Use when you can afford a longer window. |
+| Tukey | Alpha controls the proportion of the window occupied by the cosine tapers. An alpha of 0 produces a BoxCar window, while an alpha of 1 produces a Hann window. (Tapered cosine) |
+| Kaiser | Beta controls the shape of the window. A beta of zero produces a BoxCar window, while larger values increase sidelobe suppression at the cost of a wider main lobe. |
+| Poisson | Exponential, Decaying transients, impulse responses, reverberation, and modal analysis. |
+| Hyperbolic Secant | Beta controls the concentration of the window. A beta of zero produces a BoxCar window, while larger values increase attenuation toward the endpoints. |
+| Quadratic Spline | General spectral analysis, Smooth polynomial taper and faster distant roll-off. (Quadratic B-spline window) |
+| Ogg Vorbis | Supports transitions between short and long blocks. Helps control leakage and transient coding artifacts. |
+| Cascaded Sine | Sine taper. |
+| Galss | [Discussion](https://hydrogenaud.io/index.php/topic,125031.msg1036200.html#msg1036200) |
+| Lanczos | Smooth taper. Balanced resolution and leakage. Only moderate sidelobe suppression. |
 | 4-term Blackman-Harris | Produces very clean peaks with minimal leakage from strong tones into neighboring bins. w(x) = a0​ + a1 ​cos(πt) + a2 ​cos(2πt) + a3​ cos(3πt) |
 
 `Window parameter`
@@ -1072,7 +1092,7 @@ Deselects all channels in the `Channels` list.
 
 `Channel pair`
 
-Allows you to select the pair of channels that will be used to render a visualisation. Used by the [Peak / RMS](#peak-rms) and the [Oscilloscope](#oscilloscope).
+Allows you to select the pair of channels that will be used to render a visualisation. Used by the [Peak / RMS](#peak--rms-group) and the [Oscilloscope](#oscilloscope).
 
 `Swap channels`
 
@@ -1114,19 +1134,29 @@ Displays the current color used by color source Solid or Dominant Color. Click t
 
 `Color scheme`
 
-Specifies the color scheme used to render the element.
+Specifies the color scheme used to render the element. Most color schemes are built-in and static but can be modified.
 
-- Solid color: A single color, effectively the same as color source Solid.
-- Custom: A custom list of colors.
-- Artwork: A list of colors determined by the current artwork
-- Prism 1
-- Prism 2
-- Prism 3
-- foobar2000
-- foobar2000 Dark Mode
-- Fire
-- Rainbow
-- SoX: A list of colors emulating the spectrogram colors used by SoX.
+| Name | Description |
+| --- | --- |
+| Solid color | A single color, effectively the same as color source `Solid` |
+| Custom | A custom list of colors. The colors in the list can have their own Color Source and Color Index. |
+| Artwork | A list of colors determined by the current artwork. Use the `Artwork` settings on the `Common` page to specify the order of the colors. |
+| Prism 1 | |
+| Prism 2 | |
+| Prism 3 | |
+| foobar2000 | The same colors as the built-in foobar2000 spectrum analyzer. |
+| foobar2000 Dark Mode | The same colors as the built-in foobar2000 spectrum analyzer in Dark Mode. |
+| Fire | |
+| Rainbow | |
+| SoX | A list of colors emulating the spectrogram colors used by [SoX](https://sourceforge.net/projects/sox/) |
+| Turbo | Color my by [Anton Mikhailov](https://research.google/blog/turbo-an-improved-rainbow-colormap-for-visualization/) |
+| Viridis | [Matplotlib](https://matplotlib.org/) [Perceptually Uniform Sequential](https://research.google/blog/turbo-an-improved-rainbow-colormap-for-visualization/) color maps |
+| Plasma | [Matplotlib](https://matplotlib.org/) [Perceptually Uniform Sequential](https://research.google/blog/turbo-an-improved-rainbow-colormap-for-visualization/) color maps |
+| Inferno | [Matplotlib](https://matplotlib.org/) [Perceptually Uniform Sequential](https://research.google/blog/turbo-an-improved-rainbow-colormap-for-visualization/) color maps |
+| Magma | [Matplotlib](https://matplotlib.org/) [Perceptually Uniform Sequential](https://research.google/blog/turbo-an-improved-rainbow-colormap-for-visualization/) color maps |
+| Cividis | [Matplotlib](https://matplotlib.org/) [Perceptually Uniform Sequential](https://research.google/blog/turbo-an-improved-rainbow-colormap-for-visualization/) color maps |
+| Gold | |
+| Triband | Designed to be used by the [goniometer](#oscilloscope-group) visualization |
 
 `Color list`
 
@@ -1137,6 +1167,9 @@ Press the ''Add'' button to add a color, ''Remove'' to remove a color, ''Reverse
 The position of the color in the gradient is expressed as a percentage of the length of the gradient. E.g. a position of 50% puts the color in the middle of the gradient.
 
 Press the ''Spread'' button to evenly spread the colors in the list over the gradient. This updates the position of the colors as required.
+
+        { IDC_GRADIENT_STOP_SOURCE, "Determines the source of the selected gradient stop color." },
+        { IDC_GRADIENT_STOP_INDEX, "Selects the specific Windows, DUI or CUI color to use for the selected gradient stop color." },
 
 `Horizontal gradient`
 
@@ -1298,6 +1331,8 @@ The history of foo_vis_spectrum_analyzer development is available in a separate 
 - Oleg V. Polikarpotchkin and Peter Lee for their [Bezier Spline](https://www.codeproject.com/Articles/31859/Draw-a-Smooth-Curve-through-a-Set-of-2D-Points-wit) article.
 - [Bedapisl](https://github.com/bedapisl) for [Fast ColorThief](https://github.com/bedapisl/fast-colorthief).
 - [Niels Lohmann](https://github.com/nlohmann) for [JSON for Modern C++](https://github.com/nlohmann/json).
+- Anton Mikhailov for the [Turbo](https://research.google/blog/turbo-an-improved-rainbow-colormap-for-visualization/) color map.
+- [Matplotlib](https://matplotlib.org/) for the [Perceptually Uniform Sequential](https://research.google/blog/turbo-an-improved-rainbow-colormap-for-visualization/) color maps.
 
 ---
 

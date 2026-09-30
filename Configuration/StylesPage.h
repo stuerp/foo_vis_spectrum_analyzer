@@ -141,7 +141,7 @@ private:
         VisualElement::LevelMeterAxis,
 
         // Oscilloscope
-        VisualElement::SignalLine,
+        VisualElement::Signal,
 
         // Goniometer
         VisualElement::StaticText,

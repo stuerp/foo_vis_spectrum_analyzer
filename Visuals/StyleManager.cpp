@@ -1,5 +1,5 @@
 
-/** $VER: StyleManager.cpp (2026.09.27) P. Stuer - Creates and manages the DirectX resources of the styles. **/
+/** $VER: StyleManager.cpp (2026.09.30) P. Stuer - Creates and manages the DirectX resources of the styles. **/
 
 #include "pch.h"
 
@@ -960,18 +960,26 @@ std::unordered_map<VisualElement, style_t> style_manager_t::_DefaultStyles
         (
             /* Name                */ L"Left/Side Axis",
             /* UsedBy              */ VisualizationTypes::LevelMeter,
-            style_t::Features::SupportsOpacity | style_t::Features::SupportsThickness | style_t::Features::SupportsFont,
-            ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Prism1, gradient_t::GetBuiltIn(ColorScheme::Custom), 0.5f, 1.f, L"Segoe UI", 10.f
+            /* Flags               */ style_t::Features::SupportsOpacity | style_t::Features::SupportsThickness | style_t::Features::SupportsFont,
+            /* ColorSource         */ ColorSource::Solid,
+            /* CustomColor         */ D2D1::ColorF(D2D1::ColorF::White),
+            /* ColorIndex          */ 0,
+            /* ColorScheme         */ ColorScheme::Prism1,
+            /* CustomGradientStops */ gradient_t::GetBuiltIn(ColorScheme::Custom),
+            /* Opacity             */ 0.5f,
+            /* Thickness           */ 1.f,
+            /* FontName            */ L"Segoe UI",
+            /* FontSize            */ 10.f
         )
     },
     #pragma endregion
 
     #pragma region Oscilloscope, Goniometer
     {
-        VisualElement::SignalLine,
+        VisualElement::Signal,
         style_t
         (
-            /* Name                */ L"Signal Line",
+            /* Name                */ L"Signal",
             /* UsedBy              */ VisualizationTypes::Oscilloscope | VisualizationTypes::Goniometer,
             /* Flags               */ style_t::Features::SupportsOpacity | style_t::Features::SupportsThickness,
             /* ColorSource         */ ColorSource::Solid,

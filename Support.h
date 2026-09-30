@@ -9,8 +9,8 @@
 #include <cmath>
 
 HRESULT InitializeDpiAwareness() noexcept;
-HRESULT GetDPI(_In_ HWND hWnd, _Out_ UINT & dpi) noexcept;
-HRESULT EvaluateTitleFormatScript(_In_ const std::wstring & script, _Out_ pfc::string & result) noexcept;
+HRESULT GetDPI(HWND hWnd, _Out_ UINT & dpi) noexcept;
+HRESULT EvaluateTitleFormatScript(const std::wstring & script, pfc::string & result) noexcept;
 
 /// <summary>
 /// Converts magnitude to decibel (dB).

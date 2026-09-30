@@ -75,6 +75,9 @@ HRESULT EvaluateTitleFormatScript(const std::wstring & script, pfc::string & res
 
     static_api_ptr_t<titleformat_compiler>()->compile_safe_ex(tfo, pfc::utf8FromWide(script.c_str()));
 
+    if (!tfo.is_valid())
+        return S_FALSE;
+
     custom_titleformat_hook_t Hook;
 
     tfo->run(&Hook, result, nullptr);

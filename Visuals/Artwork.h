@@ -38,7 +38,7 @@ public:
 
     ID2D1Bitmap * Bitmap() const noexcept { return _Bitmap.Get(); }
 
-    HRESULT GetColors(std::vector<D2D1_COLOR_F> & colors, uint32_t colorCount, FLOAT lightnessThreshold, FLOAT transparencyThreshold) noexcept;
+    HRESULT GetColors(uint32_t colorCount, FLOAT lightnessThreshold, FLOAT transparencyThreshold, std::vector<D2D1_COLOR_F> & colors) noexcept;
 
     HRESULT CreateWICResources(const uint8_t * data, size_t size) noexcept;
     HRESULT CreateWICResources(const std::wstring & filePath) noexcept;

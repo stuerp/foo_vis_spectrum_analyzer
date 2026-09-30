@@ -133,6 +133,8 @@ void uielement_t::RenderThreadProc() noexcept
 /// </summary>
 void uielement_t::ProcessEvents() noexcept
 {
+    assert(!fb2k::is_main_thread());
+
     const auto Flags = _Event.GetFlags();
 
     if (Flags == 0)
@@ -149,8 +151,8 @@ void uielement_t::ProcessEvents() noexcept
         _RenderState._IsPaused = false;
 
         // Set the default dominant color and gradient for the artwork color scheme.
+        _RenderState._ArtworkDominantColor = _RenderState._ArtworkColors[0];
         _RenderState._ArtworkGradientStops = gradient_t::GetBuiltIn(_Artwork.Bitmap() ? ColorScheme::Artwork : ColorScheme::Solid);
-        _RenderState._ArtworkDominantColor = _RenderState._ArtworkGradientStops[0].color;
 
         _RenderState._ResizeResources = true;
 
@@ -191,6 +193,8 @@ void uielement_t::ProcessEvents() noexcept
 /// </summary>
 void uielement_t::ProcessAudio() noexcept
 {
+    assert(!fb2k::is_main_thread());
+
     if (!_VisualisationStream.is_valid())
         return;
 
@@ -245,6 +249,8 @@ void uielement_t::ProcessAudio() noexcept
 /// </summary>
 void uielement_t::Render() noexcept
 {
+    assert(!fb2k::is_main_thread());
+
     HRESULT hr = CreateDeviceSpecificResources();
 
     if (FAILED(hr))
@@ -281,6 +287,8 @@ void uielement_t::Render() noexcept
 /// </summary>
 void uielement_t::Animate(int64_t now) noexcept
 {
+    assert(!fb2k::is_main_thread());
+
     if (_RenderState._PeakMode == PeakMode::None)
         return;
 
@@ -296,6 +304,8 @@ void uielement_t::Animate(int64_t now) noexcept
 /// </summary>
 void uielement_t::InitializeSampleRateDependentParameters(const audio_chunk_impl & chunk) noexcept
 {
+    assert(!fb2k::is_main_thread());
+
     if (_RenderState._SampleRate == chunk.get_sample_rate())
         return;
 
@@ -627,7 +637,7 @@ HRESULT uielement_t::CreateBackBuffer() noexcept
 HRESULT uielement_t::CreateArtworkDependentResources() noexcept
 {
     // Get the colors from the artwork.
-    HRESULT hr = _Artwork.GetColors(_RenderState._ArtworkColors, _RenderState._NumArtworkColors, _RenderState._LightnessThreshold, _RenderState._TransparencyThreshold);
+    HRESULT hr = _Artwork.GetColors(_RenderState._NumArtworkColors, _RenderState._LightnessThreshold, _RenderState._TransparencyThreshold, _RenderState._ArtworkColors);
 
     if (FAILED(hr))
         return S_FALSE; // Make sure resource creation continues even if something goes wrong while creating the gradient.
@@ -670,10 +680,7 @@ HRESULT uielement_t::CreateArtworkDependentResources() noexcept
     }
 
     // Create the gradient stops.
-    hr = Direct2D::CreateGradientStops(_RenderState._ArtworkColors, _RenderState._ArtworkGradientStops);
-
-    if (FAILED(hr))
-        return S_FALSE; // Make sure resource creation continues even if something goes wrong while creating the gradient.
+    _RenderState._ArtworkGradientStops = gradient_t::CreateGradientStops(_RenderState._ArtworkColors);
 
     {
         _RenderState._ResizeResources = true;
@@ -692,6 +699,8 @@ HRESULT uielement_t::CreateArtworkDependentResources() noexcept
 /// </summary>
 bool GetAudioChunk(audio_chunk & chunk, uint32_t sampleRate, uint32_t frameCount) noexcept
 {
+    assert(!fb2k::is_main_thread());
+
     const uint32_t ChannelCount = 1;
 
     audio_sample * Samples = new audio_sample[frameCount * ChannelCount];

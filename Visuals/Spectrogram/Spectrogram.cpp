@@ -304,7 +304,7 @@ void spectrogram_t::Render(ID2D1DeviceContext * deviceContext, IDXGISwapChain1 *
 {
     HRESULT hr = CreateDeviceSpecificResources(deviceContext);
 
-    if (!SUCCEEDED(hr))
+    if (FAILED(hr))
         return;
 
     // Update the offscreen bitmap.
@@ -934,7 +934,7 @@ HRESULT spectrogram_t::CreateDeviceSpecificResources(ID2D1DeviceContext * device
 
         hr = _SpectrogramStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
 
-        if (!SUCCEEDED(hr))
+        if (FAILED(hr))
             return hr;
     }
 
@@ -959,7 +959,7 @@ HRESULT spectrogram_t::CreateDeviceSpecificResources(ID2D1DeviceContext * device
 
         hr = _GradientStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
 
-        if (!SUCCEEDED(hr))
+        if (FAILED(hr))
             return hr;
     }
 
@@ -971,7 +971,7 @@ HRESULT spectrogram_t::CreateDeviceSpecificResources(ID2D1DeviceContext * device
 
         hr = _TimeLineStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
 
-        if (!SUCCEEDED(hr))
+        if (FAILED(hr))
             return hr;
     }
 
@@ -983,7 +983,7 @@ HRESULT spectrogram_t::CreateDeviceSpecificResources(ID2D1DeviceContext * device
 
         hr = _TimeTextStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"00:00", 1.f);
 
-        if (!SUCCEEDED(hr))
+        if (FAILED(hr))
             return hr;
     }
 
@@ -995,7 +995,7 @@ HRESULT spectrogram_t::CreateDeviceSpecificResources(ID2D1DeviceContext * device
 
         hr = _FreqLineStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
 
-        if (!SUCCEEDED(hr))
+        if (FAILED(hr))
             return hr;
     }
 
@@ -1007,7 +1007,7 @@ HRESULT spectrogram_t::CreateDeviceSpecificResources(ID2D1DeviceContext * device
 
         hr = _FreqTextStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"99.9fk", 1.f);
 
-        if (!SUCCEEDED(hr))
+        if (FAILED(hr))
             return hr;
     }
 
@@ -1019,7 +1019,7 @@ HRESULT spectrogram_t::CreateDeviceSpecificResources(ID2D1DeviceContext * device
 
         hr = _NyquistMarkerStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
 
-        if (!SUCCEEDED(hr))
+        if (FAILED(hr))
             return hr;
     }
 
@@ -1036,7 +1036,7 @@ HRESULT spectrogram_t::CreateDeviceSpecificResources(ID2D1DeviceContext * device
         {
             hr = deviceContext->CreateCompatibleRenderTarget(_BitmapSize, &_BitmapRenderTarget);
 
-            if (!SUCCEEDED(hr))
+            if (FAILED(hr))
                 return hr;
         }
 
@@ -1051,7 +1051,7 @@ HRESULT spectrogram_t::CreateDeviceSpecificResources(ID2D1DeviceContext * device
 
             hr = _BitmapRenderTarget->GetBitmap(&_Bitmap);
 
-            if (!SUCCEEDED(hr))
+            if (FAILED(hr))
                 return hr;
         }
     }
@@ -1062,7 +1062,7 @@ HRESULT spectrogram_t::CreateDeviceSpecificResources(ID2D1DeviceContext * device
         {
             hr = deviceContext->CreateCompatibleRenderTarget(_LegendSize, &_LegendBitmapRenderTarget);
 
-            if (!SUCCEEDED(hr))
+            if (FAILED(hr))
                 return hr;
         }
 
@@ -1072,7 +1072,7 @@ HRESULT spectrogram_t::CreateDeviceSpecificResources(ID2D1DeviceContext * device
 
             hr = _LegendBitmapRenderTarget->GetBitmap(&_LegendBitmap);
 
-            if (!SUCCEEDED(hr))
+            if (FAILED(hr))
                 return hr;
         }
     }

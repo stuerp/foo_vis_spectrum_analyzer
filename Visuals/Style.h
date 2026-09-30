@@ -1,5 +1,5 @@
 
-/** $VER: Style.h (2026.09.29) P. Stuer - Represents the style of a visual element. **/
+/** $VER: Style.h (2026.09.30) P. Stuer - Represents the style of a visual element. **/
 
 #pragma once
 
@@ -9,7 +9,6 @@
 
 #include <SDKDDKVer.h>
 #include <Windows.h>
-#include <atlcomcli.h>
 
 #include <dwrite.h>
 #include <string>
@@ -90,9 +89,6 @@ public:
     bool IsAmplitudeBased() const noexcept { return (_ColorSource == ColorSource::Gradient) && Has(style_t::Features::HorizontalGradient | style_t::Features::AmplitudeBasedColor); }
 
     static HRESULT CreateAmplitudeMap(ColorScheme colorScheme, const std::vector<D2D1_GRADIENT_STOP> & gradientStops, std::vector<D2D1_COLOR_F> & colors) noexcept;
-
-private:
-    static D2D1_COLOR_F GetWindowsColor(uint32_t index) noexcept;
 
 public:
     std::wstring _Name;

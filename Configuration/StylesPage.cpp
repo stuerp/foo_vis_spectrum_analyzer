@@ -180,8 +180,6 @@ void styles_page_t::InitializeControls() noexcept
 
         for (const auto & x : { L"Solid", L"Dominant Color", L"Windows", L"User Interface" })
             w.AddString(x);
-
-        w.SetCurSel(0);
     }
 
     UpdateControls();
@@ -759,9 +757,8 @@ LRESULT styles_page_t::OnChanged(LPNMHDR nmhd) noexcept
             if (Style->_ColorSource != ColorSource::Gradient)
             {
                 // Initialize the custom gradient with the current colors.
-                Direct2D::CreateGradientStops(Colors, Style->_CurrentGradientStops);
-
-                Style->_CustomGradient = gradient_t::ConvertFormat(Style->_CurrentGradientStops);
+                Style->_CurrentGradientStops = gradient_t::CreateGradientStops(Colors);
+                Style->_CustomGradient       = gradient_t::ConvertFormat(Style->_CurrentGradientStops);
             }
             else
             {
@@ -995,8 +992,6 @@ void styles_page_t::UpdateColorControls() noexcept
     {
         const bool IsCustomScheme = (Style->_ColorScheme == ColorScheme::Custom);
 
-        GetDlgItem(IDC_GRADIENT_STOP_SOURCE).EnableWindow(IsCustomScheme);
-
         // Remember the selected color.
         int SelectedColor = _ColorListBox.GetCurSel();
 
@@ -1031,11 +1026,15 @@ void styles_page_t::UpdateColorControls() noexcept
                 ((CComboBox) GetDlgItem(IDC_GRADIENT_STOP_SOURCE)).SetCurSel((int) cgs.StopSource);
                 ((CComboBox) GetDlgItem(IDC_GRADIENT_STOP_INDEX)) .SetCurSel((int) cgs.StopIndex);
 
+                GetDlgItem(IDC_GRADIENT_STOP_SOURCE).EnableWindow(IsCustomScheme);
                 GetDlgItem(IDC_GRADIENT_STOP_INDEX).EnableWindow(IsCustomScheme && ((cgs.StopSource == GradientStopSource::Windows) || (cgs.StopSource == GradientStopSource::UserInterface)));
             }
         }
         else
         {
+            ((CComboBox) GetDlgItem(IDC_GRADIENT_STOP_SOURCE)).SetCurSel(-1);
+
+            GetDlgItem(IDC_GRADIENT_STOP_SOURCE).EnableWindow(false);
             GetDlgItem(IDC_GRADIENT_STOP_INDEX).EnableWindow(false);
         }
     }
@@ -1043,6 +1042,8 @@ void styles_page_t::UpdateColorControls() noexcept
     {
         // Initializes the color list box.
         _ColorListBox.SetColors(Colors);
+
+        ((CComboBox) GetDlgItem(IDC_GRADIENT_STOP_SOURCE)).SetCurSel(-1);
 
         GetDlgItem(IDC_GRADIENT_STOP_SOURCE).EnableWindow(false);
         GetDlgItem(IDC_GRADIENT_STOP_INDEX) .EnableWindow(false);

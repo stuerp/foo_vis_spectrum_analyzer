@@ -139,7 +139,7 @@ HRESULT oscilloscope_base_t::CreateSizeDependentResources(ID2D1DeviceContext * d
 
     if (_SignalLineStyle._Brush == nullptr)
     {
-        _SignalLineStyle = *_State->_StyleManager.GetStyle(VisualElement::SignalLine);
+        _SignalLineStyle = *_State->_StyleManager.GetStyle(VisualElement::Signal);
 
         _SignalLineStyle.SetColor(_State);
 

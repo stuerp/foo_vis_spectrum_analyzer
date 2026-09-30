@@ -423,7 +423,7 @@ enum class VisualElement : uint32_t
     BarLeftRightIndicator       = 30,
     BarMidSideIndicator         = 31,
 
-    SignalLine                  = 32,
+    Signal                  = 32,
 
     BarSign                     = 35,
     BarMantissa                 = 36,

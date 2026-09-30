@@ -25,7 +25,7 @@ static std::vector<color_t> GetPaletteInternal(const uint8_t * pixels, uint32_t 
 /// <param name="quality">0 is the highest quality settings. 10 is the default. There is a trade-off between quality and speed. The bigger the number,
 /// the faster a color will be returned but the greater the likelihood that it will not be the visually most dominant color.</param>
 /// <param name="ignoreWhite">if set to <c>true</c> [ignore white].</param>
-HRESULT GetPalette(IWICBitmapSource * bitmapSource, std::vector<color_t> & palette, uint32_t colorCount, uint32_t quality, bool ignoreLightColors, uint8_t lightnessThreshold, uint8_t transparancyThreshold)
+HRESULT GetPalette(IWICBitmapSource * bitmapSource, uint32_t colorCount, uint32_t quality, bool ignoreLightColors, uint8_t lightnessThreshold, uint8_t transparancyThreshold, std::vector<color_t> & palette)
 {
     if ((bitmapSource == nullptr) || (colorCount < 2) || (colorCount > 256) || (quality == 0))
         return E_INVALIDARG;
@@ -61,11 +61,11 @@ HRESULT GetPalette(IWICBitmapSource * bitmapSource, std::vector<color_t> & palet
 /// <param name="quality">0 is the highest quality settings. 10 is the default. There is a trade-off between quality and speed. The bigger the number,
 /// the faster a color will be returned but the greater the likelihood that it will not be the visually most dominant color.</param>
 /// <param name="ignoreWhite">if set to <c>true</c> [ignore white].</param>
-HRESULT GetDominantColor(IWICBitmapSource * bitmapSource, color_t & color, uint32_t quality, bool ignoreLightColors, uint8_t lightnessThreshold, uint8_t transparancyThreshold)
+HRESULT GetDominantColor(IWICBitmapSource * bitmapSource, uint32_t quality, bool ignoreLightColors, uint8_t lightnessThreshold, uint8_t transparancyThreshold, color_t & color)
 {
     std::vector<color_t> Palette;
 
-    HRESULT hr = GetPalette(bitmapSource, Palette, DefaultColorCount, quality, ignoreLightColors, lightnessThreshold, transparancyThreshold);
+    HRESULT hr = GetPalette(bitmapSource, DefaultColorCount, quality, ignoreLightColors, lightnessThreshold, transparancyThreshold, Palette);
 
     if (FAILED(hr))
         return hr;
@@ -77,8 +77,8 @@ HRESULT GetDominantColor(IWICBitmapSource * bitmapSource, color_t & color, uint3
 
 #pragma region Private
 
-const int32_t SignificantBits = 5;
-const int32_t Shift = 8 - SignificantBits;
+constexpr int32_t SignificantBits = 5;
+constexpr int32_t Shift = 8 - SignificantBits;
 constexpr size_t MaxIterations = 1000;
 constexpr double FractByPopulations = 0.75;
 
@@ -305,7 +305,7 @@ std::vector<color_t> GetPaletteInternal(const uint8_t * pixels, uint32_t width, 
     color_t MinColor = std::get<1>(Result);
     color_t MaxColor = std::get<2>(Result);
 
-    VBox Box = VBox(MinColor[0], MaxColor[0], MinColor[1], MaxColor[1], MinColor[2], MaxColor[2], Histogram);
+    auto Box = VBox(MinColor[0], MaxColor[0], MinColor[1], MaxColor[1], MinColor[2], MaxColor[2], Histogram);
 
     return Quantize(Histogram, Box, colorCount);
 }

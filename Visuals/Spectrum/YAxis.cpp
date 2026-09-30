@@ -105,7 +105,7 @@ void y_axis_t::Render(ID2D1DeviceContext * deviceContext, IDXGISwapChain1 * swap
 
     HRESULT hr = CreateDeviceSpecificResources(deviceContext, StyleManager);
 
-    if (!SUCCEEDED(hr))
+    if (FAILED(hr))
         return;
 
     deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
@@ -151,7 +151,7 @@ HRESULT y_axis_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceConte
 
         hr = _LineStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
 
-        if (!SUCCEEDED(hr))
+        if (FAILED(hr))
             return hr;
     }
 
@@ -163,7 +163,7 @@ HRESULT y_axis_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceConte
 
         hr = _TextStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"+999", 1.f);
 
-        if (!SUCCEEDED(hr))
+        if (FAILED(hr))
             return hr;
     }
 

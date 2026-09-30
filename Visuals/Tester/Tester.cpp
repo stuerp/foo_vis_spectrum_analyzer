@@ -86,7 +86,7 @@ void tester_t::Render(ID2D1DeviceContext * deviceContext, IDXGISwapChain1 * swap
 {
     HRESULT hr = CreateDeviceSpecificResources(deviceContext);
 
-    if (!SUCCEEDED(hr))
+    if (FAILED(hr))
         return;
 
     double Gain = 1.;

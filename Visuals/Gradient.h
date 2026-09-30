@@ -31,5 +31,5 @@ public:
     static std::vector<gradient_stop_t> ConvertFormat(const std::vector<D2D1_GRADIENT_STOP> & gssIn);
     static std::vector<D2D1_GRADIENT_STOP> ConvertFormat(const std::vector<gradient_stop_t> & gssIn);
 
-    static std::vector<gradient_stop_t> ConvertFormat(const std::vector<D2D1_COLOR_F> & gssIn);
+    static std::vector<D2D1_GRADIENT_STOP> CreateGradientStops(const std::vector<D2D1_COLOR_F> & colors);
 };

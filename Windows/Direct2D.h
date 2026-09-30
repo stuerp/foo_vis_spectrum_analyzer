@@ -1,5 +1,5 @@
 
-/** $VER: Direct2D.h (2026.09.26) P. Stuer **/
+/** $VER: Direct2D.h (2026.09.30) P. Stuer **/
 
 #pragma once
 
@@ -72,7 +72,6 @@ public:
 
     static HRESULT CreateBitmap(IWICBitmapSource * source, ID2D1DeviceContext * deviceContext, ID2D1Bitmap ** bitmap) noexcept;
 
-    static HRESULT CreateGradientStops(const std::vector<D2D1_COLOR_F> & colors, std::vector<D2D1_GRADIENT_STOP> & gradientStops) noexcept;
     static HRESULT CreateGradientBrush(ID2D1DeviceContext * deviceContext, const std::vector<D2D1_GRADIENT_STOP> & gradientStops, const D2D1_SIZE_F & size, bool isHorizontal, ID2D1LinearGradientBrush ** gradientBrush) noexcept;
     static HRESULT CreateRadialGradientBrush(ID2D1DeviceContext * deviceContext, const std::vector<D2D1_GRADIENT_STOP> & gradientStops, const D2D1_POINT_2F & center, const D2D1_POINT_2F & offset, FLOAT rx, FLOAT ry, FLOAT rOffset, ID2D1RadialGradientBrush ** gradientBrush) noexcept;
 

@@ -413,9 +413,10 @@ const std::vector<D2D1_GRADIENT_STOP> & gradient_t::GetBuiltIn(ColorScheme color
 /// </summary>
 std::vector<gradient_stop_t> gradient_t::ConvertFormat(const std::vector<D2D1_GRADIENT_STOP> & gssIn)
 {
-    std::vector<gradient_stop_t> gssOut;
+    if (gssIn.empty())
+        return { };
 
-    gssOut.resize(gssIn.size());
+    std::vector<gradient_stop_t> gssOut(gssIn.size()); // May throw
 
     size_t i = 0;
 
@@ -430,9 +431,10 @@ std::vector<gradient_stop_t> gradient_t::ConvertFormat(const std::vector<D2D1_GR
 /// </summary>
 std::vector<D2D1_GRADIENT_STOP> gradient_t::ConvertFormat(const std::vector<gradient_stop_t> & gssIn)
 {
-    std::vector<D2D1_GRADIENT_STOP> gssOut;
+    if (gssIn.empty())
+        return { };
 
-    gssOut.resize(gssIn.size());
+    std::vector<D2D1_GRADIENT_STOP> gssOut(gssIn.size()); // May throw
 
     size_t i = 0;
 
@@ -443,20 +445,23 @@ std::vector<D2D1_GRADIENT_STOP> gradient_t::ConvertFormat(const std::vector<grad
 }
 
 /// <summary>
-/// Converts a D2D1_COLOR_F vector to a gradient_stop_t vector.
+/// Creates a gradient stops vector from a color vector.
 /// </summary>
-static std::vector<gradient_stop_t> ConvertFormat(const std::vector<D2D1_COLOR_F> & gssIn)
+std::vector<D2D1_GRADIENT_STOP> gradient_t::CreateGradientStops(const std::vector<D2D1_COLOR_F> & colors)
 {
-    std::vector<gradient_stop_t> gssOut;
+    const size_t n = colors.size();
 
-    gssOut.resize(gssIn.size());
+    if (n == 0)
+        return { };
 
-    size_t i = 0;
+    std::vector<D2D1_GRADIENT_STOP> gss(n); // May throw
 
-    for (auto & gs : gssIn)
-        gssOut[i++] = { { 0.f, gs }, GradientStopSource::Solid, 0 };
+    gss[0] = { 0.f, colors[0] };
 
-    return gssOut;
+    for (size_t i = 1; i < n; ++i)
+        gss[i] = { (FLOAT) i / (FLOAT) (n - 1), colors[i] };
+
+    return gss;
 }
 
 /// <summary>
@@ -476,7 +481,7 @@ void gradient_stop_t::SetColor(const state_t * state) noexcept
 
     if (StopSource == GradientStopSource::Windows)
     {
-        static const int ColorIndex[] =
+        static constexpr int ColorIndex[] =
         {
             COLOR_WINDOW,           // Window Background
             COLOR_WINDOWTEXT,       // Window Text
@@ -488,7 +493,7 @@ void gradient_stop_t::SetColor(const state_t * state) noexcept
             COLOR_HOTLIGHT,         // Hot Light
         };
 
-        const auto Index = std::clamp(StopIndex, 0u, (uint32_t) _countof(ColorIndex) - 1);
+        const auto Index = std::clamp((size_t) StopIndex, (size_t) 0, _countof(ColorIndex) - 1);
 
         color = D2D1::ColorF(::GetSysColor(ColorIndex[Index]));
 
@@ -504,7 +509,7 @@ void gradient_stop_t::SetColor(const state_t * state) noexcept
             return;
         }
 
-        const auto Index = std::clamp(StopIndex, 0u, (uint32_t) state->_UserInterfaceColors.size() - 1);
+        const auto Index = std::clamp((size_t) StopIndex, (size_t) 0, state->_UserInterfaceColors.size() - 1);
 
         color = state->_UserInterfaceColors[Index];
 

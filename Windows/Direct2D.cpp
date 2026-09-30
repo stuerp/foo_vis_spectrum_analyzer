@@ -232,24 +232,6 @@ HRESULT Direct2D::GetResource(const WCHAR * resourceName, const WCHAR * resource
 }
 
 /// <summary>
-/// Creates a gradient stops vector from a color vector.
-/// </summary>
-HRESULT Direct2D::CreateGradientStops(const std::vector<D2D1_COLOR_F> & colors, std::vector<D2D1_GRADIENT_STOP> & gradientStops) noexcept
-{
-    gradientStops.clear();
-
-    if (colors.empty())
-        return S_OK;
-
-    gradientStops.push_back({ 0.f, colors[0] });
-
-    for (size_t i = 1; i < colors.size(); ++i)
-        gradientStops.push_back({ (FLOAT) i / (FLOAT) (colors.size() - 1), colors[i] });
-
-    return S_OK;
-}
-
-/// <summary>
 /// Creates a gradient brush.
 /// </summary>
 HRESULT Direct2D::CreateGradientBrush(ID2D1DeviceContext * deviceContext, const std::vector<D2D1_GRADIENT_STOP> & gradientStops, const D2D1_SIZE_F & size, bool isHorizontal, ID2D1LinearGradientBrush ** gradientBrush) noexcept
@@ -272,8 +254,8 @@ HRESULT Direct2D::CreateGradientBrush(ID2D1DeviceContext * deviceContext, const 
     if (FAILED(hr))
         return hr;
 
-    D2D1_POINT_2F Start = isHorizontal ? D2D1::Point2F(       0.f, 0.f) : D2D1::Point2F(0.f, 0.f);
-    D2D1_POINT_2F End   = isHorizontal ? D2D1::Point2F(size.width, 0.f) : D2D1::Point2F(0.f, size.height);
+    const D2D1_POINT_2F Start = isHorizontal ? D2D1::Point2F(       0.f, 0.f) : D2D1::Point2F(0.f, 0.f);
+    const D2D1_POINT_2F End   = isHorizontal ? D2D1::Point2F(size.width, 0.f) : D2D1::Point2F(0.f, size.height);
 
     hr = deviceContext->CreateLinearGradientBrush(D2D1::LinearGradientBrushProperties(Start, End), D2D1::BrushProperties(), Collection.Get(), gradientBrush);
 

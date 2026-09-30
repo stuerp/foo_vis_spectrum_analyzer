@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.cpp (2026.09.25) P. Stuer - UIElement methods that run on the UI thread. **/
+/** $VER: UIElement.cpp (2026.09.30) P. Stuer - UIElement methods that run on the UI thread. **/
 
 #include "pch.h"
 
@@ -10,6 +10,7 @@
 
 #include "Error.h"
 #include "PresetManager.h"
+#include "CustomTitleFormatHook.h"
 
 #include <Constants.h>
 
@@ -702,17 +703,19 @@ bool uielement_t::GetArtworkFromScript(const metadb_handle_ptr & track, abort_ca
 {
     Log.AtTrace().Write(STR_COMPONENT_BASENAME " is getting artwork from script \"%s\".", pfc::utf8FromWide(_UIState._ArtworkFilePath.c_str()).c_str());
 
-    titleformat_object::ptr Script;
+    titleformat_object::ptr tfo;
 
-    if (!titleformat_compiler::get()->compile(Script, pfc::utf8FromWide(_UIState._ArtworkFilePath.c_str())))
+    if (!titleformat_compiler::get()->compile(tfo, pfc::utf8FromWide(_UIState._ArtworkFilePath.c_str())))
         return false;
 
-    if (!Script.is_valid())
+    if (!tfo.is_valid())
         return false;
 
     pfc::string Result;
 
-    if (!track->format_title(0, Result, Script, 0))
+    custom_titleformat_hook_t Hook;
+
+    if (!track->format_title(&Hook, Result, tfo, nullptr))
         return false;
 
     _Artwork.CreateWICResources(pfc::wideFromUTF8(Result).c_str());

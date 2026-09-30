@@ -129,6 +129,9 @@ void style_t::SetColor(const state_t * state) noexcept
 
             if (_ColorScheme == ColorScheme::Custom)
             {
+                for (auto & gs : _CustomGradient)
+                    gs.SetColor(state);
+
                 _CurrentGradientStops = gradient_t::ConvertFormat(_CustomGradient);
 
                 return;
@@ -141,7 +144,21 @@ void style_t::SetColor(const state_t * state) noexcept
 
         case ColorSource::Windows:
         {
-            _CurrentColor = GetWindowsColor(_ColorIndex);
+            static constexpr int ColorIndex[] =
+            {
+                COLOR_WINDOW,           // Window Background
+                COLOR_WINDOWTEXT,       // Window Text
+                COLOR_BTNFACE,          // Button Background
+                COLOR_BTNTEXT,          // Button Text
+                COLOR_HIGHLIGHT,        // Highlight Background
+                COLOR_HIGHLIGHTTEXT,    // Highlight Text
+                COLOR_GRAYTEXT,         // Gray Text
+                COLOR_HOTLIGHT,         // Hot Light
+            };
+
+            const auto Index = std::clamp((size_t) _ColorIndex, (size_t) 0, _countof(ColorIndex) - 1);
+
+            _CurrentColor = D2D1::ColorF(::GetSysColor(ColorIndex[Index]));
 
             return;
         }
@@ -162,26 +179,6 @@ void style_t::SetColor(const state_t * state) noexcept
             return;
         }
     }
-}
-
-/// <summary>
-/// Gets the selected Windows color.
-/// </summary>
-D2D1_COLOR_F style_t::GetWindowsColor(uint32_t index) noexcept
-{
-    static const int ColorIndex[] =
-    {
-        COLOR_WINDOW,           // Window Background
-        COLOR_WINDOWTEXT,       // Window Text
-        COLOR_BTNFACE,          // Button Background
-        COLOR_BTNTEXT,          // Button Text
-        COLOR_HIGHLIGHT,        // Highlight Background
-        COLOR_HIGHLIGHTTEXT,    // Highlight Text
-        COLOR_GRAYTEXT,         // Gray Text
-        COLOR_HOTLIGHT,         // Hot Light
-    };
-
-    return D2D1::ColorF(::GetSysColor(ColorIndex[std::clamp(index, 0u, (uint32_t) _countof(ColorIndex) - 1)]));
 }
 
 /// <summary>
