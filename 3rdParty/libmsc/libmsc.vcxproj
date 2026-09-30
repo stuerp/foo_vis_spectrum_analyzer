@@ -53,9 +53,11 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="3rdParty\ghc\filesystem.hpp" />
+    <ClInclude Include="include\Chrono.h" />
     <ClInclude Include="include\CriticalSection.h" />
     <ClInclude Include="include\Encoding.h" />
     <ClInclude Include="include\Enum.h" />
+    <ClInclude Include="include\Error.h" />
     <ClInclude Include="include\Exception.h" />
     <ClInclude Include="include\ghc\filesystem.hpp" />
     <ClInclude Include="include\libmsc.h" />

@@ -129,7 +129,7 @@ bool PresetManager::Delete(const path_t & rootPath, const std::wstring & presetN
 
     if (!Success)
     {
-        error_t LastError(::GetLastError());
+        msc::error_t LastError(::GetLastError());
 
         Log.AtError().Write(STR_COMPONENT_BASENAME " failed to delete preset \"%s\": %s", presetName.c_str(), LastError.Message().c_str());
 

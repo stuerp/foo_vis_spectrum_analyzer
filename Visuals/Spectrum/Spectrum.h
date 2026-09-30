@@ -16,8 +16,6 @@
 #include "XAxis.h"
 #include "YAxis.h"
 
-#include "Chrono.h"
-
 #include <vector>
 
 /// <summary>
@@ -102,7 +100,7 @@ private:
 
     FLOAT _LEDSize;
 
-    chrono_t _Chrono;
+    msc::chrono_t _Chrono;
 
     // Device-dependent resources
     ComPtr<ID2D1SolidColorBrush> _DebugBrush;

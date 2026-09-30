@@ -3,14 +3,15 @@
 
 #pragma once
 
-#include <CppCoreCheck/Warnings.h>
-
-#pragma warning(disable: 4100 4625 4626 4710 4711 5045 ALL_CPPCORECHECK_WARNINGS)
+#define WIN32_LEAN_AND_MEAN
 
 #include <SDKDDKVer.h>
 #include <Windows.h>
 
 #include <stdint.h>
+
+namespace msc
+{
 
 class chrono_t
 {
@@ -101,3 +102,5 @@ public:
 private:
     int64_t _Last; // No. of ticks
 };
+
+}

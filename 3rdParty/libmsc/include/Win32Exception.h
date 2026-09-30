@@ -5,9 +5,8 @@
 
 #define WIN32_LEAN_AND_MEAN
 
-#include <sdkddkver.h>
+#include <SDKDDKVer.h>
 #include <Windows.h>
-#include <strsafe.h>
 
 #include <stdexcept>
 #include <string>

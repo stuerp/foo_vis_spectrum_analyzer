@@ -12,7 +12,6 @@
 #include <Windows.h>
 
 #include "State.h"
-#include "Chrono.h"
 
 #include "WindowFunctions.h"
 
@@ -223,5 +222,5 @@ private:
     static constexpr double Amax = M_SQRT1_2;
     const double dBCorrection = -20. * std::log10(Amax); // 3.01 dB;
 
-    chrono_t _Chrono;
+    msc::chrono_t _Chrono;
 };

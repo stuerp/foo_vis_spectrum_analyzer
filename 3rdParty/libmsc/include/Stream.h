@@ -3,6 +3,8 @@
 
 #pragma once
 
+#define WIN32_LEAN_AND_MEAN
+
 #include <SDKDDKVer.h>
 #include <windows.h>
 
@@ -83,9 +85,7 @@ protected:
 class memory_stream_t : public stream_t
 {
 public:
-    memory_stream_t() noexcept : _hFile(INVALID_HANDLE_VALUE), _hMap(), _Data(), _Curr(), _Tail()
-    {
-    }
+    memory_stream_t() = default;
 
     bool Open(const fs::path & filePath, uint64_t offset, uint64_t size, bool forWriting = false);
 
@@ -96,7 +96,7 @@ public:
     virtual void Read(void * data, uint64_t size)
     {
         if (_Curr + (ptrdiff_t) size > _Tail)
-            throw exception("Insufficient data");
+            throw std::exception("Insufficient data");
 
         ::memcpy(data, _Curr, (size_t) size);
         _Curr += (ptrdiff_t) size;
@@ -105,7 +105,7 @@ public:
     virtual void Write(const void * data, uint64_t size)
     {
         if (_Curr + (ptrdiff_t) size > _Tail)
-            throw exception("Insufficient data");
+            throw std::exception("Insufficient data");
 
         ::memcpy(_Curr, data, (size_t) size);
         _Curr += (ptrdiff_t) size;
@@ -117,7 +117,7 @@ public:
     virtual void Skip(uint64_t size)
     {
         if (_Curr + (ptrdiff_t) size > _Tail)
-            throw exception("Insufficient data");
+            throw std::exception("Insufficient data");
 
         _Curr += (ptrdiff_t) size;
     }
@@ -136,18 +136,18 @@ public:
     virtual void Offset(uint64_t size)
     {
         if (_Data + (ptrdiff_t) size > _Tail)
-            throw exception("Invalid offset");
+            throw std::exception("Invalid offset");
 
         _Curr = _Data + (ptrdiff_t) size;
     }
 
 protected:
-    HANDLE _hFile;
-    HANDLE _hMap;
+    HANDLE _hFile { INVALID_HANDLE_VALUE };
+    HANDLE _hMap { };
 
-    uint8_t * _Data;
-    uint8_t * _Curr;
-    uint8_t * _Tail;
+    uint8_t * _Data { nullptr };
+    uint8_t * _Curr { nullptr };
+    uint8_t * _Tail { nullptr };
 };
 
 }

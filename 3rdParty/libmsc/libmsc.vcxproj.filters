@@ -26,6 +26,8 @@
     <ClInclude Include="include\Enum.h" />
     <ClInclude Include="include\Win32.h" />
     <ClInclude Include="include\NLS.h" />
+    <ClInclude Include="include\Chrono.h" />
+    <ClInclude Include="include\Error.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include=".editorconfig" />

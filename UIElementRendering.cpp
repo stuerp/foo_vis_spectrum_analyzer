@@ -12,7 +12,6 @@
 #include "Resources.h"
 #include "Color.h"
 #include "Gradient.h"
-#include "Chrono.h"
 #include "Event.h"
 #include "Support.h"
 
@@ -33,7 +32,7 @@ static bool GetAudioChunk(audio_chunk & chunk, uint32_t sampleRate = 44100, uint
 /// </summary>
 void uielement_t::RenderThreadProc() noexcept
 {
-    chrono_t Chrono;
+    msc::chrono_t Chrono;
 
     const int64_t SleepTime = Chrono.MicrosecondsToTicks(_RenderState._SleepTime);
 

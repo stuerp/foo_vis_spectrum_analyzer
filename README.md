@@ -103,6 +103,7 @@ v0.13.0.0-alpha2, 2026-09-30
 - Changed: `Decay Factor` is now `Afterglow`, expressed in ms, and independent of the refresh rate. Use values between 80 and 150 ms to imitate the afterglow of an analog oscilloscope.
 - Improved: Optimized the render path of the oscilloscope and goniometer.
 - Improved: The file path of the fixed artwork path can contain Windows environment variables.
+- Improved: Curve is 4 times faster.
 - Fixed: Controls on the Graphs page were not always enabled or disabled correctly when the visualization changed.
 
 You can read the full history [here](docs/History.md).

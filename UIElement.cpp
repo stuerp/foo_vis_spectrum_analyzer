@@ -8,7 +8,6 @@
 #include "Support.h"
 #include "Log.h"
 
-#include "Error.h"
 #include "PresetManager.h"
 #include "CustomTitleFormatHook.h"
 
@@ -61,7 +60,7 @@ LRESULT uielement_t::OnCreate(LPCREATESTRUCT cs) noexcept
 
     if (FAILED(hr))
     {
-        error_t LastError((DWORD) hr);
+        msc::error_t LastError((DWORD) hr);
 
         Log.AtFatal().Write(STR_COMPONENT_BASENAME " is unable to create DirectX device independent resources: %s", LastError.Message().c_str());
 
