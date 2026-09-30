@@ -258,7 +258,7 @@ HRESULT oscilloscope_xy_t::CreateDeviceSpecificResources(ID2D1DeviceContext * de
     {
         _XAxisTextStyle = *_State->_StyleManager.GetStyle(VisualElement::XAxisText);
 
-        _XAxisTextStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+        _XAxisTextStyle.SetColor(_State);
 
         // The font style is created prescaled to counter the Scale transform in the command list.
         hr = _XAxisTextStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"+0.0", _HalfSide);
@@ -271,7 +271,7 @@ HRESULT oscilloscope_xy_t::CreateDeviceSpecificResources(ID2D1DeviceContext * de
     {
         _YAxisTextStyle = *_State->_StyleManager.GetStyle(VisualElement::YAxisText);
 
-        _YAxisTextStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+        _YAxisTextStyle.SetColor(_State);
 
         // The font style is created prescaled to counter the Scale transform in the command list.
         hr = _YAxisTextStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"+0.0", _HalfSide);

@@ -1,13 +1,16 @@
 
-/** $VER: Style.cpp (2026.09.29) P. Stuer - Represents the style of a visual element. **/
+/** $VER: Style.cpp (2026.09.30) P. Stuer - Represents the style of a visual element. **/
 
 #include "pch.h"
 #include "Style.h"
 
 #include "Direct2D.h"
 #include "DirectWrite.h"
-#include "Gradients.h"
+#include "Gradient.h"
 #include "Support.h"
+#include "State.h"
+
+#include <algorithm>
 
 #pragma hdrstop
 
@@ -69,7 +72,7 @@ style_t::style_t(const std::wstring & name, VisualizationTypes usedBy, style_t::
     _ColorScheme          = colorScheme;
 
     _CustomColor          = customColor;
-    _CustomGradient       = Gradient::ConvertFormat(customGradientStops);
+    _CustomGradient       = gradient_t::ConvertFormat(customGradientStops);
 
     _Opacity              = opacity;
     _Thickness            = thickness;
@@ -86,61 +89,77 @@ style_t::style_t(const std::wstring & name, VisualizationTypes usedBy, style_t::
 }
 
 /// <summary>
-/// sets the current color based on the color source.
+/// Sets the current color based on the color source.
 /// </summary>
-void style_t::SetColor(const D2D1_COLOR_F & artworkDominantColor, const std::vector<D2D1_GRADIENT_STOP> & artworkGradientStops, const std::vector<D2D1_COLOR_F> & userInterfaceColors) noexcept
+void style_t::SetColor(const state_t * state) noexcept
 {
     switch (_ColorSource)
     {
         case ColorSource::None:
         {
-            _CurrentColor = D2D1::ColorF(0, 0.f);
-            break;
+            _CurrentColor = D2D1::ColorF(0, 0.f); // Transparent
+
+            return;
         }
 
         case ColorSource::Solid:
         {
             _CurrentColor = _CustomColor;
-            break;
+
+            return;
         }
 
         case ColorSource::DominantColor:
         {
-            _CurrentColor = artworkDominantColor;
-            break;
+            _CurrentColor = state->_ArtworkDominantColor;
+
+            return;
         }
 
         case ColorSource::Gradient:
         {
-            _CurrentColor = D2D1::ColorF(0, 0.f);
+            _CurrentColor = D2D1::ColorF(0, 0.f); // Transparent
 
             if (_ColorScheme == ColorScheme::Artwork)
             {
-                _CurrentGradientStops = artworkGradientStops;
+                _CurrentGradientStops = state->_ArtworkGradientStops;
+
+                return;
             }
-            else
+
             if (_ColorScheme == ColorScheme::Custom)
             {
-                _CurrentGradientStops = Gradient::ConvertFormat(_CustomGradient);
+                _CurrentGradientStops = gradient_t::ConvertFormat(_CustomGradient);
+
+                return;
             }
-            else
-            {
-                _CurrentGradientStops = Gradient::GetBuiltIn(_ColorScheme);
-            }
-            break;
+
+            _CurrentGradientStops = gradient_t::GetBuiltIn(_ColorScheme);
+
+            return;
         }
 
         case ColorSource::Windows:
         {
             _CurrentColor = GetWindowsColor(_ColorIndex);
-            break;
+
+            return;
         }
 
         case ColorSource::UserInterface:
         {
-            if (userInterfaceColors.size() != 0)
-                _CurrentColor = userInterfaceColors[std::clamp((size_t) _ColorIndex, (size_t) 0, userInterfaceColors.size() - 1)];
-            break;
+            if (state->_UserInterfaceColors.empty())
+            {
+                _CurrentColor = D2D1_COLOR_F(D2D1::ColorF::Red);
+
+                return;
+            }
+
+            const auto Index = std::clamp((size_t) _ColorIndex, (size_t) 0, state->_UserInterfaceColors.size() - 1);
+
+            _CurrentColor = state->_UserInterfaceColors[Index];
+
+            return;
         }
     }
 }
@@ -188,7 +207,7 @@ HRESULT style_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContex
     {
         if (Has(style_t::Features::HorizontalGradient | style_t::Features::AmplitudeBasedColor))
         {
-            hr = deviceContext->CreateSolidColorBrush(D2D1::ColorF(0), SolidColorBrush.GetAddressOf()); // The color of the brush will be set during rendering.
+            hr = deviceContext->CreateSolidColorBrush(D2D1::ColorF(0, 0.f), SolidColorBrush.GetAddressOf()); // The color of the brush will be set during rendering.
 
             if (FAILED(hr))
                 return hr;
@@ -255,7 +274,7 @@ HRESULT style_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContex
     {
         if (Has(style_t::Features::HorizontalGradient | style_t::Features::AmplitudeBasedColor))
         {
-            hr = deviceContext->CreateSolidColorBrush(D2D1::ColorF(0), SolidColorBrush.GetAddressOf()); // The color of the brush will be set during rendering.
+            hr = deviceContext->CreateSolidColorBrush(D2D1::ColorF(0, 0.f), SolidColorBrush.GetAddressOf()); // The color of the brush will be set during rendering.
 
             if (FAILED(hr))
                 return hr;
@@ -324,96 +343,131 @@ HRESULT style_t::SetBrushColor(double value) noexcept
 HRESULT style_t::CreateAmplitudeMap(ColorScheme colorScheme, const std::vector<D2D1_GRADIENT_STOP> & gradientStops, std::vector<D2D1_COLOR_F> & colors) noexcept
 {
     if (gradientStops.empty())
-        return E_FAIL;
+        return E_INVALIDARG;
 
-    const size_t Steps = 100; // Results in a 101 entry table to be mapped to amplitudes between 0 and 1.
-
-    colors.clear();
-    colors.reserve(((gradientStops.size() - 1) * Steps) + 1);
-
-    if (colorScheme != ColorScheme::SoX)
+    try
     {
-        // Linear interpolation of the colors.
+        constexpr std::size_t StepCount  = 100;
+        constexpr std::size_t ColorCount = StepCount + 1;
 
-        D2D1_COLOR_F Color1 = gradientStops[0].color;
-        FLOAT Position1 = gradientStops[0].position;
+        colors.resize(ColorCount);
 
-        // Add the run-in colors.
-        uint32_t n = (uint32_t) (Position1 * (FLOAT) Steps);
-
-        for (uint32_t j = 0; j <= n; ++j)
-            colors.push_back(Color1);
-
-        // Add the gradient colors.
-        for (size_t i = 1; i < gradientStops.size(); ++i)
+        if (colorScheme != ColorScheme::SoX)
         {
-            const D2D1_COLOR_F & Color2 = gradientStops[i].color;
-            const FLOAT & Position2 = gradientStops[i].position;
+            // Work on a sorted copy because stops can temporarily be out of order while the user edits the gradient.
+            auto GradientStops = gradientStops;
 
-            // Positions may not be in ascending order while the user is editing the gradient.
-            if (Position2 > Position1)
+            std::stable_sort(GradientStops.begin(), GradientStops.end(), [](const D2D1_GRADIENT_STOP & lhs, const D2D1_GRADIENT_STOP & rhs) noexcept
             {
-                const D2D1_COLOR_F Delta = { Color2.r - Color1.r, Color2.g - Color1.g, Color2.b - Color1.b, Color2.a - Color1.a };
+                return lhs.position < rhs.position;
+            });
 
-                n = (uint32_t) ((Position2 - Position1) * (FLOAT) Steps);
+            size_t NextStop = 1;
 
-                for (uint32_t j = 1; j < n; ++j)
+            for (size_t Step = 0; Step <= StepCount; ++Step)
+            {
+                const FLOAT Position = (FLOAT) Step / (FLOAT) StepCount;
+
+                const size_t Index = StepCount - Step;
+
+                while ((NextStop < GradientStops.size()) && (GradientStops[NextStop].position < Position))
                 {
-                    const FLOAT Factor = (FLOAT) j / (FLOAT) n;
-                    const D2D1_COLOR_F Color =
-                    {
-                        Color1.r + (Delta.r * Factor),
-                        Color1.g + (Delta.g * Factor),
-                        Color1.b + (Delta.b * Factor),
-                        Color1.a + (Delta.a * Factor)
-                    };
-
-                    colors.push_back(Color);
+                    ++NextStop;
                 }
+
+                if (Position <= GradientStops.front().position)
+                {
+                    colors[Index] = GradientStops.front().color;
+                    continue;
+                }
+
+                if (NextStop == GradientStops.size())
+                {
+                    colors[Index] = GradientStops.back().color;
+                    continue;
+                }
+
+                const D2D1_GRADIENT_STOP & l = GradientStops[NextStop - 1];
+                const D2D1_GRADIENT_STOP & r = GradientStops[NextStop];
+
+                const FLOAT Interval = r.position - l.position;
+
+                if (Interval <= 0.f)
+                {
+                    colors[Index] = r.color;
+                    continue;
+                }
+
+                const FLOAT Factor = std::clamp((Position - l.position) / Interval, 0.f, 1.f);
+
+                colors[Index] =
+                {
+                    std::lerp(l.color.r, r.color.r, Factor),
+                    std::lerp(l.color.g, r.color.g, Factor),
+                    std::lerp(l.color.b, r.color.b, Factor),
+                    std::lerp(l.color.a, r.color.a, Factor)
+                };
             }
 
-            Color1 = Color2;
-            Position1 = Position2;
+            return S_OK;
         }
-
-        // Add the run-out colors.
-        for (uint32_t j = (uint32_t) (Position1 * (FLOAT) Steps); j <= Steps; ++j)
-            colors.push_back(Color1);
-
-        // The color in the lowest position should map to the highest amplitude values.
-        std::reverse(colors.begin(), colors.end());
-    }
-    else
-    {
-        double r = 0.;
-        double g = 0.;
-        double b = 0.;
-
-        for (double amplitude = 0.; amplitude <= 1.; amplitude += 1. / Steps)
+        else
         {
-            if (amplitude >= 0.13 && amplitude < 0.73)
-                r = ::sin((amplitude - 0.13) / 0.60 * std::numbers::pi / 2.);
-            else
-            if (amplitude >= 0.73)
-                r = 1.0;
+            // Converted from the SoX source code.
+            constexpr double pi2 = std::numbers::pi / 2.;
 
-            if (amplitude >= 0.6 && amplitude < 0.91)
-                g = ::sin((amplitude - 0.6) / 0.31 * std::numbers::pi / 2.);
-            else
-            if (amplitude >= 0.91)
-                g = 1.0;
+            for (size_t Step = 0; Step <= StepCount; ++Step)
+            {
+                const auto Amplitude = (double) Step / (double) StepCount;
 
-            if (amplitude < 0.60)
-                b = 0.5 * ::sin(amplitude / 0.6 * std::numbers::pi);
-            else
-            if (amplitude >= 0.78)
-                b = (amplitude - 0.78) / 0.22;
+                FLOAT r;
 
-            colors.push_back(D2D1::ColorF((FLOAT) r, (FLOAT) g, (FLOAT) b, 1.f));
+                if (Amplitude < 0.13)
+                    r = 0.f;
+                else
+                if (Amplitude < 0.73)
+                    r = (FLOAT) std::sin((Amplitude - 0.13) / 0.60 * pi2);
+                else
+                    r = 1.f;
+
+                FLOAT g;
+
+                if (Amplitude < 0.60)
+                    g = 0.f;
+                else
+                if (Amplitude < 0.91)
+                    g = (FLOAT) std::sin((Amplitude - 0.60) / 0.31 * pi2);
+                else
+                    g = 1.f;
+
+                FLOAT b;
+
+                if (Amplitude < 0.60)
+                    b = (FLOAT) (0.5 * std::sin(Amplitude / 0.60 * std::numbers::pi));
+                else
+                if (Amplitude < 0.78)
+                    b = 0.f;
+                else
+                    b = (FLOAT) ((Amplitude - 0.78) / 0.22);
+
+                colors[Step] = D2D1::ColorF(r, g, b, 1.f);
+            }
         }
-    }
 
-    return S_OK;
+        return S_OK;
+    }
+    catch (const std::bad_alloc &)
+    {
+        colors.clear();
+
+        return E_OUTOFMEMORY;
+    }
+    catch (...)
+    {
+        colors.clear();
+
+        return E_FAIL;
+    }
 }
 
 /// <summary>

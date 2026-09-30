@@ -342,7 +342,7 @@ HRESULT peak_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceC
     {
         _BackgroundStyle = *_State->_StyleManager.GetStyle(VisualElement::BarBackground);
 
-        _BackgroundStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+        _BackgroundStyle.SetColor(_State);
 
         hr = _BackgroundStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
 
@@ -354,7 +354,7 @@ HRESULT peak_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceC
     {
         _PeakStyle = *_State->_StyleManager.GetStyle(VisualElement::BarPeakLevel);
 
-        _PeakStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+        _PeakStyle.SetColor(_State);
 
         hr = _PeakStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
 
@@ -366,7 +366,7 @@ HRESULT peak_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceC
     {
         _Peak0dBStyle = *_State->_StyleManager.GetStyle(VisualElement::Bar0dBPeakLevel);
 
-        _Peak0dBStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+        _Peak0dBStyle.SetColor(_State);
 
         hr = _Peak0dBStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
 
@@ -378,7 +378,7 @@ HRESULT peak_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceC
     {
         _PeakTextStyle = *_State->_StyleManager.GetStyle(VisualElement::BarPeakLevelText);
 
-        _PeakTextStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+        _PeakTextStyle.SetColor(_State);
 
         hr = _PeakTextStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"+199.9", 1.f);
 
@@ -390,7 +390,7 @@ HRESULT peak_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceC
     {
         _MaxPeakStyle = *_State->_StyleManager.GetStyle(VisualElement::BarMaxPeakLevel);
 
-        _MaxPeakStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+        _MaxPeakStyle.SetColor(_State);
 
         hr = _MaxPeakStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
 
@@ -402,7 +402,7 @@ HRESULT peak_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceC
     {
         _RMSStyle = *_State->_StyleManager.GetStyle(VisualElement::BarRMSLevel);
 
-        _RMSStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+        _RMSStyle.SetColor(_State);
 
         hr = _RMSStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
 
@@ -414,7 +414,7 @@ HRESULT peak_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceC
     {
         _RMS0dBStyle = *_State->_StyleManager.GetStyle(VisualElement::Bar0dBRMSLevel);
 
-        _RMS0dBStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+        _RMS0dBStyle.SetColor(_State);
 
         hr = _RMS0dBStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
 
@@ -426,7 +426,7 @@ HRESULT peak_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceC
     {
         _RMSTextStyle = *_State->_StyleManager.GetStyle(VisualElement::BarRMSLevelText);
 
-        _RMSTextStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+        _RMSTextStyle.SetColor(_State);
 
         hr = _RMSTextStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"+199.9", 1.f);
 
@@ -438,7 +438,7 @@ HRESULT peak_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceC
     {
         _NameStyle = *_State->_StyleManager.GetStyle(VisualElement::XAxisText);
 
-        _NameStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+        _NameStyle.SetColor(_State);
 
         hr = _NameStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"LFE", 1.f);
 
@@ -450,7 +450,7 @@ HRESULT peak_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceC
     {
         _ScaleTextStyle = *_State->_StyleManager.GetStyle(VisualElement::YAxisText);
 
-        _ScaleTextStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+        _ScaleTextStyle.SetColor(_State);
 
         hr = _ScaleTextStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"+999", 1.f);
 
@@ -462,7 +462,7 @@ HRESULT peak_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceC
     {
         _ScaleLineStyle = *_State->_StyleManager.GetStyle(VisualElement::HorizontalGridLine);
 
-        _ScaleLineStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+        _ScaleLineStyle.SetColor(_State);
 
         hr = _ScaleLineStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
 

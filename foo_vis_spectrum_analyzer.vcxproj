@@ -297,7 +297,7 @@
     <ClInclude Include="Windows\Module.h" />
     <ClInclude Include="Visuals\Spectrum\BezierSpline.h" />
     <ClInclude Include="Visuals\FrameCounter.h" />
-    <ClInclude Include="Visuals\Gradients.h" />
+    <ClInclude Include="Visuals\Gradient.h" />
     <ClInclude Include="Visuals\Graph.h" />
     <ClInclude Include="Resources.h" />
     <ClInclude Include="Visuals\RingBuffer.h" />
@@ -352,7 +352,7 @@
     <ClCompile Include="Tests.cpp" />
     <ClCompile Include="UIElementToolTips.cpp" />
     <ClCompile Include="Visuals\BitMeter\BitMeter.cpp" />
-    <ClCompile Include="Visuals\Gradients.cpp" />
+    <ClCompile Include="Visuals\Gradient.cpp" />
     <ClCompile Include="Visuals\GraphOptions.cpp" />
     <ClCompile Include="State.cpp" />
     <ClCompile Include="Component.cpp" />

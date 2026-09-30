@@ -1,5 +1,5 @@
 
-/** $VER: Gradients.h (2026.09.29) P. Stuer - Built-in gradients. **/
+/** $VER: Gradient.h (2026.09.30) P. Stuer - Built-in gradients. **/
 
 #pragma once
 
@@ -13,13 +13,17 @@
 
 #include "Constants.h"
 
+class state_t;
+
 struct gradient_stop_t : D2D1_GRADIENT_STOP
 {
     GradientStopSource StopSource; // The source of the color
     uint32_t StopIndex;            // The index in the Windows or user interface color list
+
+    void SetColor(const state_t * state) noexcept;
 };
 
-class Gradient
+class gradient_t
 {
 public:
     static const std::vector<D2D1_GRADIENT_STOP> & GetBuiltIn(ColorScheme colorScheme) noexcept;

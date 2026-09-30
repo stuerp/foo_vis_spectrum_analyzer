@@ -141,7 +141,7 @@ HRESULT oscilloscope_base_t::CreateSizeDependentResources(ID2D1DeviceContext * d
     {
         _SignalLineStyle = *_State->_StyleManager.GetStyle(VisualElement::SignalLine);
 
-        _SignalLineStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+        _SignalLineStyle.SetColor(_State);
 
         hr = _SignalLineStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
 
@@ -153,7 +153,7 @@ HRESULT oscilloscope_base_t::CreateSizeDependentResources(ID2D1DeviceContext * d
     {
         _XAxisLineStyle = *_State->_StyleManager.GetStyle(VisualElement::XAxisLine);
 
-        _XAxisLineStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+        _XAxisLineStyle.SetColor(_State);
 
         hr = _XAxisLineStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
 
@@ -165,7 +165,7 @@ HRESULT oscilloscope_base_t::CreateSizeDependentResources(ID2D1DeviceContext * d
     {
         _YAxisLineStyle = *_State->_StyleManager.GetStyle(VisualElement::YAxisLine);
 
-        _YAxisLineStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+        _YAxisLineStyle.SetColor(_State);
 
         hr = _YAxisLineStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
 
@@ -177,7 +177,7 @@ HRESULT oscilloscope_base_t::CreateSizeDependentResources(ID2D1DeviceContext * d
     {
         _HorizontalGridLineStyle = *_State->_StyleManager.GetStyle(VisualElement::HorizontalGridLine);
 
-        _HorizontalGridLineStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+        _HorizontalGridLineStyle.SetColor(_State);
 
         hr = _HorizontalGridLineStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
 
@@ -189,7 +189,7 @@ HRESULT oscilloscope_base_t::CreateSizeDependentResources(ID2D1DeviceContext * d
     {
         _VerticalGridLineStyle = *_State->_StyleManager.GetStyle(VisualElement::VerticalGridLine);
 
-        _VerticalGridLineStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+        _VerticalGridLineStyle.SetColor(_State);
 
         hr = _VerticalGridLineStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
 

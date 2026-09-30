@@ -98,7 +98,7 @@ To create the component first build the x86 configuration and next the x64 confi
 
 v0.13.0.0-alpha2, 2026-10-xx
 
-- New: Compiled with foobar2000 SDK 2026-09-07.
+- New: Compiled with foobar2000 SDK 2026-09-17.
 - New: Gradient stops can have color source `Solid`, `Dominant Color`, `Windows` and `User Interface`.
 - Changed: `Decay Factor` is now `Afterglow`, expressed in ms, and independent of the refresh rate. Use values between 80 and 150 ms to imitate the afterglow of an analog oscilloscope.
 - Fixed: Controls on the Graphs page were not always enabled or disabled correctly when the visualization changed.

@@ -147,7 +147,7 @@ HRESULT y_axis_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceConte
     {
         _LineStyle = *styleManager.GetStyle(VisualElement::HorizontalGridLine);
 
-        _LineStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+        _LineStyle.SetColor(_State);
 
         hr = _LineStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
 
@@ -159,7 +159,7 @@ HRESULT y_axis_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceConte
     {
         _TextStyle = *styleManager.GetStyle(VisualElement::YAxisText);
 
-        _TextStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+        _TextStyle.SetColor(_State);
 
         hr = _TextStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"+999", 1.f);
 

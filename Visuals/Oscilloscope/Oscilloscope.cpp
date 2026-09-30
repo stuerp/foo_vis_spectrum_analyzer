@@ -242,7 +242,7 @@ HRESULT oscilloscope_t::CreateDeviceSpecificResources(ID2D1DeviceContext * devic
     {
         _XAxisTextStyle = *_State->_StyleManager.GetStyle(VisualElement::XAxisText);
 
-        _XAxisTextStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+        _XAxisTextStyle.SetColor(_State);
 
         hr = _XAxisTextStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"-999", 1.f);
 
@@ -255,7 +255,7 @@ HRESULT oscilloscope_t::CreateDeviceSpecificResources(ID2D1DeviceContext * devic
     {
         _YAxisTextStyle = *_State->_StyleManager.GetStyle(VisualElement::YAxisText);
 
-        _YAxisTextStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+        _YAxisTextStyle.SetColor(_State);
 
         hr = _YAxisTextStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"-999", 1.f);
 

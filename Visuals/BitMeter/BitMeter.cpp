@@ -213,7 +213,7 @@ HRESULT bit_meter_t::CreateDeviceSpecificResources(_In_ ID2D1DeviceContext * dev
     {
         _BarBackground = *_State->_StyleManager.GetStyle(VisualElement::BarBackground);
 
-        _BarBackground.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+        _BarBackground.SetColor(_State);
 
         hr = _BarBackground.CreateDeviceSpecificResources(deviceContext, TextSize, L"", 1.f);
 
@@ -225,7 +225,7 @@ HRESULT bit_meter_t::CreateDeviceSpecificResources(_In_ ID2D1DeviceContext * dev
     {
         _BarSign = *_State->_StyleManager.GetStyle(VisualElement::BarSign);
 
-        _BarSign.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+        _BarSign.SetColor(_State);
 
         hr = _BarSign.CreateDeviceSpecificResources(deviceContext, TextSize, L"", 1.f);
 
@@ -237,7 +237,7 @@ HRESULT bit_meter_t::CreateDeviceSpecificResources(_In_ ID2D1DeviceContext * dev
     {
         _BarExponent = *_State->_StyleManager.GetStyle(VisualElement::BarExponent);
 
-        _BarExponent.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+        _BarExponent.SetColor(_State);
 
         hr = _BarExponent.CreateDeviceSpecificResources(deviceContext, TextSize, L"", 1.f);
 
@@ -249,7 +249,7 @@ HRESULT bit_meter_t::CreateDeviceSpecificResources(_In_ ID2D1DeviceContext * dev
     {
         _BarMantissa = *_State->_StyleManager.GetStyle(VisualElement::BarMantissa);
 
-        _BarMantissa.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+        _BarMantissa.SetColor(_State);
 
         hr = _BarMantissa.CreateDeviceSpecificResources(deviceContext, TextSize, L"", 1.f);
 
@@ -261,7 +261,7 @@ HRESULT bit_meter_t::CreateDeviceSpecificResources(_In_ ID2D1DeviceContext * dev
     {
         _XAxisText = *_State->_StyleManager.GetStyle(VisualElement::XAxisText);
 
-        _XAxisText.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+        _XAxisText.SetColor(_State);
 
         hr = _XAxisText.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
 
@@ -276,7 +276,7 @@ HRESULT bit_meter_t::CreateDeviceSpecificResources(_In_ ID2D1DeviceContext * dev
     {
         _YAxisText = *_State->_StyleManager.GetStyle(VisualElement::YAxisText);
 
-        _YAxisText.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+        _YAxisText.SetColor(_State);
 
         hr = _YAxisText.CreateDeviceSpecificResources(deviceContext, _Size, L"WW", 1.f);
 

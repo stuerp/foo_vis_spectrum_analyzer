@@ -1,11 +1,10 @@
 
-/** $VER: State.cpp (2026.09.23) P. Stuer **/
+/** $VER: State.cpp (2026.09.30) P. Stuer **/
 
 #include "pch.h"
 #include "State.h"
 
-#include "AudioProcessor.h"
-#include "Gradients.h"
+#include "Gradient.h"
 #include "Resources.h"
 #include "Log.h"
 
@@ -182,8 +181,7 @@ void state_t::Reset() noexcept
     // Common
     _ColorScheme_Deprecated = ColorScheme::Prism1;
 
-//  _GradientStops = Gradient::GetBuiltIn(_ColorScheme_Deprecated);
-    _CustomGradientStops_Deprecated = Gradient::GetBuiltIn(ColorScheme::Custom);
+    _CustomGradientStops_Deprecated = gradient_t::GetBuiltIn(ColorScheme::Custom);
 
     _ShowToolTipsAlways = true;
     _SuppressMirrorImage = true;
@@ -226,7 +224,7 @@ void state_t::Reset() noexcept
     // Bars
     _DrawBandBackground_Deprecated = true;
     _LightBandColor_Deprecated = D2D1::ColorF(.2f, .2f, .2f, .7f);
-    _DarkBandColor_Deprecated = D2D1::ColorF(.2f, .2f, .2f, .7f);
+    _DarkBandColor_Deprecated  = D2D1::ColorF(.2f, .2f, .2f, .7f);
 
     _LEDMode = false;
     _LEDLight = 2.f;
@@ -2016,7 +2014,7 @@ void state_t::ConvertColorSettings() noexcept
     {
         style_t style = *_StyleManager.GetStyle(VisualElement::GraphBackground);
 
-        style._CustomGradient = Gradient::ConvertFormat(_CustomGradientStops_Deprecated);
+        style._CustomGradient = gradient_t::ConvertFormat(_CustomGradientStops_Deprecated);
 
         style._ColorScheme = _ColorScheme_Deprecated;
 
@@ -2049,7 +2047,7 @@ void state_t::ConvertColorSettings() noexcept
         style_t style = *_StyleManager.GetStyle(VisualElement::VerticalGridLine);
 
         style._CustomColor    = _XLineColor_Deprecated;
-        style._CustomGradient = Gradient::ConvertFormat(_CustomGradientStops_Deprecated);
+        style._CustomGradient = gradient_t::ConvertFormat(_CustomGradientStops_Deprecated);
 
         style._ColorScheme = _ColorScheme_Deprecated;
 
@@ -2064,14 +2062,14 @@ void state_t::ConvertColorSettings() noexcept
                 style._CurrentColor = style._CustomColor;
             }
 
-        style._CurrentGradientStops = Gradient::ConvertFormat(style._CustomGradient);
+        style._CurrentGradientStops = gradient_t::ConvertFormat(style._CustomGradient);
     }
 
     {
         style_t style = *_StyleManager.GetStyle(VisualElement::XAxisText);
 
         style._CustomColor    = _XTextColor_Deprecated;
-        style._CustomGradient = Gradient::ConvertFormat(_CustomGradientStops_Deprecated);
+        style._CustomGradient = gradient_t::ConvertFormat(_CustomGradientStops_Deprecated);
 
         style._ColorScheme = _ColorScheme_Deprecated;
 
@@ -2086,14 +2084,14 @@ void state_t::ConvertColorSettings() noexcept
                 style._CurrentColor = style._CustomColor;
             }
 
-        style._CurrentGradientStops = Gradient::ConvertFormat(style._CustomGradient);
+        style._CurrentGradientStops = gradient_t::ConvertFormat(style._CustomGradient);
     }
 
     {
         style_t style = *_StyleManager.GetStyle(VisualElement::HorizontalGridLine);
 
         style._CustomColor    = _YLineColor_Deprecated;
-        style._CustomGradient = Gradient::ConvertFormat(_CustomGradientStops_Deprecated);
+        style._CustomGradient = gradient_t::ConvertFormat(_CustomGradientStops_Deprecated);
 
         style._ColorScheme = _ColorScheme_Deprecated;
 
@@ -2108,14 +2106,14 @@ void state_t::ConvertColorSettings() noexcept
                 style._CurrentColor = style._CustomColor;
             }
 
-        style._CurrentGradientStops = Gradient::ConvertFormat(style._CustomGradient);
+        style._CurrentGradientStops = gradient_t::ConvertFormat(style._CustomGradient);
     }
 
     {
         style_t style = *_StyleManager.GetStyle(VisualElement::YAxisText);
 
         style._CustomColor    = _YTextColor_Deprecated;
-        style._CustomGradient = Gradient::ConvertFormat(_CustomGradientStops_Deprecated);
+        style._CustomGradient = gradient_t::ConvertFormat(_CustomGradientStops_Deprecated);
 
         style._ColorScheme = _ColorScheme_Deprecated;
 
@@ -2130,18 +2128,18 @@ void state_t::ConvertColorSettings() noexcept
                 style._CurrentColor = style._CustomColor;
             }
 
-        style._CurrentGradientStops = Gradient::ConvertFormat(style._CustomGradient);
+        style._CurrentGradientStops = gradient_t::ConvertFormat(style._CustomGradient);
     }
 
     {
         style_t style = *_StyleManager.GetStyle(VisualElement::BarArea);
 
-        style._CustomGradient = Gradient::ConvertFormat(_CustomGradientStops_Deprecated);
+        style._CustomGradient = gradient_t::ConvertFormat(_CustomGradientStops_Deprecated);
 
         style._ColorScheme = _ColorScheme_Deprecated;
 
-            style._ColorSource = ColorSource::Gradient;
-            style._CurrentColor = D2D1::ColorF(0, 0.f);
+            style._ColorSource           = ColorSource::Gradient;
+            style._CurrentColor          = D2D1::ColorF(0, 0.f); // Transparent
             style._CurrentGradientStops = SelectGradientStops_Deprecated(_ColorScheme_Deprecated);
     }
 
@@ -2149,7 +2147,7 @@ void state_t::ConvertColorSettings() noexcept
         style_t style= *_StyleManager.GetStyle(VisualElement::BarDarkBackground);
 
         style._CustomColor    = _DarkBandColor_Deprecated;
-        style._CustomGradient = Gradient::ConvertFormat(_CustomGradientStops_Deprecated);
+        style._CustomGradient = gradient_t::ConvertFormat(_CustomGradientStops_Deprecated);
 
             style._ColorSource = ColorSource::Solid;
             style._CurrentColor = style._CustomColor;
@@ -2159,7 +2157,7 @@ void state_t::ConvertColorSettings() noexcept
         style_t style = *_StyleManager.GetStyle(VisualElement::BarLightBackground);
 
         style._CustomColor    = _LightBandColor_Deprecated;
-        style._CustomGradient = Gradient::ConvertFormat(_CustomGradientStops_Deprecated);
+        style._CustomGradient = gradient_t::ConvertFormat(_CustomGradientStops_Deprecated);
 
             style._ColorSource = ColorSource::Solid;
             style._CurrentColor = style._CustomColor;
@@ -2169,14 +2167,14 @@ void state_t::ConvertColorSettings() noexcept
         style_t style = *_StyleManager.GetStyle(VisualElement::CurveLine);
 
         style._CustomColor    = _LineColor_Deprecated;
-        style._CustomGradient = Gradient::ConvertFormat(_CustomGradientStops_Deprecated);
+        style._CustomGradient = gradient_t::ConvertFormat(_CustomGradientStops_Deprecated);
 
         style._ColorScheme = _ColorScheme_Deprecated;
 
             if (!_UseCustomLineColor_Deprecated)
             {
-                style._ColorSource = ColorSource::Gradient;
-                style._CurrentColor = D2D1::ColorF(0, 0.f);
+                style._ColorSource          = ColorSource::Gradient;
+                style._CurrentColor         = D2D1::ColorF(0, 0.f); // Transparent
                 style._CurrentGradientStops = SelectGradientStops_Deprecated(_ColorScheme_Deprecated);
             }
             else
@@ -2191,12 +2189,12 @@ void state_t::ConvertColorSettings() noexcept
     {
         style_t style = *_StyleManager.GetStyle(VisualElement::CurveArea);
 
-        style._CustomGradient = Gradient::ConvertFormat(_CustomGradientStops_Deprecated);
+        style._CustomGradient = gradient_t::ConvertFormat(_CustomGradientStops_Deprecated);
 
         style._ColorScheme = _ColorScheme_Deprecated;
 
-            style._ColorSource = ColorSource::Gradient;
-            style._CurrentColor = D2D1::ColorF(0, 0.f);
+            style._ColorSource          = ColorSource::Gradient;
+            style._CurrentColor         = D2D1::ColorF(0, 0.f); // Transparent
             style._CurrentGradientStops = SelectGradientStops_Deprecated(_ColorScheme_Deprecated);
             style._Opacity = _AreaOpacity_Deprecated;
     }
@@ -2237,7 +2235,7 @@ const std::vector<D2D1_GRADIENT_STOP> state_t::SelectGradientStops_Deprecated(Co
     if (colorScheme == ColorScheme::Artwork)
         return _ArtworkGradientStops;
 
-    return Gradient::GetBuiltIn(colorScheme);
+    return gradient_t::GetBuiltIn(colorScheme);
 }
 
 cfg_int CfgLogLevel({ 0xf06c6211, 0x1617, 0x41ac, { 0xaf, 0xbe, 0x7f, 0xb3, 0xda, 0xef, 0x6, 0x69 } }, DefaultCfgLogLevel);

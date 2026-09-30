@@ -69,7 +69,7 @@ private:
 
     void InitializeStyles() noexcept;
     void UpdateColorControls() noexcept;
-    void InitializeGradientStopColor(state_t * state, gradient_stop_t & gs) noexcept;
+    void SetColor(state_t * state, gradient_stop_t & gs) noexcept;
     void UpdateGradientStopPositons(std::vector<gradient_stop_t> & gs, size_t index) const noexcept;
     void InitializeGradientStopControls(style_t * style, int colorIndex) noexcept;
 

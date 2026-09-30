@@ -305,7 +305,7 @@ HRESULT graph_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContex
     {
         _BackgroundStyle = *StyleManager.GetStyle(VisualElement::GraphBackground);
 
-        _BackgroundStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+        _BackgroundStyle.SetColor(_State);
 
         hr = _BackgroundStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
 
@@ -317,7 +317,7 @@ HRESULT graph_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContex
     {
         _DescriptionTextStyle = *StyleManager.GetStyle(VisualElement::GraphDescriptionText);
 
-        _DescriptionTextStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+        _DescriptionTextStyle.SetColor(_State);
 
         hr = _DescriptionTextStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
 
@@ -329,7 +329,7 @@ HRESULT graph_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContex
     {
         _DescriptionBackgroundStyle = *StyleManager.GetStyle(VisualElement::GraphDescriptionBackground);
 
-        _DescriptionBackgroundStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+        _DescriptionBackgroundStyle.SetColor(_State);
 
         hr = _DescriptionBackgroundStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
 

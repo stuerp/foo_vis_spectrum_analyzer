@@ -274,7 +274,7 @@ HRESULT level_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * device
     {
         _LeftRightStyle = *_State->_StyleManager.GetStyle(VisualElement::BarLeftRight);
 
-        _LeftRightStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+        _LeftRightStyle.SetColor(_State);
 
         hr = _LeftRightStyle.CreateDeviceSpecificResources(deviceContext, Size, L"", 1.f);
 
@@ -286,7 +286,7 @@ HRESULT level_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * device
     {
         _LeftRightIndicatorStyle = *_State->_StyleManager.GetStyle(VisualElement::BarLeftRightIndicator);
 
-        _LeftRightIndicatorStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+        _LeftRightIndicatorStyle.SetColor(_State);
 
         hr = _LeftRightIndicatorStyle.CreateDeviceSpecificResources(deviceContext, Size, L"", 1.f);
     }
@@ -298,7 +298,7 @@ HRESULT level_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * device
     {
         _MidSideStyle = *_State->_StyleManager.GetStyle(VisualElement::BarMidSide);
 
-        _MidSideStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+        _MidSideStyle.SetColor(_State);
 
         hr = _MidSideStyle.CreateDeviceSpecificResources(deviceContext, Size, L"", 1.f);
 
@@ -310,7 +310,7 @@ HRESULT level_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * device
     {
         _MidSideIndicatorStyle = *_State->_StyleManager.GetStyle(VisualElement::BarMidSideIndicator);
 
-        _MidSideIndicatorStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+        _MidSideIndicatorStyle.SetColor(_State);
 
         hr = _MidSideIndicatorStyle.CreateDeviceSpecificResources(deviceContext, Size, L"", 1.f);
 
@@ -322,7 +322,7 @@ HRESULT level_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * device
     {
         _AxisStyle = *_State->_StyleManager.GetStyle(VisualElement::LevelMeterAxis);
 
-        _AxisStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+        _AxisStyle.SetColor(_State);
 
         hr = _AxisStyle.CreateDeviceSpecificResources(deviceContext, Size, L"+1.0", 1.f);
 
@@ -332,7 +332,7 @@ HRESULT level_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * device
 
 #ifdef _DEBUG
     if (_DebugBrush == nullptr)
-        (void) deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), &_DebugBrush);
+        (void) deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), _DebugBrush.GetAddressOf());
 #endif
 
     return hr;

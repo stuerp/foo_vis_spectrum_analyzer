@@ -251,7 +251,7 @@ HRESULT color_button_t::CreatePatternBrush(ID2D1RenderTarget * renderTarget) noe
 
     ComPtr<ID2D1SolidColorBrush> Brush;
 
-    hr = rt->CreateSolidColorBrush(D2D1::ColorF(1.f, 1.f, 1.f, 1.f), Brush.GetAddressOf());
+    hr = rt->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::White), Brush.GetAddressOf());
 
     if (FAILED(hr))
         return hr;

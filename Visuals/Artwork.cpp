@@ -163,7 +163,7 @@ HRESULT artwork_t::GetColors(std::vector<D2D1_COLOR_F> & colors, uint32_t colorC
     {
         colors.clear();
 
-        colors.push_back(D2D1::ColorF(1.f, 0.f, 0.f));
+        colors.push_back(D2D1::ColorF(D2D1::ColorF::Red));
     }
 
     return hr;

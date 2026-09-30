@@ -1,10 +1,10 @@
 
-/** $VER: Gradients.cpp (2026.09.28) P. Stuer - Built-in gradients. **/
+/** $VER: Gradients.cpp (2026.09.30) P. Stuer - Built-in gradients. **/
 
 #include "pch.h"
 
-#include "Gradients.h"
-#include "Constants.h"
+#include "Gradient.h"
+#include "State.h"
 
 #include <map>
 
@@ -392,15 +392,15 @@ static const std::map<ColorScheme, const std::vector<D2D1_GRADIENT_STOP> *> Colo
     { ColorScheme::Magma,               &Magma },
     { ColorScheme::Cividis,             &Cividis },
 
-    // v0.13.0.0-alpha1
+    // v0.13.0.0-alpha1, Goniometer
     { ColorScheme::Gold,                &Gold },
     { ColorScheme::Triband,             &Triband },
 };
 
 /// <summary>
-/// Gets a gradient stop vector.
+/// Gets a built-in gradient stop vector.
 /// </summary>
-const std::vector<D2D1_GRADIENT_STOP> & Gradient::GetBuiltIn(ColorScheme colorScheme) noexcept
+const std::vector<D2D1_GRADIENT_STOP> & gradient_t::GetBuiltIn(ColorScheme colorScheme) noexcept
 {
     if (auto Iter = ColorMaps.find(colorScheme); Iter != ColorMaps.end())
         return *Iter->second;
@@ -409,9 +409,9 @@ const std::vector<D2D1_GRADIENT_STOP> & Gradient::GetBuiltIn(ColorScheme colorSc
 }
 
 /// <summary>
-/// Converts to a gradient_stop_t vector.
+/// Converts to a DirectX D2D1_GRADIENT_STOP vector to a gradient_stop_t vector.
 /// </summary>
-std::vector<gradient_stop_t> Gradient::ConvertFormat(const std::vector<D2D1_GRADIENT_STOP> & gssIn)
+std::vector<gradient_stop_t> gradient_t::ConvertFormat(const std::vector<D2D1_GRADIENT_STOP> & gssIn)
 {
     std::vector<gradient_stop_t> gssOut;
 
@@ -426,9 +426,9 @@ std::vector<gradient_stop_t> Gradient::ConvertFormat(const std::vector<D2D1_GRAD
 }
 
 /// <summary>
-/// Converts to a D2D1_GRADIENT_STOP vector.
+/// Converts to a gradient_stop_t vector to a DirectX D2D1_GRADIENT_STOP vector.
 /// </summary>
-std::vector<D2D1_GRADIENT_STOP> Gradient::ConvertFormat(const std::vector<gradient_stop_t> & gssIn)
+std::vector<D2D1_GRADIENT_STOP> gradient_t::ConvertFormat(const std::vector<gradient_stop_t> & gssIn)
 {
     std::vector<D2D1_GRADIENT_STOP> gssOut;
 
@@ -443,7 +443,7 @@ std::vector<D2D1_GRADIENT_STOP> Gradient::ConvertFormat(const std::vector<gradie
 }
 
 /// <summary>
-/// Converts to a gradient_stop_t vector.
+/// Converts a D2D1_COLOR_F vector to a gradient_stop_t vector.
 /// </summary>
 static std::vector<gradient_stop_t> ConvertFormat(const std::vector<D2D1_COLOR_F> & gssIn)
 {
@@ -457,4 +457,57 @@ static std::vector<gradient_stop_t> ConvertFormat(const std::vector<D2D1_COLOR_F
         gssOut[i++] = { { 0.f, gs }, GradientStopSource::Solid, 0 };
 
     return gssOut;
+}
+
+/// <summary>
+/// Sets the color of a gradient stop.
+/// </summary>
+void gradient_stop_t::SetColor(const state_t * state) noexcept
+{
+    if (StopSource == GradientStopSource::Solid)
+        return;
+
+    if (StopSource == GradientStopSource::DominantColor)
+    {
+        color = state->_ArtworkDominantColor;
+
+        return;
+    }
+
+    if (StopSource == GradientStopSource::Windows)
+    {
+        static const int ColorIndex[] =
+        {
+            COLOR_WINDOW,           // Window Background
+            COLOR_WINDOWTEXT,       // Window Text
+            COLOR_BTNFACE,          // Button Background
+            COLOR_BTNTEXT,          // Button Text
+            COLOR_HIGHLIGHT,        // Highlight Background
+            COLOR_HIGHLIGHTTEXT,    // Highlight Text
+            COLOR_GRAYTEXT,         // Gray Text
+            COLOR_HOTLIGHT,         // Hot Light
+        };
+
+        const auto Index = std::clamp(StopIndex, 0u, (uint32_t) _countof(ColorIndex) - 1);
+
+        color = D2D1::ColorF(::GetSysColor(ColorIndex[Index]));
+
+        return;
+    }
+
+    if (StopSource == GradientStopSource::UserInterface)
+    {
+        if (state->_UserInterfaceColors.empty())
+        {
+            color = D2D1_COLOR_F(D2D1::ColorF::Red);
+
+            return;
+        }
+
+        const auto Index = std::clamp(StopIndex, 0u, (uint32_t) state->_UserInterfaceColors.size() - 1);
+
+        color = state->_UserInterfaceColors[Index];
+
+        return;
+    }
 }

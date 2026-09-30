@@ -625,7 +625,7 @@ void spectrum_t::RenderDiagnostics(ID2D1DeviceContext * deviceContext) const noe
 
         r.top++;
 
-        _DebugBrush->SetColor(D2D1::ColorF(0.0f, 0.0f, 1.0f));
+        _DebugBrush->SetColor(D2D1::ColorF(D2D1::ColorF::Blue));
 
         deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
 
@@ -735,7 +735,7 @@ HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCon
 
 #ifdef _DEBUG
     if (_DebugBrush == nullptr)
-        (void) deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), &_DebugBrush);
+        (void) deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), _DebugBrush.GetAddressOf());
 #endif
 
     #pragma warning(disable: 4062)
@@ -747,7 +747,7 @@ HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCon
             {
                 _BarAreaStyle = *StyleManager.GetStyle(VisualElement::BarArea);
 
-                _BarAreaStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+                _BarAreaStyle.SetColor(_State);
 
                 hr = _BarAreaStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, L"", 1.f);
 
@@ -759,7 +759,7 @@ HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCon
             {
                 _BarTopStyle = *StyleManager.GetStyle(VisualElement::BarTop);
 
-                _BarTopStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+                _BarTopStyle.SetColor(_State);
 
                 hr = _BarTopStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, L"", 1.f);
 
@@ -771,7 +771,7 @@ HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCon
             {
                 _BarPeakAreaStyle = *StyleManager.GetStyle(VisualElement::BarPeakArea);
 
-                _BarPeakAreaStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+                _BarPeakAreaStyle.SetColor(_State);
 
                 hr = _BarPeakAreaStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, L"", 1.f);
 
@@ -783,7 +783,7 @@ HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCon
             {
                 _BarPeakTopStyle = *StyleManager.GetStyle(VisualElement::BarPeakTop);
 
-                _BarPeakTopStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+                _BarPeakTopStyle.SetColor(_State);
 
                 hr = _BarPeakTopStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, L"", 1.f);
 
@@ -795,7 +795,7 @@ HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCon
             {
                 _DarkBackgroundStyle = *StyleManager.GetStyle(VisualElement::BarDarkBackground);
 
-                _DarkBackgroundStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+                _DarkBackgroundStyle.SetColor(_State);
 
                 hr = _DarkBackgroundStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, L"", 1.f);
 
@@ -807,7 +807,7 @@ HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCon
             {
                 _LightBackgroundStyle = *StyleManager.GetStyle(VisualElement::BarLightBackground);
 
-                _LightBackgroundStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+                _LightBackgroundStyle.SetColor(_State);
 
                 hr = _LightBackgroundStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, L"", 1.f);
 
@@ -831,7 +831,7 @@ HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCon
             {
                 _CurveLineStyle = *StyleManager.GetStyle(VisualElement::CurveLine);
 
-                _CurveLineStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+                _CurveLineStyle.SetColor(_State);
 
                 hr = _CurveLineStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, L"", 1.f);
 
@@ -843,7 +843,7 @@ HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCon
             {
                 _CurveAreaStyle = *StyleManager.GetStyle(VisualElement::CurveArea);
 
-                _CurveAreaStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+                _CurveAreaStyle.SetColor(_State);
 
                 hr = _CurveAreaStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, L"", 1.f);
 
@@ -855,7 +855,7 @@ HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCon
             {
                 _CurvePeakLineStyle = *StyleManager.GetStyle(VisualElement::CurvePeakLine);
 
-                _CurvePeakLineStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+                _CurvePeakLineStyle.SetColor(_State);
 
                 hr = _CurvePeakLineStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, L"", 1.f);
 
@@ -867,7 +867,7 @@ HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCon
             {
                 _CurvePeakAreaStyle = *StyleManager.GetStyle(VisualElement::CurvePeakArea);
 
-                _CurvePeakAreaStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+                _CurvePeakAreaStyle.SetColor(_State);
 
                 hr = _CurvePeakAreaStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, L"", 1.f);
 
@@ -889,7 +889,7 @@ HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCon
             {
                 _BarAreaStyle = *StyleManager.GetStyle(VisualElement::BarArea);
 
-                _BarAreaStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+                _BarAreaStyle.SetColor(_State);
 
                 hr = _BarAreaStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, Center, Offset, rx, ry, _State->_InnerRadius);
 
@@ -901,7 +901,7 @@ HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCon
             {
                 _BarTopStyle = *StyleManager.GetStyle(VisualElement::BarTop);
 
-                _BarTopStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+                _BarTopStyle.SetColor(_State);
 
                 hr = _BarTopStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, Center, Offset, rx, ry, _State->_InnerRadius);
 
@@ -913,7 +913,7 @@ HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCon
             {
                 _BarPeakAreaStyle = *StyleManager.GetStyle(VisualElement::BarPeakArea);
 
-                _BarPeakAreaStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+                _BarPeakAreaStyle.SetColor(_State);
 
                 hr = _BarPeakAreaStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, Center, Offset, rx, ry, _State->_InnerRadius);
 
@@ -925,7 +925,7 @@ HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCon
             {
                 _BarPeakTopStyle = *StyleManager.GetStyle(VisualElement::BarPeakTop);
 
-                _BarPeakTopStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+                _BarPeakTopStyle.SetColor(_State);
 
                 hr = _BarPeakTopStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, Center, Offset, rx, ry, _State->_InnerRadius);
 
@@ -948,7 +948,7 @@ HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCon
             {
                 _CurveLineStyle = *StyleManager.GetStyle(VisualElement::CurveLine);
 
-                _CurveLineStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+                _CurveLineStyle.SetColor(_State);
 
                 hr = _CurveLineStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, Center, Offset, rx, ry, _State->_InnerRadius);
 
@@ -960,7 +960,7 @@ HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCon
             {
                 _CurveAreaStyle = *StyleManager.GetStyle(VisualElement::CurveArea);
 
-                _CurveAreaStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+                _CurveAreaStyle.SetColor(_State);
 
                 hr = _CurveAreaStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, Center, Offset, rx, ry, _State->_InnerRadius);
 
@@ -972,7 +972,7 @@ HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCon
             {
                 _CurvePeakLineStyle = *StyleManager.GetStyle(VisualElement::CurvePeakLine);
 
-                _CurvePeakLineStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+                _CurvePeakLineStyle.SetColor(_State);
 
                 hr = _CurvePeakLineStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, Center, Offset, rx, ry, _State->_InnerRadius);
 
@@ -984,7 +984,7 @@ HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCon
             {
                 _CurvePeakAreaStyle = *StyleManager.GetStyle(VisualElement::CurvePeakArea);
 
-                _CurvePeakAreaStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+                _CurvePeakAreaStyle.SetColor(_State);
 
                 hr = _CurvePeakAreaStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, Center, Offset, rx, ry, _State->_InnerRadius);
 
@@ -1000,7 +1000,7 @@ HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCon
     {
         _NyquistMarkerStyle = *StyleManager.GetStyle(VisualElement::NyquistMarker);
 
-        _NyquistMarkerStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+        _NyquistMarkerStyle.SetColor(_State);
 
         hr = _NyquistMarkerStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, L"", 1.f);
     }
@@ -1009,7 +1009,7 @@ HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCon
     {
         _WindowFunctionStyle = *StyleManager.GetStyle(VisualElement::WindowFunction);
 
-        _WindowFunctionStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+        _WindowFunctionStyle.SetColor(_State);
 
         hr = _WindowFunctionStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, L"", 1.f);
 
@@ -1021,7 +1021,7 @@ HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCon
     {
         _WeighingFunctionStyle = *StyleManager.GetStyle(VisualElement::WeighingFunction);
 
-        _WeighingFunctionStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+        _WeighingFunctionStyle.SetColor(_State);
 
         hr = _WeighingFunctionStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, L"", 1.f);
 

@@ -316,7 +316,7 @@ HRESULT goniometer_t::CreateSizeDependentResources(ID2D1DeviceContext * deviceCo
     {
         _SignalStyle = *_State->_StyleManager.GetStyle(VisualElement::SignalLine);
 
-        _SignalStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+        _SignalStyle.SetColor(_State);
 
         hr = _SignalStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", _HalfSide);
 
@@ -354,7 +354,7 @@ HRESULT goniometer_t::CreateSizeDependentResources(ID2D1DeviceContext * deviceCo
     {
         _StaticLinesStyle = *_State->_StyleManager.GetStyle(VisualElement::StaticLines);
 
-        _StaticLinesStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+        _StaticLinesStyle.SetColor(_State);
 
         // The font style is created prescaled to counter the Scale transform in the command list.
         hr = _StaticLinesStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
@@ -367,7 +367,7 @@ HRESULT goniometer_t::CreateSizeDependentResources(ID2D1DeviceContext * deviceCo
     {
         _StaticTextStyle = *_State->_StyleManager.GetStyle(VisualElement::StaticText);
 
-        _StaticTextStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+        _StaticTextStyle.SetColor(_State);
 
         // Create a temporary non-scaled version of the font.
         {

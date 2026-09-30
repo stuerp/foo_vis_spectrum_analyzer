@@ -14,7 +14,7 @@
 
 using Microsoft::WRL::ComPtr;
 
-#include "Gradients.h"
+#include "Gradient.h"
 #include <Win32Exception.h>
 
 class Direct2DFactory

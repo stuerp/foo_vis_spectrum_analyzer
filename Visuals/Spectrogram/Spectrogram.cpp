@@ -930,7 +930,7 @@ HRESULT spectrogram_t::CreateDeviceSpecificResources(ID2D1DeviceContext * device
     {
         _SpectrogramStyle = *_State->_StyleManager.GetStyle(VisualElement::Spectrogram);
 
-        _SpectrogramStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+        _SpectrogramStyle.SetColor(_State);
 
         hr = _SpectrogramStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
 
@@ -942,7 +942,7 @@ HRESULT spectrogram_t::CreateDeviceSpecificResources(ID2D1DeviceContext * device
     {
         _GradientStyle = *_State->_StyleManager.GetStyle(VisualElement::Spectrogram);
 
-        _GradientStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+        _GradientStyle.SetColor(_State);
 
         // Remove these features.
         if (_State->_IsHorizontalSpectrogram)
@@ -967,7 +967,7 @@ HRESULT spectrogram_t::CreateDeviceSpecificResources(ID2D1DeviceContext * device
     {
         _TimeLineStyle = *_State->_StyleManager.GetStyle(VisualElement::VerticalGridLine);
 
-        _TimeLineStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+        _TimeLineStyle.SetColor(_State);
 
         hr = _TimeLineStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
 
@@ -979,7 +979,7 @@ HRESULT spectrogram_t::CreateDeviceSpecificResources(ID2D1DeviceContext * device
     {
         _TimeTextStyle = *_State->_StyleManager.GetStyle(VisualElement::XAxisText);
 
-        _TimeTextStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+        _TimeTextStyle.SetColor(_State);
 
         hr = _TimeTextStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"00:00", 1.f);
 
@@ -991,7 +991,7 @@ HRESULT spectrogram_t::CreateDeviceSpecificResources(ID2D1DeviceContext * device
     {
         _FreqLineStyle = *_State->_StyleManager.GetStyle(VisualElement::HorizontalGridLine);
 
-        _FreqLineStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+        _FreqLineStyle.SetColor(_State);
 
         hr = _FreqLineStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
 
@@ -1003,7 +1003,7 @@ HRESULT spectrogram_t::CreateDeviceSpecificResources(ID2D1DeviceContext * device
     {
         _FreqTextStyle = *_State->_StyleManager.GetStyle(VisualElement::YAxisText);
 
-        _FreqTextStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+        _FreqTextStyle.SetColor(_State);
 
         hr = _FreqTextStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"99.9fk", 1.f);
 
@@ -1015,7 +1015,7 @@ HRESULT spectrogram_t::CreateDeviceSpecificResources(ID2D1DeviceContext * device
     {
         _NyquistMarkerStyle = *_State->_StyleManager.GetStyle(VisualElement::NyquistMarker);
 
-        _NyquistMarkerStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+        _NyquistMarkerStyle.SetColor(_State);
 
         hr = _NyquistMarkerStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
 
@@ -1025,7 +1025,7 @@ HRESULT spectrogram_t::CreateDeviceSpecificResources(ID2D1DeviceContext * device
 
 #ifdef _DEBUG
     if (_DebugBrush == nullptr)
-        (void) deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Green), &_DebugBrush);
+        (void) deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Green), _DebugBrush.GetAddressOf());
 #endif
 
     Resize();

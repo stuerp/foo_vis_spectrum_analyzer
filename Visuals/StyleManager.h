@@ -6,7 +6,7 @@
 #include "pch.h"
 
 #include "Style.h"
-#include "Gradients.h"
+#include "Gradient.h"
 
 #pragma warning(disable: 4868) // compiler may not enforce left-to-right evaluation order in braced initializer list
 
@@ -50,9 +50,9 @@ private:
     static json ToJSON(const gradient_stop_t & gradientStop) noexcept;
     static json ToJSON(const D2D1_COLOR_F & color) noexcept;
 
-    static std::vector<gradient_stop_t>    FromJSONGradientStops(const json::array_t & array) noexcept;
-    static gradient_stop_t                 FromJSONGradientStop(const json & object) noexcept;
-    static D2D1_COLOR_F                    FromJSONColor(const json & object) noexcept;
+    static std::vector<gradient_stop_t>FromJSONGradientStops(const json::array_t & array) noexcept;
+    static gradient_stop_t             FromJSONGradientStop(const json & object) noexcept;
+    static D2D1_COLOR_F                FromJSONColor(const json & object) noexcept;
 
 private:
     std::unordered_map<VisualElement, style_t> _Styles;
