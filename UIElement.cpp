@@ -261,7 +261,7 @@ void uielement_t::OnContextMenu(CWindow wnd, CPoint position) noexcept
             if (msc::InRange(CommandId, (int) IDM_REFRESH_RATE_LIMIT, (int) IDM_REFRESH_RATE_LIMIT + 999))
             {
                 _UIState    ._RefreshRateLimit =
-                _RenderState._RefreshRateLimit = RefreshRates[CommandId - IDM_REFRESH_RATE_LIMIT]; // Near-atomic
+                _RenderState._RefreshRateLimit = (int32_t) RefreshRates[CommandId - IDM_REFRESH_RATE_LIMIT]; // Near-atomic
             }
             else
             if (CommandId >= IDM_PRESET_NAME)
