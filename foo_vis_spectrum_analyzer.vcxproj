@@ -264,6 +264,7 @@
     <ClInclude Include="Visuals\Tester\Tester.h" />
     <ClInclude Include="Visuals\Visualization.h" />
     <ClInclude Include="Windows\Direct3D.h" />
+    <ClInclude Include="Windows\DirectXFactory.h" />
     <ClInclude Include="Windows\DXGI.h" />
     <ClInclude Include="Windows\Event.h" />
     <ClInclude Include="Configuration\ColorButton.h" />
@@ -292,7 +293,6 @@
     <ClInclude Include="Analyzers\FrequencyBand.h" />
     <ClInclude Include="Log.h" />
     <ClInclude Include="Windows\Raster.h" />
-    <ClInclude Include="Windows\Module.h" />
     <ClInclude Include="Visuals\Spectrum\BezierSpline.h" />
     <ClInclude Include="Visuals\FrameCounter.h" />
     <ClInclude Include="Visuals\Gradient.h" />

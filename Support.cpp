@@ -1,5 +1,5 @@
 
-/** $VER: Support.cpp (2026.09.26) P. Stuer **/
+/** $VER: Support.cpp (2026.09.30) P. Stuer **/
 
 #include "pch.h"
 
@@ -37,6 +37,7 @@ HRESULT GetDPI(HWND hWnd, UINT & dpi) noexcept
 
     typedef UINT (WINAPI * GetDpiForWindow_t)(HWND hwnd);
 
+    #pragma warning(disable: 4191) // 'type cast': unsafe conversion from 'FARPROC' to 'GetDPI::GetDpiForWindow_t'
     const auto GetDpiForWindow_ = (GetDpiForWindow_t) Module.GetFunctionAddress("GetDpiForWindow"); // Windows 10 or higher
 
     if (GetDpiForWindow_ != nullptr)

@@ -1,5 +1,5 @@
 
-/** $VER: WIC.h (2026.09.26) P. Stuer **/
+/** $VER: WIC.h (2026.09.30) P. Stuer **/
 
 #pragma once
 
@@ -10,14 +10,45 @@
 #include <SDKDDKVer.h>
 #include <wincodec.h>
 
-#include <string>
+#include <wrl/client.h>
+
+using Microsoft::WRL::ComPtr;
 
 #include <Win32Exception.h>
 
+#include "DirectXFactory.h"
+
+class WICFactory final : public DirectXFactory<WICFactory, IWICImagingFactory3>
+{
+    friend class DirectXFactory<WICFactory, IWICImagingFactory3>;
+
+public:
+    WICFactory(const WICFactory &) = delete;
+    WICFactory & operator=(const WICFactory &) = delete;
+
+private:
+    WICFactory() = default;
+    ~WICFactory() = default;
+
+    void CreateFactory()
+    {
+        ComPtr<IWICImagingFactory3> Factory;
+
+        {
+            HRESULT hr = ::CoCreateInstance(CLSID_WICImagingFactory, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(Factory.ReleaseAndGetAddressOf()));
+
+            if (FAILED(hr))
+                throw msc::win32_exception("Unable to create WIC factory.", (DWORD) hr);
+        }
+
+        _Factory = std::move(Factory);
+    }
+};
+/*
 class WICFactory
 {
 public:
-    WICFactory(const WICFactory & ) = delete;
+    WICFactory(const WICFactory &) = delete;
     WICFactory & operator=(const WICFactory &) = delete;
 
     [[nodiscard]]
@@ -50,6 +81,8 @@ private:
 private:
     ComPtr<IWICImagingFactory3> _Factory;
 };
+*/
+#include <string>
 
 class WIC
 {

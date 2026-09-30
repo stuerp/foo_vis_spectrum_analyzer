@@ -14,28 +14,82 @@
 
 using Microsoft::WRL::ComPtr;
 
-#include "Gradient.h"
 #include <Win32Exception.h>
 
-class Direct2DFactory
+#include "DirectXFactory.h"
+
+class Direct2DFactory final : public DirectXFactory<Direct2DFactory, ID2D1Factory1>
+{
+    friend class DirectXFactory<Direct2DFactory, ID2D1Factory1>;
+
+public:
+    Direct2DFactory(const Direct2DFactory &) = delete;
+    Direct2DFactory & operator=(const Direct2DFactory &) = delete;
+
+private:
+    Direct2DFactory() = default;
+    ~Direct2DFactory() = default;
+
+    void CreateFactory()
+    {
+        ComPtr<ID2D1Factory1> Factory;
+
+        {
+            #ifdef _DEBUG
+                constexpr D2D1_FACTORY_OPTIONS Options = { D2D1_DEBUG_LEVEL_INFORMATION };
+            #else
+                constexpr D2D1_FACTORY_OPTIONS Options = { D2D1_DEBUG_LEVEL_NONE };
+            #endif
+
+            const HRESULT hr = ::D2D1CreateFactory(D2D1_FACTORY_TYPE_MULTI_THREADED, Options, Factory.ReleaseAndGetAddressOf());
+
+            if (FAILED(hr))
+                throw msc::win32_exception("Unable to create Direct2D factory.", static_cast<DWORD>(hr));
+        }
+
+        _Factory = std::move(Factory);
+    }
+};
+/*
+class Direct2DFactory final
 {
 public:
-    Direct2DFactory(const Direct2DFactory & ) = delete;
+    Direct2DFactory(const Direct2DFactory &) = delete;
     Direct2DFactory & operator=(const Direct2DFactory &) = delete;
 
     [[nodiscard]]
-    static ID2D1Factory1 * Get()
+    static ComPtr<ID2D1Factory1> Get()
     {
-        return Instance()._Factory.Get();
+        auto & Instance = GetInstance();
+
+        std::scoped_lock Lock(Instance._Mutex);
+
+        if (Instance._Factory == nullptr)
+            Instance.CreateFactory();
+
+        return Instance._Factory; // Calls AddRef()
     }
 
     static void Shutdown()
     {
-        Instance()._Factory.Reset();
+        auto & Instance = GetInstance();
+
+        std::scoped_lock Lock(Instance._Mutex);
+
+        Instance._Factory.Reset();
     }
 
 private:
-    Direct2DFactory()
+    Direct2DFactory() = default;
+
+    static Direct2DFactory & GetInstance()
+    {
+        static Direct2DFactory Instance;
+
+        return Instance;
+    }
+
+    void CreateFactory()
     {
         #ifdef _DEBUG
             constexpr D2D1_FACTORY_OPTIONS Options = { D2D1_DEBUG_LEVEL_INFORMATION };
@@ -43,23 +97,21 @@ private:
             constexpr D2D1_FACTORY_OPTIONS Options = { D2D1_DEBUG_LEVEL_NONE };
         #endif
 
-        HRESULT hr = ::D2D1CreateFactory(D2D1_FACTORY_TYPE_MULTI_THREADED, Options, _Factory.ReleaseAndGetAddressOf());
+        ComPtr<ID2D1Factory1> Factory;
+
+        const HRESULT hr = ::D2D1CreateFactory(D2D1_FACTORY_TYPE_MULTI_THREADED, Options, Factory.ReleaseAndGetAddressOf());
 
         if (FAILED(hr))
-            throw msc::win32_exception("Unable to create Direct2D factory.", (DWORD) hr);
-    }
+            throw msc::win32_exception("Unable to create Direct2D factory.", static_cast<DWORD>(hr));
 
-    static Direct2DFactory & Instance()
-    {
-        static Direct2DFactory Instance;
-
-        return Instance;
+        _Factory = std::move(Factory);
     }
 
 private:
     ComPtr<ID2D1Factory1> _Factory;
+    std::mutex _Mutex;
 };
-
+*/
 class Direct2D
 {
 public:

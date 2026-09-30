@@ -1,5 +1,5 @@
 
-/** $VER: DXGI.h (2026.09.26) P. Stuer **/
+/** $VER: DXGI.h (2026.09.30) P. Stuer **/
 
 #pragma once
 
@@ -16,6 +16,41 @@ using Microsoft::WRL::ComPtr;
 
 #include <Win32Exception.h>
 
+#include "DirectXFactory.h"
+
+class DXGIFactory final : public DirectXFactory<DXGIFactory, IDXGIFactory7>
+{
+    friend class DirectXFactory<DXGIFactory, IDXGIFactory7>;
+
+public:
+    DXGIFactory(const DXGIFactory &) = delete;
+    DXGIFactory & operator=(const DXGIFactory &) = delete;
+
+private:
+    DXGIFactory() = default;
+    ~DXGIFactory() = default;
+
+    void CreateFactory()
+    {
+        ComPtr<IDXGIFactory7> Factory;
+
+        {
+            #ifdef _DEBUG
+                constexpr UINT Flags = DXGI_CREATE_FACTORY_DEBUG;
+            #else
+                constexpr UINT Flags = 0;
+            #endif
+
+            HRESULT hr = ::CreateDXGIFactory2(Flags, IID_PPV_ARGS(Factory.ReleaseAndGetAddressOf()));
+
+            if (FAILED(hr))
+                throw msc::win32_exception("Unable to create DXGI factory.", (DWORD) hr);
+        }
+
+        _Factory = std::move(Factory);
+    }
+};
+/*
 class DXGIFactory
 {
 public:
@@ -58,3 +93,4 @@ private:
 private:
     ComPtr<IDXGIFactory7> _Factory;
 };
+*/

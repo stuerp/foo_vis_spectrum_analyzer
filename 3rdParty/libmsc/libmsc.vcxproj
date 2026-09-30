@@ -61,6 +61,7 @@
     <ClInclude Include="include\Exception.h" />
     <ClInclude Include="include\ghc\filesystem.hpp" />
     <ClInclude Include="include\libmsc.h" />
+    <ClInclude Include="include\Module.h" />
     <ClInclude Include="include\NLS.h" />
     <ClInclude Include="include\RAII.h" />
     <ClInclude Include="include\Stream.h" />

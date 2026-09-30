@@ -1,6 +1,16 @@
 
 # foo_vis_spectrum_analyzer History
 
+v0.13.0.0-alpha2, 2026-09-30
+
+- New: Compiled with foobar2000 SDK 2026-09-17.
+- New: Gradient stops can have color source `Solid`, `Dominant Color`, `Windows` and `User Interface`. [Forum Request](https://hydrogenaudio.org/index.php/topic,125031.msg1087413.html#msg1087413)
+- Changed: `Decay Factor` is now `Afterglow`, expressed in ms, and independent of the refresh rate. Use values between 80 and 150 ms to imitate the afterglow of an analog oscilloscope.
+- Improved: Optimized the render path of the oscilloscope and goniometer.
+- Improved: The file path of the fixed artwork path can contain Windows environment variables.
+- Improved: Curve visualization is 4 times faster.
+- Fixed: Controls on the Graphs page were not always enabled or disabled correctly when the visualization changed.
+
 v0.13.0.0-alpha1, 2026-09-22
 
 - New: Goniometer with a 1st order or 4-th order Linkwitz-Riley crossover filter.
