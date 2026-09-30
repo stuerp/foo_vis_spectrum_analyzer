@@ -1,5 +1,5 @@
 
-/** $VER: RingBuffer.h (2024.03.09) P. Stuer **/
+/** $VER: RingBuffer.h (2026.09.30) P. Stuer **/
 
 #pragma once
 
@@ -10,52 +10,130 @@
 #include <SDKDDKVer.h>
 #include <Windows.h>
 
+#include <array>
+#include <type_traits>
+#include <utility>
+
 #pragma once
 
-template<typename T, size_t size>
+template<typename T, size_t capacity>
 class ring_buffer_t
 {
+    static_assert(capacity > 0, "Capacity must be greater than zero.");
+
 public:
-    ring_buffer_t() : _Curr(0), _Count(0), _Items() { }
+    constexpr ring_buffer_t() noexcept(std::is_nothrow_default_constructible_v<T>) = default;
 
-    T operator [](size_t index) const
+    [[nodiscard]]
+    constexpr const T & operator[](const size_t index) const noexcept
     {
-        return _Items[(_Curr + index) % size];
+        assert(index < _Count);
+        return _Items[Wrap(_First + index)];
     }
 
-    void Add(T item)
+    [[nodiscard]]
+    constexpr T & operator[](const size_t index) noexcept
     {
-        _Items[(_Curr + _Count) % size] = item;
-
-        if (_Count < size)
-            _Count++;
-        else
-            _Curr = (_Curr + 1) % size;
+        assert(index < _Count);
+        return _Items[Wrap(_First + index)];
     }
 
-    T First() const
+    constexpr void Add(const T & item) noexcept(std::is_nothrow_copy_assignable_v<T>)
     {
-        return _Items[_Curr];
+        AddImpl(item);
     }
 
-    T Last() const
+    constexpr void Add(T && item) noexcept(std::is_nothrow_move_assignable_v<T>)
     {
-        return _Items[(_Curr + (_Count - 1)) % size];
+        AddImpl(std::move(item));
     }
 
-    size_t Count() const
+    [[nodiscard]]
+    constexpr const T & First() const noexcept
+    {
+        assert(_Count != 0);
+
+        return _Items[_First];
+    }
+
+    [[nodiscard]]
+    constexpr T & First() noexcept
+    {
+        assert(_Count != 0);
+
+        return _Items[_First];
+    }
+
+    [[nodiscard]]
+    constexpr const T & Last() const noexcept
+    {
+        assert(_Count != 0);
+
+        return _Items[Wrap(_First + _Count - 1)];
+    }
+
+    [[nodiscard]]
+    constexpr T & Last() noexcept
+    {
+        assert(_Count != 0);
+
+        return _Items[Wrap(_First + _Count - 1)];
+    }
+
+    [[nodiscard]]
+    constexpr size_t Count() const noexcept
     {
         return _Count;
     }
 
-    void Reset()
+    [[nodiscard]]
+    static constexpr size_t Capacity() noexcept
     {
-        _Curr = 0;
+        return capacity;
+    }
+
+    [[nodiscard]]
+    constexpr bool IsEmpty() const noexcept
+    {
+        return (_Count == 0);
+    }
+
+    [[nodiscard]]
+    constexpr bool IsFull() const noexcept
+    {
+        return (_Count == capacity);
+    }
+
+    constexpr void Reset() noexcept
+    {
+        _First = 0;
         _Count = 0;
     }
 
 private:
-    size_t _Curr;
-    size_t _Count;
-    T _Items[size];
+    [[nodiscard]]
+    static constexpr size_t Wrap(const size_t index) noexcept
+    {
+        return index < capacity ? index : index - capacity;
+    }
+
+    template<typename U>
+    constexpr void AddImpl(U && item) noexcept(std::is_nothrow_assignable_v<T &, U &&>)
+    {
+        if (_Count < capacity)
+        {
+            _Items[Wrap(_First + _Count)] = std::forward<U>(item);
+            ++_Count;
+        }
+        else
+        {
+            _Items[_First] = std::forward<U>(item);
+            _First = Wrap(_First + 1);
+        }
+    }
+
+private:
+    size_t _First = 0;
+    size_t _Count = 0;
+    std::array<T, capacity> _Items{};
 };
