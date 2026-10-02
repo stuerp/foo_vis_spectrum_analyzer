@@ -235,7 +235,7 @@ HRESULT style_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContex
     // Create the DirectX text format.
     if (Has(style_t::Features::SupportsFont) && (_TextFormat == nullptr) && !_FontName.empty())
     {
-        const FLOAT FontSize = ToDIPs(_FontSize) / scaleFactor; // In DIPs
+        const FLOAT FontSize = PointsToDIPs(_FontSize) / scaleFactor; // In DIPs
 
         hr = DirectWrite::CreateTextFormat(_FontName, FontSize, DWRITE_TEXT_ALIGNMENT_CENTER, DWRITE_PARAGRAPH_ALIGNMENT_CENTER, _TextFormat.GetAddressOf());
 

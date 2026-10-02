@@ -9,9 +9,6 @@
 
 #include <SDKDDKVer.h>
 #include <Windows.h>
-#include <atlbase.h>
-
-#include "WIC.h"
 
 /// <summary>
 /// Represents a bitmap image.

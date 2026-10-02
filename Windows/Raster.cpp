@@ -5,6 +5,8 @@
 
 #include "Raster.h"
 
+#include "WIC.h"
+
 #pragma hdrstop
 
 /// <summary>

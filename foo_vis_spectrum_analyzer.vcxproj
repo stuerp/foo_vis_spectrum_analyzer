@@ -265,7 +265,6 @@
     <ClInclude Include="Visuals\Tester\Tester.h" />
     <ClInclude Include="Visuals\Visualization.h" />
     <ClInclude Include="Windows\Direct3D.h" />
-    <ClInclude Include="Windows\DirectXFactory.h" />
     <ClInclude Include="Windows\DXGI.h" />
     <ClInclude Include="Windows\Event.h" />
     <ClInclude Include="Configuration\ColorButton.h" />

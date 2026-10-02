@@ -28,6 +28,7 @@ public:
     constexpr const T & operator[](const size_t index) const noexcept
     {
         assert(index < _Count);
+
         return _Items[Wrap(_First + index)];
     }
 
@@ -35,17 +36,18 @@ public:
     constexpr T & operator[](const size_t index) noexcept
     {
         assert(index < _Count);
+
         return _Items[Wrap(_First + index)];
     }
 
     constexpr void Add(const T & item) noexcept(std::is_nothrow_copy_assignable_v<T>)
     {
-        AddImpl(item);
+        AddInternal(item);
     }
 
     constexpr void Add(T && item) noexcept(std::is_nothrow_move_assignable_v<T>)
     {
-        AddImpl(std::move(item));
+        AddInternal(std::move(item));
     }
 
     [[nodiscard]]
@@ -114,11 +116,11 @@ private:
     [[nodiscard]]
     static constexpr size_t Wrap(const size_t index) noexcept
     {
-        return index < capacity ? index : index - capacity;
+        return (index < capacity) ? index : (index - capacity);
     }
 
     template<typename U>
-    constexpr void AddImpl(U && item) noexcept(std::is_nothrow_assignable_v<T &, U &&>)
+    constexpr void AddInternal(U && item) noexcept(std::is_nothrow_assignable_v<T &, U &&>)
     {
         if (_Count < capacity)
         {
@@ -133,7 +135,8 @@ private:
     }
 
 private:
-    size_t _First = 0;
-    size_t _Count = 0;
-    std::array<T, capacity> _Items{};
+    std::array<T, capacity> _Items {};
+
+    size_t _First { };
+    size_t _Count { };
 };

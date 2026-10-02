@@ -19,10 +19,11 @@ using namespace foobar2000_io;
 class memory_stream_t : public file
 {
 public:
-    memory_stream_t(const void * data, t_size size) : _Data((const uint8_t *) data), _Size(size), _Position() { }
+    memory_stream_t(const void * data, t_size size) noexcept : _Data((const uint8_t *) data), _Size(size) { }
 
     memory_stream_t(const memory_stream_t &) = delete;
     memory_stream_t & operator=(const memory_stream_t &) = delete;
+
     memory_stream_t(memory_stream_t &&) = delete;
     memory_stream_t & operator=(memory_stream_t &&) = delete;
 
@@ -32,16 +33,18 @@ public:
 
     t_size read(void * data, t_size size, abort_callback & abortHandler) override final
     {
-        t_size Delta = std::min(size, (t_size) (_Size - _Position));
+        abortHandler.check();
 
-        if (Delta > 0)
+        const t_size BytesToRead = std::min(size, (t_size) (_Size - _Position));
+
+        if (BytesToRead > 0)
         {
-            std::memcpy(data, _Data + _Position, Delta);
+            std::memcpy(data, _Data + _Position, BytesToRead);
 
-            _Position += Delta;
+            _Position += BytesToRead;
         }
 
-        return Delta;
+        return BytesToRead;
     }
 
     #pragma endregion
@@ -72,8 +75,10 @@ public:
         throw exception_io_denied_readonly();
     }
 
-    void seek(t_filesize offset, abort_callback &) override final
+    void seek(t_filesize offset, abort_callback & abortHandler) override final
     {
+        abortHandler.check();
+
         if (offset > _Size)
             throw exception_io_seek_out_of_range();
 
@@ -92,8 +97,10 @@ public:
         return true;
     }
 
-    void reopen(abort_callback &) override final
+    void reopen(abort_callback & abortHandler) override final
     {
+        abortHandler.check();
+
         _Position = 0;
     }
 
@@ -105,7 +112,7 @@ public:
     #pragma endregion
 
 private:
-    const uint8_t * _Data;
-    t_filesize _Size;
-    t_filesize _Position;
+    const uint8_t * _Data { };
+    t_filesize _Size { };
+    t_filesize _Position { };
 };

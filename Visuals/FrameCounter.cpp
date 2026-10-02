@@ -83,7 +83,7 @@ HRESULT frame_counter_t::CreateDeviceIndependentResources() noexcept
     if (_TextFormat != nullptr)
         return S_OK;
 
-    const FLOAT FontSize = ToDIPs(_FontSize); // In DIPs
+    const FLOAT FontSize = PointsToDIPs(_FontSize); // In DIPs
 
     HRESULT hr = DirectWriteFactory::Get()->CreateTextFormat(_FontFamilyName.c_str(), NULL, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, FontSize, L"", _TextFormat.GetAddressOf());
 

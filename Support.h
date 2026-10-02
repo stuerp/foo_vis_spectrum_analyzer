@@ -1,5 +1,5 @@
 
-/** $VER: Support.h (2026.09.06) P. Stuer **/
+/** $VER: Support.h (2026.10.02) P. Stuer **/
 
 #pragma once
 
@@ -9,13 +9,13 @@
 #include <cmath>
 
 HRESULT InitializeDpiAwareness() noexcept;
-HRESULT GetDPI(HWND hWnd, _Out_ UINT & dpi) noexcept;
+HRESULT GetDPI(HWND hWnd, UINT & dpi) noexcept;
 HRESULT EvaluateTitleFormatScript(const std::wstring & script, pfc::string & result) noexcept;
 
 /// <summary>
 /// Converts magnitude to decibel (dB).
 /// </summary>
-inline static double ToDecibel(const double magnitude) noexcept
+[[nodiscard]] inline double ToDecibel(const double magnitude) noexcept
 {
     return 20. * std::log10(magnitude);
 }
@@ -23,23 +23,29 @@ inline static double ToDecibel(const double magnitude) noexcept
 /// <summary>
 /// Converts decibel (dB) to magnitude.
 /// </summary>
-inline static double ToMagnitude(const double dB) noexcept
+[[nodiscard]] inline double ToMagnitude(const double dB) noexcept
 {
     return std::pow(10., dB / 20.);
 }
 
 /// <summary>
-/// Converts points to DIPs (Device Independent Pixels).
+/// Converts typographic points to DIPs (Device Independent Pixels).
 /// </summary>
-inline static FLOAT ToDIPs(const FLOAT points) noexcept
+/// <remarks>
+/// One point is 1/72 of an inch and one DIP is 1/96 of a logical inch.
+/// </remarks>
+[[nodiscard]] inline constexpr FLOAT PointsToDIPs(const FLOAT points) noexcept
 {
-    return (points / 72.f) * (FLOAT) USER_DEFAULT_SCREEN_DPI; // FIXME: Should 96.0 change on high DPI screens?
+    constexpr FLOAT DIPSPerInch = 96.0f;
+    constexpr FLOAT PointsPerInch = 72.0f;
+
+    return points * DIPSPerInch / PointsPerInch;
 }
 
 /// <summary>
 /// Converts the specified value from degrees to radians.
 /// </summary>
-inline double Degrees2Radians(double degrees) noexcept
+[[nodiscard]] inline constexpr double DegreesToRadians(double degrees) noexcept
 {
-    return (degrees * 2. * std::numbers::pi) / 360.;
+    return degrees * std::numbers::pi / 180.0;
 }

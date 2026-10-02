@@ -771,7 +771,7 @@ void uielement_t::RenderDebug() noexcept
 
     ComPtr<IDWriteTextFormat> TextFormat;
 
-    const FLOAT FontSize = ToDIPs(12.f); // In DIPs
+    const FLOAT FontSize = PointsToDIPs(12.f); // In DIPs
 
     HRESULT hr = DirectWrite::CreateTextFormat(L"Segoe UI", FontSize, DWRITE_TEXT_ALIGNMENT_TRAILING, DWRITE_PARAGRAPH_ALIGNMENT_NEAR, TextFormat.GetAddressOf());
 
