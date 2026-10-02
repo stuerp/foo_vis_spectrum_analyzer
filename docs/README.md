@@ -928,11 +928,13 @@ Displays artwork on the graph background. By default the front cover of the play
 
 Determines how over- and undersized artwork is rendered.
 
-- Free: The artwork will not be scaled.
-- Fit big: Artwork that is bigger than the available area will be proportionally scaled.
-- Fit width: The width of the artwork is scaled to fit in the available area.
-- Fit height: The height of the artwork is scaled to fit in the available area.
-- Fill: The width or height of artwork is scaled to fit the available area.
+| Name | Description |
+| --- | --- |
+| Free | The artwork will not be scaled. |
+| Fit big | Artwork that is bigger than the available area will be proportionally scaled. |
+| Fit width | The width of the artwork is scaled to fit in the available area. |
+| Fit height | The height of the artwork is scaled to fit in the available area. |
+| Fill | The artwork is scaled to fill the available area. |
 
 `Fit window`
 
@@ -1168,8 +1170,8 @@ The position of the color in the gradient is expressed as a percentage of the le
 
 Press the ''Spread'' button to evenly spread the colors in the list over the gradient. This updates the position of the colors as required.
 
-        { IDC_GRADIENT_STOP_SOURCE, "Determines the source of the selected gradient stop color." },
-        { IDC_GRADIENT_STOP_INDEX, "Selects the specific Windows, DUI or CUI color to use for the selected gradient stop color." },
+        { IDC_GRADIENT_COLOR_SOURCE, "Determines the source of the selected gradient stop color." },
+        { IDC_GRADIENT_COLOR_INDEX, "Selects the specific Windows, DUI or CUI color to use for the selected gradient stop color." },
 
 `Horizontal gradient`
 

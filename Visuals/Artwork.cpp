@@ -1,5 +1,5 @@
 
-/** $VER: Artwork.cpp (2026.09.26) P. Stuer **/
+/** $VER: Artwork.cpp (2026.10.01) P. Stuer **/
 
 #include "pch.h"
 
@@ -252,32 +252,35 @@ void artwork_t::Render(ID2D1DeviceContext * deviceContext, const D2D1_RECT_F & r
 /// <summary>
 /// Adjusts the bitmap destination rectangle depending on the selected fit mode.
 /// </summary>
+/*
 void artwork_t::AdjustRect(const FitMode fitMode, FLOAT & scalar, D2D1_RECT_F & rect) const noexcept
 {
+    scalar = 1.f;
+
     D2D1_SIZE_F Size = _Bitmap->GetSize();
 
     if ((Size.width == 0) || (Size.height == 0))
         return;
 
-    const FLOAT MaxWidth  = rect.right  - rect.left;
-    const FLOAT MaxHeight = rect.bottom - rect.top;
+    const FLOAT AreaWidth  = rect.right  - rect.left;
+    const FLOAT AreaHeight = rect.bottom - rect.top;
 
     FLOAT WScalar = 1.f, HScalar = 1.f;
 
-    if (fitMode != FitMode::Fill)
+    if (msc::InRange(fitMode, FitMode::Free, FitMode::FitHeight))
     {
         if ((fitMode == FitMode::FitWidth) || (fitMode == FitMode::FitBig))
-            WScalar = (Size.width  > MaxWidth)  ? MaxWidth  / Size.width  : 1.f;
+            WScalar = (Size.width  > AreaWidth)  ? AreaWidth  / Size.width  : 1.f;
 
         if ((fitMode == FitMode::FitHeight) || (fitMode == FitMode::FitBig))
-            HScalar = (Size.height > MaxHeight) ? MaxHeight / Size.height : 1.f;
+            HScalar = (Size.height > AreaHeight) ? AreaHeight / Size.height : 1.f;
 
         scalar = std::min(WScalar, HScalar);
     }
     else
     {
-        WScalar = (Size.width  > MaxWidth)  ? Size.width  / MaxWidth  : MaxWidth  / Size.width;
-        HScalar = (Size.height > MaxHeight) ? Size.height / MaxHeight : MaxHeight / Size.height;
+        WScalar = (Size.width  > AreaWidth)  ? Size.width  / AreaWidth  : AreaWidth  / Size.width;
+        HScalar = (Size.height > AreaHeight) ? Size.height / AreaHeight : AreaHeight / Size.height;
 
         scalar = std::max(WScalar, HScalar);
     }
@@ -285,10 +288,45 @@ void artwork_t::AdjustRect(const FitMode fitMode, FLOAT & scalar, D2D1_RECT_F & 
     Size.width  *= scalar;
     Size.height *= scalar;
 
-    rect.left   += (MaxWidth  - Size.width)  / 2.f;
-    rect.top    += (MaxHeight - Size.height) / 2.f;
+    rect.left   += (AreaWidth  - Size.width)  / 2.f;
+    rect.top    += (AreaHeight - Size.height) / 2.f;
     rect.right   = rect.left + Size.width;
     rect.bottom  = rect.top  + Size.height;
+}
+*/
+void artwork_t::AdjustRect(const FitMode fitMode, FLOAT & scalar, D2D1_RECT_F & rect) const noexcept
+{
+    scalar = 1.f;
+
+    const auto Size = _Bitmap->GetSize();
+
+    if (Size.width <= 0.f || Size.height <= 0.f)
+        return;
+
+    const FLOAT AreaW = rect.right  - rect.left;
+    const FLOAT AreaH = rect.bottom - rect.top;
+
+    const bool ShrinkOnly = msc::InRange(fitMode, FitMode::Free, FitMode::FitHeight);
+
+    if (ShrinkOnly)
+    {
+        const FLOAT w = (fitMode == FitMode::FitWidth  || fitMode == FitMode::FitBig) ? std::min(1.f, AreaW / Size.width)  : 1.f;
+        const FLOAT h = (fitMode == FitMode::FitHeight || fitMode == FitMode::FitBig) ? std::min(1.f, AreaH / Size.height) : 1.f;
+
+        scalar = std::min(w, h);
+    }
+    else
+    {
+        scalar = std::max(std::max(Size.width / AreaW, AreaW / Size.width), std::max(Size.height / AreaH, AreaH / Size.height));
+    }
+
+    const FLOAT w = Size.width  * scalar;
+    const FLOAT h = Size.height * scalar;
+
+    const FLOAT Left = rect.left + (AreaW - w) / 2.f;
+    const FLOAT Top  = rect.top  + (AreaH - h) / 2.f;
+
+    rect = D2D1::RectF(Left, Top, Left + w, Top + h);
 }
 
 /// <summary>

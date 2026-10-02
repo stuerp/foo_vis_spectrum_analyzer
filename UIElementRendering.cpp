@@ -1,12 +1,14 @@
 
-/** $VER: UIElementRendering.cpp (2026.09.26) P. Stuer - UIElement methods that run on the render thread. **/
+/** $VER: UIElementRendering.cpp (2026.10.01) P. Stuer - UIElement methods that run on the render thread. **/
 
 #include "pch.h"
 
 #include "UIElement.h"
 
-#include "Direct2D.h"
 #include "DXGI.h"
+#include "Direct2D.h"
+#include "DirectWrite.h"
+#include "WIC.h"
 
 #include "Constants.h"
 #include "Resources.h"
@@ -17,8 +19,6 @@
 
 #include "Log.h"
 
-#pragma comment(lib, "d2d1")
-#pragma comment(lib, "d3d11")
 #pragma comment(lib, "dxgi")
 #pragma comment(lib, "dxguid")
 #pragma comment(lib, "dcomp")
@@ -339,13 +339,33 @@ void uielement_t::InitializeSampleRateDependentParameters(const audio_chunk_impl
 /// </summary>
 HRESULT uielement_t::CreateDeviceIndependentResources() noexcept
 {
+    HRESULT hr = DXGIFactory::Startup();
+
+    if (FAILED(hr))
+        return hr;
+
+    hr = Direct2DFactory::Startup();
+
+    if (FAILED(hr))
+        return hr;
+
+    hr = DirectWriteFactory::Startup();
+
+    if (FAILED(hr))
+        return hr;
+
+    hr = WICFactory::Startup();
+
+    if (FAILED(hr))
+        return hr;
+
     UINT Flags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
 
     #ifdef _DEBUG
         Flags |= D3D11_CREATE_DEVICE_DEBUG;
     #endif
 
-    HRESULT hr = ::D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, Flags, nullptr, 0, D3D11_SDK_VERSION, _D3DDevice.GetAddressOf(), nullptr, _D3DDeviceContext.GetAddressOf());
+    hr = ::D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, Flags, nullptr, 0, D3D11_SDK_VERSION, _D3DDevice.GetAddressOf(), nullptr, _D3DDeviceContext.GetAddressOf());
 
     if (FAILED(hr))
         return hr;
@@ -370,6 +390,11 @@ void uielement_t::DeleteDeviceIndependentResources() noexcept
     _DCompositionDevice.Reset();
     _D3DDeviceContext.Reset();
     _D3DDevice.Reset();
+
+    WICFactory::Shutdown();
+    DirectWriteFactory::Shutdown();
+    Direct2DFactory::Shutdown();
+    DXGIFactory::Shutdown();
 }
 
 /// <summary>
@@ -544,10 +569,6 @@ void uielement_t::DeleteDeviceSpecificResources() noexcept
     _SwapChain.Reset();
     _DeviceContext.Reset();
     _D2DDevice.Reset();
-
-    // Destroy now instead of in DLLMain.
-    Direct2DFactory::Shutdown();
-    DXGIFactory::Shutdown();
 }
 
 /// <summary>

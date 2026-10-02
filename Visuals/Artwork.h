@@ -1,5 +1,5 @@
 
-/** $VER: Artwork.h (2026.09.26) P. Stuer  **/
+/** $VER: Artwork.h (2026.10.01) P. Stuer  **/
 
 #pragma once
 
@@ -20,10 +20,7 @@
 class artwork_t
 {
 public:
-    artwork_t()
-    {
-//      SetStatus(Idle);
-    }
+    artwork_t() = default;
 
     virtual ~artwork_t()
     {
@@ -50,7 +47,7 @@ private:
     void DeleteDeviceSpecificResources() noexcept;
 
 private:
-    void AdjustRect(_In_ const FitMode fitMode, _Out_ FLOAT & scalar, _Inout_ D2D1_RECT_F & rect) const noexcept;
+    void AdjustRect(const FitMode fitMode, FLOAT & scalar, D2D1_RECT_F & rect) const noexcept;
 
 private:
     msc::critical_section_t _CriticalSection;

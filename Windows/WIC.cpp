@@ -1,11 +1,58 @@
 
-/** $VER: WIC.cpp (2026.09.26) P. Stuer **/
+/** $VER: WIC.cpp (2026.10.01) P. Stuer **/
 
 #include "pch.h"
 
 #include "WIC.h"
 
 #pragma comment(lib, "windowscodecs")
+
+ComPtr<IWICImagingFactory3> WICFactory::_Factory;
+int64_t WICFactory::_ReferenceCount = 0;
+
+ComPtr<IWICImagingFactory3> WICFactory::Get() noexcept
+{
+    return Instance()._Factory.Get();
+}
+
+HRESULT WICFactory::Startup() noexcept
+{
+    return Instance().Initialize();
+}
+
+void WICFactory::Shutdown() noexcept
+{
+    Instance().Terminate();
+}
+
+WICFactory & WICFactory::Instance() noexcept
+{
+    static WICFactory _Instance;
+
+    return _Instance;
+}
+
+HRESULT WICFactory::Initialize() noexcept
+{
+    std::lock_guard Lock(_Mutex);
+
+    ++_ReferenceCount;
+
+    if (_Factory)
+        return S_OK;
+
+    return ::CoCreateInstance(CLSID_WICImagingFactory, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&_Factory));
+}
+
+void WICFactory::Terminate() noexcept
+{
+    std::lock_guard Lock(_Mutex);
+
+    --_ReferenceCount;
+
+    if (_ReferenceCount == 0)
+        _Factory.Reset();
+}
 
 /// <summary>
 /// Creates a WIC bitmap frame from raw image data.

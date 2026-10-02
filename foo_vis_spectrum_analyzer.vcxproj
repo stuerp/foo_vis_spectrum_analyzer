@@ -243,6 +243,7 @@
     <ClInclude Include="Configuration\PresetsPageLayout.h" />
     <ClInclude Include="Configuration\StylesPage.h" />
     <ClInclude Include="Configuration\StylesPageLayout.h" />
+    <ClInclude Include="Configuration\Toggle.h" />
     <ClInclude Include="Configuration\TransformPage.h" />
     <ClInclude Include="Configuration\TransformPageLayout.h" />
     <ClInclude Include="Configuration\VisualizationPage.h" />
@@ -379,6 +380,7 @@
     <ClCompile Include="Windows\DirectWrite.cpp" />
     <ClCompile Include="DUIElement.cpp" />
     <ClCompile Include="Log.cpp" />
+    <ClCompile Include="Windows\DXGI.cpp" />
     <ClCompile Include="Windows\Raster.cpp" />
     <ClCompile Include="UIElementRendering.cpp" />
     <ClCompile Include="Analyzers\FFTAnalyzer.cpp" />

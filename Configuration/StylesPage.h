@@ -1,5 +1,5 @@
 
-/** $VER: StylesPage.h (2026.09.29) P. Stuer - Declares a configuration dialog page. **/
+/** $VER: StylesPage.h (2026.10.01) P. Stuer - Declares a configuration dialog page. **/
 
 #pragma once
 
@@ -19,7 +19,7 @@ public:
     styles_page_t(styles_page_t &&) = delete;
     styles_page_t & operator=(styles_page_t &&) = delete;
 
-    virtual ~styles_page_t() noexcept { }
+    virtual ~styles_page_t() = default;
 
     BOOL OnInitDialog(CWindow w, LPARAM lParam) noexcept override final;
 
@@ -69,9 +69,8 @@ private:
 
     void InitializeStyles() noexcept;
     void UpdateColorControls() noexcept;
-    void SetColor(state_t * state, gradient_stop_t & gs) noexcept;
     void UpdateGradientStopPositons(std::vector<gradient_stop_t> & gs, size_t index) const noexcept;
-    void InitializeGradientStopControls(style_t * style, int colorIndex) noexcept;
+    void UpdateColorIndexControl(const style_t * style, int colorIndex) noexcept;
 
 private:
     std::vector<std::shared_ptr<numeric_edit_t>> _NumericEdits;

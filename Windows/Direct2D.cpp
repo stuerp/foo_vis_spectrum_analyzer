@@ -1,5 +1,5 @@
 
-/** $VER: Direct2D.cpp (2026.09.26) P. Stuer **/
+/** $VER: Direct2D.cpp (2026.10.01) P. Stuer **/
 
 #include "pch.h"
 
@@ -9,9 +9,43 @@
 #include "WIC.h"
 
 #pragma comment(lib, "d2d1")
-#pragma comment(lib, "dwrite")
 
 #pragma hdrstop
+
+ComPtr<ID2D1Factory2> Direct2DFactory::_Factory;
+int64_t Direct2DFactory::_ReferenceCount = 0;
+
+// Should be called and complete before worker threads start using the factory.
+HRESULT Direct2DFactory::Initialize() noexcept
+{
+    std::lock_guard Lock(_Mutex);
+
+    ++_ReferenceCount;
+
+    if (_Factory)
+        return S_OK;
+
+    {
+        D2D1_FACTORY_OPTIONS Options{};
+
+    #ifdef _DEBUG
+        Options.debugLevel = D2D1_DEBUG_LEVEL_INFORMATION;
+    #endif
+
+        return ::D2D1CreateFactory(D2D1_FACTORY_TYPE_MULTI_THREADED, Options, _Factory.GetAddressOf());
+    }
+}
+
+// All worker threads should be stopped before calling.
+void Direct2DFactory::Terminate() noexcept
+{
+    std::lock_guard Lock(_Mutex);
+
+    --_ReferenceCount;
+
+    if (_ReferenceCount == 0)
+        _Factory.Reset();
+}
 
 /// <summary>
 /// Gets the refresh rate of the current display.

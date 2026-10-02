@@ -1,5 +1,5 @@
 
-/** $VER: CommonPage.cpp (2026.09.09) P. Stuer - Implements a configuration dialog page. **/
+/** $VER: CommonPage.cpp (2026.10.01) P. Stuer - Implements a configuration dialog page. **/
 
 #include "pch.h"
 

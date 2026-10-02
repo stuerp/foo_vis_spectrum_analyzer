@@ -14,74 +14,35 @@
 
 using Microsoft::WRL::ComPtr;
 
-#include <Win32Exception.h>
+#include <mutex>
 
-#include "DirectXFactory.h"
-
-class DirectWriteFactory final : public DirectXFactory<DirectWriteFactory, IDWriteFactory3>
-{
-    friend class DirectXFactory<DirectWriteFactory, IDWriteFactory3>;
-
-public:
-    DirectWriteFactory(const DirectWriteFactory &) = delete;
-    DirectWriteFactory & operator=(const DirectWriteFactory &) = delete;
-
-private:
-    DirectWriteFactory() = default;
-    ~DirectWriteFactory() = default;
-
-    void CreateFactory()
-    {
-        ComPtr<IDWriteFactory3> Factory;
-
-        {
-            HRESULT hr = ::DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(Factory), (IUnknown **) Factory.ReleaseAndGetAddressOf());
-
-            if (FAILED(hr))
-                throw msc::win32_exception("Unable to create DirectWrite factory.", (DWORD) hr);
-        }
-
-        _Factory = std::move(Factory);
-    }
-};
-/*
 class DirectWriteFactory final
 {
 public:
-    DirectWriteFactory(const DirectWriteFactory & ) = delete;
-    DirectWriteFactory & operator=(const DirectWriteFactory &) = delete;
+    DirectWriteFactory(const DirectWriteFactory &) = delete;
+    DirectWriteFactory& operator=(const DirectWriteFactory &) = delete;
 
     [[nodiscard]]
-    static ComPtr<IDWriteFactory3> Get()
-    {
-        return Instance()._Factory.Get();
-    }
+    static ComPtr<IDWriteFactory3> Get() noexcept;
 
-    static void Shutdown()
-    {
-        Instance()._Factory.Reset();
-    }
+    static HRESULT Startup() noexcept;
+    static void Shutdown() noexcept;
 
 private:
-    DirectWriteFactory()
-    {
-        HRESULT hr = ::DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(_Factory), (IUnknown **) _Factory.ReleaseAndGetAddressOf());
+    DirectWriteFactory() noexcept = default;
 
-        if (FAILED(hr))
-            throw msc::win32_exception("Unable to create DirectWrite factory.", (DWORD) hr);
-    }
+    static DirectWriteFactory & Instance() noexcept;
 
-    static DirectWriteFactory & Instance()
-    {
-        static DirectWriteFactory Instance;
-
-        return Instance;
-    }
+    HRESULT Initialize() noexcept;
+    void Terminate() noexcept;
 
 private:
-    ComPtr<IDWriteFactory3> _Factory;
+    static ComPtr<IDWriteFactory3> _Factory;
+    static int64_t _ReferenceCount;
+
+    std::mutex _Mutex;
 };
-*/
+
 #include <string>
 
 class DirectWrite

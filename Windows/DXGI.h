@@ -1,5 +1,5 @@
 
-/** $VER: DXGI.h (2026.09.30) P. Stuer **/
+/** $VER: DXGI.h (2026.10.01) P. Stuer **/
 
 #pragma once
 
@@ -14,83 +14,29 @@
 
 using Microsoft::WRL::ComPtr;
 
-#include <Win32Exception.h>
-
-#include "DirectXFactory.h"
-
-class DXGIFactory final : public DirectXFactory<DXGIFactory, IDXGIFactory7>
+class DXGIFactory final
 {
-    friend class DirectXFactory<DXGIFactory, IDXGIFactory7>;
-
 public:
     DXGIFactory(const DXGIFactory &) = delete;
-    DXGIFactory & operator=(const DXGIFactory &) = delete;
-
-private:
-    DXGIFactory() = default;
-    ~DXGIFactory() = default;
-
-    void CreateFactory()
-    {
-        ComPtr<IDXGIFactory7> Factory;
-
-        {
-            #ifdef _DEBUG
-                constexpr UINT Flags = DXGI_CREATE_FACTORY_DEBUG;
-            #else
-                constexpr UINT Flags = 0;
-            #endif
-
-            HRESULT hr = ::CreateDXGIFactory2(Flags, IID_PPV_ARGS(Factory.ReleaseAndGetAddressOf()));
-
-            if (FAILED(hr))
-                throw msc::win32_exception("Unable to create DXGI factory.", (DWORD) hr);
-        }
-
-        _Factory = std::move(Factory);
-    }
-};
-/*
-class DXGIFactory
-{
-public:
-    DXGIFactory(const DXGIFactory & ) = delete;
-    DXGIFactory & operator=(const DXGIFactory &) = delete;
+    DXGIFactory& operator=(const DXGIFactory &) = delete;
 
     [[nodiscard]]
-    static IDXGIFactory7 * Get()
-    {
-        return Instance()._Factory.Get();
-    }
+    static ComPtr<IDXGIFactory7> Get() noexcept;
 
-    static void Shutdown()
-    {
-        Instance()._Factory.Reset();
-    }
+    static HRESULT Startup() noexcept;
+    static void Shutdown() noexcept;
 
 private:
-    DXGIFactory()
-    {
-        #ifdef _DEBUG
-            constexpr UINT Flags = DXGI_CREATE_FACTORY_DEBUG;
-        #else
-            constexpr UINT Flags = 0;
-        #endif
+    DXGIFactory() noexcept = default;
 
-        HRESULT hr = ::CreateDXGIFactory2(Flags, IID_PPV_ARGS(_Factory.ReleaseAndGetAddressOf()));
+    static DXGIFactory & Instance() noexcept;
 
-        if (FAILED(hr))
-            throw msc::win32_exception("Unable to create Direct2D factory.", (DWORD) hr);
-    }
-
-    static DXGIFactory & Instance()
-    {
-        static DXGIFactory Instance;
-
-        return Instance;
-    }
+    HRESULT Initialize() noexcept;
+    void Terminate() noexcept;
 
 private:
-    ComPtr<IDXGIFactory7> _Factory;
+    static ComPtr<IDXGIFactory7> _Factory;
+    static int64_t _ReferenceCount;
+
+    std::mutex _Mutex;
 };
-*/

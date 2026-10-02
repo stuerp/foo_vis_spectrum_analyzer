@@ -1,16 +1,23 @@
 
-/** $VER: StylesPage.cpp (2026.09.30) P. Stuer - Implements a configuration dialog page. **/
+/** $VER: StylesPage.cpp (2026.10.02) P. Stuer - Implements a configuration dialog page. **/
 
 #include "pch.h"
 
 #include "StylesPage.h"
 #include "Support.h"
 
-#include "Direct2D.h"
 #include "ColorDialog.h"
 #include "ColorListBox.h"
 #include "Gradient.h"
 #include "Toggle.h"
+
+namespace
+{
+    static bool IsValidColorIndex(int colorIndex, size_t colorCount) noexcept
+    {
+        return (colorIndex >= 0) && ((size_t) colorIndex < colorCount);
+    }
+}
 
 /// <summary>
 /// Initializes the page.
@@ -45,13 +52,13 @@ BOOL styles_page_t::OnInitDialog(CWindow w, LPARAM lParam) noexcept
         { IDC_HORIZONTAL_GRADIENT, "Generates a horizontal instead of a vertical gradient." },
         { IDC_AMPLITUDE_BASED, "Determines the color of the bar based on the amplitude when using a horizontal gradient." },
 
-        { IDC_GRADIENT_STOP_SOURCE, "Determines the source of the selected gradient stop color." },
-        { IDC_GRADIENT_STOP_INDEX, "Selects the specific Windows, DUI or CUI color to use for the selected gradient stop color." },
+        { IDC_GRADIENT_COLOR_SOURCE, "Determines the source of the selected gradient stop color." },
+        { IDC_GRADIENT_COLOR_INDEX, "Selects the specific Windows, DUI or CUI color to use for the selected gradient stop color." },
 
         { IDC_OPACITY, "Determines the opacity of the resulting color brush." },
         { IDC_THICKNESS, "Determines the thickness of the resulting color brush when applicable." },
 
-        { IDC_FONT_NAME, "Determines the opacity of the resulting color brush." },
+        { IDC_FONT_NAME, "Specifies the name of the font." },
         { IDC_FONT_NAME_SELECT, "Opens a dialog to select a font." },
         { IDC_FONT_SIZE, "Determines the size of the font in points." },
     };
@@ -174,7 +181,7 @@ void styles_page_t::InitializeControls() noexcept
     }
 
     {
-        auto w = (CComboBox) GetDlgItem(IDC_GRADIENT_STOP_SOURCE);
+        auto w = (CComboBox) GetDlgItem(IDC_GRADIENT_COLOR_SOURCE);
 
         w.ResetContent();
 
@@ -273,7 +280,7 @@ void styles_page_t::OnSelectionChanged(UINT notificationCode, int id, CWindow wi
 
             const auto SelectedColor = _ColorListBox.GetCurSel();
 
-            if (!msc::InRange(SelectedColor, 0, (int) (Style->_CurrentGradientStops.size() - 1)))
+            if (!IsValidColorIndex(SelectedColor, Style->_CurrentGradientStops.size()))
                 return;
 
             {
@@ -303,51 +310,53 @@ void styles_page_t::OnSelectionChanged(UINT notificationCode, int id, CWindow wi
             {
                 const bool IsCustomScheme = (Style->_ColorScheme == ColorScheme::Custom);
 
-                GetDlgItem(IDC_GRADIENT_STOP_SOURCE).EnableWindow(IsCustomScheme);
+                GetDlgItem(IDC_GRADIENT_COLOR_SOURCE).EnableWindow(IsCustomScheme);
 
                 if (IsCustomScheme)
                 {
                     const auto & cgs = Style->_CustomGradient[(size_t) SelectedColor];
 
-                    ((CComboBox) GetDlgItem(IDC_GRADIENT_STOP_SOURCE)).SetCurSel((int) cgs.StopSource);
+                    ((CComboBox) GetDlgItem(IDC_GRADIENT_COLOR_SOURCE)).SetCurSel((int) cgs.ColorSource);
 
-                    GetDlgItem(IDC_GRADIENT_STOP_INDEX).EnableWindow((cgs.StopSource == GradientStopSource::Windows) || (cgs.StopSource == GradientStopSource::UserInterface));
+                    UpdateColorIndexControl(Style, SelectedColor);
+
+                    GetDlgItem(IDC_GRADIENT_COLOR_INDEX).EnableWindow((cgs.ColorSource == GradientStopSource::Windows) || (cgs.ColorSource == GradientStopSource::UserInterface));
                 }
             }
 
             return;
         }
 
-        case IDC_GRADIENT_STOP_SOURCE:
+        case IDC_GRADIENT_COLOR_SOURCE:
         {
             style_t * const Style = _StyleManager->GetStyle(_ActiveStyles[_SelectedStyle]);
 
-            const auto SelectedColor = (size_t) _ColorListBox.GetCurSel();
+            const auto SelectedColor = _ColorListBox.GetCurSel();
 
-            if (!msc::InRange(SelectedColor, (size_t) 0, Style->_CustomGradient.size() - 1))
+            if (!IsValidColorIndex(SelectedColor, Style->_CustomGradient.size()))
                 return;
 
-            auto & gs = Style->_CustomGradient[SelectedColor];
+            auto & gs = Style->_CustomGradient[(size_t) SelectedColor];
 
-            gs.StopSource = (GradientStopSource) SelectedIndex;
+            gs.ColorSource = (GradientStopSource) SelectedIndex;
             gs.SetColor(_State);
 
             UpdateControls();
             break;
         }
 
-        case IDC_GRADIENT_STOP_INDEX:
+        case IDC_GRADIENT_COLOR_INDEX:
         {
             style_t * const Style = _StyleManager->GetStyle(_ActiveStyles[_SelectedStyle]);
 
-            const auto SelectedColor = (size_t) _ColorListBox.GetCurSel();
+            const auto SelectedColor = _ColorListBox.GetCurSel();
 
-            if (!msc::InRange(SelectedColor, (size_t) 0, Style->_CustomGradient.size() - 1))
+            if (!IsValidColorIndex(SelectedColor, Style->_CustomGradient.size()))
                 return;
 
-            auto & gs = Style->_CustomGradient[SelectedColor];
+            auto & gs = Style->_CustomGradient[(size_t) SelectedColor];
 
-            gs.StopIndex = (uint32_t) SelectedIndex;
+            gs.ColorIndex = (uint32_t) SelectedIndex;
             gs.SetColor(_State);
 
             UpdateControls();
@@ -382,12 +391,12 @@ void styles_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
         // Color Scheme
         case IDC_POSITION:
         {
-            const auto SelectedStop = _ColorListBox.GetCurSel();
+            const auto SelectedColor = _ColorListBox.GetCurSel();
 
-            if (!msc::InRange(SelectedStop, 0, (int) Style->_CustomGradient.size() - 1))
+            if (!IsValidColorIndex(SelectedColor, Style->_CustomGradient.size()))
                 return;
 
-            auto & cgs = Style->_CustomGradient[(size_t) SelectedStop];
+            auto & cgs = Style->_CustomGradient[(size_t) SelectedColor];
 
             // Update the position of the selected gradient stop.
             {
@@ -511,7 +520,7 @@ void styles_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
             {
                 const auto SelectedColor = _ColorListBox.GetCurSel();
 
-                if (!msc::InRange(SelectedColor, 0, (int) Style->_CustomGradient.size() - 1))
+                if (!IsValidColorIndex(SelectedColor, Style->_CustomGradient.size()))
                     return;
 
                 auto Color = Style->_CustomGradient[(size_t) SelectedColor].color;
@@ -549,7 +558,7 @@ void styles_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
             {
                 const auto SelectedColor = _ColorListBox.GetCurSel();
 
-                if (!msc::InRange(SelectedColor, 0, (int) Style->_CustomGradient.size() - 1))
+                if (!IsValidColorIndex(SelectedColor, Style->_CustomGradient.size()))
                     return;
 
                 Style->_CustomGradient.erase(Style->_CustomGradient.begin() + SelectedColor);
@@ -922,11 +931,7 @@ void styles_page_t::UpdateControls() noexcept
     SetDlgItemTextW(IDC_FONT_NAME, Style->_FontName.c_str());
     SetDouble(IDC_FONT_SIZE, Style->_FontSize, 0, 1);
 
-    const auto ColorIndex = ((CListBox) GetDlgItem(IDC_GRADIENT_COLORS)).GetCurSel();
-
-    InitializeGradientStopControls(Style, ColorIndex);
-
-    // Enable the contols as necessary.
+    // Enable the controls as necessary.
     {
         const bool IsGradient = Style->_ColorSource == ColorSource::Gradient;
 
@@ -984,18 +989,20 @@ void styles_page_t::UpdateColorControls() noexcept
 
     // Update the gradient control.
     _GradientButton.SetGradientStops(gs);
-
+;
     // Update the color list.
     std::vector<D2D1_COLOR_F> Colors;
+
+    bool IsIndexedGradientColor = false;
 
     if (Style->_ColorSource == ColorSource::Gradient)
     {
         const bool IsCustomScheme = (Style->_ColorScheme == ColorScheme::Custom);
 
-        // Remember the selected color.
+        // Save the selected color.
         int SelectedColor = _ColorListBox.GetCurSel();
 
-        // Initializes the color list box.
+        // Update the list box with the colors of the custom gradient.
         {
             for (const auto & Iter : gs)
                 Colors.push_back(Iter.color);
@@ -1004,10 +1011,11 @@ void styles_page_t::UpdateColorControls() noexcept
         }
 
         // Update the gradient controls.
-        if (SelectedColor != LB_ERR)
+        if (IsValidColorIndex(SelectedColor, Style->_CustomGradient.size()))
         {
             SelectedColor = std::clamp(SelectedColor, 0, (int) gs.size() - 1);
 
+            // Restore the selected color.
             _ColorListBox.SetCurSel(SelectedColor);
 
             // Update the position control.
@@ -1019,34 +1027,36 @@ void styles_page_t::UpdateColorControls() noexcept
                 SetInteger(IDC_POSITION, Position);
             }
 
-            // Update the stop controls.
+            // Update the gradient stop controls.
+            if (IsCustomScheme)
             {
                 const auto & cgs = Style->_CustomGradient[(size_t) SelectedColor];
 
-                ((CComboBox) GetDlgItem(IDC_GRADIENT_STOP_SOURCE)).SetCurSel((int) cgs.StopSource);
-                ((CComboBox) GetDlgItem(IDC_GRADIENT_STOP_INDEX)) .SetCurSel((int) cgs.StopIndex);
+                IsIndexedGradientColor = ((cgs.ColorSource == GradientStopSource::Windows) || (cgs.ColorSource == GradientStopSource::UserInterface));
 
-                GetDlgItem(IDC_GRADIENT_STOP_SOURCE).EnableWindow(IsCustomScheme);
-                GetDlgItem(IDC_GRADIENT_STOP_INDEX).EnableWindow(IsCustomScheme && ((cgs.StopSource == GradientStopSource::Windows) || (cgs.StopSource == GradientStopSource::UserInterface)));
+                ((CComboBox) GetDlgItem(IDC_GRADIENT_COLOR_SOURCE)).SetCurSel((int) cgs.ColorSource);
+                ((CComboBox) GetDlgItem(IDC_GRADIENT_COLOR_INDEX)) .SetCurSel(IsIndexedGradientColor ? (int) cgs.ColorIndex : -1);
+
+            }
+            else
+            {
+                ((CComboBox) GetDlgItem(IDC_GRADIENT_COLOR_SOURCE)).SetCurSel(-1);
+                ((CComboBox) GetDlgItem(IDC_GRADIENT_COLOR_INDEX)) .SetCurSel(-1);
             }
         }
         else
         {
-            ((CComboBox) GetDlgItem(IDC_GRADIENT_STOP_SOURCE)).SetCurSel(-1);
-
-            GetDlgItem(IDC_GRADIENT_STOP_SOURCE).EnableWindow(false);
-            GetDlgItem(IDC_GRADIENT_STOP_INDEX).EnableWindow(false);
+            ((CComboBox) GetDlgItem(IDC_GRADIENT_COLOR_SOURCE)).SetCurSel(-1);
         }
+
+        UpdateColorIndexControl(Style, SelectedColor);
     }
     else
     {
         // Initializes the color list box.
         _ColorListBox.SetColors(Colors);
 
-        ((CComboBox) GetDlgItem(IDC_GRADIENT_STOP_SOURCE)).SetCurSel(-1);
-
-        GetDlgItem(IDC_GRADIENT_STOP_SOURCE).EnableWindow(false);
-        GetDlgItem(IDC_GRADIENT_STOP_INDEX) .EnableWindow(false);
+        ((CComboBox) GetDlgItem(IDC_GRADIENT_COLOR_SOURCE)).SetCurSel(-1);
     }
 
     // Enable the gradient controls as necessary.
@@ -1061,63 +1071,83 @@ void styles_page_t::UpdateColorControls() noexcept
 
         GetDlgItem(IDC_POSITION).EnableWindow(HasSelection && HasMoreThanOneColor && !IsArtworkScheme);
         GetDlgItem(IDC_SPREAD)  .EnableWindow(HasSelection && HasMoreThanOneColor && !IsArtworkScheme);
+
+        GetDlgItem(IDC_GRADIENT_COLOR_SOURCE).EnableWindow(HasSelection);
+        GetDlgItem(IDC_GRADIENT_COLOR_INDEX) .EnableWindow(IsIndexedGradientColor);
     }
 }
 
 /// <summary>
-/// Updates the position of the current gradient colors.
+/// Updates the positions of the current gradient colors starting at the specified index.
 /// </summary>
 void styles_page_t::UpdateGradientStopPositons(std::vector<gradient_stop_t> & gs, size_t index) const noexcept
 {
     if (gs.empty())
         return;
 
-    if (index == 0)
-        gs[index].position = 0.f;
-    else
-    if (index == gs.size() - 1)
-        gs[index].position = 1.f;
-    else
-    if (index != ~(size_t) 0)
-        gs[index].position = std::clamp(gs[index - 1].position + (gs[index + 1].position - gs[index - 1].position) / 2.f, 0.f, 1.f);
-    else
-    // Spread the positions of the stops between 0.f and 1.f.
+    if (gs.size() == 1)
     {
-        FLOAT Position = 0.f;
+        gs[0].position = 0.f;
 
-        for (auto & Iter : gs)
-        {
-            Iter.position = Position / (FLOAT) (gs.size() - 1);
-            Position++;
-        }
+        return;
     }
+
+    if (index == ~(size_t) 0)
+    {
+        // Spread the positions of the stops between 0 and 1.
+        const FLOAT Denominator = (FLOAT) (gs.size() - 1);
+
+        for (size_t i = 0; i < gs.size(); ++i)
+            gs[i].position = (FLOAT) i / Denominator;
+
+        return;
+    }
+
+    if (index >= gs.size())
+        index = gs.size() - 1;
+
+    if (index == 0)
+    {
+        gs[index].position = 0.f;
+
+        return;
+    }
+
+    if (index == gs.size() - 1)
+    {
+        gs[index].position = 1.f;
+
+        return;
+    }
+
+    gs[index].position = std::clamp(gs[index - 1].position + (gs[index + 1].position - gs[index - 1].position) / 2.f, 0.f, 1.f);
 }
 
 /// <summary>
 /// Configures the gradient stop source and gradent stop index controls based on the selected style and color index.
 /// </summary>
-void styles_page_t::InitializeGradientStopControls(style_t * style, int gradientStopIndex) noexcept
+void styles_page_t::UpdateColorIndexControl(const style_t * style, int colorIndex) noexcept
 {
-    auto w = (CComboBox) GetDlgItem(IDC_GRADIENT_STOP_INDEX);
+    auto w = (CComboBox) GetDlgItem(IDC_GRADIENT_COLOR_INDEX);
 
     w.ResetContent();
 
-    if (gradientStopIndex == LB_ERR)
+    if (!IsValidColorIndex(colorIndex, style->_CustomGradient.size()))
         return;
 
-    const auto & gss = style->_CustomGradient[(size_t) gradientStopIndex];
+    const auto & gss = style->_CustomGradient[(size_t) colorIndex];
 
-    if (gss.StopSource == GradientStopSource::Windows)
+    if (gss.ColorSource == GradientStopSource::Windows)
     {
         for (const auto & x : { L"Window Background", L"Window Text", L"Button Background", L"Button Text", L"Highlight Background", L"Highlight Text", L"Gray Text", L"Hot Light" })
             w.AddString(x);
 
-        w.SetCurSel((int) std::clamp(gss.StopIndex, 0u, (uint32_t) (w.GetCount() - 1)));
+        w.SetCurSel((int) std::clamp(gss.ColorIndex, 0u, (uint32_t) (w.GetCount() - 1)));
 
         return;
     }
 
-    if (gss.StopSource == GradientStopSource::UserInterface)
+    if (gss.ColorSource == GradientStopSource::UserInterface)
     {
         if (_State->_IsDUI)
         {
@@ -1130,7 +1160,7 @@ void styles_page_t::InitializeGradientStopControls(style_t * style, int gradient
                 w.AddString(x);
         }
 
-        w.SetCurSel((int) std::clamp(gss.StopIndex, 0u, (uint32_t) (w.GetCount() - 1)));
+        w.SetCurSel((int) std::clamp(gss.ColorIndex, 0u, (uint32_t) (w.GetCount() - 1)));
 
         return;
     }

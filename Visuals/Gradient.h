@@ -1,5 +1,5 @@
 
-/** $VER: Gradient.h (2026.09.30) P. Stuer - Built-in gradients. **/
+/** $VER: Gradient.h (2026.10.02) P. Stuer - Built-in gradients. **/
 
 #pragma once
 
@@ -17,8 +17,8 @@ class state_t;
 
 struct gradient_stop_t : D2D1_GRADIENT_STOP
 {
-    GradientStopSource StopSource; // The source of the color
-    uint32_t StopIndex;            // The index in the Windows or user interface color list
+    GradientStopSource ColorSource; // The source of the color
+    uint32_t ColorIndex;            // The index in the Windows or user interface color list
 
     void SetColor(const state_t * state) noexcept;
 };

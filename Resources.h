@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2026.09.30) P. Stuer **/
+/** $VER: Resources.h (2026.10.01) P. Stuer **/
 
 #pragma once
 
@@ -16,7 +16,7 @@
 #define NUM_PRODUCT_PATCH       0
 #define NUM_PRODUCT_PRERELEASE  0
 
-#define STR_RELEASE_TAG         "-alpha3"
+#define STR_RELEASE_TAG         "-alpha4"
 
 /** Component specific **/
 
@@ -486,8 +486,8 @@
 #define IDC_REMOVE                      7520
 #define IDC_REVERSE                     7522
 
-#define IDC_GRADIENT_STOP_SOURCE        7524
-#define IDC_GRADIENT_STOP_INDEX         7526
+#define IDC_GRADIENT_COLOR_SOURCE       7524
+#define IDC_GRADIENT_COLOR_INDEX        7526
 
 #define IDC_OPACITY_LBL                 7528
 #define IDC_OPACITY                     7530

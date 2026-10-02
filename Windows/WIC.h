@@ -1,5 +1,5 @@
 
-/** $VER: WIC.h (2026.09.30) P. Stuer **/
+/** $VER: WIC.h (2026.10.01) P. Stuer **/
 
 #pragma once
 
@@ -14,74 +14,35 @@
 
 using Microsoft::WRL::ComPtr;
 
-#include <Win32Exception.h>
+#include <mutex>
 
-#include "DirectXFactory.h"
-
-class WICFactory final : public DirectXFactory<WICFactory, IWICImagingFactory3>
-{
-    friend class DirectXFactory<WICFactory, IWICImagingFactory3>;
-
-public:
-    WICFactory(const WICFactory &) = delete;
-    WICFactory & operator=(const WICFactory &) = delete;
-
-private:
-    WICFactory() = default;
-    ~WICFactory() = default;
-
-    void CreateFactory()
-    {
-        ComPtr<IWICImagingFactory3> Factory;
-
-        {
-            HRESULT hr = ::CoCreateInstance(CLSID_WICImagingFactory, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(Factory.ReleaseAndGetAddressOf()));
-
-            if (FAILED(hr))
-                throw msc::win32_exception("Unable to create WIC factory.", (DWORD) hr);
-        }
-
-        _Factory = std::move(Factory);
-    }
-};
-/*
-class WICFactory
+class WICFactory final
 {
 public:
     WICFactory(const WICFactory &) = delete;
-    WICFactory & operator=(const WICFactory &) = delete;
+    WICFactory& operator=(const WICFactory &) = delete;
 
     [[nodiscard]]
-    static IWICImagingFactory3 * Get()
-    {
-        return Instance()._Factory.Get();
-    }
+    static ComPtr<IWICImagingFactory3> Get() noexcept;
 
-    static void Shutdown()
-    {
-        Instance()._Factory.Reset();
-    }
+    static HRESULT Startup() noexcept;
+    static void Shutdown() noexcept;
 
 private:
-    WICFactory()
-    {
-        HRESULT hr = ::CoCreateInstance(CLSID_WICImagingFactory, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(_Factory.ReleaseAndGetAddressOf()));
+    WICFactory() noexcept = default;
 
-        if (FAILED(hr))
-            throw msc::win32_exception("Unable to create WIC factory.", (DWORD) hr);
-    }
+    static WICFactory & Instance() noexcept;
 
-    static WICFactory & Instance()
-    {
-        static WICFactory Instance;
-
-        return Instance;
-    }
+    HRESULT Initialize() noexcept;
+    void Terminate() noexcept;
 
 private:
-    ComPtr<IWICImagingFactory3> _Factory;
+    static ComPtr<IWICImagingFactory3> _Factory;
+    static int64_t _ReferenceCount;
+
+    std::mutex _Mutex;
 };
-*/
+
 #include <string>
 
 class WIC

@@ -19,7 +19,7 @@ namespace msc
 /// <summary>
 /// Returns the input value clamped between min and max.
 /// </summary>
-template <class T>
+template <class T> [[nodiscard]]
 inline static constexpr T Clamp(T value, T minValue, T maxValue)
 {
     return std::min(std::max(value, minValue), maxValue);
@@ -28,8 +28,8 @@ inline static constexpr T Clamp(T value, T minValue, T maxValue)
 /// <summary>
 /// Returns true of the input value is in the interval between min and max.
 /// </summary>
-template <class T>
-inline static constexpr T InRange(T value, T minValue, T maxValue)
+template <class T> [[nodiscard]]
+inline static constexpr bool InRange(T value, T minValue, T maxValue)
 {
     return (minValue <= value) && (value <= maxValue);
 }
@@ -37,7 +37,7 @@ inline static constexpr T InRange(T value, T minValue, T maxValue)
 /// <summary>
 /// Constrains the specified value to the range [0 .. max - 1], wrapping around values that are larger than the maximum value.
 /// </summary>
-template<class T>
+template<class T> [[nodiscard]]
 inline static constexpr T Wrap(T value, T max)
 {
     value %= max;
@@ -48,7 +48,7 @@ inline static constexpr T Wrap(T value, T max)
     return value;
 }
 
-template<>
+template<> [[nodiscard]]
 inline float Wrap(float value, float max)
 {
     value = std::fmod(value, max);
@@ -59,7 +59,7 @@ inline float Wrap(float value, float max)
     return value;
 }
 
-template<>
+template<> [[nodiscard]]
 inline double Wrap(double value, double max)
 {
     value = std::fmod(value, max);
@@ -73,7 +73,7 @@ inline double Wrap(double value, double max)
 /// <summary>
 /// Maps a value from one range (srcMin, srcMax) to another (dstMin, dstMax).
 /// </summary>
-template<class T, class U>
+template<class T, class U> [[nodiscard]]
 inline static constexpr U Map(T value, T srcMin, T srcMax, U dstMin, U dstMax)
 {
     return dstMin + (U) (((double) (value - srcMin) * (double) (dstMax - dstMin)) / (double) (srcMax - srcMin));
@@ -82,7 +82,7 @@ inline static constexpr U Map(T value, T srcMin, T srcMax, U dstMin, U dstMax)
 /// <summary>
 /// Returns true if the specified flags are set.
 /// </summary>
-template <class T>
+template <class T> [[nodiscard]]
 inline static bool IsSet(T a, T b)
 {
     return (a & b) == b;

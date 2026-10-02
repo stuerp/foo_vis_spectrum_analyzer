@@ -1,6 +1,10 @@
 
 # foo_vis_spectrum_analyzer History
 
+v0.13.0.0-alpha3, 2026-09-30
+
+- Fixed: Race condition during the destruction of DirectX resources when using multiple instances.
+
 v0.13.0.0-alpha2, 2026-09-30
 
 - New: Compiled with foobar2000 SDK 2026-09-17.

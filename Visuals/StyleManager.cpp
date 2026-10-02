@@ -394,8 +394,8 @@ json style_manager_t::ToJSON(const gradient_stop_t & gradientStop) noexcept
     ({
         { "position", gradientStop.position },
         { "color",    ToJSON(gradientStop.color) },
-        { "stopSoure", gradientStop.StopSource },
-        { "stopIndex", gradientStop.StopIndex },
+        { "stopSoure", gradientStop.ColorSource },
+        { "stopIndex", gradientStop.ColorIndex },
     });
 }
 

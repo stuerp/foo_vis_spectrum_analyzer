@@ -5,8 +5,8 @@
 
 #include "Direct3D.h"
 
-#pragma comment(lib, "d3d11.lib")
-#pragma comment(lib, "d3dcompiler.lib")
+#pragma comment(lib, "d3d11")
+#pragma comment(lib, "d3dcompiler")
 
 using namespace DirectX;
 

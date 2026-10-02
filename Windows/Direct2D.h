@@ -1,5 +1,5 @@
 
-/** $VER: Direct2D.h (2026.09.30) P. Stuer **/
+/** $VER: Direct2D.h (2026.10.01) P. Stuer **/
 
 #pragma once
 
@@ -14,104 +14,50 @@
 
 using Microsoft::WRL::ComPtr;
 
-#include <Win32Exception.h>
+#include <mutex>
 
-#include "DirectXFactory.h"
-
-class Direct2DFactory final : public DirectXFactory<Direct2DFactory, ID2D1Factory1>
-{
-    friend class DirectXFactory<Direct2DFactory, ID2D1Factory1>;
-
-public:
-    Direct2DFactory(const Direct2DFactory &) = delete;
-    Direct2DFactory & operator=(const Direct2DFactory &) = delete;
-
-private:
-    Direct2DFactory() = default;
-    ~Direct2DFactory() = default;
-
-    void CreateFactory()
-    {
-        ComPtr<ID2D1Factory1> Factory;
-
-        {
-            #ifdef _DEBUG
-                constexpr D2D1_FACTORY_OPTIONS Options = { D2D1_DEBUG_LEVEL_INFORMATION };
-            #else
-                constexpr D2D1_FACTORY_OPTIONS Options = { D2D1_DEBUG_LEVEL_NONE };
-            #endif
-
-            const HRESULT hr = ::D2D1CreateFactory(D2D1_FACTORY_TYPE_MULTI_THREADED, Options, Factory.ReleaseAndGetAddressOf());
-
-            if (FAILED(hr))
-                throw msc::win32_exception("Unable to create Direct2D factory.", static_cast<DWORD>(hr));
-        }
-
-        _Factory = std::move(Factory);
-    }
-};
-/*
 class Direct2DFactory final
 {
 public:
     Direct2DFactory(const Direct2DFactory &) = delete;
-    Direct2DFactory & operator=(const Direct2DFactory &) = delete;
+    Direct2DFactory& operator=(const Direct2DFactory &) = delete;
 
     [[nodiscard]]
-    static ComPtr<ID2D1Factory1> Get()
+    static ComPtr<ID2D1Factory2> Get() noexcept
     {
-        auto & Instance = GetInstance();
-
-        std::scoped_lock Lock(Instance._Mutex);
-
-        if (Instance._Factory == nullptr)
-            Instance.CreateFactory();
-
-        return Instance._Factory; // Calls AddRef()
+        return Instance()._Factory.Get();
     }
 
-    static void Shutdown()
+    static HRESULT Startup() noexcept
     {
-        auto & Instance = GetInstance();
+        return Instance().Initialize();
+    }
 
-        std::scoped_lock Lock(Instance._Mutex);
-
-        Instance._Factory.Reset();
+    static void Shutdown() noexcept
+    {
+        Instance().Terminate();
     }
 
 private:
-    Direct2DFactory() = default;
+    Direct2DFactory() noexcept = default;
 
-    static Direct2DFactory & GetInstance()
+    static Direct2DFactory & Instance() noexcept
     {
-        static Direct2DFactory Instance;
+        static Direct2DFactory _Instance;
 
-        return Instance;
+        return _Instance;
     }
 
-    void CreateFactory()
-    {
-        #ifdef _DEBUG
-            constexpr D2D1_FACTORY_OPTIONS Options = { D2D1_DEBUG_LEVEL_INFORMATION };
-        #else
-            constexpr D2D1_FACTORY_OPTIONS Options = { D2D1_DEBUG_LEVEL_NONE };
-        #endif
-
-        ComPtr<ID2D1Factory1> Factory;
-
-        const HRESULT hr = ::D2D1CreateFactory(D2D1_FACTORY_TYPE_MULTI_THREADED, Options, Factory.ReleaseAndGetAddressOf());
-
-        if (FAILED(hr))
-            throw msc::win32_exception("Unable to create Direct2D factory.", static_cast<DWORD>(hr));
-
-        _Factory = std::move(Factory);
-    }
+    HRESULT Initialize() noexcept;
+    void Terminate() noexcept;
 
 private:
-    ComPtr<ID2D1Factory1> _Factory;
+    static ComPtr<ID2D1Factory2> _Factory;
+    static int64_t _ReferenceCount;
+
     std::mutex _Mutex;
 };
-*/
+
 class Direct2D
 {
 public:
@@ -128,6 +74,8 @@ public:
     static HRESULT CreateRadialGradientBrush(ID2D1DeviceContext * deviceContext, const std::vector<D2D1_GRADIENT_STOP> & gradientStops, const D2D1_POINT_2F & center, const D2D1_POINT_2F & offset, FLOAT rx, FLOAT ry, FLOAT rOffset, ID2D1RadialGradientBrush ** gradientBrush) noexcept;
 
 private:
+    Direct2D() = default;
+
     static HRESULT GetResource(const WCHAR * resourceName, const WCHAR * resourceType, void ** resourceData, DWORD * resourceSize) noexcept;
 };
 

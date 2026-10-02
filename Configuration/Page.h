@@ -19,9 +19,7 @@
 class page_t : public CDialogImpl<page_t>
 {
 public:
-    page_t(int id) : IDD(id), _hParent(), _State(), _IsInitializing(false), _IgnoreNotifications(false)
-    {
-    }
+    page_t(int id) : IDD(id) { }
 
     virtual ~page_t() = default; // Virtual destructor for proper polymorphic deletion
 
@@ -88,7 +86,6 @@ private:
         MSG_WM_INITDIALOG(OnInitDialog)
         MSG_WM_SHOWWINDOW(OnShowWindow)
         MSG_WM_CTLCOLORDLG(OnCtlColorDlg)
-//      MSG_WM_DESTROY(OnDestroy)
 
         COMMAND_CODE_HANDLER_EX(CBN_SELCHANGE, OnSelectionChanged) // This also handles LBN_SELCHANGE
         COMMAND_CODE_HANDLER_EX(EN_CHANGE, OnEditChange)
@@ -108,11 +105,11 @@ public:
     int IDD;
 
 protected:
-    HWND _hParent;
-    state_t * _State;
+    HWND _hParent {};
+    state_t * _State {};
 
-    bool _IsInitializing;       // True of the dialog is initializing a lot of controls and the UI thread should not be notified of the changes.
-    bool _IgnoreNotifications;  // True if the notifications of the controls should be ignored.
+    bool _IsInitializing { false };         // True of the dialog is initializing a lot of controls and the UI thread should not be notified of the changes.
+    bool _IgnoreNotifications { false };    // True if the notifications of the controls should be ignored.
 
     CToolTipCtrl _ToolTipControl;
 

@@ -1,5 +1,5 @@
 
-/** $VER: Gradients.cpp (2026.09.30) P. Stuer - Built-in gradients. **/
+/** $VER: Gradients.cpp (2026.02.10) P. Stuer - Built-in gradients. **/
 
 #include "pch.h"
 
@@ -469,19 +469,19 @@ std::vector<D2D1_GRADIENT_STOP> gradient_t::CreateGradientStops(const std::vecto
 /// </summary>
 void gradient_stop_t::SetColor(const state_t * state) noexcept
 {
-    if (StopSource == GradientStopSource::Solid)
+    if (ColorSource == GradientStopSource::Solid)
         return;
 
-    if (StopSource == GradientStopSource::DominantColor)
+    if (ColorSource == GradientStopSource::DominantColor)
     {
         color = state->_ArtworkDominantColor;
 
         return;
     }
 
-    if (StopSource == GradientStopSource::Windows)
+    if (ColorSource == GradientStopSource::Windows)
     {
-        static constexpr int ColorIndex[] =
+        static constexpr int ColorIndexes[] =
         {
             COLOR_WINDOW,           // Window Background
             COLOR_WINDOWTEXT,       // Window Text
@@ -493,14 +493,14 @@ void gradient_stop_t::SetColor(const state_t * state) noexcept
             COLOR_HOTLIGHT,         // Hot Light
         };
 
-        const auto Index = std::clamp((size_t) StopIndex, (size_t) 0, _countof(ColorIndex) - 1);
+        ColorIndex = std::clamp((size_t) ColorIndex, (size_t) 0, _countof(ColorIndexes) - 1);
 
-        color = D2D1::ColorF(::GetSysColor(ColorIndex[Index]));
+        color = D2D1::ColorF(::GetSysColor(ColorIndexes[ColorIndex]));
 
         return;
     }
 
-    if (StopSource == GradientStopSource::UserInterface)
+    if (ColorSource == GradientStopSource::UserInterface)
     {
         if (state->_UserInterfaceColors.empty())
         {
@@ -509,9 +509,9 @@ void gradient_stop_t::SetColor(const state_t * state) noexcept
             return;
         }
 
-        const auto Index = std::clamp((size_t) StopIndex, (size_t) 0, state->_UserInterfaceColors.size() - 1);
+        ColorIndex = std::clamp((size_t) ColorIndex, (size_t) 0, state->_UserInterfaceColors.size() - 1);
 
-        color = state->_UserInterfaceColors[Index];
+        color = state->_UserInterfaceColors[ColorIndex];
 
         return;
     }

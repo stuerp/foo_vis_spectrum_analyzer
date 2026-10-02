@@ -9,6 +9,53 @@
 
 #pragma hdrstop
 
+ComPtr<IDWriteFactory3> DirectWriteFactory::_Factory;
+int64_t DirectWriteFactory::_ReferenceCount = 0;
+
+ComPtr<IDWriteFactory3> DirectWriteFactory::Get() noexcept
+{
+    return Instance()._Factory.Get();
+}
+
+HRESULT DirectWriteFactory::Startup() noexcept
+{
+    return Instance().Initialize();
+}
+
+void DirectWriteFactory::Shutdown() noexcept
+{
+    Instance().Terminate();
+}
+
+DirectWriteFactory & DirectWriteFactory::Instance() noexcept
+{
+    static DirectWriteFactory _Instance;
+
+    return _Instance;
+}
+
+HRESULT DirectWriteFactory::Initialize() noexcept
+{
+    std::lock_guard Lock(_Mutex);
+
+    ++_ReferenceCount;
+
+    if (_Factory)
+        return S_OK;
+
+    return ::DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(_Factory), (IUnknown **) _Factory.GetAddressOf());
+}
+
+void DirectWriteFactory::Terminate() noexcept
+{
+    std::lock_guard Lock(_Mutex);
+
+    --_ReferenceCount;
+
+    if (_ReferenceCount == 0)
+        _Factory.Reset();
+}
+
 /// <summary>
 /// Creates and initializes a TextFormat object.
 /// </summary>
