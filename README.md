@@ -98,6 +98,7 @@ To create the component first build the x86 configuration and next the x64 confi
 
 v0.13.0.0-alpha4, 2026-xx-xx
 
+- Changed: Artwork `Fill` mode will scale up images smaller than the visualizer panel.
 - Fixed: Vertical Grid style of the Oscilloscope visualization did not react to changes. (Regression)
 
 You can read the full history [here](docs/History.md).

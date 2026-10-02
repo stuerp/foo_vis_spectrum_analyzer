@@ -306,6 +306,9 @@ void artwork_t::AdjustRect(const FitMode fitMode, FLOAT & scalar, D2D1_RECT_F & 
     const FLOAT AreaW = rect.right  - rect.left;
     const FLOAT AreaH = rect.bottom - rect.top;
 
+    if (AreaW <= 0.f || AreaH <= 0.f)
+        return;
+
     const bool ShrinkOnly = msc::InRange(fitMode, FitMode::Free, FitMode::FitHeight);
 
     if (ShrinkOnly)
@@ -317,7 +320,10 @@ void artwork_t::AdjustRect(const FitMode fitMode, FLOAT & scalar, D2D1_RECT_F & 
     }
     else
     {
-        scalar = std::max(std::max(Size.width / AreaW, AreaW / Size.width), std::max(Size.height / AreaH, AreaH / Size.height));
+        if ((Size.width <= AreaW) && (Size.height <= AreaH))
+            scalar = std::min(std::max(Size.width / AreaW, AreaW / Size.width), std::max(Size.height / AreaH, AreaH / Size.height));
+        else
+            scalar = std::max(std::max(Size.width / AreaW, AreaW / Size.width), std::max(Size.height / AreaH, AreaH / Size.height));
     }
 
     const FLOAT w = Size.width  * scalar;
