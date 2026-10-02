@@ -250,9 +250,10 @@ HRESULT oscilloscope_xy_t::CreateDeviceSpecificResources(ID2D1DeviceContext * de
     if (_State->_ResizeResources)
         DeleteDeviceSpecificResources();
 
-    oscilloscope_base_t::CreateDeviceSpecificResources(deviceContext);
+    HRESULT hr = oscilloscope_base_t::CreateDeviceSpecificResources(deviceContext);
 
-    HRESULT hr = S_OK;
+    if (FAILED(hr))
+        return hr;
 
     if (_XAxisTextStyle._Brush == nullptr)
     {

@@ -237,6 +237,9 @@ HRESULT oscilloscope_t::CreateDeviceSpecificResources(ID2D1DeviceContext * devic
 
     HRESULT hr = oscilloscope_base_t::CreateDeviceSpecificResources(deviceContext);
 
+    if (FAILED(hr))
+        return hr;
+
     // The font style is created prescaled to counter the Scale transform in the command list.
     if (_XAxisTextStyle._Brush == nullptr)
     {

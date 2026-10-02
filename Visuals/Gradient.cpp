@@ -493,7 +493,7 @@ void gradient_stop_t::SetColor(const state_t * state) noexcept
             COLOR_HOTLIGHT,         // Hot Light
         };
 
-        ColorIndex = std::clamp((size_t) ColorIndex, (size_t) 0, _countof(ColorIndexes) - 1);
+        ColorIndex = (uint32_t) std::clamp((size_t) ColorIndex, (size_t) 0, _countof(ColorIndexes) - 1);
 
         color = D2D1::ColorF(::GetSysColor(ColorIndexes[ColorIndex]));
 
@@ -509,7 +509,7 @@ void gradient_stop_t::SetColor(const state_t * state) noexcept
             return;
         }
 
-        ColorIndex = std::clamp((size_t) ColorIndex, (size_t) 0, state->_UserInterfaceColors.size() - 1);
+        ColorIndex = (uint32_t) std::clamp((size_t) ColorIndex, (size_t) 0, state->_UserInterfaceColors.size() - 1);
 
         color = state->_UserInterfaceColors[ColorIndex];
 

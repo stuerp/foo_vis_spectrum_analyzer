@@ -1,5 +1,5 @@
 
-/** $VER: OscilloscopeBase.cpp (2026.09.23) P. Stuer - Implements a base class for an oscilloscope. **/
+/** $VER: OscilloscopeBase.cpp (2026.10.02) P. Stuer - Implements a base class for an oscilloscope. **/
 
 #include <pch.h>
 
@@ -256,6 +256,7 @@ void oscilloscope_base_t::DeleteSizeDependentResources() noexcept
     _XAxisLineStyle.DeleteDeviceSpecificResources();
     _YAxisLineStyle.DeleteDeviceSpecificResources();
     _HorizontalGridLineStyle.DeleteDeviceSpecificResources();
+    _VerticalGridLineStyle.DeleteDeviceSpecificResources();
 }
 
 /// <summary>
