@@ -96,11 +96,12 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.13.0.0-alpha4, 2026-xx-xx
+v0.13.0.0-alpha4, 2026-10-03
 
 - New: The channels in the configuration dialog can be reordered. [Forum request](https://hydrogenaudio.org/index.php/topic,125031.msg1087375.html#msg1087375)
 - Changed: Artwork `Fill` mode will scale up images smaller than the visualizer panel.
 - Fixed: Vertical Grid style of the Oscilloscope visualization did not react to changes. (Regression)
+- Fixed: Another attempt to fix the DirectX factory creation code. (Regression)
 
 You can read the full history [here](docs/History.md).
 

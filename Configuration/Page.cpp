@@ -139,9 +139,9 @@ double page_t::ClampNewSpinPosition(LPNMUPDOWN nmud, double minValue, double max
 /// </summary>
 void page_t::SetInteger(int id, int64_t value) noexcept
 {
-    auto Edit = ((CEdit) GetDlgItem(id));
+    CEdit Edit(GetDlgItem(id));
 
-    auto CaretIndex = Edit.GetCaretIndex();
+    const auto CaretIndex = Edit.GetCaretIndex();
 
     Edit.SetWindowTextW(pfc::wideFromUTF8(pfc::format_int(value)));
 
@@ -153,9 +153,9 @@ void page_t::SetInteger(int id, int64_t value) noexcept
 /// </summary>
 void page_t::SetDouble(int id, double value, unsigned width, unsigned precision) noexcept
 {
-    auto Edit = ((CEdit) GetDlgItem(id));
+    CEdit Edit(GetDlgItem(id));
 
-    auto CaretIndex = Edit.GetCaretIndex();
+    const auto CaretIndex = Edit.GetCaretIndex();
 
     Edit.SetWindowTextW(pfc::wideFromUTF8(pfc::format_float(value, width, precision)));
 

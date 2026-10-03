@@ -1,5 +1,5 @@
 
-/** $VER: StylesPage.cpp (2026.10.02) P. Stuer - Implements a configuration dialog page. **/
+/** $VER: StylesPage.cpp (2026.10.03) P. Stuer - Implements a configuration dialog page. **/
 
 #include "pch.h"
 
@@ -82,7 +82,7 @@ void styles_page_t::InitializeControls() noexcept
     }
 
     {
-        auto w = (CComboBox) GetDlgItem(IDC_SCOPE);
+        CComboBox w(GetDlgItem(IDC_SCOPE));
 
         w.ResetContent();
 
@@ -103,7 +103,7 @@ void styles_page_t::InitializeControls() noexcept
     }
 
     {
-        auto w = (CComboBox) GetDlgItem(IDC_COLOR_SOURCE);
+        CComboBox w(GetDlgItem(IDC_COLOR_SOURCE));
 
         w.ResetContent();
 
@@ -130,7 +130,7 @@ void styles_page_t::InitializeControls() noexcept
 
         static_assert((_countof(ColorMapNames) - 1) == (size_t) ColorScheme::Max, "");
 
-        auto w = (CComboBox) GetDlgItem(IDC_COLOR_SCHEME);
+        CComboBox w(GetDlgItem(IDC_COLOR_SCHEME));
 
         w.ResetContent();
 
@@ -155,7 +155,7 @@ void styles_page_t::InitializeControls() noexcept
 
         auto ne = std::make_shared<numeric_edit_t>(); ne->Initialize(GetDlgItem(IDC_OPACITY)); _NumericEdits.push_back(ne);
 
-        auto w = CUpDownCtrl(GetDlgItem(IDC_OPACITY_SPIN));
+        CUpDownCtrl w(GetDlgItem(IDC_OPACITY_SPIN));
 
         w.SetRange32((int) (MinOpacity * 100.f), (int) (MaxOpacity * 100.f));
         w.SetPos32(0);
@@ -171,7 +171,7 @@ void styles_page_t::InitializeControls() noexcept
 
         auto ne = std::make_shared<numeric_edit_t>(); ne->Initialize(GetDlgItem(IDC_THICKNESS)); _NumericEdits.push_back(ne);
 
-        auto w = CUpDownCtrl(GetDlgItem(IDC_THICKNESS_SPIN));
+        CUpDownCtrl w(GetDlgItem(IDC_THICKNESS_SPIN));
 
         w.SetRange32((int) (MinThickness * 10.), (int) (MaxThickness * 10.));
         w.SetAccel(_countof(Accel), Accel);
@@ -284,6 +284,9 @@ void styles_page_t::OnSelectionChanged(UINT notificationCode, int id, CWindow wi
             if (!IsValidColorIndex(SelectedColor, Style->_CurrentGradientStops.size()))
                 return;
 
+            auto Scope = msc::toggle_t(_IgnoreNotifications, true);
+
+            // Update the gradient stop position.
             {
                 const auto & cgs = Style->_CurrentGradientStops[(size_t) SelectedColor];
 
@@ -389,29 +392,39 @@ void styles_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
         default:
             return;
 
-        // Color Scheme
+        // Gradient color position
         case IDC_POSITION:
         {
-            const auto SelectedColor = _ColorListBox.GetCurSel();
-
-            if (!IsValidColorIndex(SelectedColor, Style->_CustomGradient.size()))
-                return;
-
-            auto & cgs = Style->_CustomGradient[(size_t) SelectedColor];
-
-            // Update the position of the selected gradient stop.
+            auto Scope = msc::toggle_t(_IgnoreNotifications, true);
             {
-                int Position = std::clamp(::_wtoi(Text), 0, 100);
+                // Convert to a custom color scheme if necessary.
+                if (Style->_ColorScheme != ColorScheme::Custom)
+                {
+                    Style->_ColorScheme    = ColorScheme::Custom;
+                    Style->_CustomGradient = gradient_t::ConvertFormat(Style->_CurrentGradientStops);
 
-                if ((int) (cgs.position * 100.f) == Position)
-                    return;
+                    ((CComboBox) GetDlgItem(IDC_COLOR_SCHEME)).SetCurSel((int) Style->_ColorScheme);
+                }
 
-                cgs.position = (FLOAT) Position / 100.f;
+                {
+                    const auto SelectedColor = _ColorListBox.GetCurSel();
+
+                    if (!IsValidColorIndex(SelectedColor, Style->_CustomGradient.size()))
+                        return;
+
+                    auto & cgs = Style->_CustomGradient[(size_t) SelectedColor];
+
+                    // Update the position of the selected gradient stop.
+                    {
+                        int Position = std::clamp(::_wtoi(Text), 0, 100);
+
+                        if ((int) (cgs.position * 100.f) == Position)
+                            return;
+
+                        cgs.position = (FLOAT) Position / 100.f;
+                    }
+                }
             }
-
-            Style->_ColorScheme = ColorScheme::Custom;
-
-            ((CComboBox) GetDlgItem(IDC_COLOR_SCHEME)).SetCurSel((int) Style->_ColorScheme);
             break;
         }
 
@@ -512,6 +525,7 @@ void styles_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
         {
             style_t * const Style = _StyleManager->GetStyle(_ActiveStyles[_SelectedStyle]);
 
+            // Convert to a custom color scheme if necessary.
             if (Style->_ColorScheme != ColorScheme::Custom)
             {
                 Style->_ColorScheme    = ColorScheme::Custom;
@@ -550,6 +564,7 @@ void styles_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
 
             style_t * const Style = _StyleManager->GetStyle(_ActiveStyles[_SelectedStyle]);
 
+            // Convert to a custom color scheme if necessary.
             if (Style->_ColorScheme != ColorScheme::Custom)
             {
                 Style->_ColorScheme    = ColorScheme::Custom;
@@ -575,6 +590,7 @@ void styles_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
         {
             style_t * const Style = _StyleManager->GetStyle(_ActiveStyles[_SelectedStyle]);
 
+            // Convert to a custom color scheme if necessary.
             if (Style->_ColorScheme != ColorScheme::Custom)
             {
                 Style->_ColorScheme    = ColorScheme::Custom;
@@ -596,6 +612,7 @@ void styles_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
         {
             style_t * const Style = _StyleManager->GetStyle(_ActiveStyles[_SelectedStyle]);
 
+            // Convert to a custom color scheme if necessary.
             if (Style->_ColorScheme != ColorScheme::Custom)
             {
                 Style->_ColorScheme    = ColorScheme::Custom;
@@ -692,16 +709,16 @@ void styles_page_t::OnDoubleClick(UINT code, int id, CWindow) noexcept
 /// <summary>
 /// Handles a notification from an UpDown control.
 /// </summary>
-LRESULT styles_page_t::OnDeltaPos(LPNMHDR nmhd) noexcept
+LRESULT styles_page_t::OnDeltaPos(LPNMHDR nmh) noexcept
 {
     if (_State == nullptr)
         return -1;
 
     auto ChangedSettings = ConfigurationChanges::All;
 
-    auto nmud = (LPNMUPDOWN) nmhd;
+    auto nmud = (LPNMUPDOWN) nmh;
 
-    switch (nmhd->idFrom)
+    switch (nmh->idFrom)
     {
         default:
             return -1;
@@ -781,8 +798,10 @@ LRESULT styles_page_t::OnChanged(LPNMHDR nmhd) noexcept
                 Style->_CurrentGradientStops = gradient_t::ConvertFormat(Style->_CustomGradient);
             }
 
-            // Update the controls.
+            // Update the color scheme.
             ((CComboBox) GetDlgItem(IDC_COLOR_SCHEME)).SetCurSel((int) Style->_ColorScheme);
+
+            // Update the gradient control.
             _GradientButton.SetGradientStops(Style->_CurrentGradientStops);
             break;
         }
@@ -807,11 +826,60 @@ LRESULT styles_page_t::OnChanged(LPNMHDR nmhd) noexcept
 }
 
 /// <summary>
+/// Handles a position notification from a color button control.
+/// </summary>
+LRESULT styles_page_t::OnPositionChanging(LPNMHDR nmh) noexcept
+{
+    style_t * const Style = _StyleManager->GetStyle(_ActiveStyles[_SelectedStyle]);
+
+    auto Scope = msc::toggle_t(_IgnoreNotifications, true);
+
+    // Convert to a custom color scheme if necessary.
+    if (Style->_ColorScheme != ColorScheme::Custom)
+    {
+        Style->_ColorScheme    = ColorScheme::Custom;
+        Style->_CustomGradient = gradient_t::ConvertFormat(Style->_CurrentGradientStops);
+
+        ((CComboBox) GetDlgItem(IDC_COLOR_SCHEME)).SetCurSel((int) Style->_ColorScheme);
+    }
+
+    {
+        const auto SelectedColor = _ColorListBox.GetCurSel();
+
+        if (!IsValidColorIndex(SelectedColor, Style->_CustomGradient.size()))
+            return -1;
+
+        // Update the gradient stop position.
+        {
+            auto nmcb = (NMCOLORBUTTON *) nmh;
+
+            auto & cgs = Style->_CustomGradient[(size_t) SelectedColor];
+
+            const FLOAT MinPosition = ((SelectedColor - 1) > 0)                                   ? Style->_CustomGradient[(size_t) SelectedColor - 1].position : 0.f;
+            const FLOAT MaxPosition = ((SelectedColor + 1) < (int) Style->_CustomGradient.size()) ? Style->_CustomGradient[(size_t) SelectedColor + 1].position : 1.f;
+
+            cgs.position = std::clamp(nmcb->Position, MinPosition, MaxPosition);
+
+            const auto Position = (int64_t) (cgs.position * 100.f);
+
+            SetInteger(IDC_POSITION, Position);
+        }
+    }
+
+    // Update the gradient control.
+    _GradientButton.SetGradientStops(Style->_CurrentGradientStops);
+
+    ConfigurationChanged(ConfigurationChanges::All);
+
+    return 0;
+}
+
+/// <summary>
 /// Fills the styles listbox with the styles used by the current visualization.
 /// </summary>
 void styles_page_t::InitializeStyles() noexcept
 {
-    auto w = (CListBox) GetDlgItem(IDC_STYLES);
+    CListBox w(GetDlgItem(IDC_STYLES));
 
     w.ResetContent();
 
@@ -882,7 +950,7 @@ void styles_page_t::UpdateControls() noexcept
 
         case ColorSource::Windows:
         {
-            auto w = (CComboBox) GetDlgItem(IDC_COLOR_INDEX);
+            CComboBox w(GetDlgItem(IDC_COLOR_INDEX));
 
             w.ResetContent();
 
@@ -895,7 +963,7 @@ void styles_page_t::UpdateControls() noexcept
 
         case ColorSource::UserInterface:
         {
-            auto w = (CComboBox) GetDlgItem(IDC_COLOR_INDEX);
+            CComboBox w(GetDlgItem(IDC_COLOR_INDEX));
 
             w.ResetContent();
 
@@ -1003,7 +1071,7 @@ void styles_page_t::UpdateColorControls() noexcept
         // Save the selected color.
         int SelectedColor = _ColorListBox.GetCurSel();
 
-        // Update the list box with the colors of the custom gradient.
+        // Update the gradient color list box.
         {
             for (const auto & Iter : gs)
                 Colors.push_back(Iter.color);
@@ -1129,7 +1197,7 @@ void styles_page_t::UpdateGradientStopPositons(std::vector<gradient_stop_t> & gs
 /// </summary>
 void styles_page_t::UpdateColorIndexControl(const style_t * style, int colorIndex) noexcept
 {
-    auto w = (CComboBox) GetDlgItem(IDC_GRADIENT_COLOR_INDEX);
+    CComboBox w(GetDlgItem(IDC_GRADIENT_COLOR_INDEX));
 
     w.ResetContent();
 

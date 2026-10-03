@@ -29,12 +29,16 @@ public:
     void OnButtonClick(UINT, int, CWindow) noexcept override final;
     void OnDoubleClick(UINT code, int id, CWindow) noexcept override final;
 
-    LRESULT OnDeltaPos(LPNMHDR nmhd) noexcept final;
+    LRESULT OnDeltaPos(LPNMHDR nmhd) noexcept override final;
     LRESULT OnChanged(LPNMHDR nmhd) noexcept override final;
+
+    LRESULT OnPositionChanging(LPNMHDR nmh) noexcept;
 
     LRESULT OnConfigurationChanged(UINT msg, WPARAM wParam, LPARAM lParam) noexcept override final;
 
     BEGIN_MSG_MAP(styles_page_t)
+        NOTIFY_CODE_HANDLER_EX(CBN_POSITION_CHANGING, OnPositionChanging)
+
         CHAIN_MSG_MAP(page_t)
         CHAIN_MSG_MAP(CDialogResize<styles_page_t>)
     END_MSG_MAP()

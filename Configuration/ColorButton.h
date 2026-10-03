@@ -1,5 +1,5 @@
 
-/** $VER: ColorButton.h (2026.09.26) P. Stuer **/
+/** $VER: ColorButton.h (2026.10.03) P. Stuer - Implements a color control that can display gradients. **/
 
 #pragma once
 
@@ -41,16 +41,27 @@ public:
 
 private:
     void OnPaint(HDC) noexcept;
-    LRESULT OnLButtonDown(UINT, CPoint) noexcept;
 
-    void SendChangedNotification() const noexcept;
+    LRESULT OnLButtonDown(UINT, CPoint) noexcept;
+    LRESULT OnLButtonUp(UINT, CPoint) noexcept;
+    void OnMouseMove(UINT flags, CPoint point) noexcept;
+    void OnCaptureChanged(CWindow wnd) noexcept;
+    void OnCancelMode() noexcept;
+
+    void NotifyParent(UINT code) const noexcept;
+    LRESULT NotifyParent(UINT code, float position) const noexcept;
 
     DECLARE_WND_CLASS_EX(NULL, 0, COLOR_3DFACE)
 
     BEGIN_MSG_MAP(color_button_t)
         MSG_WM_SIZE(OnSize)
         MSG_WM_PAINT(OnPaint)
+
         MSG_WM_LBUTTONDOWN(OnLButtonDown)
+        MSG_WM_LBUTTONUP(OnLButtonUp)
+        MSG_WM_MOUSEMOVE(OnMouseMove)
+        MSG_WM_CAPTURECHANGED(OnCaptureChanged)
+        MSG_WM_CANCELMODE(OnCancelMode)
     END_MSG_MAP()
 
 private:
@@ -68,4 +79,23 @@ private:
 private:
     D2D1_COLOR_F _Color { };
     std::vector<D2D1_GRADIENT_STOP> _GradientStops;
+
+private:
+    struct capture_t
+    {
+        bool IsActive = false;
+        CPoint Origin;
+        float Position = 0.f;
+    };
+
+    capture_t _Capture;
+};
+
+inline constexpr UINT CBN_POSITION_CHANGED  = NM_FIRST - 1;
+inline constexpr UINT CBN_POSITION_CHANGING = NM_FIRST - 2;
+
+struct NMCOLORBUTTON
+{
+    NMHDR Header;
+    float Position;
 };

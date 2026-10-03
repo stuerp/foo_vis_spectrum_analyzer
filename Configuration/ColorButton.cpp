@@ -1,5 +1,5 @@
 
-/** $VER: ColorButton.cpp (2026.09.26) P. Stuer - Implements a list box that displays colors using WTL. **/
+/** $VER: ColorButton.cpp (2026.10.03) P. Stuer - Implements a color control that can display gradients. **/
 
 #include "pch.h"
 
@@ -8,6 +8,8 @@
 
 #include "Theme.h"
 #include "Color.h"
+
+#include "Log.h"
 
 #pragma hdrstop
 
@@ -42,6 +44,8 @@ void color_button_t::Terminate() noexcept
 {
     if (!IsWindow() || !_IsSubclassed)
         return;
+
+    _Capture.IsActive = false;
 
     DeleteDeviceSpecificResources();
     DeleteDeviceIndependentResources();
@@ -133,32 +137,130 @@ void color_button_t::OnPaint(HDC) noexcept
 }
 
 /// <summary>
-/// Handles the WM_LBUTTONDBLCLK message.
+/// Handles the WM_LBUTTONDOWN message.
 /// </summary>
-LRESULT color_button_t::OnLButtonDown(UINT, CPoint) noexcept
+LRESULT color_button_t::OnLButtonDown(UINT, CPoint point) noexcept
 {
-    if (!_GradientStops.empty())
-        return 1;
-
-    color_dialog_t cd;
-
-    if (cd.SelectColor(m_hWnd, _Color))
+    if (_GradientStops.empty())
     {
-        SetColor(_Color);
-        SendChangedNotification();
+        color_dialog_t cd;
+
+        if (cd.SelectColor(m_hWnd, _Color))
+        {
+            SetColor(_Color);
+
+            NotifyParent((UINT) NM_RETURN);
+        }
+    }
+    else
+    {
+        ::SetCapture(m_hWnd);
+
+        _Capture = { true, point, -1.f };
     }
 
     return 0;
 }
 
 /// <summary>
+/// Handles the WM_LBUTTONUP message.
+/// </summary>
+LRESULT color_button_t::OnLButtonUp(UINT, CPoint point) noexcept
+{
+    if (_GradientStops.empty())
+        return 1;
+
+    _Capture.IsActive = false;
+
+    if (::GetCapture() == m_hWnd)
+        ::ReleaseCapture();
+
+    {
+        CRect cr;
+
+        GetClientRect(cr);
+
+        const float Position = std::clamp((float) point.y / (float) cr.bottom, 0.f, 1.f);
+
+        NotifyParent(CBN_POSITION_CHANGED, Position);
+    }
+
+    return 0;
+}
+
+/// <summary>
+/// Handles the WM_MOUSEMOVE message.
+/// </summary>
+void color_button_t::OnMouseMove(UINT flags, CPoint point) noexcept
+{
+    if (!_Capture.IsActive)
+        return;
+
+    {
+        CRect cr;
+
+        GetClientRect(cr);
+
+        const float Position = std::clamp((float) point.y / (float) cr.bottom, 0.f, 1.f);
+
+        if (Position == _Capture.Position)
+            return;
+
+        NotifyParent(CBN_POSITION_CHANGING, Position);
+
+        _Capture.Position = Position;
+    }
+}
+
+/// <summary>
+/// Handles the WM_CAPTURECHANGED message.
+/// </summary>
+void color_button_t::OnCaptureChanged(CWindow) noexcept
+{
+    if (!_Capture.IsActive)
+        return;
+
+    _Capture.IsActive = false;
+}
+
+/// <summary>
+/// Handles the WM_CANCELMODE message.
+/// </summary>
+void color_button_t::OnCancelMode() noexcept
+{
+    if (!_Capture.IsActive)
+        return;
+
+    _Capture.IsActive = false;
+}
+
+/// <summary>
 /// Sends a notification to the parent that the content has changed.
 /// </summary>
-void color_button_t::SendChangedNotification() const noexcept
+void color_button_t::NotifyParent(UINT code) const noexcept
 {
-    NMHDR nmhdr = { m_hWnd, (UINT_PTR) GetDlgCtrlID(), (UINT) NM_RETURN };
+    NMHDR nmh = { m_hWnd, (UINT_PTR) GetDlgCtrlID(), code };
 
-    ::SendMessageW(GetParent(), WM_NOTIFY, nmhdr.idFrom, (LPARAM) &nmhdr);
+    ::SendMessageW(GetParent(), WM_NOTIFY, nmh.idFrom, (LPARAM) &nmh);
+}
+
+/// <summary>
+/// Notifies the parent about a position change.
+/// </summary>
+LRESULT color_button_t::NotifyParent(UINT code, float position) const noexcept
+{
+    NMCOLORBUTTON nmcb
+    {
+        .Header
+        {
+            .hwndFrom = m_hWnd,
+            .idFrom   = (UINT_PTR) GetDlgCtrlID(),
+            .code     = code,
+        },
+        .Position = position
+    };
+
+    return ::SendMessage(GetParent(), WM_NOTIFY, nmcb.Header.idFrom, (LPARAM) &nmcb);
 }
 
 /// <summary>
