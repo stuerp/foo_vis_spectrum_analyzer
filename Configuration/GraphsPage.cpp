@@ -1,10 +1,14 @@
 
-/** $VER: GraphsPage.cpp (2026.09.20) P. Stuer - Implements a configuration dialog page. **/
+/** $VER: GraphsPage.cpp (2026.10.03) P. Stuer - Implements a configuration dialog page. **/
 
 #include "pch.h"
 
 #include "GraphsPage.h"
 #include "Constants.h"
+
+#include <Toggle.h>
+
+#include <bit>
 
 // Display names for the audio_chunk channel bits.
 static constexpr const WCHAR * const ChannelNames[] =
@@ -69,6 +73,8 @@ BOOL graphs_page_t::OnInitDialog(CWindow w, LPARAM lParam) noexcept
         { IDC_CHANNELS, "Determines which channels are used by the visualization." },
         { IDC_ALL_CHANNELS, "Selects all channels." },
         { IDC_NO_CHANNELS, "Deselects all channels." },
+        { IDC_CHANNEL_UP, "Moves the selected channel up in the list." },
+        { IDC_CHANNEL_DOWN, "Moves the selected channel down in the list." },
 
         { IDC_CHANNEL_PAIRS, "Determines which combination of channels will be displayed." },
         { IDC_SWAP_CHANNELS, "Swaps the channels of a channel pair during visualisation e.g. the X and Y axis of an oscilloscope." },
@@ -106,7 +112,7 @@ void graphs_page_t::InitializeControls() noexcept
 
     // Horizontal Alignment
     {
-        auto w = (CComboBox) GetDlgItem(IDC_HORIZONTAL_ALIGNMENT);
+        CComboBox w(GetDlgItem(IDC_HORIZONTAL_ALIGNMENT));
 
         w.ResetContent();
 
@@ -138,7 +144,7 @@ void graphs_page_t::InitializeControls() noexcept
         {
             auto ne = std::make_shared<numeric_edit_t>(); ne->Initialize(GetDlgItem(IDC_AMPLITUDE_LO)); _NumericEdits.push_back(ne);
 
-            auto w = CUpDownCtrl(GetDlgItem(IDC_AMPLITUDE_LO_SPIN));
+            CUpDownCtrl w(GetDlgItem(IDC_AMPLITUDE_LO_SPIN));
 
             w.SetAccel(_countof(Accel), Accel);
             w.SetRange32((int) (MinAmplitude * 10.), (int) (MaxAmplitude * 10.));
@@ -150,7 +156,7 @@ void graphs_page_t::InitializeControls() noexcept
         {
             auto ne = std::make_shared<numeric_edit_t>(); ne->Initialize(GetDlgItem(IDC_AMPLITUDE_HI)); _NumericEdits.push_back(ne);
 
-            auto w = CUpDownCtrl(GetDlgItem(IDC_AMPLITUDE_HI_SPIN));
+            CUpDownCtrl w(GetDlgItem(IDC_AMPLITUDE_HI_SPIN));
 
             w.SetAccel(_countof(Accel), Accel);
             w.SetRange32((int) (MinAmplitude * 10), (int) (MaxAmplitude * 10.));
@@ -162,7 +168,7 @@ void graphs_page_t::InitializeControls() noexcept
         {
             auto ne = std::make_shared<numeric_edit_t>(); ne->Initialize(GetDlgItem(IDC_AMPLITUDE_STEP)); _NumericEdits.push_back(ne);
 
-            auto w = CUpDownCtrl(GetDlgItem(IDC_AMPLITUDE_STEP_SPIN));
+            CUpDownCtrl w(GetDlgItem(IDC_AMPLITUDE_STEP_SPIN));
 
             w.SetAccel(_countof(Accel), Accel);
             w.SetRange32((int) (MinAmplitudeStep * 10), (int) (MaxAmplitudeStep * 10.));
@@ -182,20 +188,39 @@ void graphs_page_t::InitializeControls() noexcept
 
     // Channels
     {
-        static_assert(_countof(ChannelNames) == audio_chunk::defined_channel_count, "Channels enum mismatch");
+        static_assert(_countof(ChannelNames) == audio_chunk::defined_channel_count, "Channels enum mismatch"); // Protection against SDK changes
         static_assert(_countof(ChannelNames) == (size_t) Channels::Count, "Insufficient channels names");
 
-        auto w = (CListBox) GetDlgItem(IDC_CHANNELS);
+        CListViewCtrl w(GetDlgItem(IDC_CHANNELS));
 
-        w.ResetContent();
+        w.DeleteAllItems();
 
-        for (const auto & x : ChannelNames)
-            w.AddString(x);
+        w.InsertColumn(0, L"", LVCFMT_LEFT, 250, 0);
+
+        for (const auto Channel : _State->_ChannelOrder)
+        {
+            const auto ChannelIndex = (size_t) std::countr_zero((uint32_t) Channel);
+
+            w.AddItem(-1, 0, ChannelNames[ChannelIndex]);
+        }
+
+        w.SetExtendedListViewStyle(/*LVS_EX_FULLROWSELECT |*/ LVS_EX_DOUBLEBUFFER /*| LVS_EX_AUTOCHECKSELECT*/ | LVS_EX_AUTOSIZECOLUMNS | LVS_EX_BORDERSELECT | LVS_EX_CHECKBOXES);
+    }
+
+    // Channel Up / Channel Down
+    {
+        _SymbolFont = ::CreateFontW(16, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY, DEFAULT_PITCH, L"Segoe UI Symbol");
+
+        GetDlgItem(IDC_CHANNEL_UP)  .SetWindowText(L"\u2191");
+        GetDlgItem(IDC_CHANNEL_UP)  .SetFont(_SymbolFont);
+
+        GetDlgItem(IDC_CHANNEL_DOWN).SetWindowText(L"\u2193");
+        GetDlgItem(IDC_CHANNEL_DOWN)  .SetFont(_SymbolFont);
     }
 
     // Channel pairs
     {
-        auto w = (CComboBox) GetDlgItem(IDC_CHANNEL_PAIRS);
+        CComboBox w(GetDlgItem(IDC_CHANNEL_PAIRS));
 
         w.ResetContent();
 
@@ -235,7 +260,7 @@ void graphs_page_t::UpdateControls() noexcept
     /* Graph Descriptions */
 
     {
-        auto w = (CListBox) GetDlgItem(IDC_GRAPH_SETTINGS);
+        CListBox w(GetDlgItem(IDC_GRAPH_SETTINGS));
 
         w.ResetContent();
 
@@ -370,15 +395,17 @@ void graphs_page_t::UpdateControls() noexcept
 
     // Channels
     {
-        auto w = (CListBox) GetDlgItem(IDC_CHANNELS);
+        auto Scope = msc::toggle_t(_IgnoreNotifications, true);
 
-        uint32_t Mask = Options._ActiveChannelMask;
+        CListViewCtrl w(GetDlgItem(IDC_CHANNELS));
 
-        for (int i = 0; i < (int) _countof(ChannelNames); ++i)
+        int i = 0;
+
+        for (const auto Channel : _State->_ChannelOrder)
         {
-            w.SetSel(i, (Mask & 1) ? TRUE : FALSE);
+            const auto IsSet = ((Options._ActiveChannelMask & (uint32_t) Channel) != 0);
 
-            Mask >>= 1;
+            w.SetCheckState(i++, IsSet ? TRUE : FALSE);
         }
     }
 
@@ -386,7 +413,7 @@ void graphs_page_t::UpdateControls() noexcept
     const bool SupportsChannelPairs = IsLevelMeter || IsOscilloscopeXY || IsGoniometer;
 
     {
-        auto w = (CComboBox) GetDlgItem(IDC_CHANNEL_PAIRS);
+        CComboBox w(GetDlgItem(IDC_CHANNEL_PAIRS));
 
         w.EnableWindow(SupportsChannelPairs);
         w.SetCurSel((int) Options._ChannelPair);
@@ -415,7 +442,7 @@ void graphs_page_t::TerminateControls() noexcept
 /// <summary>
 /// Handles an update of the selected item of a combo box.
 /// </summary>
-void graphs_page_t::OnSelectionChanged(UINT notificationCode, int id, CWindow w) noexcept
+void graphs_page_t::OnSelectionChanged(UINT, int id, CWindow w) noexcept
 {
     if (_State == nullptr)
         return;
@@ -446,11 +473,11 @@ void graphs_page_t::OnSelectionChanged(UINT notificationCode, int id, CWindow w)
 
             Options._HorizontalAlignment = (HorizontalAlignment) SelectedIndex;
 
-            _IgnoreNotifications = true;
+            {
+                auto Scope = msc::toggle_t(_IgnoreNotifications, true);
 
-            UpdateControls();
-
-            _IgnoreNotifications = false;
+                UpdateControls();
+            }
 
             ChangedSettings = ConfigurationChanges::Layout;
             break;
@@ -462,11 +489,11 @@ void graphs_page_t::OnSelectionChanged(UINT notificationCode, int id, CWindow w)
 
             Options._XAxisMode = (XAxisMode) SelectedIndex;
 
-            _IgnoreNotifications = true;
+            {
+                auto Scope = msc::toggle_t(_IgnoreNotifications, true);
 
-            UpdateControls();
-
-            _IgnoreNotifications = false;
+                UpdateControls();
+            }
             break;
         }
 
@@ -476,17 +503,11 @@ void graphs_page_t::OnSelectionChanged(UINT notificationCode, int id, CWindow w)
 
             Options._YAxisMode = (YAxisMode) SelectedIndex;
 
-            _IgnoreNotifications = true;
+            {
+                auto Scope = msc::toggle_t(_IgnoreNotifications, true);
 
-            UpdateControls();
-
-            _IgnoreNotifications = false;
-            break;
-        }
-
-        case IDC_CHANNELS:
-        {
-            UpdateSelectedChannels();
+                UpdateControls();
+            }
             break;
         }
 
@@ -509,7 +530,7 @@ void graphs_page_t::OnSelectionChanged(UINT notificationCode, int id, CWindow w)
 /// </summary>
 void graphs_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
 {
-    if ((_State == nullptr) || _IgnoreNotifications || (code != EN_CHANGE))
+    if (_IgnoreNotifications || (code != EN_CHANGE) || (_State == nullptr))
         return;
 
     auto ChangedSettings = ConfigurationChanges::All;
@@ -573,7 +594,7 @@ void graphs_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
 /// <summary>
 /// Handles the notification when a control loses focus.
 /// </summary>
-void graphs_page_t::OnEditLostFocus(UINT code, int id, CWindow) noexcept
+void graphs_page_t::OnEditLostFocus(UINT, int id, CWindow) noexcept
 {
     if ((_State == nullptr) || _IgnoreNotifications)
         return;
@@ -744,21 +765,73 @@ void graphs_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
 
         case IDC_ALL_CHANNELS:
         {
-            auto lb = (CListBox) GetDlgItem(IDC_CHANNELS);
+            auto Scope = msc::toggle_t(_IgnoreNotifications, true);
 
-            lb.SelItemRange(TRUE, 0, 0xFFFF);
+            CListViewCtrl w(GetDlgItem(IDC_CHANNELS));
 
-            UpdateSelectedChannels();
+            const int Count = w.GetItemCount();
+
+            for (int Index = 0; Index < Count; ++Index)
+                w.SetCheckState(Index, TRUE);
+
+            UpdateActiveChannelMask();
             break;
         }
 
         case IDC_NO_CHANNELS:
         {
-            auto lb = (CListBox) GetDlgItem(IDC_CHANNELS);
+            auto Scope = msc::toggle_t(_IgnoreNotifications, true);
 
-            lb.SelItemRange(FALSE, 0, 0xFFFF);
+            CListViewCtrl w(GetDlgItem(IDC_CHANNELS));
 
-            UpdateSelectedChannels();
+            const int Count = w.GetItemCount();
+
+            for (int Index = 0; Index < Count; ++Index)
+                w.SetCheckState(Index, FALSE);
+
+            UpdateActiveChannelMask();
+            break;
+        }
+
+        case IDC_CHANNEL_UP:
+        {
+            auto Scope = msc::toggle_t(_IgnoreNotifications, true);
+
+            CListViewCtrl w(GetDlgItem(IDC_CHANNELS));
+
+            const int SrcIndex = w.GetNextItem(-1, LVNI_SELECTED);
+
+            if (SrcIndex <= 0)
+                break;
+
+            const int DstIndex = SrcIndex - 1;
+
+            SwapItems(w, SrcIndex, DstIndex);
+
+            std::swap(_State->_ChannelOrder[(size_t) SrcIndex], _State->_ChannelOrder[(size_t) DstIndex]);
+
+            UpdateActiveChannelMask();
+            break;
+        }
+
+        case IDC_CHANNEL_DOWN:
+        {
+            auto Scope = msc::toggle_t(_IgnoreNotifications, true);
+
+            CListViewCtrl w(GetDlgItem(IDC_CHANNELS));
+
+            const int SrcIndex = w.GetNextItem(-1, LVNI_SELECTED);
+
+            if ((SrcIndex < 0) || (SrcIndex >= w.GetItemCount()- 1))
+                break;
+
+            const int DstIndex = SrcIndex + 1;
+
+            SwapItems(w, SrcIndex, DstIndex);
+
+            std::swap(_State->_ChannelOrder[(size_t) SrcIndex], _State->_ChannelOrder[(size_t) DstIndex]);
+
+            UpdateActiveChannelMask();
             break;
         }
 
@@ -775,7 +848,7 @@ void graphs_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
 /// <summary>
 /// Handles a notification from an UpDown control.
 /// </summary>
-LRESULT graphs_page_t::OnDeltaPos(LPNMHDR nmhd) noexcept
+LRESULT graphs_page_t::OnDeltaPos(LPNMHDR nmh) noexcept
 {
     if (_State == nullptr)
         return -1;
@@ -783,9 +856,9 @@ LRESULT graphs_page_t::OnDeltaPos(LPNMHDR nmhd) noexcept
     auto ChangedSettings = ConfigurationChanges::All;
     auto & gd = _State->_GraphOptions[_SelectedGraph];
 
-    auto nmud = (LPNMUPDOWN) nmhd;
+    auto nmud = (LPNMUPDOWN) nmh;
 
-    switch (nmhd->idFrom)
+    switch (nmh->idFrom)
     {
         default:
             return -1;
@@ -824,11 +897,37 @@ LRESULT graphs_page_t::OnDeltaPos(LPNMHDR nmhd) noexcept
 }
 
 /// <summary>
+/// Handles the change of a checkbox.
+/// </summary>
+LRESULT graphs_page_t::OnChannelChanged(int, LPNMHDR nmh, BOOL &) noexcept
+{
+    if (_IgnoreNotifications)
+        return 0;
+
+    const auto * nmlv = (const NMLISTVIEW *) nmh;
+
+    if ((nmlv->uChanged & LVIF_STATE) == 0)
+        return 0;
+
+    const auto OldCheckState = nmlv->uOldState & LVIS_STATEIMAGEMASK;
+    const auto NewCheckState = nmlv->uNewState & LVIS_STATEIMAGEMASK;
+
+    if (OldCheckState == NewCheckState)
+        return 0;
+
+    UpdateActiveChannelMask();
+
+    ConfigurationChanged(ConfigurationChanges::All);
+
+    return 0;
+}
+
+/// <summary>
 /// Fills the X-axis mode combobox with the modes relevant to the current visualization.
 /// </summary>
 void graphs_page_t::InitializeXAxisMode() noexcept
 {
-    auto w = (CComboBox) GetDlgItem(IDC_X_AXIS_MODE);
+    CComboBox w(GetDlgItem(IDC_X_AXIS_MODE));
 
     w.ResetContent();
 
@@ -853,7 +952,7 @@ void graphs_page_t::InitializeXAxisMode() noexcept
 /// </summary>
 void graphs_page_t::InitializeYAxisMode() noexcept
 {
-    auto w = (CComboBox) GetDlgItem(IDC_Y_AXIS_MODE);
+    CComboBox w(GetDlgItem(IDC_Y_AXIS_MODE));
 
     w.ResetContent();
 
@@ -874,22 +973,83 @@ void graphs_page_t::InitializeYAxisMode() noexcept
 }
 
 /// <summary>
-/// Updates the Selected Channels setting.
+/// Updates the Active Channel Mask setting with the user interface changes.
 /// </summary>
-void graphs_page_t::UpdateSelectedChannels() noexcept
+void graphs_page_t::UpdateActiveChannelMask() noexcept
 {
-    auto lb = (CListBox) GetDlgItem(IDC_CHANNELS);
+    CListViewCtrl w(GetDlgItem(IDC_CHANNELS));
 
-    const int Count = lb.GetSelCount();
+    const int Count = w.GetItemCount();
 
-    std::vector<int> Items((size_t) Count);
+    uint32_t NewActiveChanneMask = 0;
 
-    lb.GetSelItems(Count, Items.data());
+    for (int Index = 0; Index < Count; ++Index)
+    {
+        if (w.GetCheckState(Index))
+            NewActiveChanneMask |= (uint32_t) _State->_ChannelOrder[(size_t) Index];
+    }
 
-    uint32_t Channels = 0;
+    _State->_GraphOptions[_SelectedGraph]._ActiveChannelMask = NewActiveChanneMask;
+}
 
-    for (int Item : Items)
-        Channels |= 1 << Item;
+/// <summary>
+/// Swaps two items in a listview.
+/// </summary>
+void graphs_page_t::SwapItems(CListViewCtrl & w, int SrcIndex, int DstIndex) noexcept
+{
+    WCHAR SrcText[64] = { };
 
-    _State->_GraphOptions[_SelectedGraph]._ActiveChannelMask = Channels;
+    LVITEMW SrcItem =
+    {
+        .mask = ~0u,
+        .iItem = SrcIndex,
+        .pszText = SrcText,
+        .cchTextMax = _countof(SrcText),
+    };
+
+    w.GetItem(&SrcItem);
+
+    WCHAR DstText[64] = { };
+
+    LVITEMW DstItem =
+    {
+        .mask = ~0u,
+        .iItem = DstIndex,
+        .pszText = DstText,
+        .cchTextMax = _countof(DstText),
+    };
+
+    w.GetItem(&DstItem);
+
+    {
+        LVITEM Item = SrcItem;
+
+        Item.iItem = DstIndex;
+
+        w.SetItem(&Item);
+    }
+
+    {
+        LVITEM Item = DstItem;
+
+        Item.iItem = SrcIndex;
+
+        w.SetItem(&Item);
+    }
+
+    // Swap checkbox states.
+    const BOOL SrcChecked = w.GetCheckState(SrcIndex);
+    const BOOL DstChecked = w.GetCheckState(DstIndex);
+
+    w.SetCheckState(DstIndex, SrcChecked);
+    w.SetCheckState(SrcIndex, DstChecked);
+
+    // Remove selection and focus from the old position.
+    w.SetItemState(SrcIndex, 0, LVIS_SELECTED | LVIS_FOCUSED);
+
+    // Select and focus the new position.
+    w.SetItemState(DstIndex, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
+
+    w.EnsureVisible(DstIndex, FALSE);
+    w.SetFocus();
 }

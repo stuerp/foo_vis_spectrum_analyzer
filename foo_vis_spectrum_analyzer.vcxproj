@@ -243,7 +243,6 @@
     <ClInclude Include="Configuration\PresetsPageLayout.h" />
     <ClInclude Include="Configuration\StylesPage.h" />
     <ClInclude Include="Configuration\StylesPageLayout.h" />
-    <ClInclude Include="Configuration\Toggle.h" />
     <ClInclude Include="Configuration\TransformPage.h" />
     <ClInclude Include="Configuration\TransformPageLayout.h" />
     <ClInclude Include="Configuration\VisualizationPage.h" />

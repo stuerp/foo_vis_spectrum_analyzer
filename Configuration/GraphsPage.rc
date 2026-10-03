@@ -1,5 +1,5 @@
 
-/** $VER: GraphsPage.rc (2026.09.06) P. Stuer **/
+/** $VER: GraphsPage.rc (2026.10.03) P. Stuer **/
 
 #include "Resources.h"
 
@@ -78,9 +78,12 @@ style DS_SETFONT | DS_CONTROL | WS_CHILD | WS_CLIPCHILDREN
     /* Channels */
 
     ltext       "Channels:",                        IDC_STATIC,                     X_G28, Y_G28 + 2, W_G28, H_G28
-    listbox IDC_CHANNELS, X_G29, Y_G29, W_G29, H_G29, LBS_HASSTRINGS | LBS_MULTIPLESEL | LBS_NOTIFY | LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
+//  listbox                                         IDC_CHANNELS,                   X_G29, Y_G29,     W_G29, H_G29, LBS_HASSTRINGS | LBS_MULTIPLESEL | LBS_NOTIFY | LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
+    control     "",                                 IDC_CHANNELS,                   "SysListView32", WS_CHILD | WS_VISIBLE | WS_TABSTOP | WS_BORDER | LVS_REPORT | LVS_SINGLESEL | LVS_SHOWSELALWAYS | LVS_NOCOLUMNHEADER, X_G29, Y_G29, W_G29, H_G29
 
     pushbutton  "All",                              IDC_ALL_CHANNELS,               X_G52, Y_G52, W_G52, H_G52
+    pushbutton  "",                                 IDC_CHANNEL_UP,                 X_G54, Y_G54, W_G54, H_G54
+    pushbutton  "",                                 IDC_CHANNEL_DOWN,               X_G55, Y_G55, W_G55, H_G55
     pushbutton  "None",                             IDC_NO_CHANNELS,                X_G53, Y_G53, W_G53, H_G53
 
     ltext       "Channel pair:",                    IDC_STATIC,                     X_C50, Y_C50 + 2, W_C50, H_C50

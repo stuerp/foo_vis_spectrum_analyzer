@@ -262,7 +262,7 @@
 #define Y_G28    Y_G24
 
 // ListBox: Channels
-#define W_G29    80
+#define W_G29   104
 #define H_G29   160
 #define X_G29   X_G28
 #define Y_G29   Y_G28 + H_G28 + IY
@@ -272,6 +272,18 @@
 #define H_G52   H_BTN
 #define X_G52   X_G29
 #define Y_G52   Y_G29 + H_G29 + IY
+
+// Button: Channel Up
+#define W_G54   16
+#define H_G54   H_BTN
+#define X_G54   X_G52 + W_G52 + IX
+#define Y_G54   Y_G52
+
+// Button: Channel Down
+#define W_G55   16
+#define H_G55   H_BTN
+#define X_G55   X_G54 + W_G54 + IX
+#define Y_G55   Y_G54
 
 // Button: No Channels
 #define W_G53   30

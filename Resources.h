@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2026.10.01) P. Stuer **/
+/** $VER: Resources.h (2026.10.03) P. Stuer **/
 
 #pragma once
 
@@ -327,11 +327,13 @@
 #define IDC_CHANNELS                    5132
 
 #define IDC_ALL_CHANNELS                5134
-#define IDC_NO_CHANNELS                 5136
+#define IDC_CHANNEL_UP                  5136
+#define IDC_CHANNEL_DOWN                5138
+#define IDC_NO_CHANNELS                 5140
 
-#define IDC_CHANNEL_PAIRS               5138
+#define IDC_CHANNEL_PAIRS               5142
 
-#define IDC_SWAP_CHANNELS               5140
+#define IDC_SWAP_CHANNELS               5144
 
 #pragma endregion
 

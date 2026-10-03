@@ -12,7 +12,7 @@
 #include "Resources.h"
 #include "State.h"
 
-class transform_page_t : public page_t
+class transform_page_t final : public page_t
 {
 public:
     transform_page_t(int id) : page_t(id) { }
@@ -34,10 +34,7 @@ public:
     LRESULT OnDeltaPos(LPNMHDR nmhd) noexcept;
 
 private:
-    void InitializeControls() noexcept override;
-    void UpdateControls() noexcept override;
-    void TerminateControls() noexcept override;
-
-private:
-    std::vector<std::shared_ptr<numeric_edit_t>> _NumericEdits;
+    void InitializeControls() noexcept override final;
+    void UpdateControls() noexcept override final;
+    void TerminateControls() noexcept override final;
 };

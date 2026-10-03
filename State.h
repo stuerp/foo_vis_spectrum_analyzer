@@ -1,5 +1,5 @@
 
-/** $VER: State.h (2026.09.23) P. Stuer **/
+/** $VER: State.h (2026.10.03) P. Stuer **/
 
 #pragma once
 
@@ -298,6 +298,7 @@ public:
     style_manager_t _StyleManager;                                      // Styles shared by all graphs.
     std::vector<graph_options_t> _GraphOptions;
 
+    std::vector<Channels> _ChannelOrder;
     #pragma endregion
 
     std::wstring _PresetsDirectoryPath;

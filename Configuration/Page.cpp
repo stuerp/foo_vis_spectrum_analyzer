@@ -4,9 +4,10 @@
 #include "pch.h"
 
 #include "Page.h"
-#include "Toggle.h"
 
 #include "Theme.h"
+
+#include <Toggle.h>
 
 /// <summary>
 /// Initialize the dialog.
@@ -39,12 +40,12 @@ BOOL page_t::OnInitDialog(CWindow w, LPARAM lParam) noexcept
 /// </summary>
 void page_t::OnShowWindow(BOOL isBeingShown, INT status) noexcept
 {
-    if (isBeingShown)
-    {
-        auto Scope = toggle_t(_IsInitializing, true);
+    if (!isBeingShown)
+        return;
 
-        InitializeControls();
-    }
+    auto Scope = msc::toggle_t(_IsInitializing, true);
+
+    InitializeControls();
 }
 
 /// <summary>
@@ -75,7 +76,7 @@ LRESULT page_t::OnConfigurationChanged(UINT msg, WPARAM wParam, LPARAM lParam) n
     {
         case CC_PRESET_LOADED:
         {
-            auto Scope = toggle_t(_IsInitializing, true);
+            auto Scope = msc::toggle_t(_IsInitializing, true);
 
             InitializeControls();
             break;

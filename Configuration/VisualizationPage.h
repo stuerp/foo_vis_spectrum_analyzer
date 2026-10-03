@@ -32,7 +32,4 @@ private:
     void InitializeControls() noexcept override;
     void UpdateControls() noexcept override;
     void TerminateControls() noexcept override;
-
-private:
-    std::vector<std::shared_ptr<numeric_edit_t>> _NumericEdits;
 };

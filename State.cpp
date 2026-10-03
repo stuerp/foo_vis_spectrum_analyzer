@@ -1,5 +1,5 @@
 
-/** $VER: State.cpp (2026.09.30) P. Stuer **/
+/** $VER: State.cpp (2026.10.03) P. Stuer **/
 
 #include "pch.h"
 #include "State.h"
@@ -216,6 +216,36 @@ void state_t::Reset() noexcept
     _GridColumnCount = 1;
     _VerticalLayout = false;
     _OverlapGraphs = false;
+
+    _ChannelOrder =
+    {
+        Channels::FrontLeft,
+        Channels::FrontRight,
+        Channels::FrontCenter,
+
+        Channels::LFE,
+
+        Channels::BackLeft,
+        Channels::BackRight,
+
+        Channels::FrontCenterLeft,
+        Channels::FrontCenterRight,
+
+        Channels::BackCenter,
+
+        Channels::SideLeft,
+        Channels::SideRight,
+
+        Channels::TopCenter,
+
+        Channels::TopFrontLeft,
+        Channels::TopFrontCenter,
+        Channels::TopFrontRight,
+
+        Channels::TopBackLeft,
+        Channels::TopBackCenter,
+        Channels::TopBackRight,
+    };
 
     /** Visualization **/
 
@@ -511,6 +541,8 @@ state_t & state_t::operator=(const state_t & other) noexcept
     _GridColumnCount = other._GridColumnCount;
     _VerticalLayout = other._VerticalLayout;
     _OverlapGraphs = other._OverlapGraphs;
+
+    _ChannelOrder = other._ChannelOrder;
 
     #pragma endregion
 
@@ -1673,6 +1705,9 @@ void state_t::FromJSON(const char * data, size_t size, bool isPreset)
         }
     }
 
+    // Graphs
+    _ChannelOrder = Object.value("channelOrder", _ChannelOrder);
+
     {
         const auto & Styles = Object.value("styles", json::array());
 
@@ -1989,7 +2024,10 @@ json state_t::ToJSON(bool isPreset) const
             })
         ), 
 
+        { "channelOrder", _ChannelOrder },
+
 //      { "channelPair", _ChannelPair }, // FIXME: Shouldn't this be tied to a graph?
+
 
         // Styles
         { "styles", _StyleManager.ToJSON() },

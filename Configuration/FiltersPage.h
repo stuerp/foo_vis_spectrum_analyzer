@@ -33,10 +33,7 @@ public:
     LRESULT OnDeltaPos(LPNMHDR nmhd) noexcept;
 
 private:
-    void InitializeControls() noexcept override;
-    void UpdateControls() noexcept override;
-    void TerminateControls() noexcept override;
-
-private:
-    std::vector<std::shared_ptr<numeric_edit_t>> _NumericEdits;
+    void InitializeControls() noexcept override final;
+    void UpdateControls() noexcept override final;
+    void TerminateControls() noexcept override final;
 };

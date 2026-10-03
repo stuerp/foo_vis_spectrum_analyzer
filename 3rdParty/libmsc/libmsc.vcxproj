@@ -67,6 +67,7 @@
     <ClInclude Include="include\Stream.h" />
     <ClInclude Include="include\Strings.h" />
     <ClInclude Include="include\Support.h" />
+    <ClInclude Include="include\Toggle.h" />
     <ClInclude Include="include\Win32.h" />
     <ClInclude Include="include\Win32Exception.h" />
     <ClInclude Include="src\Encoding.h" />

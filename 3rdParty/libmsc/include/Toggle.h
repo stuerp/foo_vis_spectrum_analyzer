@@ -5,6 +5,9 @@
 
 #pragma once
 
+namespace msc
+{
+
 /// <summary>
 /// Implements a toggle that returns a variable to its previous value when the toggle goes out of scope.
 /// </summary>
@@ -29,3 +32,5 @@ private:
     T & _Variable;
     T _OldValue;
 };
+
+}

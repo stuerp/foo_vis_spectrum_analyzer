@@ -9,7 +9,8 @@
 #include "ColorDialog.h"
 #include "ColorListBox.h"
 #include "Gradient.h"
-#include "Toggle.h"
+
+#include <Toggle.h>
 
 namespace
 {
@@ -224,7 +225,7 @@ void styles_page_t::OnSelectionChanged(UINT notificationCode, int id, CWindow wi
 
         case IDC_STYLES:
         {
-            auto Scope = toggle_t(_IsInitializing, true);
+            auto Scope = msc::toggle_t(_IsInitializing, true);
 
             _SelectedStyle = (size_t) ((CListBox) window).GetCurSel();
 
@@ -845,7 +846,7 @@ void styles_page_t::UpdateControls() noexcept
     if (_ActiveStyles.empty())
         return;
 
-    auto Scope = toggle_t(_IgnoreNotifications, true);
+    auto Scope = msc::toggle_t(_IgnoreNotifications, true);
 
     // Update the Scope combobox.
     {
@@ -1020,7 +1021,7 @@ void styles_page_t::UpdateColorControls() noexcept
 
             // Update the position control.
             {
-                auto Scope = toggle_t(_IgnoreNotifications, true);
+                auto Scope = msc::toggle_t(_IgnoreNotifications, true);
 
                 const int64_t Position = (int64_t) (gs[(size_t) SelectedColor].position * 100.f);
 
@@ -1177,7 +1178,7 @@ LRESULT styles_page_t::OnConfigurationChanged(UINT msg, WPARAM wParam, LPARAM lP
     {
         case CC_COLORS:
         {
-            auto Scope = toggle_t(_IsInitializing, true);
+            auto Scope = msc::toggle_t(_IsInitializing, true);
 
             UpdateControls();
             break;

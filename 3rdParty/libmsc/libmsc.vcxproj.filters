@@ -29,6 +29,7 @@
     <ClInclude Include="include\Chrono.h" />
     <ClInclude Include="include\Error.h" />
     <ClInclude Include="include\Module.h" />
+    <ClInclude Include="include\Toggle.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include=".editorconfig" />

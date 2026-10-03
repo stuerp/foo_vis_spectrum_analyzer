@@ -1,5 +1,5 @@
 
-/** $VER: Page.h (2026.09.26) P. Stuer - Implements a configuration dialog page. **/
+/** $VER: Page.h (2026.10.03) P. Stuer - Implements a configuration dialog page. **/
 
 #pragma once
 
@@ -112,6 +112,8 @@ protected:
     bool _IgnoreNotifications { false };    // True if the notifications of the controls should be ignored.
 
     CToolTipCtrl _ToolTipControl;
+
+    std::vector<std::shared_ptr<numeric_edit_t>> _NumericEdits;
 
 private:
     fb2k::CCoreDarkModeHooks _DarkMode;

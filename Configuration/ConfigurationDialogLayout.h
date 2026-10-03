@@ -14,7 +14,7 @@
 #define W_CHB       10 // Check box
 #define H_CHB       10 // Check box
 
-#define W_A00      442 // Dialog width (in dialog units)
+#define W_A00      458 // Dialog width (in dialog units)
 #define H_A00      342 // Dialog height (in dialog units)
 
 #define DX           7

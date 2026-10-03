@@ -63,9 +63,9 @@ public:
     END_DLGRESIZE_MAP()
 
 private:
-    void InitializeControls() noexcept;
-    void UpdateControls() noexcept override;
-    void TerminateControls() noexcept;
+    void InitializeControls() noexcept final;
+    void UpdateControls() noexcept override final;
+    void TerminateControls() noexcept final;
 
     void InitializeStyles() noexcept;
     void UpdateColorControls() noexcept;
@@ -73,7 +73,6 @@ private:
     void UpdateColorIndexControl(const style_t * style, int colorIndex) noexcept;
 
 private:
-    std::vector<std::shared_ptr<numeric_edit_t>> _NumericEdits;
     std::vector<VisualElement> _ActiveStyles;   // The styles that are relevant for the current visualization.
     size_t _SelectedStyle { };                  // Index of the selected style in the listbox.
 
