@@ -131,7 +131,7 @@ bool PresetManager::Delete(const path_t & rootPath, const std::wstring & presetN
     {
         msc::error_t LastError(::GetLastError());
 
-        Log.AtError().Write(STR_COMPONENT_BASENAME " failed to delete preset \"%s\": %s", presetName.c_str(), LastError.Message().c_str());
+        Log.AtError().Write(STR_COMPONENT_BASENAME " failed to delete preset \"%s\": %s (0x%08X)", presetName.c_str(), msc::WideToUTF8(LastError.Message()).c_str(), (int) LastError.Number());
 
         return false;
     }

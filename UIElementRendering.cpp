@@ -1,5 +1,5 @@
 
-/** $VER: UIElementRendering.cpp (2026.10.01) P. Stuer - UIElement methods that run on the render thread. **/
+/** $VER: UIElementRendering.cpp (2026.10.03) P. Stuer - UIElement methods that run on the render thread. **/
 
 #include "pch.h"
 
@@ -342,22 +342,46 @@ HRESULT uielement_t::CreateDeviceIndependentResources() noexcept
     HRESULT hr = DXGIFactory::Startup();
 
     if (FAILED(hr))
+    {
+        msc::error_t LastError((DWORD) hr);
+
+        Log.AtFatal().Write(STR_COMPONENT_BASENAME " is unable to create DXGI factory: %s (0x%08X)", msc::WideToUTF8(LastError.Message()).c_str(), (int) hr);
+
         return hr;
+    }
 
     hr = Direct2DFactory::Startup();
 
     if (FAILED(hr))
+    {
+        msc::error_t LastError((DWORD) hr);
+
+        Log.AtFatal().Write(STR_COMPONENT_BASENAME " is unable to create Direct2D factory: %s (0x%08X)", msc::WideToUTF8(LastError.Message()).c_str(), (int) hr);
+
         return hr;
+    }
 
     hr = DirectWriteFactory::Startup();
 
     if (FAILED(hr))
+    {
+        msc::error_t LastError((DWORD) hr);
+
+        Log.AtFatal().Write(STR_COMPONENT_BASENAME " is unable to create DirectWrite factory: %s (0x%08X)", msc::WideToUTF8(LastError.Message()).c_str(), (int) hr);
+
         return hr;
+    }
 
     hr = WICFactory::Startup();
 
     if (FAILED(hr))
+    {
+        msc::error_t LastError((DWORD) hr);
+
+        Log.AtFatal().Write(STR_COMPONENT_BASENAME " is unable to create WIC factory: %s (0x%08X)", msc::WideToUTF8(LastError.Message()).c_str(), (int) hr);
+
         return hr;
+    }
 
     UINT Flags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
 
@@ -368,14 +392,35 @@ HRESULT uielement_t::CreateDeviceIndependentResources() noexcept
     hr = ::D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, Flags, nullptr, 0, D3D11_SDK_VERSION, _D3DDevice.GetAddressOf(), nullptr, _D3DDeviceContext.GetAddressOf());
 
     if (FAILED(hr))
+    {
+        msc::error_t LastError((DWORD) hr);
+
+        Log.AtFatal().Write(STR_COMPONENT_BASENAME " is unable to create Direct3D device: %s (0x%08X)", msc::WideToUTF8(LastError.Message()).c_str(), (int) hr);
+
         return hr;
+    }
 
     hr = ::DCompositionCreateDevice(nullptr, IID_PPV_ARGS(_DCompositionDevice.GetAddressOf()));
 
     if (FAILED(hr))
+    {
+        msc::error_t LastError((DWORD) hr);
+
+        Log.AtFatal().Write(STR_COMPONENT_BASENAME " is unable to create DirectComposition device: %s (0x%08X)", msc::WideToUTF8(LastError.Message()).c_str(), (int) hr);
+
         return hr;
+    }
 
     hr = _FrameCounter.CreateDeviceIndependentResources();
+
+    if (FAILED(hr))
+    {
+        msc::error_t LastError((DWORD) hr);
+
+        Log.AtFatal().Write(STR_COMPONENT_BASENAME " is unable to create frame counter resources: %s (0x%08X)", msc::WideToUTF8(LastError.Message()).c_str(), (int) hr);
+
+        return hr;
+    }
 
     return hr;
 }

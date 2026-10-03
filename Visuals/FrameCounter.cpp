@@ -87,31 +87,31 @@ HRESULT frame_counter_t::CreateDeviceIndependentResources() noexcept
 
     HRESULT hr = DirectWriteFactory::Get()->CreateTextFormat(_FontFamilyName.c_str(), NULL, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, FontSize, L"", _TextFormat.GetAddressOf());
 
-    if (SUCCEEDED(hr))
-    {
-        _TextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
-        _TextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
-        _TextFormat->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
+    if (FAILED(hr))
+        return hr;
 
-        const WCHAR Text[] = L"999.99 fps";
+    _TextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
+    _TextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
+    _TextFormat->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
 
-        ComPtr<IDWriteTextLayout> TextLayout;
+    const WCHAR Text[] = L"999.99 fps";
 
-        hr = DirectWriteFactory::Get()->CreateTextLayout(Text, (UINT32) ::wcslen(Text), _TextFormat.Get(), 1920.f, 1080.f, TextLayout.GetAddressOf());
+    ComPtr<IDWriteTextLayout> TextLayout;
 
-        if (SUCCEEDED(hr))
-        {
-            DWRITE_TEXT_METRICS TextMetrics = { };
+    hr = DirectWriteFactory::Get()->CreateTextLayout(Text, (UINT32) ::wcslen(Text), _TextFormat.Get(), 1920.f, 1080.f, TextLayout.GetAddressOf());
 
-            hr = TextLayout->GetMetrics(&TextMetrics);
+    if (FAILED(hr))
+        return hr;
 
-            if (SUCCEEDED(hr))
-            {
-                _TextWidth  = TextMetrics.width;
-                _TextHeight = TextMetrics.height;
-            }
-        }
-    }
+    DWRITE_TEXT_METRICS TextMetrics = { };
+
+    hr = TextLayout->GetMetrics(&TextMetrics);
+
+    if (FAILED(hr))
+        return hr;
+
+    _TextWidth  = TextMetrics.width;
+    _TextHeight = TextMetrics.height;
 
     return hr;
 }
