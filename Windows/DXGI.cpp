@@ -96,7 +96,7 @@ HRESULT DXGI::GetRefreshRate(IDXGIDevice1 * dxgiDevice, double & refreshRate) no
 
     // Fallback: Enumerate all modes and return the refresh rate of the first exact resolution match.
 
-    UINT Flags = 0;  // Use 0 for current mode matching
+    const UINT Flags = 0;  // Use 0 for current mode matching
     UINT ModeCount = 0;
 
     hr = DXGIOutput->GetDisplayModeList(DXGI_FORMAT_R8G8B8A8_UNORM, Flags, &ModeCount, nullptr);

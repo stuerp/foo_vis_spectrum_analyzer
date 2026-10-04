@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.cpp (2026.09.09) P. Stuer - Implements a spectrum analyzer visualization **/
+/** $VER: Spectrum.cpp (2026.10.04) P. Stuer - Implements a spectrum analyzer visualization **/
 
 #include "pch.h"
 
@@ -49,8 +49,6 @@ void spectrum_t::Configure(state_t * state, graph_options_t * options, analysis_
 void spectrum_t::Move(const D2D1_RECT_F & rect) noexcept
 {
     InitializeMetrics(rect);
-
-    _OpacityMask.Reset(); // Forces the opacity mask to be regenerated.
 }
 
 /// <summary>
@@ -58,7 +56,7 @@ void spectrum_t::Move(const D2D1_RECT_F & rect) noexcept
 /// </summary>
 void spectrum_t::Resize() noexcept
 {
-    if (!_ForceElementToResize ||(_Size.width <= 0.f) || (_Size.height <= 0.f))
+    if (!_ForceElementToResize || (_Size.width <= 0.f) || (_Size.height <= 0.f))
         return;
 
     const FLOAT xt = ((_GraphOptions->_XAxisMode != XAxisMode::None) && _GraphOptions->_XAxisTop)    ? _XAxis.GetTextHeight() : 0.f;
@@ -153,25 +151,11 @@ void spectrum_t::Render(ID2D1DeviceContext * deviceContext, IDXGISwapChain1 * sw
 }
 
 /// <summary>
-/// Handles a configuration change.
-/// </summary>
-void spectrum_t::OnConfigurationChange(ConfigurationChanges configurationChanges) noexcept
-{
-    if (!IsSet(configurationChanges, ConfigurationChanges::Layout))
-        return;
-
-    _XAxis.Configure(_State, _GraphOptions, _Analysis, _IsFirst, _IsLast);
-    _XAxis.Resize(true);
-}
-
-/// <summary>
 /// Renders the spectrum analysis as bars.
 /// Note: Created in a top-left (0,0) coordinate system and later translated and flipped as necessary.
 /// </summary>
 void spectrum_t::RenderBars(ID2D1DeviceContext * deviceContext) noexcept
 {
-    _LEDSize = _State->_LEDLight + _State->_LEDGap;
-
     FLOAT t = _ClientSize.width / (FLOAT) _Analysis->_FrequencyBands.size();
 
     // Use the full width of the graph?
@@ -186,7 +170,11 @@ void spectrum_t::RenderBars(ID2D1DeviceContext * deviceContext) noexcept
     FLOAT x1 = HOffset;
     FLOAT x2 = x1 + BarWidth;
 
+    const bool HasPeaks = (_State->_PeakMode != PeakMode::None);
+
     deviceContext->SetAntialiasMode( D2D1_ANTIALIAS_MODE_ALIASED); // Required by FillOpacityMask() and results in crispier graphics.
+
+//  _DebugBrush->SetColor(D2D1::ColorF(0x000000FF)); deviceContext->DrawRectangle({ 0.f, 0.f, _ClientSize.width, _ClientSize.height }, _DebugBrush.Get());
 
     for (const auto & fb : _Analysis->_FrequencyBands)
     {
@@ -201,12 +189,12 @@ void spectrum_t::RenderBars(ID2D1DeviceContext * deviceContext) noexcept
             if (fb.HasDarkBackground)
             {
                 if (_DarkBackgroundStyle.IsEnabled())
-                    RenderBarPart(deviceContext, Rect, _DarkBackgroundStyle);
+                    RenderBarSegment(deviceContext, Rect, _DarkBackgroundStyle);
             }
             else
             {
                 if (_LightBackgroundStyle.IsEnabled())
-                    RenderBarPart(deviceContext, Rect, _LightBackgroundStyle);
+                    RenderBarSegment(deviceContext, Rect, _LightBackgroundStyle);
             }
         }
 
@@ -216,7 +204,7 @@ void spectrum_t::RenderBars(ID2D1DeviceContext * deviceContext) noexcept
 
             if (!GreaterThanNyquist || (GreaterThanNyquist && !_State->_SuppressMirrorImage))
             {
-                if ((_State->_PeakMode != PeakMode::None) && (fb.PeakValue > 0.))
+                if (HasPeaks && (fb.PeakValue > 0.))
                     RenderBar(deviceContext, Rect, _BarPeakAreaStyle, _BarPeakTopStyle, fb.PeakValue, fb.Opacity);
 
                 if (fb.Value > 0.)
@@ -234,25 +222,39 @@ void spectrum_t::RenderBars(ID2D1DeviceContext * deviceContext) noexcept
 /// </summary>
 void spectrum_t::RenderBar(ID2D1DeviceContext * deviceContext, D2D1_RECT_F & rect, const style_t & areaStyle, const style_t & topStyle, double value, double opacity) noexcept
 {
-    rect.top    = 0.f;
-    rect.bottom = _ClientSize.height * (FLOAT) value;
+    rect.top = 0.f;
 
     // Draw the bar area.
     if (areaStyle.IsEnabled())
     {
+        rect.bottom = _ClientSize.height * (FLOAT) value;
+
+        if (_State->_LEDMode)
+        {
+            if ( _State->_LEDIntegralSize)
+                rect.bottom = std::ceil(rect.bottom / _LEDSize) * _LEDSize;
+
+            rect.bottom -= _State->_LEDGap;
+        }
+
         if (_BarAreaStyle.IsAmplitudeBased())
             _BarAreaStyle.SetBrushColor(value);
 
-        RenderBarPart(deviceContext, rect, areaStyle);
+        RenderBarSegment(deviceContext, rect, areaStyle);
     }
 
     // Draw the bar top.
     if (topStyle.IsEnabled())
     {
+        rect.bottom = _ClientSize.height * (FLOAT) value;
+
         if (_State->_LEDMode)
         {
-            rect.bottom = _ClientSize.height * (FLOAT) value;
-            rect.top    = rect.bottom - _LEDSize;
+            if ( _State->_LEDIntegralSize)
+                rect.bottom = std::ceil(rect.bottom / _LEDSize) * _LEDSize;
+
+            rect.bottom -= _State->_LEDGap;
+            rect.top     = rect.bottom - _LEDSize;
         }
         else
         {
@@ -263,31 +265,19 @@ void spectrum_t::RenderBar(ID2D1DeviceContext * deviceContext, D2D1_RECT_F & rec
         if ((_State->_PeakMode == PeakMode::FadeOut) || (_State->_PeakMode == PeakMode::FadingAIMP))
             topStyle._Brush->SetOpacity((FLOAT) opacity);
 
-        RenderBarPart(deviceContext, rect, topStyle);
+        RenderBarSegment(deviceContext, rect, topStyle);
     }
 }
 
 /// <summary>
-/// Renders a part of a bar.
+/// Renders a segment of a bar.
 /// </summary>
-void spectrum_t::RenderBarPart(ID2D1DeviceContext * deviceContext, D2D1_RECT_F & rect, const style_t & style) const noexcept
+void spectrum_t::RenderBarSegment(ID2D1DeviceContext * deviceContext, D2D1_RECT_F & rect, const style_t & style) const noexcept
 {
+//  _DebugBrush->SetColor(D2D1::ColorF(0x00FF0000)); deviceContext->DrawRectangle(rect, _DebugBrush.Get());
+
     if (_State->_LEDMode)
-    {
-        if (_State->_LEDIntegralSize)
-        {
-            rect.top    = std::clamp(std::ceilf(rect.top    / _LEDSize) * _LEDSize, _ClientRect.top, _ClientRect.bottom);
-            rect.bottom = std::clamp(std::ceilf(rect.bottom / _LEDSize) * _LEDSize, _ClientRect.top, _ClientRect.bottom);
-        }
-
-        deviceContext->PushAxisAlignedClip(rect, D2D1_ANTIALIAS_MODE_ALIASED);
-
-        const D2D1_RECT_F Src = { rect.left, 0.f, rect.right, _ClientSize.height };
-
-        deviceContext->FillOpacityMask(_OpacityMask.Get(), style._Brush.Get(), Src, Src);
-
-        deviceContext->PopAxisAlignedClip();
-    }
+        deviceContext->FillOpacityMask(_OpacityMask.Get(), style._Brush.Get(), rect, rect);
     else
         deviceContext->FillRectangle(rect, style._Brush.Get());
 }
@@ -817,6 +807,8 @@ HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCon
 
             if (_OpacityMask == nullptr)
             {
+                _LEDSize = _State->_LEDLight + _State->_LEDGap;
+
                 hr = CreateOpacityMask(deviceContext);
 
                 if (FAILED(hr))
@@ -1070,24 +1062,23 @@ HRESULT spectrum_t::CreateOpacityMask(ID2D1DeviceContext * deviceContext) noexce
     if (FAILED(hr))
         return hr;
 
-    rt->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
-
     ComPtr<ID2D1SolidColorBrush> Brush;
+    {
+        hr = rt->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Black), Brush.GetAddressOf());
 
-    hr = rt->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Black), Brush.GetAddressOf());
-
-    if (FAILED(hr))
-        return hr;
+        if (FAILED(hr))
+            return hr;
+    }
 
     rt->BeginDraw();
 
     rt->Clear(); // Transparent
 
-    const FLOAT LEDSize = _State->_LEDLight + _State->_LEDGap;
-
-    if (LEDSize > 0.f)
+    if (_LEDSize > 0.f)
     {
-        for (FLOAT y = 0.f; y < _ClientSize.height; y += LEDSize)
+        rt->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
+
+        for (FLOAT y = 0.f; y < _ClientSize.height; y += _LEDSize)
             rt->FillRectangle(D2D1::RectF(0.f, y, 1.f, y + _State->_LEDLight), Brush.Get());
     }
 
@@ -1428,4 +1419,16 @@ HRESULT spectrum_t::CreateSegment(FLOAT a1, FLOAT a2, FLOAT r1, FLOAT r2, ID2D1P
     Sink->Close();
 
     return hr;
+}
+
+/// <summary>
+/// Handles a configuration change.
+/// </summary>
+void spectrum_t::OnConfigurationChange(ConfigurationChanges configurationChanges) noexcept
+{
+    if (!IsSet(configurationChanges, ConfigurationChanges::Layout))
+        return;
+
+    _XAxis.Configure(_State, _GraphOptions, _Analysis, _IsFirst, _IsLast);
+    _XAxis.Resize(true);
 }

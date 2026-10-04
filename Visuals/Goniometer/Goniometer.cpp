@@ -144,7 +144,7 @@ void goniometer_t::Render(ID2D1DeviceContext * deviceContext, IDXGISwapChain1 * 
         {
             ComPtr<ID2D1SolidColorBrush> WhiteBrush;
 
-            hr = _DeviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::White), &WhiteBrush);
+            hr = _DeviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::White), WhiteBrush.GetAddressOf());
 
             const FLOAT x = 4.f + ((_Side - 8.f) / 2.f * (1.f + (FLOAT) _AudioProcessor.GetCorrelation()));
             const FLOAT y = _Side - 4.f;
@@ -250,7 +250,7 @@ HRESULT goniometer_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceC
 
     if (_BlurEffect == nullptr)
     {
-        hr = _DeviceContext->CreateEffect(CLSID_D2D1GaussianBlur, &_BlurEffect);
+        hr = _DeviceContext->CreateEffect(CLSID_D2D1GaussianBlur, _BlurEffect.GetAddressOf());
 
         if (FAILED(hr))
             return hr;
@@ -271,7 +271,7 @@ HRESULT goniometer_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceC
 
     if (_SpriteBatch == nullptr)
     {
-        hr = _DeviceContext->CreateSpriteBatch(&_SpriteBatch);
+        hr = _DeviceContext->CreateSpriteBatch(_SpriteBatch.GetAddressOf());
 
         if (FAILED(hr))
             return hr;
@@ -556,7 +556,7 @@ HRESULT goniometer_t::CreatePointSprite(ComPtr<ID2D1Bitmap1> & bitmap) noexcept
         D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED)
     );
 
-    HRESULT hr = _DeviceContext->CreateBitmap(Size, nullptr, 0, &Properties, &bitmap);
+    HRESULT hr = _DeviceContext->CreateBitmap(Size, nullptr, 0, &Properties, bitmap.GetAddressOf());
 
     if (FAILED(hr))
         return hr;
@@ -571,7 +571,7 @@ HRESULT goniometer_t::CreatePointSprite(ComPtr<ID2D1Bitmap1> & bitmap) noexcept
 
     ComPtr<ID2D1SolidColorBrush> WhiteBrush;
 
-    hr = _DeviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::White), &WhiteBrush);
+    hr = _DeviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::White), WhiteBrush.GetAddressOf());
 
     if (SUCCEEDED(hr))
     {
@@ -597,7 +597,7 @@ HRESULT goniometer_t::CreateStaticContent() noexcept
     const auto ScaleTransform = D2D1::Matrix3x2F::Scale(D2D1::SizeF(_HalfSide, _HalfSide));
 
     // Create a command list that will store the grid pattern and the axes.
-    HRESULT hr = _DeviceContext->CreateCommandList(&_StaticContent);
+    HRESULT hr = _DeviceContext->CreateCommandList(_StaticContent.GetAddressOf());
 
     if (FAILED(hr))
         return hr;

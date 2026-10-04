@@ -1034,7 +1034,7 @@ HRESULT spectrogram_t::CreateDeviceSpecificResources(ID2D1DeviceContext * device
     {
         if (_BitmapRenderTarget == nullptr)
         {
-            hr = deviceContext->CreateCompatibleRenderTarget(_BitmapSize, &_BitmapRenderTarget);
+            hr = deviceContext->CreateCompatibleRenderTarget(_BitmapSize, _BitmapRenderTarget.GetAddressOf());
 
             if (FAILED(hr))
                 return hr;
@@ -1049,7 +1049,7 @@ HRESULT spectrogram_t::CreateDeviceSpecificResources(ID2D1DeviceContext * device
 //          _BitmapRenderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE); // Don't use: This causes ghost images in the final output.
             _BitmapRenderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
 
-            hr = _BitmapRenderTarget->GetBitmap(&_Bitmap);
+            hr = _BitmapRenderTarget->GetBitmap(_Bitmap.GetAddressOf());
 
             if (FAILED(hr))
                 return hr;
@@ -1060,7 +1060,7 @@ HRESULT spectrogram_t::CreateDeviceSpecificResources(ID2D1DeviceContext * device
     {
         if (_LegendBitmapRenderTarget == nullptr)
         {
-            hr = deviceContext->CreateCompatibleRenderTarget(_LegendSize, &_LegendBitmapRenderTarget);
+            hr = deviceContext->CreateCompatibleRenderTarget(_LegendSize, _LegendBitmapRenderTarget.GetAddressOf());
 
             if (FAILED(hr))
                 return hr;
@@ -1070,7 +1070,7 @@ HRESULT spectrogram_t::CreateDeviceSpecificResources(ID2D1DeviceContext * device
         {
             CreateLegend(_LegendBitmapRenderTarget.Get());
 
-            hr = _LegendBitmapRenderTarget->GetBitmap(&_LegendBitmap);
+            hr = _LegendBitmapRenderTarget->GetBitmap(_LegendBitmap.GetAddressOf());
 
             if (FAILED(hr))
                 return hr;

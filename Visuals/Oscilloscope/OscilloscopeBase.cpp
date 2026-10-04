@@ -94,7 +94,7 @@ HRESULT oscilloscope_base_t::CreateDeviceSpecificResources(ID2D1DeviceContext * 
 
     if (_BlurEffect == nullptr)
     {
-        hr = _DeviceContext->CreateEffect(CLSID_D2D1GaussianBlur, &_BlurEffect);
+        hr = _DeviceContext->CreateEffect(CLSID_D2D1GaussianBlur, _BlurEffect.GetAddressOf());
 
         if (FAILED(hr))
             return hr;

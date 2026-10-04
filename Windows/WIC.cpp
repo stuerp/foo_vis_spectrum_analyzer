@@ -41,7 +41,7 @@ HRESULT WICFactory::Initialize() noexcept
     if (_Factory)
         return S_OK;
 
-    return ::CoCreateInstance(CLSID_WICImagingFactory, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&_Factory));
+    return ::CoCreateInstance(CLSID_WICImagingFactory, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(_Factory.GetAddressOf()));
 }
 
 void WICFactory::Terminate() noexcept

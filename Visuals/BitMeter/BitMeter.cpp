@@ -352,7 +352,7 @@ void bit_meter_t::DeleteDeviceSpecificResources() noexcept
 /// </summary>
 HRESULT bit_meter_t::CreateStaticContentCommandList() noexcept
 {
-    HRESULT hr = _DeviceContext->CreateCommandList(&_StaticContentCommandList);
+    HRESULT hr = _DeviceContext->CreateCommandList(_StaticContentCommandList.GetAddressOf());
 
     if (FAILED(hr))
         return hr;

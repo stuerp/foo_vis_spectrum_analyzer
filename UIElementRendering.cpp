@@ -509,7 +509,7 @@ HRESULT uielement_t::CreateDeviceSpecificResources() noexcept
                 .AlphaMode   = DXGI_ALPHA_MODE_PREMULTIPLIED, // Required for alpha transparency.
             };
 
-            hr = DXGIFactory::Get()->CreateSwapChainForComposition(_D3DDevice.Get(), &scd, nullptr, &_SwapChain);
+            hr = DXGIFactory::Get()->CreateSwapChainForComposition(_D3DDevice.Get(), &scd, nullptr, _SwapChain.GetAddressOf());
 
             if (FAILED(hr))
                 return hr;
@@ -517,12 +517,12 @@ HRESULT uielement_t::CreateDeviceSpecificResources() noexcept
 
         // Set up DirectComposition.
         {
-            hr = _DCompositionDevice->CreateTargetForHwnd(m_hWnd, TRUE, &_CompositionTarget);
+            hr = _DCompositionDevice->CreateTargetForHwnd(m_hWnd, TRUE, _CompositionTarget.GetAddressOf());
 
             if (FAILED(hr))
                 return hr;
 
-            hr = _DCompositionDevice->CreateVisual(&_CompositionVisual);
+            hr = _DCompositionDevice->CreateVisual(_CompositionVisual.GetAddressOf());
 
             if (FAILED(hr))
                 return hr;

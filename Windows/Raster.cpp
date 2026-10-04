@@ -15,7 +15,7 @@
 HRESULT raster_t::Initialize(IWICBitmapSource * bitmapSource) noexcept
 {
     // Create the bitmap from the image frame.
-    HRESULT hr = WICFactory::Get()->CreateBitmapFromSource(bitmapSource, WICBitmapCacheOnDemand, &_Bitmap);
+    HRESULT hr = WICFactory::Get()->CreateBitmapFromSource(bitmapSource, WICBitmapCacheOnDemand, _Bitmap.GetAddressOf());
 
     if (FAILED(hr))
         return hr;

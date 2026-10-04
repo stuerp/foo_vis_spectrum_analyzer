@@ -54,7 +54,7 @@ private:
     void RenderBars(ID2D1DeviceContext * deviceContext) noexcept;
     void RenderBar(ID2D1DeviceContext * deviceContext, D2D1_RECT_F & rect, const style_t & areaStyle, const style_t & topStyle, double value, double opacity) noexcept;
 
-    void RenderBarPart(ID2D1DeviceContext * deviceContext, D2D1_RECT_F & rect, const style_t & style) const noexcept;
+    void RenderBarSegment(ID2D1DeviceContext * deviceContext, D2D1_RECT_F & rect, const style_t & style) const noexcept;
 
     void RenderCurve(ID2D1DeviceContext * deviceContext) noexcept;
     void RenderRadialBars(ID2D1DeviceContext * deviceContext) noexcept;
