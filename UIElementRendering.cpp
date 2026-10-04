@@ -473,6 +473,8 @@ HRESULT uielement_t::CreateDeviceSpecificResources() noexcept
             if (FAILED(hr))
                 return hr;
 
+            (void) DXGI::GetRefreshRate(DXGIDevice.Get(), _DisplayRefreshRate); // Currently not used yet.
+
             // Create a D2D device from the DXGI device.
             hr = Direct2DFactory::Get()->CreateDevice(DXGIDevice.Get(), _D2DDevice.GetAddressOf());
 
@@ -490,8 +492,6 @@ HRESULT uielement_t::CreateDeviceSpecificResources() noexcept
                 return hr;
 
             _DeviceContext->SetDpi((FLOAT) _DPI, (FLOAT) _DPI);
-
-            (void) Direct2D::GetRefreshRate(DXGIDevice.Get(), _DisplayRefreshRate); // Currently not used yet.
         }
 
         if (_SwapChain == nullptr)

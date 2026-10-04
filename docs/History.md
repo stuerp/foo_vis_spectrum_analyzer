@@ -1,6 +1,13 @@
 
 # foo_vis_spectrum_analyzer History
 
+v0.13.0.0-alpha4, 2026-10-03
+
+- New: The channels in the configuration dialog can be reordered. [Forum request](https://hydrogenaudio.org/index.php/topic,125031.msg1087375.html#msg1087375)
+- Changed: Artwork `Fill` mode will scale up images smaller than the visualizer panel.
+- Fixed: Vertical Grid style of the Oscilloscope visualization did not react to changes. (Regression)
+- Fixed: Another attempt to fix the DirectX factory creation code. (Regression)
+
 v0.13.0.0-alpha3, 2026-09-30
 
 - Fixed: Race condition during the destruction of DirectX resources when using multiple instances.

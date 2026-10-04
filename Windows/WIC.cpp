@@ -1,5 +1,5 @@
 
-/** $VER: WIC.cpp (2026.10.01) P. Stuer **/
+/** $VER: WIC.cpp (2026.10.04) P. Stuer **/
 
 #include "pch.h"
 
@@ -7,10 +7,10 @@
 
 #pragma comment(lib, "windowscodecs")
 
-ComPtr<IWICImagingFactory3> WICFactory::_Factory;
+ComPtr<WICFactory::Interface> WICFactory::_Factory;
 int64_t WICFactory::_ReferenceCount = 0;
 
-ComPtr<IWICImagingFactory3> WICFactory::Get() noexcept
+ComPtr<WICFactory::Interface> WICFactory::Get() noexcept
 {
     return Instance()._Factory.Get();
 }

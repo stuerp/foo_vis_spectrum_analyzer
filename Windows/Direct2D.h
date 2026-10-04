@@ -1,5 +1,5 @@
 
-/** $VER: Direct2D.h (2026.10.01) P. Stuer **/
+/** $VER: Direct2D.h (2026.10.04) P. Stuer **/
 
 #pragma once
 
@@ -18,12 +18,14 @@ using Microsoft::WRL::ComPtr;
 
 class Direct2DFactory final
 {
+    typedef ID2D1Factory2 Interface;
+
 public:
     Direct2DFactory(const Direct2DFactory &) = delete;
-    Direct2DFactory& operator=(const Direct2DFactory &) = delete;
+    Direct2DFactory & operator=(const Direct2DFactory &) = delete;
 
     [[nodiscard]]
-    static ComPtr<ID2D1Factory2> Get() noexcept
+    static ComPtr<Interface> Get() noexcept
     {
         return Instance()._Factory.Get();
     }
@@ -52,7 +54,7 @@ private:
     void Terminate() noexcept;
 
 private:
-    static ComPtr<ID2D1Factory2> _Factory;
+    static ComPtr<Interface> _Factory;
     static int64_t _ReferenceCount;
 
     std::mutex _Mutex;
@@ -61,8 +63,6 @@ private:
 class Direct2D
 {
 public:
-    static HRESULT GetRefreshRate(IDXGIDevice1 * dxgiDevice, double & refreshRate) noexcept;
-
     static HRESULT Load(const WCHAR * resourceName, const WCHAR * resourceType, IWICBitmapSource ** source) noexcept;
     static HRESULT Load(const WCHAR * uri, IWICBitmapSource ** source) noexcept;
 

@@ -1,5 +1,5 @@
 
-/** $VER: WIC.h (2026.10.01) P. Stuer **/
+/** $VER: WIC.h (2026.10.04) P. Stuer **/
 
 #pragma once
 
@@ -18,12 +18,14 @@ using Microsoft::WRL::ComPtr;
 
 class WICFactory final
 {
+    typedef IWICImagingFactory Interface;
+
 public:
     WICFactory(const WICFactory &) = delete;
-    WICFactory& operator=(const WICFactory &) = delete;
+    WICFactory & operator=(const WICFactory &) = delete;
 
     [[nodiscard]]
-    static ComPtr<IWICImagingFactory3> Get() noexcept;
+    static ComPtr<Interface> Get() noexcept;
 
     static HRESULT Startup() noexcept;
     static void Shutdown() noexcept;
@@ -37,7 +39,7 @@ private:
     void Terminate() noexcept;
 
 private:
-    static ComPtr<IWICImagingFactory3> _Factory;
+    static ComPtr<Interface> _Factory;
     static int64_t _ReferenceCount;
 
     std::mutex _Mutex;

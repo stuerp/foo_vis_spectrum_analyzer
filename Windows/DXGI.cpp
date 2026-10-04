@@ -1,5 +1,5 @@
 
-/** $VER: DXGI.cpp (2026.10.01) P. Stuer **/
+/** $VER: DXGI.cpp (2026.10.04) P. Stuer **/
 
 #include "pch.h"
 
@@ -9,30 +9,8 @@
 
 #pragma hdrstop
 
-ComPtr<IDXGIFactory7> DXGIFactory::_Factory;
+ComPtr<DXGIFactory::Interface> DXGIFactory::_Factory;
 int64_t DXGIFactory::_ReferenceCount = 0;
-
-ComPtr<IDXGIFactory7> DXGIFactory::Get() noexcept
-{
-    return Instance()._Factory.Get();
-}
-
-HRESULT DXGIFactory::Startup() noexcept
-{
-    return Instance().Initialize();
-}
-
-void DXGIFactory::Shutdown() noexcept
-{
-    Instance().Terminate();
-}
-
-DXGIFactory & DXGIFactory::Instance() noexcept
-{
-    static DXGIFactory _Instance;
-
-    return _Instance;
-}
 
 HRESULT DXGIFactory::Initialize() noexcept
 {
@@ -62,4 +40,85 @@ void DXGIFactory::Terminate() noexcept
 
     if (_ReferenceCount == 0)
         _Factory.Reset();
+}
+
+/// <summary>
+/// Gets the refresh rate of the current display.
+/// </summary>
+HRESULT DXGI::GetRefreshRate(IDXGIDevice1 * dxgiDevice, double & refreshRate) noexcept
+{
+    refreshRate = 0.;
+
+    if (dxgiDevice == nullptr)
+        return E_POINTER;
+
+    // Get the current desktop resolution for mode matching.
+    DEVMODE DisplaySettings = { .dmSize = sizeof(DEVMODE) };
+
+    if (!::EnumDisplaySettingsW(nullptr, ENUM_CURRENT_SETTINGS, &DisplaySettings))
+        return HRESULT_FROM_WIN32(::GetLastError());
+
+    ComPtr<IDXGIAdapter> DXGIAdapter;
+
+    HRESULT hr = dxgiDevice->GetAdapter(DXGIAdapter.GetAddressOf());
+
+    if (FAILED(hr))
+        return hr;
+
+    ComPtr<IDXGIOutput> DXGIOutput;
+
+    // Primary output (index 0)
+    hr = DXGIAdapter->EnumOutputs(0, DXGIOutput.GetAddressOf());
+
+    if (FAILED(hr))
+        return hr;
+
+    // Find the closest matching mode (includes current refresh rate).
+    const DXGI_MODE_DESC TargetMode =
+    {
+        .Width            = DisplaySettings.dmPelsWidth,
+        .Height           = DisplaySettings.dmPelsHeight,
+        .Format           = DXGI_FORMAT_R8G8B8A8_UNORM,  // Common format
+        .ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED,
+        .Scaling          = DXGI_MODE_SCALING_UNSPECIFIED
+    };
+
+    DXGI_MODE_DESC MatchedMode = { };
+
+    hr = DXGIOutput->FindClosestMatchingMode(&TargetMode, &MatchedMode, nullptr);
+
+    if (SUCCEEDED(hr))
+    {
+        refreshRate = static_cast<double>(MatchedMode.RefreshRate.Numerator) / MatchedMode.RefreshRate.Denominator;
+
+        return hr;
+    }
+
+    // Fallback: Enumerate all modes and return the refresh rate of the first exact resolution match.
+
+    UINT Flags = 0;  // Use 0 for current mode matching
+    UINT ModeCount = 0;
+
+    hr = DXGIOutput->GetDisplayModeList(DXGI_FORMAT_R8G8B8A8_UNORM, Flags, &ModeCount, nullptr);
+
+    if (FAILED(hr) || (ModeCount == 0))
+        return hr;
+
+    std::vector<DXGI_MODE_DESC> Modes(ModeCount);
+
+    hr = DXGIOutput->GetDisplayModeList(DXGI_FORMAT_R8G8B8A8_UNORM, Flags, &ModeCount, Modes.data());
+
+    if (FAILED(hr))
+        return hr;
+
+    for (const auto & Mode : Modes)
+    {
+        if (Mode.Width == TargetMode.Width && Mode.Height == TargetMode.Height)
+        {
+            refreshRate = static_cast<double>(Mode.RefreshRate.Numerator) / Mode.RefreshRate.Denominator;
+            break;
+        }
+    }
+
+    return hr;
 }

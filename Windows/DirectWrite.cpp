@@ -1,5 +1,5 @@
 
-/** $VER: DirectWrite.cpp (2026.09.26) P. Stuer **/
+/** $VER: DirectWrite.cpp (2026.10.04) P. Stuer **/
 
 #include "pch.h"
 
@@ -9,30 +9,8 @@
 
 #pragma hdrstop
 
-ComPtr<IDWriteFactory3> DirectWriteFactory::_Factory;
+ComPtr<DirectWriteFactory::Interface> DirectWriteFactory::_Factory;
 int64_t DirectWriteFactory::_ReferenceCount = 0;
-
-ComPtr<IDWriteFactory3> DirectWriteFactory::Get() noexcept
-{
-    return Instance()._Factory.Get();
-}
-
-HRESULT DirectWriteFactory::Startup() noexcept
-{
-    return Instance().Initialize();
-}
-
-void DirectWriteFactory::Shutdown() noexcept
-{
-    Instance().Terminate();
-}
-
-DirectWriteFactory & DirectWriteFactory::Instance() noexcept
-{
-    static DirectWriteFactory _Instance;
-
-    return _Instance;
-}
 
 HRESULT DirectWriteFactory::Initialize() noexcept
 {

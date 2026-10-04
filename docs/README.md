@@ -1092,6 +1092,10 @@ Selects all channels in the `Channels` list.
 
 Deselects all channels in the `Channels` list.
 
+`Up` / `Down`
+
+Moves the highlighted channel up or down in the list.
+
 `Channel pair`
 
 Allows you to select the pair of channels that will be used to render a visualisation. Used by the [Peak / RMS](#peak--rms-group) and the [Oscilloscope](#oscilloscope).
