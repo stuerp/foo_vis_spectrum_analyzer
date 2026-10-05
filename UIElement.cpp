@@ -279,7 +279,7 @@ void uielement_t::OnContextMenu(CWindow wnd, CPoint position) noexcept
 
                     UpdateState(ConfigurationChanges::All);
 
-                    // Notify the configuration dialog.
+                    // Notify the configuration dialog about the loaded preset.
                     if (_ConfigurationDialog.IsWindow())
                     {
                         _ConfigurationDialog.PostMessageW(UM_CONFIGURATION_CHANGED, CC_PRESET_LOADED); // Must be sent outside the critical section.

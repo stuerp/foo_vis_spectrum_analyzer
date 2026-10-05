@@ -131,7 +131,7 @@ void configuration_dialog_t::OnButtonClick(UINT, int id, CWindow) noexcept
                 _MenuList.SetCurSel((int) _State->_PageIndex);
             }
 
-            ConfigurationChanged(ConfigurationChanges::All);
+            NotifyParent(ConfigurationChanges::All);
             break;
         }
 
@@ -142,7 +142,7 @@ void configuration_dialog_t::OnButtonClick(UINT, int id, CWindow) noexcept
             {
                 *_State = _OldState;
 
-                ConfigurationChanged(ConfigurationChanges::All);
+                NotifyParent(ConfigurationChanges::All);
             }
 
             GetWindowRect(&_State->_Bounds);
@@ -313,12 +313,12 @@ void configuration_dialog_t::ResizePages() noexcept
 /// <summary>
 /// Notifies the UI thread of the changed settings.
 /// </summary>
-void configuration_dialog_t::ConfigurationChanged(ConfigurationChanges settings) const noexcept
+void configuration_dialog_t::NotifyParent(ConfigurationChanges settings) const noexcept
 {
     if (_IsInitializing)
         return;
 
-    ::PostMessageW(_hParent, UM_CONFIGURATION_CHANGED, (WPARAM) settings, 0);
-
     Log.AtDebug().Write(STR_COMPONENT_BASENAME " configuration dialog notified parent of a configuration change (%08X).", (uint32_t) settings);
+
+    ::PostMessageW(_hParent, UM_CONFIGURATION_CHANGED, (WPARAM) settings, 0);
 }

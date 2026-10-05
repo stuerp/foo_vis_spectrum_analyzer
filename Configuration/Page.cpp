@@ -182,12 +182,12 @@ void page_t::SetNote(int id, uint32_t noteNumber) noexcept
 /// <summary>
 /// Notifies the UI thread of the changed settings.
 /// </summary>
-void page_t::ConfigurationChanged(ConfigurationChanges settings) const noexcept
+void page_t::NotifyParent(ConfigurationChanges settings) const noexcept
 {
     if (_IsInitializing)
         return;
 
-    ::PostMessageW(_hParent, UM_CONFIGURATION_CHANGED, (WPARAM) settings, 0);
-
     Log.AtDebug().Write(STR_COMPONENT_BASENAME " configuration dialog notified parent of configuration change (%08X).", (uint32_t) settings);
+
+    ::PostMessageW(_hParent, UM_CONFIGURATION_CHANGED, (WPARAM) settings, 0);
 }

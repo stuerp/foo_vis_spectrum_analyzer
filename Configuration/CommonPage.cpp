@@ -308,7 +308,7 @@ void common_page_t::OnSelectionChanged(UINT notificationCode, int id, CWindow w)
 
     }
 
-    ConfigurationChanged(ChangedSettings);
+    NotifyParent(ChangedSettings);
 }
 
 /// <summary>
@@ -372,7 +372,7 @@ void common_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
         }
     }
 
-    ConfigurationChanged(ChangedSettings);
+    NotifyParent(ChangedSettings);
 }
 
 /// <summary>
@@ -418,7 +418,7 @@ void common_page_t::OnEditLostFocus(UINT code, int id, CWindow) noexcept
         }
     }
 
-    ConfigurationChanged(ChangedSettings);
+    NotifyParent(ChangedSettings);
 }
 
 /// <summary>
@@ -487,7 +487,7 @@ void common_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
         }
     }
 
-    ConfigurationChanged(ChangedSettings);
+    NotifyParent(ChangedSettings);
 }
 
 /// <summary>
@@ -535,7 +535,7 @@ LRESULT common_page_t::OnDeltaPos(LPNMHDR nmhd) noexcept
         }
     }
 
-    ConfigurationChanged(ChangedSettings);
+    NotifyParent(ChangedSettings);
 
     return 0;
 }
@@ -565,7 +565,7 @@ LRESULT common_page_t::OnHScroll(UINT msg, WPARAM wParam, LPARAM lParam) noexcep
             return 1; // Notification not processed
     }
 
-    ConfigurationChanged(ConfigurationChanges::Artwork);
+    NotifyParent(ConfigurationChanges::Artwork);
 
     return 0;
 }

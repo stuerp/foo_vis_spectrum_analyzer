@@ -1,5 +1,5 @@
 
-/** $VER: PeakMeter.cpp (2026.09.25) P. Stuer - Represents a peak meter. **/
+/** $VER: PeakMeter.cpp (2026.10.05) P. Stuer - Represents a peak meter. **/
 
 #include "pch.h"
 
@@ -566,4 +566,15 @@ HRESULT peak_meter_t::CreateOpacityMask(ID2D1DeviceContext * deviceContext) noex
     hr = rt->GetBitmap(_OpacityMask.GetAddressOf());
 
     return hr;
+}
+
+/// <summary>
+/// Handles a configuration change.
+/// </summary>
+void peak_meter_t::OnConfigurationChange(ConfigurationChanges configurationChanges) noexcept
+{
+    if (!IsSet(configurationChanges, ConfigurationChanges::Layout))
+        return;
+
+    _State->_ResizeResources = true;
 }

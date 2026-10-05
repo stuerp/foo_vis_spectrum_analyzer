@@ -174,7 +174,7 @@ void presets_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
 
             _IsInitializing = false;
 
-            ConfigurationChanged(ConfigurationChanges::All);
+            NotifyParent(ConfigurationChanges::All);
             break;
         }
 
@@ -230,7 +230,7 @@ void presets_page_t::OnDoubleClick(UINT code, int id, CWindow) noexcept
 
         UpdateControls();
 
-        ConfigurationChanged(ConfigurationChanges::All);
+        NotifyParent(ConfigurationChanges::All);
     }
     else
         SetMsgHandled(FALSE);

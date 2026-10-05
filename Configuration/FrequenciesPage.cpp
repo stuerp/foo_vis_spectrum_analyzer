@@ -333,7 +333,7 @@ void frequencies_page_t::OnSelectionChanged(UINT notificationCode, int id, CWind
         }
     }
 
-    ConfigurationChanged(ChangedSettings);
+    NotifyParent(ChangedSettings);
 }
 
 /// <summary>
@@ -394,7 +394,7 @@ void frequencies_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
         }
     }
 
-    ConfigurationChanged(ChangedSettings);
+    NotifyParent(ChangedSettings);
 }
 
 /// <summary>
@@ -448,7 +448,7 @@ void frequencies_page_t::OnEditLostFocus(UINT code, int id, CWindow) noexcept
         }
     }
 
-    ConfigurationChanged(ChangedSettings);
+    NotifyParent(ChangedSettings);
 }
 
 /// <summary>
@@ -566,7 +566,7 @@ LRESULT frequencies_page_t::OnDeltaPos(LPNMHDR nmhd) noexcept
         }
     }
 
-    ConfigurationChanged(ChangedSettings);
+    NotifyParent(ChangedSettings);
 
     return 0;
 }

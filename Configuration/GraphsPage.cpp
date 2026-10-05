@@ -522,7 +522,7 @@ void graphs_page_t::OnSelectionChanged(UINT, int id, CWindow w) noexcept
         #pragma endregion
     }
 
-    ConfigurationChanged(ChangedSettings);
+    NotifyParent(ChangedSettings);
 }
 
 /// <summary>
@@ -588,7 +588,7 @@ void graphs_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
         #pragma endregion
     }
 
-    ConfigurationChanged(ChangedSettings);
+    NotifyParent(ChangedSettings);
 }
 
 /// <summary>
@@ -640,7 +640,7 @@ void graphs_page_t::OnEditLostFocus(UINT, int id, CWindow) noexcept
         }
     }
 
-    ConfigurationChanged(ChangedSettings);
+    NotifyParent(ChangedSettings);
 }
 
 /// <summary>
@@ -842,7 +842,7 @@ void graphs_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
         }
     }
 
-    ConfigurationChanged(ChangedSettings);
+    NotifyParent(ChangedSettings);
 }
 
 /// <summary>
@@ -891,7 +891,7 @@ LRESULT graphs_page_t::OnDeltaPos(LPNMHDR nmh) noexcept
         }
     }
 
-    ConfigurationChanged(ChangedSettings);
+    NotifyParent(ChangedSettings);
 
     return 0;
 }
@@ -917,7 +917,7 @@ LRESULT graphs_page_t::OnChannelChanged(int, LPNMHDR nmh, BOOL &) noexcept
 
     UpdateActiveChannelMask();
 
-    ConfigurationChanged(ConfigurationChanges::All);
+    NotifyParent(ConfigurationChanges::All);
 
     return 0;
 }

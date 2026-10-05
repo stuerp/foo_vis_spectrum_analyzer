@@ -1,5 +1,5 @@
 
-/** $VER: Tester.cpp (2026.06.24) P. Stuer - Implements a minimal visualization for testing purposes. **/
+/** $VER: Tester.cpp (2026.10.05) P. Stuer - Implements a minimal visualization for testing purposes. **/
 
 #include <pch.h>
 
@@ -209,4 +209,15 @@ void tester_t::DeleteDeviceSpecificResources() noexcept
 #ifdef _DEBUG
     _Brush.Reset();
 #endif
+}
+
+/// <summary>
+/// Handles a configuration change.
+/// </summary>
+void tester_t::OnConfigurationChange(ConfigurationChanges configurationChanges) noexcept
+{
+    if (!IsSet(configurationChanges, ConfigurationChanges::Layout))
+        return;
+
+    _State->_ResizeResources = true;
 }

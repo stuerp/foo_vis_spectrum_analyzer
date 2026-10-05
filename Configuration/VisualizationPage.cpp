@@ -406,7 +406,7 @@ void visualization_page_t::OnSelectionChanged(UINT notificationCode, int id, CWi
         }
     }
 
-    ConfigurationChanged(ChangedSettings);
+    NotifyParent(ChangedSettings);
 }
 
 /// <summary>
@@ -605,7 +605,7 @@ void visualization_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
         }
     }
 
-    ConfigurationChanged(ChangedSettings);
+    NotifyParent(ChangedSettings);
 }
 
 /// <summary>
@@ -769,7 +769,7 @@ void visualization_page_t::OnEditLostFocus(UINT code, int id, CWindow) noexcept
         }
     }
 
-    ConfigurationChanged(ChangedSettings);
+    NotifyParent(ChangedSettings);
 }
 
 /// <summary>
@@ -916,7 +916,7 @@ void visualization_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
         }
     }
 
-    ConfigurationChanged(ChangedSettings);
+    NotifyParent(ChangedSettings);
 }
 
 /// <summary>
@@ -946,7 +946,7 @@ LRESULT visualization_page_t::OnDeltaPos(LPNMHDR nmhd) noexcept
         }
     }
 
-    ConfigurationChanged(ChangedSettings);
+    NotifyParent(ChangedSettings);
 
     return 0;
 }

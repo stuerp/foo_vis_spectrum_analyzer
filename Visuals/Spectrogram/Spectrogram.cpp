@@ -1,5 +1,5 @@
 
-/** $VER: Spectrogram.cpp (2026.09.21) P. Stuer - Represents a spectrum analysis as a 2D heat map **/
+/** $VER: Spectrogram.cpp (2026.10.05) P. Stuer - Represents a spectrum analysis as a 2D heat map **/
 
 #include "pch.h"
 
@@ -1270,4 +1270,15 @@ frequency_bands_t spectrogram_t::ResampleSpectrum(const frequency_bands_t & fb, 
     }
 
     return Dst;
+}
+
+/// <summary>
+/// Handles a configuration change.
+/// </summary>
+void spectrogram_t::OnConfigurationChange(ConfigurationChanges configurationChanges) noexcept
+{
+    if (!IsSet(configurationChanges, ConfigurationChanges::Layout))
+        return;
+
+    _State->_ResizeResources = true;
 }

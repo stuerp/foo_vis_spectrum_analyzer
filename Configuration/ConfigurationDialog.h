@@ -68,7 +68,7 @@ private:
     void InitializeControls() noexcept;
     void TerminateControls() noexcept;
 
-    void ConfigurationChanged(ConfigurationChanges settings) const noexcept;
+    void NotifyParent(ConfigurationChanges settings) const noexcept;
 
     void ResizePages() noexcept;
 

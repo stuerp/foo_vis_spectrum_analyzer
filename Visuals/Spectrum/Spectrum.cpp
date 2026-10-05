@@ -1429,6 +1429,8 @@ void spectrum_t::OnConfigurationChange(ConfigurationChanges configurationChanges
     if (!IsSet(configurationChanges, ConfigurationChanges::Layout))
         return;
 
+    _State->_ResizeResources = true;
+
     _XAxis.Configure(_State, _GraphOptions, _Analysis, _IsFirst, _IsLast);
     _XAxis.Resize(true);
 }

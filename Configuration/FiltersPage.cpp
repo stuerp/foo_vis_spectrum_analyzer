@@ -292,7 +292,7 @@ void filters_page_t::OnSelectionChanged(UINT notificationCode, int id, CWindow w
         }
     }
 
-    ConfigurationChanged(ChangedSettings);
+    NotifyParent(ChangedSettings);
 }
 
 /// <summary>
@@ -333,7 +333,7 @@ void filters_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
         #undef ON_EDIT_CHANGE_DOUBLE
     }
 
-    ConfigurationChanged(ChangedSettings);
+    NotifyParent(ChangedSettings);
 }
 
 /// <summary>
@@ -363,7 +363,7 @@ void filters_page_t::OnEditLostFocus(UINT code, int id, CWindow) noexcept
         case IDC_HIGH_BAND:         { SetDouble(id, _State->_HighBand); break; }
     }
 
-    ConfigurationChanged(ChangedSettings);
+    NotifyParent(ChangedSettings);
 }
 
 /// <summary>
@@ -447,7 +447,7 @@ LRESULT filters_page_t::OnDeltaPos(LPNMHDR nmhd) noexcept
         }
     }
 
-    ConfigurationChanged(ChangedSettings);
+    NotifyParent(ChangedSettings);
 
     return 0;
 }

@@ -109,7 +109,7 @@ void uielement_t::RenderThreadProc() noexcept
         {
             _ConfigurationDialog.PostMessageW(UM_CONFIGURATION_CHANGED, CC_COLORS); // Must be sent outside the critical section.
 
-        //  Log.AtDebug().Write(STR_COMPONENT_BASENAME " notified configuration dialog of configuration change (Artwork colors).");
+            Log.AtDebug().Write(STR_COMPONENT_BASENAME " notified configuration dialog of configuration change (Artwork colors).");
 
             HaveArtworkColorsChanged = false;
         }
@@ -331,8 +331,6 @@ void uielement_t::InitializeSampleRateDependentParameters(const audio_chunk_impl
 
     #pragma warning(default: 4061)
 }
-
-#pragma region DirectX
 
 /// <summary>
 /// Creates resources which are not bound to any D3D device. Their lifetime effectively extends for the duration of the app.
@@ -754,8 +752,6 @@ HRESULT uielement_t::CreateArtworkDependentResources() noexcept
 
     return S_OK;
 }
-
-#pragma endregion
 
 #ifdef _DEBUG
 

@@ -1,5 +1,5 @@
 
-/** $VER: LevelMeter.cpp (2026.09.21) P. Stuer - Implements a left/right/mid/side level meter. **/
+/** $VER: LevelMeter.cpp (2026.10.05) P. Stuer - Implements a left/right/mid/side level meter. **/
 
 #include "pch.h"
 
@@ -417,4 +417,15 @@ HRESULT level_meter_t::CreateOpacityMask(ID2D1DeviceContext * deviceContext) noe
     hr = rt->GetBitmap(_OpacityMask.GetAddressOf());
 
     return hr;
+}
+
+/// <summary>
+/// Handles a configuration change.
+/// </summary>
+void level_meter_t::OnConfigurationChange(ConfigurationChanges configurationChanges) noexcept
+{
+    if (!IsSet(configurationChanges, ConfigurationChanges::Layout))
+        return;
+
+    _State->_ResizeResources = true;
 }

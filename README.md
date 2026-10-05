@@ -98,7 +98,8 @@ To create the component first build the x86 configuration and next the x64 confi
 
 v0.13.0.0-alpha5, 2026-xx-xx
 
-- Changed: Relaxed DirectX version requirements.
+- New: You can modify the position of a gradient stop by clicking and dragging on the gradient control. The value will be constrained between the previous and next gradient stop position.
+- Changed: DirectX version requirements were relaxed.
 - Improved: Optimized the Spectrum LED rendering.
 - Fixed: Spectrum LED rendering when using two or more graphs.
 

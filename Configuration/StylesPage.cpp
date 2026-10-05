@@ -368,7 +368,7 @@ void styles_page_t::OnSelectionChanged(UINT notificationCode, int id, CWindow wi
         }
     }
 
-    ConfigurationChanged(ChangedSettings);
+    NotifyParent(ChangedSettings);
 }
 
 /// <summary>
@@ -461,7 +461,7 @@ void styles_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
         }
     }
 
-    ConfigurationChanged(ChangedSettings);
+    NotifyParent(ChangedSettings);
 }
 
 /// <summary>
@@ -503,7 +503,7 @@ void styles_page_t::OnEditLostFocus(UINT code, int id, CWindow) noexcept
         }
     }
 
-    ConfigurationChanged(ChangedSettings);
+    NotifyParent(ChangedSettings);
 }
 
 /// <summary>
@@ -692,7 +692,7 @@ void styles_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
         }
     }
 
-    ConfigurationChanged(ChangedSettings);
+    NotifyParent(ChangedSettings);
 }
 
 /// <summary>
@@ -746,7 +746,7 @@ LRESULT styles_page_t::OnDeltaPos(LPNMHDR nmh) noexcept
         }
     }
 
-    ConfigurationChanged(ChangedSettings);
+    NotifyParent(ChangedSettings);
 
     return 0;
 }
@@ -820,7 +820,7 @@ LRESULT styles_page_t::OnChanged(LPNMHDR nmhd) noexcept
         }
     }
 
-    ConfigurationChanged(ChangedSettings);
+    NotifyParent(ChangedSettings);
 
     return 0;
 }
@@ -855,21 +855,32 @@ LRESULT styles_page_t::OnPositionChanging(LPNMHDR nmh) noexcept
 
             auto & cgs = Style->_CustomGradient[(size_t) SelectedColor];
 
-            const FLOAT MinPosition = ((SelectedColor - 1) > 0)                                   ? Style->_CustomGradient[(size_t) SelectedColor - 1].position : 0.f;
-            const FLOAT MaxPosition = ((SelectedColor + 1) < (int) Style->_CustomGradient.size()) ? Style->_CustomGradient[(size_t) SelectedColor + 1].position : 1.f;
+            {
+                const FLOAT MinPosition = ((SelectedColor - 1) > 0)                                   ? Style->_CustomGradient[(size_t) SelectedColor - 1].position : 0.f;
+                const FLOAT MaxPosition = ((SelectedColor + 1) < (int) Style->_CustomGradient.size()) ? Style->_CustomGradient[(size_t) SelectedColor + 1].position : 1.f;
 
-            cgs.position = std::clamp(nmcb->Position, MinPosition, MaxPosition);
+                const auto NewPosition = std::clamp(nmcb->Position, MinPosition, MaxPosition);
 
-            const auto Position = (int64_t) (cgs.position * 100.f);
+                if (std::fabs(cgs.position - NewPosition) < 1e-3f)
+                    return -1;
 
-            SetInteger(IDC_POSITION, Position);
+                cgs.position = NewPosition;
+            }
+
+            {
+                const auto Position = (int64_t) (cgs.position * 100.f);
+
+                SetInteger(IDC_POSITION, Position);
+            }
+
+            Style->_CurrentGradientStops = gradient_t::ConvertFormat(Style->_CustomGradient);
         }
     }
 
     // Update the gradient control.
     _GradientButton.SetGradientStops(Style->_CurrentGradientStops);
 
-    ConfigurationChanged(ConfigurationChanges::All);
+    NotifyParent(ConfigurationChanges::Layout);
 
     return 0;
 }

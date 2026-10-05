@@ -452,4 +452,6 @@ void bit_meter_t::OnConfigurationChange(ConfigurationChanges configurationChange
 {
     if (!IsSet(configurationChanges, ConfigurationChanges::Layout))
         _StaticContentCommandList.Reset();
+
+    _State->_ResizeResources = true;
 }

@@ -1,5 +1,5 @@
 
-/** $VER: PeakMeter.h (2026.06.15) P. Stuer - Represents a peak meter. **/
+/** $VER: PeakMeter.h (2026.10.05) P. Stuer - Represents a peak meter. **/
 
 #pragma once
 
@@ -37,6 +37,9 @@ public:
     void Render(ID2D1DeviceContext * deviceContext, IDXGISwapChain1 * swapChain) noexcept override final;
     void Reset() noexcept override final;
 
+    void OnConfigurationChange(ConfigurationChanges configurationChanges) noexcept;
+
+    // visualization_t
     void Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept;
 
 private:
