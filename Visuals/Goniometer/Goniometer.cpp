@@ -69,7 +69,7 @@ void goniometer_t::Release() noexcept
 /// <summary>
 /// Handles a configuration change.
 /// </summary>
-void goniometer_t::OnConfigurationChange(ConfigurationChanges configurationChanges) noexcept
+void goniometer_t::OnConfigurationChanged(ConfigurationChanges configurationChanges) noexcept
 {
     if (!IsSet(configurationChanges, ConfigurationChanges::Goniometer))
         return;

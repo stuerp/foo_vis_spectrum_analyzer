@@ -28,7 +28,7 @@ public:
     virtual void SetTransform(ID2D1DeviceContext * deviceContext, const D2D1_RECT_F & rect) const noexcept;
     virtual void ResetTransform(ID2D1DeviceContext * deviceContext) const noexcept;
 
-    virtual void OnConfigurationChange(ConfigurationChanges configurationChanges) noexcept { }
+    virtual void OnConfigurationChanged(ConfigurationChanges configurationChanges) noexcept { }
 
     static bool IsOverlappingHorizontally(const D2D1_RECT_F & a, const D2D1_RECT_F & b) noexcept;
     static bool IsOverlappingVertically(const D2D1_RECT_F & a, const D2D1_RECT_F & b) noexcept;

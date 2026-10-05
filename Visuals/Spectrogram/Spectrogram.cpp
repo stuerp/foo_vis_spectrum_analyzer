@@ -1275,7 +1275,7 @@ frequency_bands_t spectrogram_t::ResampleSpectrum(const frequency_bands_t & fb, 
 /// <summary>
 /// Handles a configuration change.
 /// </summary>
-void spectrogram_t::OnConfigurationChange(ConfigurationChanges configurationChanges) noexcept
+void spectrogram_t::OnConfigurationChanged(ConfigurationChanges configurationChanges) noexcept
 {
     if (!IsSet(configurationChanges, ConfigurationChanges::Layout))
         return;

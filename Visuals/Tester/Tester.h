@@ -25,7 +25,7 @@ public:
     void Reset() noexcept override final;
     void Release() noexcept override final;
 
-    void OnConfigurationChange(ConfigurationChanges configurationChanges) noexcept override final;
+    void OnConfigurationChanged(ConfigurationChanges configurationChanges) noexcept override final;
 
     // visualization_t
     void Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept;

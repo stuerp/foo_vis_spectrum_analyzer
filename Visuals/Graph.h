@@ -60,7 +60,7 @@ public:
 
     bool GetToolTipText(FLOAT x, FLOAT y, std::wstring & toolTip, size_t & index) const noexcept;
 
-    void OnConfigurationChange(ConfigurationChanges configurationChanges) noexcept override final;
+    void OnConfigurationChanged(ConfigurationChanges configurationChanges) noexcept override final;
 
 private:
     HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept;

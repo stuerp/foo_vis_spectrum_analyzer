@@ -422,7 +422,7 @@ HRESULT level_meter_t::CreateOpacityMask(ID2D1DeviceContext * deviceContext) noe
 /// <summary>
 /// Handles a configuration change.
 /// </summary>
-void level_meter_t::OnConfigurationChange(ConfigurationChanges configurationChanges) noexcept
+void level_meter_t::OnConfigurationChanged(ConfigurationChanges configurationChanges) noexcept
 {
     if (!IsSet(configurationChanges, ConfigurationChanges::Layout))
         return;

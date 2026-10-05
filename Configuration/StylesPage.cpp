@@ -1,5 +1,5 @@
 
-/** $VER: StylesPage.cpp (2026.10.03) P. Stuer - Implements a configuration dialog page. **/
+/** $VER: StylesPage.cpp (2026.10.05) P. Stuer - Implements a configuration dialog page. **/
 
 #include "pch.h"
 
@@ -14,7 +14,7 @@
 
 namespace
 {
-    static bool IsValidColorIndex(int colorIndex, size_t colorCount) noexcept
+    static inline bool IsValidColorIndex(int colorIndex, size_t colorCount) noexcept
     {
         return (colorIndex >= 0) && ((size_t) colorIndex < colorCount);
     }
@@ -346,6 +346,8 @@ void styles_page_t::OnSelectionChanged(UINT notificationCode, int id, CWindow wi
             gs.SetColor(_State);
 
             UpdateControls();
+
+            ChangedSettings = ConfigurationChanges::Layout;
             break;
         }
 
@@ -364,6 +366,8 @@ void styles_page_t::OnSelectionChanged(UINT notificationCode, int id, CWindow wi
             gs.SetColor(_State);
 
             UpdateControls();
+
+            ChangedSettings = ConfigurationChanges::Layout;
             break;
         }
     }
@@ -416,14 +420,21 @@ void styles_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
 
                     // Update the position of the selected gradient stop.
                     {
-                        int Position = std::clamp(::_wtoi(Text), 0, 100);
+                        const int NewPosition = std::clamp(::_wtoi(Text), 0, 100);
 
-                        if ((int) (cgs.position * 100.f) == Position)
+                        if ((int) (cgs.position * 100.f) == NewPosition)
                             return;
 
-                        cgs.position = (FLOAT) Position / 100.f;
+                        cgs.position = (FLOAT) NewPosition / 100.f;
                     }
+
+                    Style->_CurrentGradientStops = gradient_t::ConvertFormat(Style->_CustomGradient);
                 }
+
+                // Update the gradient control.
+                _GradientButton.SetGradientStops(Style->_CurrentGradientStops);
+
+                ChangedSettings = ConfigurationChanges::Layout;
             }
             break;
         }
@@ -553,6 +564,8 @@ void styles_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
             }
 
             UpdateColorControls();
+
+            ChangedSettings = ConfigurationChanges::Layout;
             break;
         }
 
@@ -583,6 +596,8 @@ void styles_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
             }
 
             UpdateColorControls();
+
+            ChangedSettings = ConfigurationChanges::Layout;
             break;
         }
 
@@ -605,6 +620,8 @@ void styles_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
             }
 
             UpdateColorControls();
+
+            ChangedSettings = ConfigurationChanges::Layout;
             break;
         }
 
@@ -624,6 +641,8 @@ void styles_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
             }
 
             UpdateColorControls();
+
+            ChangedSettings = ConfigurationChanges::Layout;
             break;
         }
 
@@ -637,6 +656,8 @@ void styles_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
                 UnSet(Style->_Flags, style_t::Features::HorizontalGradient);
 
             UpdateControls();
+
+            ChangedSettings = ConfigurationChanges::Layout;
             break;
         }
 
@@ -648,6 +669,8 @@ void styles_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
                 Set(Style->_Flags, style_t::Features::AmplitudeBasedColor);
             else
                 UnSet(Style->_Flags, style_t::Features::AmplitudeBasedColor);
+
+            ChangedSettings = ConfigurationChanges::Layout;
             break;
         }
 

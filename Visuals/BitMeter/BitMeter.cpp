@@ -448,7 +448,7 @@ HRESULT bit_meter_t::CreateStaticContentCommandList() noexcept
 /// <summary>
 /// Handles a configuration change event.
 /// </summary>
-void bit_meter_t::OnConfigurationChange(ConfigurationChanges configurationChanges) noexcept
+void bit_meter_t::OnConfigurationChanged(ConfigurationChanges configurationChanges) noexcept
 {
     if (!IsSet(configurationChanges, ConfigurationChanges::Layout))
         _StaticContentCommandList.Reset();

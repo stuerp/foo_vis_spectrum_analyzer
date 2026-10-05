@@ -214,7 +214,7 @@ void tester_t::DeleteDeviceSpecificResources() noexcept
 /// <summary>
 /// Handles a configuration change.
 /// </summary>
-void tester_t::OnConfigurationChange(ConfigurationChanges configurationChanges) noexcept
+void tester_t::OnConfigurationChanged(ConfigurationChanges configurationChanges) noexcept
 {
     if (!IsSet(configurationChanges, ConfigurationChanges::Layout))
         return;

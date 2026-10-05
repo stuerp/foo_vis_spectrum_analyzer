@@ -1424,7 +1424,7 @@ HRESULT spectrum_t::CreateSegment(FLOAT a1, FLOAT a2, FLOAT r1, FLOAT r2, ID2D1P
 /// <summary>
 /// Handles a configuration change.
 /// </summary>
-void spectrum_t::OnConfigurationChange(ConfigurationChanges configurationChanges) noexcept
+void spectrum_t::OnConfigurationChanged(ConfigurationChanges configurationChanges) noexcept
 {
     if (!IsSet(configurationChanges, ConfigurationChanges::Layout))
         return;

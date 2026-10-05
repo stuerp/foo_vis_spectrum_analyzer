@@ -364,8 +364,8 @@ void graph_t::DeleteDeviceSpecificResources() noexcept
 /// <summary>
 /// Forwards the configuration change event to the visualization.
 /// </summary>
-void graph_t::OnConfigurationChange(ConfigurationChanges configurationChanges) noexcept
+void graph_t::OnConfigurationChanged(ConfigurationChanges configurationChanges) noexcept
 {
     if (_Visualization.get() != nullptr)
-        _Visualization->OnConfigurationChange(configurationChanges);
+        _Visualization->OnConfigurationChanged(configurationChanges);
 }
