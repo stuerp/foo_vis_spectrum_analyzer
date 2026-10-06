@@ -91,6 +91,7 @@ void peak_meter_t::CreateParts() noexcept
 
     bool IsFirstBar = true;
 
+#ifdef v1
     if (_State->_IsHorizontalPeakMeter)
     {
         if (_GraphOptions->_FlipVertically)
@@ -143,6 +144,41 @@ void peak_meter_t::CreateParts() noexcept
 
                 IsFirstBar = false;
             }
+        }
+    }
+#endif
+    {
+        const bool ReverseLayout = _State->_IsHorizontalPeakMeter ? _GraphOptions->_FlipVertically : _GraphOptions->_FlipHorizontally;
+
+        const auto AddMeter = [this, &IsFirstBar](const auto & channel)
+        {
+            if (_State->_HasCenterScale && !IsFirstBar)
+            {
+                _Parts.push_back(new scale_t(_State, _GraphOptions, DWRITE_TEXT_ALIGNMENT_CENTER, DWRITE_PARAGRAPH_ALIGNMENT_CENTER));
+            }
+
+            const auto Measurement = std::find_if(_Analysis->_PeakMeasurements.cbegin(), _Analysis->_PeakMeasurements.cend(), [channel](const peak_measurement_t & item)
+            {
+                return item.Channel == channel;
+            });
+
+            if (Measurement != _Analysis->_PeakMeasurements.cend())
+            {
+                _Parts.push_back(new bar_t(_State, _GraphOptions, std::addressof(*Measurement)));
+            }
+
+            IsFirstBar = false;
+        };
+
+        const auto & ChannelOrder = _State->_ChannelOrder;
+
+        if (ReverseLayout)
+        {
+            std::for_each(ChannelOrder.crbegin(), ChannelOrder.crend(), AddMeter);
+        }
+        else
+        {
+            std::for_each(ChannelOrder.cbegin(), ChannelOrder.cend(), AddMeter);
         }
     }
 

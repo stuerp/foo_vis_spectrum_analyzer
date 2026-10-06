@@ -132,11 +132,76 @@ void bit_meter_t::Render(ID2D1DeviceContext * deviceContext, IDXGISwapChain1 * s
     // Draw the measurements for each selected channel.
     deviceContext->SetAntialiasMode( D2D1_ANTIALIAS_MODE_ALIASED); // Required by FillOpacityMask() and results in crispier graphics.
 
+#ifdef v1
     D2D1_RECT_F r = { .bottom = ChannelHeight };
 
-    for (const auto & m : _Analysis->_BitMeasurements)
+    for (const auto & Channel : _State->_ChannelOrder)
     {
-        const D2D1_MATRIX_3X2_F Translate = D2D1::Matrix3x2F::Translation(_Rect.left + YAxisWidth + XOffset, _Rect.top + YOffset);
+        auto it = std::find_if(_Analysis->_BitMeasurements.begin(), _Analysis->_BitMeasurements.end(), [Channel](const auto & m) { return m.Channel == Channel; });
+
+        if (it == _Analysis->_BitMeasurements.end())
+            continue;
+
+        const auto & m = *it;
+
+        {
+            const D2D1_MATRIX_3X2_F Translate = D2D1::Matrix3x2F::Translation(_Rect.left + YAxisWidth + XOffset, _Rect.top + YOffset);
+
+            deviceContext->SetTransform(Translate);
+
+            r.left = 0.f;
+
+            // Draw the bit bar counts for the current channel.
+            size_t BitNumber = 0;
+
+            for (const auto & BitCount : m.BitCounts)
+            {
+                r.right = r.left + BarWidth - 1.f;
+
+                if (!_State->_IsPaused || (_State->_IsPaused && _State->_VisualizeDuringPause))
+                {
+                    style_t * Style = _Styles[BitNumber];
+
+                    if (Style->IsEnabled())
+                    {
+                        if (_State->_OpacityMode)
+                            Style->_Brush->SetOpacity((FLOAT) BitCount);
+                        else
+                        {
+                            Style->_Brush->SetOpacity(Style->_Opacity); // Always set the opacity in case we're returning from opacity mode.
+                            r.top = ChannelHeight - ((FLOAT) BitCount * ChannelHeight);
+                        }
+
+                        deviceContext->FillRectangle(r, Style->_Brush.Get());
+                    }
+                }
+
+                r.left = r.right + 1.f;
+                ++BitNumber;
+            }
+
+            YOffset += ChannelHeight + XAxisHeight;
+        }
+    }
+#else
+    const bool Visualize = !_State->_IsPaused || _State->_VisualizeDuringPause;
+    const FLOAT TranslationX = _Rect.left + YAxisWidth + XOffset;
+    const FLOAT ChannelOffset = ChannelHeight + XAxisHeight;
+
+    D2D1_RECT_F r =
+    {
+        .top = 0.f,
+        .bottom = ChannelHeight
+    };
+
+    for (const auto & Channel : _State->_ChannelOrder)
+    {
+        const auto it = std::find_if(_Analysis->_BitMeasurements.begin(), _Analysis->_BitMeasurements.end(), [Channel](const auto & m){ return m.Channel == Channel; });
+
+        if (it == _Analysis->_BitMeasurements.end())
+            continue;
+
+        const D2D1_MATRIX_3X2_F Translate = D2D1::Matrix3x2F::Translation(TranslationX, _Rect.top + YOffset);
 
         deviceContext->SetTransform(Translate);
 
@@ -145,34 +210,38 @@ void bit_meter_t::Render(ID2D1DeviceContext * deviceContext, IDXGISwapChain1 * s
         // Draw the bit bar counts for the current channel.
         size_t BitNumber = 0;
 
-        for (const auto & BitCount : m.BitCounts)
+        for (const auto & BitCount : it->BitCounts)
         {
             r.right = r.left + BarWidth - 1.f;
 
-            if (!_State->_IsPaused || (_State->_IsPaused && _State->_VisualizeDuringPause))
+            if (Visualize)
             {
                 style_t * Style = _Styles[BitNumber];
 
                 if (Style->IsEnabled())
                 {
                     if (_State->_OpacityMode)
+                    {
+                        r.top = 0.f;
                         Style->_Brush->SetOpacity((FLOAT) BitCount);
+                    }
                     else
                     {
-                        Style->_Brush->SetOpacity(Style->_Opacity); // Always set the opacity in case we're returning from opacity mode.
                         r.top = ChannelHeight - ((FLOAT) BitCount * ChannelHeight);
+                        Style->_Brush->SetOpacity(Style->_Opacity); // Always set the opacity in case we're returning from opacity mode.
                     }
 
                     deviceContext->FillRectangle(r, Style->_Brush.Get());
                 }
             }
 
-            r.left = r.right + 1.f;
+            r.left += BarWidth;
             ++BitNumber;
         }
 
-        YOffset += ChannelHeight + XAxisHeight;
+        YOffset += ChannelOffset;
     }
+#endif
 
     deviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
 }
@@ -365,6 +434,10 @@ HRESULT bit_meter_t::CreateStaticContentCommandList() noexcept
 
     _DeviceContext->Clear(); // Transparent
 
+    const bool DrawXAxis         = _GraphOptions->_XAxisBottom && _XAxisText.IsEnabled();
+    const bool DrawYAxis         = _GraphOptions->_YAxisLeft   && _YAxisText.IsEnabled();
+    const bool DrawBarBackground = _BarBackground.IsEnabled();
+
     const FLOAT XAxisHeight = _GraphOptions->_XAxisBottom ? YPadding + _XAxisText._Height + YPadding : 1.f;
     const FLOAT YAxisWidth  = _GraphOptions->_YAxisLeft   ? XPadding + _YAxisText._Width  + XPadding : 0.f;
 
@@ -382,13 +455,20 @@ HRESULT bit_meter_t::CreateStaticContentCommandList() noexcept
     const FLOAT ChannelHeight = ClientHeight / (FLOAT) _MeasurementCount;
 
     const FLOAT XOffset = GetHOffset(_GraphOptions->_HorizontalAlignment, ClientWidth - TotalBarWidth);
-    FLOAT YOffset = 0.f;
+          FLOAT YOffset = 0.f;
 
     // Draw the static content for each selected channel.
     D2D1_RECT_F r = { .bottom = ChannelHeight };
 
-    for (const auto & m : _Analysis->_BitMeasurements)
+    for (const auto & Channel : _State->_ChannelOrder)
     {
+        const auto it = std::find_if(_Analysis->_BitMeasurements.begin(), _Analysis->_BitMeasurements.end(), [Channel](const auto & m){ return m.Channel == Channel; });
+
+        if (it == _Analysis->_BitMeasurements.end())
+            continue;
+
+        const auto & m = *it;
+
         const D2D1_MATRIX_3X2_F Translate = D2D1::Matrix3x2F::Translation(0.f, YOffset);
 
         _DeviceContext->SetTransform(Translate);
@@ -397,7 +477,7 @@ HRESULT bit_meter_t::CreateStaticContentCommandList() noexcept
         {
             r.left = XOffset;
 
-            if (_GraphOptions->_YAxisLeft && _YAxisText.IsEnabled())
+            if (DrawYAxis)
             {
                 r.left  += XPadding;
                 r.right = r.left + _YAxisText._Width;
@@ -415,11 +495,11 @@ HRESULT bit_meter_t::CreateStaticContentCommandList() noexcept
             // Draw the background.
             r.right = r.left + BarWidth - 1.f;
 
-            if (_BarBackground.IsEnabled())
+            if (DrawBarBackground)
                 _DeviceContext->FillRectangle(r, _BarBackground._Brush.Get());
 
             // Draw the bit number.
-            if (_GraphOptions->_XAxisBottom && _XAxisText.IsEnabled())
+            if (DrawXAxis)
             {
                 const std::wstring & Text = _Labels[BitNumber];
 
@@ -429,7 +509,7 @@ HRESULT bit_meter_t::CreateStaticContentCommandList() noexcept
                 _DeviceContext->DrawText(Text.c_str(), (UINT) Text.size(), _XAxisText._TextFormat.Get(), cr, _XAxisText._Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
             }
 
-            r.left = r.right + 1.f;
+            r.left += BarWidth;
         }
 
         YOffset += ChannelHeight + XAxisHeight;

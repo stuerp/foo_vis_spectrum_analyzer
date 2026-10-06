@@ -1,5 +1,5 @@
 
-/** $VER: Analysis.h (2026.09.20) P. Stuer **/
+/** $VER: Analysis.h (2026.10.06) P. Stuer **/
 
 #pragma once
 
@@ -27,8 +27,9 @@
 /// </summary>
 struct measurement_t
 {
-    measurement_t(const WCHAR * _channelName) noexcept : ChannelName(_channelName) { }
+    measurement_t(Channels channel, const WCHAR * _channelName) noexcept : Channel(channel), ChannelName(_channelName) { }
 
+    Channels Channel;
     std::wstring ChannelName;
 };
 
@@ -37,7 +38,7 @@ struct measurement_t
 /// </summary>
 struct peak_measurement_t : measurement_t
 {
-    peak_measurement_t(const WCHAR * channelName) noexcept : measurement_t(channelName)
+    peak_measurement_t(Channels channel, const WCHAR * channelName) noexcept : measurement_t(channel, channelName)
     {
         HoldTime = 0.;
         FallRate = 0.;
@@ -74,7 +75,7 @@ struct peak_measurement_t : measurement_t
 /// </summary>
 struct bit_measurement_t : measurement_t
 {
-    bit_measurement_t(const WCHAR * channelName, size_t bitCount) noexcept : measurement_t(channelName)
+    bit_measurement_t(Channels channel, const WCHAR * channelName, size_t bitCount) noexcept : measurement_t(channel, channelName)
     {
         BitCounts.resize(bitCount, 0.);
     }

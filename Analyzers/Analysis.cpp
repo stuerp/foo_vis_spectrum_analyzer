@@ -1143,7 +1143,7 @@ void analysis_t::InitializePeakMeasurements(uint32_t activeChannelMask) noexcept
         for (uint32_t ActiveChannelMask = activeChannelMask; (ActiveChannelMask != 0) && (i < _countof(ChannelNames)); ActiveChannelMask >>= 1, ++i)
         {
             if (ActiveChannelMask & 1)
-                _PeakMeasurements.push_back({ ChannelNames[i] });
+                _PeakMeasurements.push_back({ (Channels)(1 << i), ChannelNames[i] });
         }
 
         _PeakActiveChannelMask = activeChannelMask;
@@ -1287,7 +1287,7 @@ void analysis_t::InitializeBitMeasurements(uint32_t activeChannelMask) noexcept
         for (uint32_t SelectedChannels = activeChannelMask; (SelectedChannels != 0) && (i < _countof(ChannelNames)); SelectedChannels >>= 1, ++i)
         {
             if (SelectedChannels & 1)
-                _BitMeasurements.push_back({ ChannelNames[i], n });
+                _BitMeasurements.push_back({ (Channels) (1 << i), ChannelNames[i], n });
         }
 
         _BitActiveChannelMask = activeChannelMask;
