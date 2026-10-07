@@ -1,5 +1,5 @@
 
-/** $VER: OscilloscopeBase.cpp (2026.10.02) P. Stuer - Implements a base class for an oscilloscope. **/
+/** $VER: OscilloscopeBase.cpp (2026.10.07) P. Stuer - Implements a base class for an oscilloscope. **/
 
 #include <pch.h>
 
@@ -137,65 +137,42 @@ HRESULT oscilloscope_base_t::CreateSizeDependentResources(ID2D1DeviceContext * d
 
     HRESULT hr = S_OK;
 
-    if (_SignalLineStyle._Brush == nullptr)
+    const auto CreateStyle = [this, deviceContext](auto & Style, VisualElement Element) noexcept -> HRESULT
     {
-        _SignalLineStyle = *_State->_StyleManager.GetStyle(VisualElement::Signal);
+        if (Style._Brush != nullptr)
+            return S_OK;
 
-        _SignalLineStyle.SetColor(_State);
+        Style = *_State->_StyleManager.GetStyle(Element);
 
-        hr = _SignalLineStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
+        Style.SetColor(_State);
 
-        if (FAILED(hr))
-            return hr;
-    }
+        return Style.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
+    };
 
-    if (_XAxisLineStyle._Brush == nullptr)
-    {
-        _XAxisLineStyle = *_State->_StyleManager.GetStyle(VisualElement::XAxisLine);
+    hr = CreateStyle(_SignalLineStyle, VisualElement::Signal);
 
-        _XAxisLineStyle.SetColor(_State);
+    if (FAILED(hr))
+        return hr;
 
-        hr = _XAxisLineStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
+    hr = CreateStyle(_XAxisLineStyle, VisualElement::XAxisLine);
 
-        if (FAILED(hr))
-            return hr;
-    }
+    if (FAILED(hr))
+        return hr;
 
-    if (_YAxisLineStyle._Brush == nullptr)
-    {
-        _YAxisLineStyle = *_State->_StyleManager.GetStyle(VisualElement::YAxisLine);
+    hr = CreateStyle(_YAxisLineStyle, VisualElement::YAxisLine);
 
-        _YAxisLineStyle.SetColor(_State);
+    if (FAILED(hr))
+        return hr;
 
-        hr = _YAxisLineStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
+    hr = CreateStyle(_HorizontalGridLineStyle, VisualElement::HorizontalGridLine);
 
-        if (FAILED(hr))
-            return hr;
-    }
+    if (FAILED(hr))
+        return hr;
 
-    if (_HorizontalGridLineStyle._Brush == nullptr)
-    {
-        _HorizontalGridLineStyle = *_State->_StyleManager.GetStyle(VisualElement::HorizontalGridLine);
+    hr = CreateStyle(_VerticalGridLineStyle, VisualElement::VerticalGridLine);
 
-        _HorizontalGridLineStyle.SetColor(_State);
-
-        hr = _HorizontalGridLineStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
-
-        if (FAILED(hr))
-            return hr;
-    }
-
-    if (_VerticalGridLineStyle._Brush == nullptr)
-    {
-        _VerticalGridLineStyle = *_State->_StyleManager.GetStyle(VisualElement::VerticalGridLine);
-
-        _VerticalGridLineStyle.SetColor(_State);
-
-        hr = _VerticalGridLineStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
-
-        if (FAILED(hr))
-            return hr;
-    }
+    if (FAILED(hr))
+        return hr;
 
     if ((_Bitmaps[0] == nullptr) || (_Bitmaps[1] == nullptr))
     {
@@ -205,7 +182,8 @@ HRESULT oscilloscope_base_t::CreateSizeDependentResources(ID2D1DeviceContext * d
             D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED) // Required for alpha transparency. Otherwise use D2D1_ALPHA_MODE_IGNORE.
         );
 
-        UINT32 w = (UINT32) _Size.width, h = (UINT32) _Size.height;
+        UINT32 w = (UINT32) _Size.width;
+        UINT32 h = (UINT32) _Size.height;
 
         if (_SquareBitmaps)
         {
@@ -241,7 +219,7 @@ HRESULT oscilloscope_base_t::CreateSizeDependentResources(ID2D1DeviceContext * d
             return hr;
     }
 
-    return hr;
+    return S_OK;
 }
 
 /// <summary>
@@ -264,11 +242,9 @@ void oscilloscope_base_t::DeleteSizeDependentResources() noexcept
 /// </summary>
 HRESULT oscilloscope_base_t::ClearBitmaps() noexcept
 {
-    HRESULT hr = E_FAIL;
-
     _DeviceContext->BeginDraw();
 
-    for (auto Bitmap : _Bitmaps)
+    for (const auto & Bitmap : _Bitmaps)
     {
         if (Bitmap == nullptr)
             continue;
@@ -280,7 +256,7 @@ HRESULT oscilloscope_base_t::ClearBitmaps() noexcept
 
     _DeviceContext->SetTarget(nullptr);
 
-    hr = _DeviceContext->EndDraw();
+    HRESULT hr = _DeviceContext->EndDraw();
 
     return hr;
 }
@@ -290,22 +266,33 @@ HRESULT oscilloscope_base_t::ClearBitmaps() noexcept
 /// </summary>
 size_t oscilloscope_base_t::FindZeroCrossing(const audio_sample * frames, size_t frameCount, uint32_t channelCount) noexcept
 {
+    if ((frames == nullptr) || (frameCount < 3) || (channelCount == 0))
+        return frameCount;
+
     size_t CrossIndex = frameCount;
 
     // Return the earliest zero-crossing across all channels.
     for (size_t i = 0; i < channelCount; ++i)
     {
-        audio_sample Sample0 = frames[i];
-        audio_sample Sample1 = frames[i + channelCount];
+        const audio_sample * Frame = frames + i;
 
-        for (size_t j = 2; j < frameCount; ++j)
+        audio_sample Sample0 = frames[0];
+        audio_sample Sample1 = frames[channelCount];
+
+        for (size_t j = 2; (j < frameCount) && (j <= CrossIndex); ++j)
         {
-            const audio_sample Sample2 = frames[i + (j * channelCount)];
+            Frame += channelCount;
+
+            const audio_sample Sample2 = frames[channelCount];
 
             // Is this a rising zero crossing? Confirm with the next sample.
             if ((Sample0 < 0.) && (Sample1 >= 0.) && (Sample2 >= 0.))
             {
-                CrossIndex = std::min(CrossIndex, j - 1);
+                CrossIndex = j - 1;
+
+                if (CrossIndex == 1)
+                    return CrossIndex;
+
                 break;
             }
 

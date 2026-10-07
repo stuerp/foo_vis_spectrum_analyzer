@@ -1,5 +1,5 @@
 
-/** $VER: BitMeter.h (2026.06.10) P. Stuer - Implements a bit meter visualization. **/
+/** $VER: BitMeter.h (2026.10.07) P. Stuer - Implements a bit meter visualization. **/
 
 #pragma once
 
@@ -52,6 +52,7 @@ private:
     style_t _YAxisText;
 
     std::vector<style_t *> _Styles;
+    BitMeterMode _CachedBitMeterMode = BitMeterMode::Integer;
 
     ComPtr<ID2D1DeviceContext> _DeviceContext;
     ComPtr<ID2D1CommandList> _StaticContentCommandList;

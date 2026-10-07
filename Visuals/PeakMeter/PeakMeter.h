@@ -1,5 +1,5 @@
 
-/** $VER: PeakMeter.h (2026.10.05) P. Stuer - Represents a peak meter. **/
+/** $VER: PeakMeter.h (2026.10.07) P. Stuer - Represents a peak meter. **/
 
 #pragma once
 
@@ -14,8 +14,6 @@
 #include <Windows.h>
 
 #include <d2d1_2.h>
-
-#include <atlbase.h>
 
 #include "Visualization.h"
 #include "PeakMeterParts.h"
@@ -58,7 +56,7 @@ private:
 
     static constexpr FLOAT _TickSize = 4.f;
 
-    style_t _BackgroundStyle;
+    style_t _BarBackgroundStyle;
 
     style_t _PeakStyle;
     style_t _Peak0dBStyle;
@@ -77,5 +75,5 @@ private:
     ComPtr<ID2D1Bitmap> _OpacityMask;
     ComPtr<ID2D1SolidColorBrush> _DebugBrush;
 
-    std::vector<part_t *> _Parts;
+    std::vector<std::unique_ptr<part_t>> _Parts;
 };
