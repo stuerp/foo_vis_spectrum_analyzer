@@ -1,5 +1,5 @@
 
-/** $VER: Direct3D.cpp (2025.10.25) P. Stuer **/
+/** $VER: Direct3D.cpp (2026.10.07) P. Stuer **/
 
 #include "pch.h"
 
@@ -8,19 +8,23 @@
 #pragma comment(lib, "d3d11")
 #pragma comment(lib, "d3dcompiler")
 
-using namespace DirectX;
-
-HRESULT CompileShader(const char * shaderSource, const char * entryPoint, const char * shaderModel, ID3DBlob ** shader) noexcept
+/// <summary>
+/// Compiles the specified shader source code.
+/// </summary>
+HRESULT Direct3D::CompileShader(const char * sourceCode, const char * sourceName, const char * entryPoint, const char * shaderModel, ID3DBlob ** shader, ID3DBlob ** errorMessages) noexcept
 {
-    ComPtr<ID3DBlob> ErrorMessages;
+    if ((shader == nullptr) || (errorMessages == nullptr))
+        return E_POINTER;
 
-    HRESULT hr = ::D3DCompile(shaderSource, strlen(shaderSource), nullptr, nullptr, nullptr, entryPoint, shaderModel, 0, 0, shader, ErrorMessages.GetAddressOf());
+    *shader = nullptr;
 
-    if (FAILED(hr))
-    {
-        if (ErrorMessages)
-            ::OutputDebugStringA(static_cast<char *>(ErrorMessages->GetBufferPointer()));
-    }
+    UINT Flags = D3DCOMPILE_ENABLE_STRICTNESS;
 
-    return hr;
+#if defined(_DEBUG)
+    Flags |= D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
+#else
+    Flags |= D3DCOMPILE_OPTIMIZATION_LEVEL3;
+#endif
+
+    return ::D3DCompile(sourceCode, ::strlen(sourceCode), sourceName, nullptr, nullptr, entryPoint, shaderModel, Flags, 0, shader, errorMessages);
 }

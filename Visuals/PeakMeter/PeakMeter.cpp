@@ -59,7 +59,7 @@ void peak_meter_t::Reset() noexcept
 /// <summary>
 /// Renders this instance.
 /// </summary>
-void peak_meter_t::Render(ID2D1DeviceContext * deviceContext, IDXGISwapChain1 * swapChain) noexcept
+void peak_meter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 {
     HRESULT hr = CreateDeviceSpecificResources(deviceContext);
 

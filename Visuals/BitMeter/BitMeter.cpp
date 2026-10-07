@@ -94,7 +94,7 @@ void bit_meter_t::Resize() noexcept
 /// <summary>
 /// Renders this instance.
 /// </summary>
-void bit_meter_t::Render(ID2D1DeviceContext * deviceContext, IDXGISwapChain1 * swapChain) noexcept
+void bit_meter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 {
     HRESULT hr = CreateDeviceSpecificResources(deviceContext);
 

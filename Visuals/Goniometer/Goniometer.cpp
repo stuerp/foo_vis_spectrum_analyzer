@@ -82,7 +82,7 @@ void goniometer_t::OnConfigurationChanged(ConfigurationChanges configurationChan
 /// <summary>
 /// Renders this instance.
 /// </summary>
-void goniometer_t::Render(ID2D1DeviceContext * deviceContext, IDXGISwapChain1 * swapChain) noexcept
+void goniometer_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 {
     HRESULT hr = CreateDeviceSpecificResources(deviceContext);
 

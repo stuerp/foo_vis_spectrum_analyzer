@@ -1,5 +1,5 @@
 
-/** $VER: Graph.cpp (2026.09.25) P. Stuer - Implements a graph on which the visualizations are rendered. **/
+/** $VER: Graph.cpp (2026.10.07) P. Stuer - Implements a graph on which the visualizations are rendered. **/
 
 #include "pch.h"
 
@@ -19,6 +19,7 @@
 #include "Goniometer.h"
 
 #include "Tester.h"
+#include "D3DTester.h"
 
 #pragma hdrstop
 
@@ -43,7 +44,7 @@ void graph_t::Move(const D2D1_RECT_F & rect) noexcept
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void graph_t::Initialize(state_t * state, graph_options_t * graphOptions, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext, IDXGISwapChain1 * swapChain) noexcept
+void graph_t::Initialize(state_t * state, graph_options_t * graphOptions, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext, IDXGISwapChain1 * swapChain, IDCompositionDevice * compositionDevice, IDCompositionVisual * compositionVisual) noexcept
 {
     _State = state;
     _GraphOptions = graphOptions;
@@ -97,6 +98,10 @@ void graph_t::Initialize(state_t * state, graph_options_t * graphOptions, bool i
         case VisualizationType::Tester:
             _Visualization = std::make_unique<tester_t>();
             break;
+
+        case VisualizationType::D3DTester:
+            _Visualization = std::make_unique<d3d_tester_t>();
+            break;
     }
 
     _Visualization->Configure(state, graphOptions, &_Analysis, _IsFirst, _IsLast, d3dDevice, d3dDeviceContext);
@@ -121,7 +126,20 @@ void graph_t::Render(ID2D1DeviceContext * deviceContext, artwork_t & artwork, ID
         return;
 
     RenderBackground(deviceContext, artwork);
-    RenderForeground(deviceContext, swapChain);
+
+    {
+        // FIXME
+        deviceContext->EndDraw();
+
+        Render3D(swapChain);
+
+        // FIXME
+        deviceContext->BeginDraw();
+    }
+
+    Render2D(deviceContext);
+
+    RenderDescription(deviceContext);
 
     // Erase the copy of the chunk.
     _Analysis._Chunk.reset();
@@ -239,14 +257,17 @@ void graph_t::RenderBackground(ID2D1DeviceContext * deviceContext, artwork_t & a
 /// <summary>
 /// Renders the foreground.
 /// </summary>
-void graph_t::RenderForeground(ID2D1DeviceContext * deviceContext, IDXGISwapChain1 * swapChain) noexcept
+void graph_t::Render3D(IDXGISwapChain1 * swapChain) noexcept
 {
-    _Visualization->Render(deviceContext, swapChain);
+    _Visualization->Render3D(swapChain);
+}
 
-    if ((_State->_VisualizationType == VisualizationType::PeakMeter) || (_State->_VisualizationType == VisualizationType::LevelMeter))
-        return;
-
-    RenderDescription(deviceContext);
+/// <summary>
+/// Renders the foreground.
+/// </summary>
+void graph_t::Render2D(ID2D1DeviceContext * deviceContext) noexcept
+{
+    _Visualization->Render(deviceContext);
 }
 
 /// <summary>
@@ -254,6 +275,9 @@ void graph_t::RenderForeground(ID2D1DeviceContext * deviceContext, IDXGISwapChai
 /// </summary>
 void graph_t::RenderDescription(ID2D1DeviceContext * deviceContext) noexcept
 {
+    if ((_State->_VisualizationType == VisualizationType::PeakMeter) || (_State->_VisualizationType == VisualizationType::LevelMeter))
+        return;
+
     if (_Description.empty())
         return;
 

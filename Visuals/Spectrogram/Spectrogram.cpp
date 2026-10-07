@@ -300,7 +300,7 @@ void spectrogram_t::Resize() noexcept
 /// <summary>
 /// Renders the spectrum analysis as a spectrogram.
 /// </summary>
-void spectrogram_t::Render(ID2D1DeviceContext * deviceContext, IDXGISwapChain1 * swapChain) noexcept
+void spectrogram_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 {
     HRESULT hr = CreateDeviceSpecificResources(deviceContext);
 

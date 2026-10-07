@@ -49,7 +49,7 @@ void level_meter_t::Move(const D2D1_RECT_F & rect) noexcept
 /// <summary>
 /// Renders this instance.
 /// </summary>
-void level_meter_t::Render(ID2D1DeviceContext * deviceContext, IDXGISwapChain1 * swapChain) noexcept
+void level_meter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 {
     HRESULT hr = CreateDeviceSpecificResources(deviceContext);
 

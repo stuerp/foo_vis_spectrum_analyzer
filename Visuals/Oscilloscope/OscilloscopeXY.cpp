@@ -46,7 +46,7 @@ void oscilloscope_xy_t::Configure(state_t * state, graph_options_t * graphOption
 /// <summary>
 /// Renders this instance.
 /// </summary>
-void oscilloscope_xy_t::Render(ID2D1DeviceContext * deviceContext, IDXGISwapChain1 * swapChain) noexcept
+void oscilloscope_xy_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 {
     HRESULT hr = CreateDeviceSpecificResources(deviceContext);
 

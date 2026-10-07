@@ -3,10 +3,6 @@
 
 #pragma once
 
-#include <CppCoreCheck/Warnings.h>
-
-#pragma warning(disable: 4100 4625 4626 4710 4711 5045 ALL_CPPCORECHECK_WARNINGS)
-
 #include <SDKDDKVer.h>
 #include <WinSock2.h>
 #include <Windows.h>
@@ -35,7 +31,7 @@ public:
 
     // element_t
     void Move(const D2D1_RECT_F & rect) noexcept override final;
-    void Render(ID2D1DeviceContext * deviceContext, IDXGISwapChain1 * swapChain) noexcept override final;
+    void Render(ID2D1DeviceContext * deviceContext) noexcept override final;
     void Reset() noexcept override final { }
 
     void OnConfigurationChanged(ConfigurationChanges configurationChanges) noexcept override final;

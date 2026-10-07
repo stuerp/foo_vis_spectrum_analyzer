@@ -263,7 +263,7 @@ void uielement_t::Render() noexcept
         Item->Render(_DeviceContext.Get(), _Artwork, _SwapChain.Get());
 
     if (_UIState._ShowFrameCounter)
-        _FrameCounter.Render(_DeviceContext.Get(), _SwapChain.Get());
+        _FrameCounter.Render(_DeviceContext.Get());
 
 #ifdef _DEBUG
     RenderDebug();
@@ -381,32 +381,46 @@ HRESULT uielement_t::CreateDeviceIndependentResources() noexcept
         return hr;
     }
 
-    UINT Flags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
-
-    #ifdef _DEBUG
-        Flags |= D3D11_CREATE_DEVICE_DEBUG;
-    #endif
-
-    hr = ::D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, Flags, nullptr, 0, D3D11_SDK_VERSION, _D3DDevice.GetAddressOf(), nullptr, _D3DDeviceContext.GetAddressOf());
-
-    if (FAILED(hr))
+    // Create the device chain: ID3D11Device -> IDXGIDevice -> ID2D1Device -> ID2D1DeviceContext
     {
-        msc::error_t LastError((DWORD) hr);
+        UINT Flags = D3D11_CREATE_DEVICE_BGRA_SUPPORT; // Required for Direct3D and Direct2D interoperation
 
-        Log.AtFatal().Write(STR_COMPONENT_BASENAME " is unable to create Direct3D device: %s (0x%08X)", msc::WideToUTF8(LastError.Message()).c_str(), (int) hr);
+        #ifdef _DEBUG
+            Flags |= D3D11_CREATE_DEVICE_DEBUG;
+        #endif
 
-        return hr;
-    }
+        hr = ::D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, Flags, nullptr, 0, D3D11_SDK_VERSION, _D3DDevice.GetAddressOf(), nullptr, _D3DDeviceContext.GetAddressOf());
 
-    hr = ::DCompositionCreateDevice(nullptr, IID_PPV_ARGS(_DCompositionDevice.GetAddressOf()));
+        if (FAILED(hr))
+        {
+            msc::error_t LastError((DWORD) hr);
 
-    if (FAILED(hr))
-    {
-        msc::error_t LastError((DWORD) hr);
+            Log.AtFatal().Write(STR_COMPONENT_BASENAME " is unable to create Direct3D device: %s (0x%08X)", msc::WideToUTF8(LastError.Message()).c_str(), (int) hr);
 
-        Log.AtFatal().Write(STR_COMPONENT_BASENAME " is unable to create DirectComposition device: %s (0x%08X)", msc::WideToUTF8(LastError.Message()).c_str(), (int) hr);
+            return hr;
+        }
 
-        return hr;
+        // Create the DirectComposition device and associate it with the Direct3D device. It assures that the device's surface factory is associated with a DXGI device.
+        {
+            ComPtr<IDXGIDevice> DXGIDevice;
+
+            hr = _D3DDevice.As(&DXGIDevice);
+
+            if (FAILED(hr))
+                return hr;
+
+            hr = ::DCompositionCreateDevice(DXGIDevice.Get(), IID_PPV_ARGS(&_CompositionDevice));
+        //  hr = ::DCompositionCreateDevice(nullptr, IID_PPV_ARGS(_CompositionDevice.GetAddressOf()));
+        }
+
+        if (FAILED(hr))
+        {
+            msc::error_t LastError((DWORD) hr);
+
+            Log.AtFatal().Write(STR_COMPONENT_BASENAME " is unable to create DirectComposition device: %s (0x%08X)", msc::WideToUTF8(LastError.Message()).c_str(), (int) hr);
+
+            return hr;
+        }
     }
 
     hr = _FrameCounter.CreateDeviceIndependentResources();
@@ -430,7 +444,7 @@ void uielement_t::DeleteDeviceIndependentResources() noexcept
 {
     _FrameCounter.DeleteDeviceIndependentResources();
 
-    _DCompositionDevice.Reset();
+    _CompositionDevice.Reset();
     _D3DDeviceContext.Reset();
     _D3DDevice.Reset();
 
@@ -515,12 +529,12 @@ HRESULT uielement_t::CreateDeviceSpecificResources() noexcept
 
         // Set up DirectComposition.
         {
-            hr = _DCompositionDevice->CreateTargetForHwnd(m_hWnd, TRUE, _CompositionTarget.GetAddressOf());
+            hr = _CompositionDevice->CreateTargetForHwnd(m_hWnd, TRUE, _CompositionTarget.GetAddressOf());
 
             if (FAILED(hr))
                 return hr;
 
-            hr = _DCompositionDevice->CreateVisual(_CompositionVisual.GetAddressOf());
+            hr = _CompositionDevice->CreateVisual(_CompositionVisual.GetAddressOf());
 
             if (FAILED(hr))
                 return hr;
@@ -535,7 +549,7 @@ HRESULT uielement_t::CreateDeviceSpecificResources() noexcept
             if (FAILED(hr))
                 return hr;
 
-            hr = _DCompositionDevice->Commit();
+            hr = _CompositionDevice->Commit();
 
             if (FAILED(hr))
                 return hr;

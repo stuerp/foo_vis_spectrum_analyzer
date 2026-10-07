@@ -96,11 +96,11 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.13.0.0-alpha5, 2026-xx-xx
+v0.13.0.0-rc1, 2026-10-07
 
 - New: You can modify the position of a gradient stop by clicking and dragging on the gradient control. The value will be constrained between the previous and next gradient stop position.
 - Changed: DirectX version requirements were relaxed.
-- Improved: Optimized the Spectrum LED rendering.
+- Improved: Optimized the spectrum LED rendering.
 - Improved: Peak Meter and Bit Meter honor the channel order specified in the configuration dialog.
 - Fixed: Spectrum LED rendering when using two or more graphs.
 

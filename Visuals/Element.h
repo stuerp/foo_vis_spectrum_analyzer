@@ -18,7 +18,8 @@ public:
     virtual ~element_t() = default;
 
     virtual void Move(const D2D1_RECT_F & rect) noexcept { }
-    virtual void Render(ID2D1DeviceContext * deviceContext, IDXGISwapChain1 * swapChain) noexcept { }
+    virtual void Render3D(IDXGISwapChain1 * swapChain) noexcept { }
+    virtual void Render(ID2D1DeviceContext * deviceContext) noexcept { }
     virtual void Reset() noexcept { }
     virtual void Release() noexcept { }
 

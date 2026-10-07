@@ -18,6 +18,7 @@
 #include <d3d11_2.h>
 #include <d2d1_3.h>
 #include <d2d1helper.h>
+#include <d3dcompiler.h>
 #include <dcomp.h>
 #include <dwrite.h>
 

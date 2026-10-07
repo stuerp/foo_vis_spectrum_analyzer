@@ -264,7 +264,7 @@ void x_axis_t::Resize(bool force) noexcept
 /// <summary>
 /// Renders this instance to the specified render target.
 /// </summary>
-void x_axis_t::Render(ID2D1DeviceContext * deviceContext, IDXGISwapChain1 * swapChain) noexcept
+void x_axis_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 {
     auto & StyleManager = _GraphOptions->_UseLocalStyles ? _GraphOptions->_StyleManager : _State->_StyleManager;
 

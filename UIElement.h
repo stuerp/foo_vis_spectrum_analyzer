@@ -245,7 +245,7 @@ private:
     ComPtr<ID3D11Device> _D3DDevice;
     ComPtr<ID3D11DeviceContext> _D3DDeviceContext;
 
-    ComPtr<IDCompositionDevice> _DCompositionDevice;
+    ComPtr<IDCompositionDevice> _CompositionDevice;
 
     ComPtr<IDXGISwapChain1> _SwapChain;
 

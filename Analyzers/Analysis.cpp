@@ -186,6 +186,11 @@ void analysis_t::Process(const audio_chunk & chunk) noexcept
             _Chunk.copy(chunk, true);
             break;
         }
+
+        case VisualizationType::D3DTester:
+        {
+            break;
+        }
     }
 }
 
@@ -450,6 +455,7 @@ void analysis_t::UpdatePeakValues(bool isStopped) noexcept
         }
 
         case VisualizationType::Tester:
+        case VisualizationType::D3DTester:
         {
             break;
         }

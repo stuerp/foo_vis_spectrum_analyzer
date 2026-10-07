@@ -76,7 +76,7 @@ void oscilloscope_t::Configure(state_t * state, graph_options_t * graphOptions, 
 /// <summary>
 /// Renders this instance.
 /// </summary>
-void oscilloscope_t::Render(ID2D1DeviceContext * deviceContext, IDXGISwapChain1 * swapChain) noexcept
+void oscilloscope_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 {
     {
         const size_t FrameCount     = _Analysis->_Chunk.get_sample_count();     // get_sample_count() actually returns the number of frames.

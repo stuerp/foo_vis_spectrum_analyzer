@@ -28,11 +28,11 @@ public:
 
     // element_t
     void Move(const D2D1_RECT_F & rect) noexcept override final;
-    void Render(ID2D1DeviceContext * deviceContext, IDXGISwapChain1 * swapChain) noexcept override final { };
+    void Render(ID2D1DeviceContext * deviceContext) noexcept override final { };
     void Reset() noexcept override final;
     void Release() noexcept override final;
 
-    void Initialize(state_t * state, graph_options_t * graphOptions, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext, IDXGISwapChain1 * swapChain) noexcept;
+    void Initialize(state_t * state, graph_options_t * graphOptions, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext, IDXGISwapChain1 * swapChain, IDCompositionDevice * compositionDevice, IDCompositionVisual * compositionVisual) noexcept;
     void Process(const audio_chunk & chunk) noexcept;
     void Render(ID2D1DeviceContext * deviceContext, artwork_t & artwork, IDXGISwapChain1 * swapChain) noexcept;
 
@@ -67,7 +67,8 @@ private:
     void DeleteDeviceSpecificResources() noexcept;
 
     void RenderBackground(ID2D1DeviceContext * deviceContext, artwork_t & artwork) noexcept;
-    void RenderForeground(ID2D1DeviceContext * deviceContext, IDXGISwapChain1 * swapChain) noexcept;
+    void Render3D(IDXGISwapChain1 * swapChain) noexcept;
+    void Render2D(ID2D1DeviceContext * deviceContext) noexcept;
     void RenderDescription(ID2D1DeviceContext * deviceContext) noexcept;
 
 public:

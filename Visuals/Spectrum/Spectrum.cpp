@@ -77,7 +77,7 @@ void spectrum_t::Resize() noexcept
 /// <summary>
 /// Renders this instance to the specified render target.
 /// </summary>
-void spectrum_t::Render(ID2D1DeviceContext * deviceContext, IDXGISwapChain1 * swapChain) noexcept
+void spectrum_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 {
     HRESULT hr = CreateDeviceSpecificResources(deviceContext);
 
@@ -91,8 +91,8 @@ void spectrum_t::Render(ID2D1DeviceContext * deviceContext, IDXGISwapChain1 * sw
         {
             if (_IsFirst)
             {
-                _XAxis.Render(deviceContext, swapChain);
-                _YAxis.Render(deviceContext, swapChain);
+                _XAxis.Render(deviceContext);
+                _YAxis.Render(deviceContext);
             }
 
             SetTransform(deviceContext, _ClientRect);
@@ -142,6 +142,7 @@ void spectrum_t::Render(ID2D1DeviceContext * deviceContext, IDXGISwapChain1 * sw
         case VisualizationType::Goniometer:
 
         case VisualizationType::Tester:
+        case VisualizationType::D3DTester:
 
         default:
             break;

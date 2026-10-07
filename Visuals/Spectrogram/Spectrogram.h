@@ -33,7 +33,7 @@ public:
 
     // element_t
     void Move(const D2D1_RECT_F & rect) noexcept override final;
-    void Render(ID2D1DeviceContext * deviceContext, IDXGISwapChain1 * swapChain) noexcept override final;
+    void Render(ID2D1DeviceContext * deviceContext) noexcept override final;
 
     void OnConfigurationChanged(ConfigurationChanges configurationChanges) noexcept;
 

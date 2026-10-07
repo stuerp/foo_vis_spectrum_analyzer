@@ -1,5 +1,5 @@
 
-/** $VER: Visualization.h (2026.09.14) P. Stuer - Base class for all visualization elements. **/
+/** $VER: Visualization.h (2026.10.07) P. Stuer - Base class for all visualization elements. **/
 
 #pragma once
 

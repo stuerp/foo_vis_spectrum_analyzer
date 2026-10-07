@@ -1,5 +1,5 @@
 
-/** $VER: Constants.h (2026.09.29) P. Stuer **/
+/** $VER: Constants.h (2026.10.07) P. Stuer **/
 
 #pragma once
 
@@ -18,10 +18,11 @@ enum class VisualizationType
     BitMeter = 8,
     Goniometer = 9,
 
-    Tester = 63,
+    Tester = 10,
+    D3DTester = 11,
 
     Min = Bars,
-    Max = Tester,
+    Max = D3DTester,
 };
 
 // Common

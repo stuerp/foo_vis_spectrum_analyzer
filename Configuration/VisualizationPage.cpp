@@ -1,5 +1,5 @@
 
-/** $VER: VisualizationPage.cpp (2026.09.23) P. Stuer - Implements a configuration dialog page. **/
+/** $VER: VisualizationPage.cpp (2026.10.07) P. Stuer - Implements a configuration dialog page. **/
 
 #include "pch.h"
 
@@ -83,7 +83,8 @@ void visualization_page_t::InitializeControls() noexcept
         {
             L"Bars", L"Curve", L"Spectrogram", L"Peak/RMS Meter", L"Balance/Correlation Meter", L"Radial Bars", L"Radial Curve", L"Oscilloscope", L"Bit Meter", L"Goniometer",
         #ifdef _DEBUG
-            L"Tester"
+            L"Tester",
+            L"D3D Tester",
         #endif
         };
 
