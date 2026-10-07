@@ -293,7 +293,7 @@ void oscilloscope_t::DeleteDeviceSpecificResources() noexcept
 /// </summary>
 HRESULT oscilloscope_t::CreateSignalGeometry(const audio_chunk_impl & chunk, const D2D1_SIZE_F & clientSize, ComPtr<ID2D1PathGeometry> & geometry) noexcept
 {
-    size_t FrameCount = chunk.get_sample_count();                   // get_sample_count() actually returns the number of frames.
+    size_t FrameCount = chunk.get_sample_count();                       // get_sample_count() actually returns the number of frames.
 
     const uint32_t ChannelCount = chunk.get_channel_count();
 
@@ -309,11 +309,14 @@ HRESULT oscilloscope_t::CreateSignalGeometry(const audio_chunk_impl & chunk, con
 
     if (_State->_ZeroCrossingTrigger && (FrameCount >= 4))
     {
-        FrameCount /= 2;
+        const size_t SearchFrameCount = FrameCount / 2;
+        const size_t CrossIndex = FindZeroCrossing(Frames, SearchFrameCount, ChannelCount);
 
-        const size_t CrossIndex = FindZeroCrossing(Frames, FrameCount, ChannelCount);
-        
-        Frames += CrossIndex * ChannelCount;
+        if (CrossIndex < SearchFrameCount)
+        {
+            Frames     += CrossIndex * ChannelCount;
+            FrameCount -= CrossIndex;
+        }
     }
 
     // Create the signal geometry.
@@ -335,7 +338,7 @@ HRESULT oscilloscope_t::CreateSignalGeometry(const audio_chunk_impl & chunk, con
                 break;
         }
 
-        HRESULT hr = Direct2DFactory::Get()->CreatePathGeometry(geometry.GetAddressOf());
+        HRESULT hr = Direct2DFactory::Get()->CreatePathGeometry(geometry.ReleaseAndGetAddressOf());
 
         if (FAILED(hr))
             return hr;
@@ -357,7 +360,6 @@ HRESULT oscilloscope_t::CreateSignalGeometry(const audio_chunk_impl & chunk, con
             {
                 if (ActiveChannelMask & 1)
                 {
-                    const size_t SampleCount = FrameCount * ChannelCount;
                     const FLOAT dx = clientSize.width / (FLOAT) FrameCount;
 
                     FLOAT x = 0.f;
@@ -365,10 +367,14 @@ HRESULT oscilloscope_t::CreateSignalGeometry(const audio_chunk_impl & chunk, con
 
                     Sink->BeginFigure(D2D1::Point2F(x, y), D2D1_FIGURE_BEGIN_HOLLOW);
 
-                    for (size_t i = ChannelCount + ChannelOffset; i < SampleCount; i += ChannelCount)
+                    const audio_sample * Samples = Frames + ChannelOffset;
+
+                    for (size_t FrameNumber = 1; FrameNumber < FrameCount; ++FrameNumber)
                     {
-                        x += dx;
-                        y = ChannelBaseline - (std::clamp((FLOAT) (Scaler(Frames[i]) * _State->_YInputGain), -1.f, 1.f) * ChannelMax);
+                        Samples += ChannelCount;
+
+                        x = (FLOAT) FrameNumber * dx;
+                        y = ChannelBaseline - (std::clamp((FLOAT) (Scaler(*Samples) * _State->_YInputGain), -1.f, 1.f) * ChannelMax);
 
                         Sink->AddLine(D2D1::Point2F(x, y));
                     }

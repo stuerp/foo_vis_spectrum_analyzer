@@ -388,6 +388,11 @@ void spectrum_t::RenderRadialBars(ID2D1DeviceContext * deviceContext) noexcept
 
     ComPtr<ID2D1PathGeometry> Path;
 
+    ID2D1Brush * BarPeakAreaBrush = _BarPeakAreaStyle._Brush.Get();
+    ID2D1Brush * BarPeakTopBrush  = _BarPeakTopStyle._Brush.Get();
+    ID2D1Brush * BarAreaBrush     = _BarAreaStyle._Brush.Get();
+    ID2D1Brush * BarTopBrush      = _BarTopStyle._Brush.Get();
+
     for (const auto & fb : _Analysis->_FrequencyBands)
     {
         const bool GreaterThanNyquist = fb.Lo >= _Analysis->_NyquistFrequency; // 24/09/25: Use the lower frequency of a band instead of the center frequency.
@@ -409,7 +414,7 @@ void spectrum_t::RenderRadialBars(ID2D1DeviceContext * deviceContext) noexcept
                         _BarPeakAreaStyle.SetBrushColor(Value);
                     }
 
-                    deviceContext->FillGeometry(Path.Get(), _BarPeakAreaStyle._Brush.Get());
+                    deviceContext->FillGeometry(Path.Get(), BarPeakAreaBrush);
 
                     Path.Reset();
                 }
@@ -434,7 +439,7 @@ void spectrum_t::RenderRadialBars(ID2D1DeviceContext * deviceContext) noexcept
 
                     _BarPeakTopStyle._Brush->SetOpacity(Opacity);
 
-                    deviceContext->FillGeometry(Path.Get(), _BarPeakTopStyle._Brush.Get());
+                    deviceContext->FillGeometry(Path.Get(), BarPeakTopBrush);
 
                     Path.Reset();
                 }
@@ -455,7 +460,7 @@ void spectrum_t::RenderRadialBars(ID2D1DeviceContext * deviceContext) noexcept
                         _BarAreaStyle.SetBrushColor(Value);
                     }
 
-                    deviceContext->FillGeometry(Path.Get(), _BarAreaStyle._Brush.Get());
+                    deviceContext->FillGeometry(Path.Get(), BarAreaBrush);
 
                     Path.Reset();
                 }
@@ -476,7 +481,7 @@ void spectrum_t::RenderRadialBars(ID2D1DeviceContext * deviceContext) noexcept
                         _BarTopStyle.SetBrushColor(Value);
                     }
 
-                    deviceContext->FillGeometry(Path.Get(), _BarTopStyle._Brush.Get());
+                    deviceContext->FillGeometry(Path.Get(), BarTopBrush);
 
                     Path.Reset();
                 }
@@ -627,6 +632,8 @@ void spectrum_t::RenderDiagnostics(ID2D1DeviceContext * deviceContext) const noe
     {
         deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
+        ID2D1Brush * Brush = _WindowFunctionStyle._Brush.Get();
+
         const FLOAT y1 = _ClientRect.bottom;
         const FLOAT y2 = _ClientRect.top + 1.f;
 
@@ -642,7 +649,7 @@ void spectrum_t::RenderDiagnostics(ID2D1DeviceContext * deviceContext) const noe
 
             auto p2 = D2D1_POINT_2F(msc::Map(x, -1., 1., _ClientRect.left, _ClientRect.right), msc::Map(y, 0., 1., y1, y2));
 
-            deviceContext->DrawLine(p1, p2, _WindowFunctionStyle._Brush.Get(), _WindowFunctionStyle._Thickness);
+            deviceContext->DrawLine(p1, p2, Brush, _WindowFunctionStyle._Thickness);
 
             p1 = p2;
         }
@@ -651,7 +658,7 @@ void spectrum_t::RenderDiagnostics(ID2D1DeviceContext * deviceContext) const noe
 
         auto p2 = D2D1_POINT_2F(_ClientRect.right, msc::Map(y, 0., 1., y1, y2));
 
-        deviceContext->DrawLine(p1, p2, _WindowFunctionStyle._Brush.Get(), _WindowFunctionStyle._Thickness);
+        deviceContext->DrawLine(p1, p2, Brush, _WindowFunctionStyle._Thickness);
     }
 
     // Render the weighing function.
@@ -661,6 +668,8 @@ void spectrum_t::RenderDiagnostics(ID2D1DeviceContext * deviceContext) const noe
         const double Offset   = _State->_FrequencyShift * BinWidth;
 
         deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+
+        ID2D1Brush * Brush = _WeighingFunctionStyle._Brush.Get();
 
         const FLOAT x1 = _ClientRect.left;
         const FLOAT x2 = _ClientRect.right;
@@ -684,7 +693,7 @@ void spectrum_t::RenderDiagnostics(ID2D1DeviceContext * deviceContext) const noe
 
             auto p2 = D2D1_POINT_2F(x, msc::Map(y, _GraphOptions->_AmplitudeLo, _GraphOptions->_AmplitudeHi, y1, y2));
 
-            deviceContext->DrawLine(p1, p2, _WeighingFunctionStyle._Brush.Get(), _WeighingFunctionStyle._Thickness);
+            deviceContext->DrawLine(p1, p2, Brush, _WeighingFunctionStyle._Thickness);
 
             p1 = p2;
         }
@@ -696,7 +705,7 @@ void spectrum_t::RenderDiagnostics(ID2D1DeviceContext * deviceContext) const noe
 
         auto p2 = D2D1_POINT_2F(x, msc::Map(y, _GraphOptions->_AmplitudeLo, _GraphOptions->_AmplitudeHi, y1, y2));
 
-        deviceContext->DrawLine(p1, p2, _WeighingFunctionStyle._Brush.Get(), _WeighingFunctionStyle._Thickness);
+        deviceContext->DrawLine(p1, p2, Brush, _WeighingFunctionStyle._Thickness);
     }
 }
 
@@ -728,82 +737,70 @@ HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCon
         (void) deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), _DebugBrush.GetAddressOf());
 #endif
 
+    const auto InitializeStyle = [this, deviceContext, & StyleManager](auto & Style, VisualElement Element) noexcept -> HRESULT
+    {
+        if (Style._Brush != nullptr)
+            return S_OK;
+
+        Style = *StyleManager.GetStyle(Element);
+
+        Style.SetColor(_State);
+
+        return Style.CreateDeviceSpecificResources(deviceContext, _ClientSize, L"", 1.f);
+    };
+
+    const auto InitializeRadialStyle = [this, deviceContext, &StyleManager](auto & Style, VisualElement Element) noexcept -> HRESULT
+    {
+        if (Style._Brush != nullptr)
+            return S_OK;
+
+        constexpr D2D1_POINT_2F Center = { };
+        constexpr D2D1_POINT_2F Offset = { };
+
+        const FLOAT Radius = _ClientSize.height / 2.f;
+
+        Style = *StyleManager.GetStyle(Element);
+
+        Style.SetColor(_State);
+
+        return Style.CreateDeviceSpecificResources(deviceContext, _ClientSize, Center, Offset, Radius, Radius, _State->_InnerRadius);
+    };
+
+    #pragma warning(push)
     #pragma warning(disable: 4062)
     switch (_State->_VisualizationType)
     {
         case VisualizationType::Bars:
         {
-            if (_BarAreaStyle._Brush == nullptr)
-            {
-                _BarAreaStyle = *StyleManager.GetStyle(VisualElement::BarArea);
+            hr = InitializeStyle(_BarAreaStyle, VisualElement::BarArea);
 
-                _BarAreaStyle.SetColor(_State);
+            if (FAILED(hr))
+                return hr;
 
-                hr = _BarAreaStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, L"", 1.f);
+            hr = InitializeStyle(_BarTopStyle, VisualElement::BarTop);
 
-                if (FAILED(hr))
-                    return hr;
-            }
+            if (FAILED(hr))
+                return hr;
 
-            if (_BarTopStyle._Brush == nullptr)
-            {
-                _BarTopStyle = *StyleManager.GetStyle(VisualElement::BarTop);
+            hr = InitializeStyle(_BarPeakAreaStyle, VisualElement::BarPeakArea);
 
-                _BarTopStyle.SetColor(_State);
+            if (FAILED(hr))
+                return hr;
 
-                hr = _BarTopStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, L"", 1.f);
+            hr = InitializeStyle(_BarPeakTopStyle, VisualElement::BarPeakTop);
 
-                if (FAILED(hr))
-                    return hr;
-            }
+            if (FAILED(hr))
+                return hr;
 
-            if (_BarPeakAreaStyle._Brush == nullptr)
-            {
-                _BarPeakAreaStyle = *StyleManager.GetStyle(VisualElement::BarPeakArea);
+            hr = InitializeStyle(_DarkBackgroundStyle, VisualElement::BarDarkBackground);
 
-                _BarPeakAreaStyle.SetColor(_State);
+            if (FAILED(hr))
+                return hr;
 
-                hr = _BarPeakAreaStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, L"", 1.f);
+            hr = InitializeStyle(_LightBackgroundStyle, VisualElement::BarLightBackground);
 
-                if (FAILED(hr))
-                    return hr;
-            }
-
-            if (_BarPeakTopStyle._Brush == nullptr)
-            {
-                _BarPeakTopStyle = *StyleManager.GetStyle(VisualElement::BarPeakTop);
-
-                _BarPeakTopStyle.SetColor(_State);
-
-                hr = _BarPeakTopStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, L"", 1.f);
-
-                if (FAILED(hr))
-                    return hr;
-            }
-
-            if (_DarkBackgroundStyle._Brush == nullptr)
-            {
-                _DarkBackgroundStyle = *StyleManager.GetStyle(VisualElement::BarDarkBackground);
-
-                _DarkBackgroundStyle.SetColor(_State);
-
-                hr = _DarkBackgroundStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, L"", 1.f);
-
-                if (FAILED(hr))
-                    return hr;
-            }
-
-            if (_LightBackgroundStyle._Brush == nullptr)
-            {
-                _LightBackgroundStyle = *StyleManager.GetStyle(VisualElement::BarLightBackground);
-
-                _LightBackgroundStyle.SetColor(_State);
-
-                hr = _LightBackgroundStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, L"", 1.f);
-
-                if (FAILED(hr))
-                    return hr;
-            }
+            if (FAILED(hr))
+                return hr;
 
             if (_OpacityMask == nullptr)
             {
@@ -814,214 +811,103 @@ HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCon
                 if (FAILED(hr))
                     return hr;
             }
+
             break;
         }
 
         case VisualizationType::Curve:
         {
-            if (_CurveLineStyle._Brush == nullptr)
-            {
-                _CurveLineStyle = *StyleManager.GetStyle(VisualElement::CurveLine);
+            hr = InitializeStyle(_CurveLineStyle, VisualElement::CurveLine);
 
-                _CurveLineStyle.SetColor(_State);
+            if (FAILED(hr))
+                return hr;
 
-                hr = _CurveLineStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, L"", 1.f);
+            hr = InitializeStyle(_CurveAreaStyle, VisualElement::CurveArea);
 
-                if (FAILED(hr))
-                    return hr;
-            }
+            if (FAILED(hr))
+                return hr;
 
-            if (_CurveAreaStyle._Brush == nullptr)
-            {
-                _CurveAreaStyle = *StyleManager.GetStyle(VisualElement::CurveArea);
+            hr = InitializeStyle(_CurvePeakLineStyle, VisualElement::CurvePeakLine);
 
-                _CurveAreaStyle.SetColor(_State);
+            if (FAILED(hr))
+                return hr;
 
-                hr = _CurveAreaStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, L"", 1.f);
+            hr = InitializeStyle(_CurvePeakAreaStyle, VisualElement::CurvePeakArea);
 
-                if (FAILED(hr))
-                    return hr;
-            }
+            if (FAILED(hr))
+                return hr;
 
-            if (_CurvePeakLineStyle._Brush == nullptr)
-            {
-                _CurvePeakLineStyle = *StyleManager.GetStyle(VisualElement::CurvePeakLine);
-
-                _CurvePeakLineStyle.SetColor(_State);
-
-                hr = _CurvePeakLineStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, L"", 1.f);
-
-                if (FAILED(hr))
-                    return hr;
-            }
-
-            if (_CurvePeakAreaStyle._Brush == nullptr)
-            {
-                _CurvePeakAreaStyle = *StyleManager.GetStyle(VisualElement::CurvePeakArea);
-
-                _CurvePeakAreaStyle.SetColor(_State);
-
-                hr = _CurvePeakAreaStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, L"", 1.f);
-
-                if (FAILED(hr))
-                    return hr;
-            }
             break;
         }
 
         case VisualizationType::RadialBars:
         {
-            constexpr D2D1_POINT_2F Center = { };
-            constexpr D2D1_POINT_2F Offset = { };
+            hr = InitializeRadialStyle(_BarAreaStyle, VisualElement::BarArea);
 
-            const FLOAT rx = _ClientSize.height / 2.f;
-            const FLOAT ry = _ClientSize.height / 2.f;
+            if (FAILED(hr))
+                return hr;
 
-            if (_BarAreaStyle._Brush == nullptr)
-            {
-                _BarAreaStyle = *StyleManager.GetStyle(VisualElement::BarArea);
+            hr = InitializeRadialStyle(_BarTopStyle, VisualElement::BarTop);
 
-                _BarAreaStyle.SetColor(_State);
+            if (FAILED(hr))
+                return hr;
 
-                hr = _BarAreaStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, Center, Offset, rx, ry, _State->_InnerRadius);
+            hr = InitializeRadialStyle(_BarPeakAreaStyle, VisualElement::BarPeakArea);
 
-                if (FAILED(hr))
-                    return hr;
-            }
+            if (FAILED(hr))
+                return hr;
 
-            if (_BarTopStyle._Brush == nullptr)
-            {
-                _BarTopStyle = *StyleManager.GetStyle(VisualElement::BarTop);
+            hr = InitializeRadialStyle(_BarPeakTopStyle, VisualElement::BarPeakTop);
 
-                _BarTopStyle.SetColor(_State);
-
-                hr = _BarTopStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, Center, Offset, rx, ry, _State->_InnerRadius);
-
-                if (FAILED(hr))
-                    return hr;
-            }
-
-            if (_BarPeakAreaStyle._Brush == nullptr)
-            {
-                _BarPeakAreaStyle = *StyleManager.GetStyle(VisualElement::BarPeakArea);
-
-                _BarPeakAreaStyle.SetColor(_State);
-
-                hr = _BarPeakAreaStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, Center, Offset, rx, ry, _State->_InnerRadius);
-
-                if (FAILED(hr))
-                    return hr;
-            }
-
-            if (_BarPeakTopStyle._Brush == nullptr)
-            {
-                _BarPeakTopStyle = *StyleManager.GetStyle(VisualElement::BarPeakTop);
-
-                _BarPeakTopStyle.SetColor(_State);
-
-                hr = _BarPeakTopStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, Center, Offset, rx, ry, _State->_InnerRadius);
-
-                if (FAILED(hr))
-                    return hr;
-            }
+            if (FAILED(hr))
+                return hr;
 
             break;
         }
 
         case VisualizationType::RadialCurve:
         {
-            constexpr D2D1_POINT_2F Center = { };
-            constexpr D2D1_POINT_2F Offset = { };
+            hr = InitializeRadialStyle(_CurveLineStyle, VisualElement::CurveLine);
 
-            const FLOAT rx = _ClientSize.height / 2.f;
-            const FLOAT ry = _ClientSize.height / 2.f;
+            if (FAILED(hr))
+                return hr;
 
-            if (_CurveLineStyle._Brush == nullptr)
-            {
-                _CurveLineStyle = *StyleManager.GetStyle(VisualElement::CurveLine);
+            hr = InitializeRadialStyle(_CurveAreaStyle, VisualElement::CurveArea);
 
-                _CurveLineStyle.SetColor(_State);
+            if (FAILED(hr))
+                return hr;
 
-                hr = _CurveLineStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, Center, Offset, rx, ry, _State->_InnerRadius);
+            hr = InitializeRadialStyle(_CurvePeakLineStyle, VisualElement::CurvePeakLine);
 
-                if (FAILED(hr))
-                    return hr;
-            }
+            if (FAILED(hr))
+                return hr;
 
-            if (_CurveAreaStyle._Brush == nullptr)
-            {
-                _CurveAreaStyle = *StyleManager.GetStyle(VisualElement::CurveArea);
+            hr = InitializeRadialStyle(_CurvePeakAreaStyle, VisualElement::CurvePeakArea);
 
-                _CurveAreaStyle.SetColor(_State);
-
-                hr = _CurveAreaStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, Center, Offset, rx, ry, _State->_InnerRadius);
-
-                if (FAILED(hr))
-                    return hr;
-            }
-
-            if (_CurvePeakLineStyle._Brush == nullptr)
-            {
-                _CurvePeakLineStyle = *StyleManager.GetStyle(VisualElement::CurvePeakLine);
-
-                _CurvePeakLineStyle.SetColor(_State);
-
-                hr = _CurvePeakLineStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, Center, Offset, rx, ry, _State->_InnerRadius);
-
-                if (FAILED(hr))
-                    return hr;
-            }
-
-            if (_CurvePeakAreaStyle._Brush == nullptr)
-            {
-                _CurvePeakAreaStyle = *StyleManager.GetStyle(VisualElement::CurvePeakArea);
-
-                _CurvePeakAreaStyle.SetColor(_State);
-
-                hr = _CurvePeakAreaStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, Center, Offset, rx, ry, _State->_InnerRadius);
-
-                if (FAILED(hr))
-                    return hr;
-            }
+            if (FAILED(hr))
+                return hr;
 
             break;
         }
     }
+    #pragma warning(pop)
 
-    if (_NyquistMarkerStyle._Brush == nullptr)
-    {
-        _NyquistMarkerStyle = *StyleManager.GetStyle(VisualElement::NyquistMarker);
+    hr = InitializeStyle(_NyquistMarkerStyle, VisualElement::NyquistMarker);
 
-        _NyquistMarkerStyle.SetColor(_State);
+    if (FAILED(hr))
+        return hr;
 
-        hr = _NyquistMarkerStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, L"", 1.f);
-    }
+    hr = InitializeStyle(_WindowFunctionStyle, VisualElement::WindowFunction);
 
-    if (_WindowFunctionStyle._Brush == nullptr)
-    {
-        _WindowFunctionStyle = *StyleManager.GetStyle(VisualElement::WindowFunction);
+    if (FAILED(hr))
+        return hr;
 
-        _WindowFunctionStyle.SetColor(_State);
+    hr = InitializeStyle(_WeighingFunctionStyle, VisualElement::WeighingFunction);
 
-        hr = _WindowFunctionStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, L"", 1.f);
+    if (FAILED(hr))
+        return hr;
 
-        if (FAILED(hr))
-            return hr;
-    }
-
-    if (_WeighingFunctionStyle._Brush == nullptr)
-    {
-        _WeighingFunctionStyle = *StyleManager.GetStyle(VisualElement::WeighingFunction);
-
-        _WeighingFunctionStyle.SetColor(_State);
-
-        hr = _WeighingFunctionStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, L"", 1.f);
-
-        if (FAILED(hr))
-            return hr;
-    }
-
-    return hr;
+    return S_OK;
 }
 
 /// <summary>
@@ -1029,13 +915,15 @@ HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCon
 /// </summary>
 void spectrum_t::DeleteDeviceSpecificResources() noexcept
 {
-    _YAxis.DeleteDeviceSpecificResources();
-    _XAxis.DeleteDeviceSpecificResources();
+    _WeighingFunctionStyle.DeleteDeviceSpecificResources();
+    _WindowFunctionStyle.DeleteDeviceSpecificResources();
 
-    _CurveLineStyle.DeleteDeviceSpecificResources();
-    _CurveAreaStyle.DeleteDeviceSpecificResources();
-    _CurvePeakLineStyle.DeleteDeviceSpecificResources();
+    _NyquistMarkerStyle.DeleteDeviceSpecificResources();
+
     _CurvePeakAreaStyle.DeleteDeviceSpecificResources();
+    _CurvePeakLineStyle.DeleteDeviceSpecificResources();
+    _CurveAreaStyle.DeleteDeviceSpecificResources();
+    _CurveLineStyle.DeleteDeviceSpecificResources();
 
     _BarAreaStyle.DeleteDeviceSpecificResources();
     _BarTopStyle.DeleteDeviceSpecificResources();
@@ -1044,10 +932,11 @@ void spectrum_t::DeleteDeviceSpecificResources() noexcept
     _DarkBackgroundStyle.DeleteDeviceSpecificResources();
     _LightBackgroundStyle.DeleteDeviceSpecificResources();
 
-    _NyquistMarkerStyle.DeleteDeviceSpecificResources();
-
     _OpacityMask.Reset();
     _DebugBrush.Reset();
+
+    _YAxis.DeleteDeviceSpecificResources();
+    _XAxis.DeleteDeviceSpecificResources();
 }
 
 /// <summary>

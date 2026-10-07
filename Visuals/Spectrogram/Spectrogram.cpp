@@ -316,7 +316,7 @@ void spectrogram_t::Render(ID2D1DeviceContext * deviceContext, IDXGISwapChain1 *
     if (_State->_IsHorizontalSpectrogram)
     {
         // Draw the offscreen bitmap.
-        if (!_State->_IsPaused || (_State->_IsPaused && _State->_VisualizeDuringPause))
+        if (!_State->_IsPaused || _State->_VisualizeDuringPause)
         {
             SetTransform(deviceContext, _BitmapRect);
 
@@ -387,7 +387,7 @@ void spectrogram_t::Render(ID2D1DeviceContext * deviceContext, IDXGISwapChain1 *
     else
     {
         // Draw the offscreen bitmap.
-        if (!_State->_IsPaused || (_State->_IsPaused && _State->_VisualizeDuringPause))
+        if (!_State->_IsPaused || _State->_VisualizeDuringPause)
         {
             SetTransform(deviceContext, _BitmapRect);
 
@@ -499,12 +499,17 @@ void spectrogram_t::RenderTimeAxis(ID2D1DeviceContext * deviceContext, bool firs
 {
     deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
 
+    ID2D1Brush * TimeLineBrush = _TimeLineStyle._Brush.Get();
+    ID2D1Brush * TimeTextBrush = _TimeTextStyle._Brush.Get();
+
+    IDWriteTextFormat * TimeTextFormat = _TimeTextStyle._TextFormat.Get();
+
     if (_State->_IsHorizontalSpectrogram)
     {
         const FLOAT y1 = first ?                    0.f : _Size.height - _TimeTextStyle._Height;
         const FLOAT y2 = first ? _TimeTextStyle._Height : _Size.height;
 
-        rect_t Rect = { 0.f, first ? 0.f : y1, 0.f, first ? y2 : _Size.height };
+        rect_t Rect = { 0.f, y1, 0.f, y2 };
 
         deviceContext->PushAxisAlignedClip({ _BitmapRect.left, y1, _BitmapRect.right, y2 }, D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
@@ -515,7 +520,7 @@ void spectrogram_t::RenderTimeAxis(ID2D1DeviceContext * deviceContext, bool firs
             const FLOAT x = !_GraphOptions->_FlipHorizontally ? _BitmapRect.left + Label.X : Label.X + _TimeTextStyle._Width;
 
             // Draw the tick.
-            deviceContext->DrawLine( { x, y1 }, { x, y2 }, _TimeLineStyle._Brush.Get(), _TimeLineStyle._Thickness);
+            deviceContext->DrawLine( { x, y1 }, { x, y2 }, TimeLineBrush, _TimeLineStyle._Thickness);
 
             if (!_GraphOptions->_FlipHorizontally)
             {
@@ -529,7 +534,7 @@ void spectrogram_t::RenderTimeAxis(ID2D1DeviceContext * deviceContext, bool firs
             }
 
             // Draw the label.
-            deviceContext->DrawTextW(Label.Text.c_str(), (UINT32) Label.Text.size(), _TimeTextStyle._TextFormat.Get(), Rect, _TimeTextStyle._Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
+            deviceContext->DrawTextW(Label.Text.c_str(), (UINT32) Label.Text.size(), TimeTextFormat, Rect, TimeTextBrush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
         }
 
         deviceContext->PopAxisAlignedClip();
@@ -550,21 +555,21 @@ void spectrogram_t::RenderTimeAxis(ID2D1DeviceContext * deviceContext, bool firs
             const FLOAT y = !_GraphOptions->_FlipVertically ? _BitmapRect.top - _TimeTextStyle._Height + Label.Y : _BitmapRect.top + Label.Y;
 
             // Draw the tick.
-            deviceContext->DrawLine( { x1, y }, { x2, y }, _TimeLineStyle._Brush.Get(), _TimeLineStyle._Thickness);
+            deviceContext->DrawLine( { x1, y }, { x2, y }, TimeLineBrush, _TimeLineStyle._Thickness);
 
             if (!_GraphOptions->_FlipVertically)
             {
                 Rect.y2 = y;
-                Rect.y1 = Rect.y2 - _TimeTextStyle._Height;
+                Rect.y1 = y - _TimeTextStyle._Height;
             }
             else
             {
-                Rect.y2 = y;
-                Rect.y1 = Rect.y2 + _TimeTextStyle._Height;
+                Rect.y1 = y;
+                Rect.y2 = y + _TimeTextStyle._Height;
             }
 
             // Draw the label.
-            deviceContext->DrawTextW(Label.Text.c_str(), (UINT32) Label.Text.size(), _TimeTextStyle._TextFormat.Get(), Rect, _TimeTextStyle._Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
+            deviceContext->DrawTextW(Label.Text.c_str(), (UINT32) Label.Text.size(), TimeTextFormat, Rect, TimeTextBrush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
         }
 
         deviceContext->PopAxisAlignedClip();
@@ -578,7 +583,13 @@ void spectrogram_t::RenderFreqAxis(ID2D1DeviceContext * deviceContext, bool left
 {
     deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
 
-    const FLOAT Opacity = _FreqTextStyle._Brush->GetOpacity();
+    ID2D1Brush * TextBrush = _FreqTextStyle._Brush.Get();
+    ID2D1Brush * LineBrush = _FreqLineStyle._Brush.Get();
+
+    IDWriteTextFormat * TextFormat = _FreqTextStyle._TextFormat.Get();
+
+    const FLOAT Opacity      = TextBrush->GetOpacity();
+    const FLOAT MinorOpacity = Opacity / 2.f;
 
     if (_State->_IsHorizontalSpectrogram)
         _FreqTextStyle.SetHorizontalAlignment(left ? DWRITE_TEXT_ALIGNMENT_TRAILING : DWRITE_TEXT_ALIGNMENT_LEADING);
@@ -590,28 +601,19 @@ void spectrogram_t::RenderFreqAxis(ID2D1DeviceContext * deviceContext, bool left
         if (Label.IsHidden)
             continue;
 
-        _FreqTextStyle._Brush->SetOpacity(Label.IsMinor ? Opacity / 2.f : Opacity);
+        _FreqTextStyle._Brush->SetOpacity(Label.IsMinor ? MinorOpacity : Opacity);
+
+        const D2D1_RECT_F & r = left ? Label.Rect1 : Label.Rect2;
+
+        deviceContext->DrawTextW(Label.Text.c_str(), (UINT32) Label.Text.size(), TextFormat, r, TextBrush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
 
         if (left)
-        {
-            const auto & r = Label.Rect1;
-
-            deviceContext->DrawTextW(Label.Text.c_str(), (UINT32) Label.Text.size(), _FreqTextStyle._TextFormat.Get(), r, _FreqTextStyle._Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
-
-            deviceContext->DrawLine({ r.right + 1.f, Label.Tick }, { r.right + 1.f + TickSize, Label.Tick }, _FreqLineStyle._Brush.Get());
-        }
+            deviceContext->DrawLine({ r.right + 1.f, Label.Tick }, { r.right + 1.f + TickSize, Label.Tick }, LineBrush);
         else
-        {
-            const auto & r = Label.Rect2;
-
-            deviceContext->DrawTextW(Label.Text.c_str(), (UINT32) Label.Text.size(), _FreqTextStyle._TextFormat.Get(), Label.Rect2, _FreqTextStyle._Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
-
-            deviceContext->DrawLine({ r.left - 2.f - TickSize, Label.Tick }, { r.left - 2.f, Label.Tick }, _FreqLineStyle._Brush.Get());
-        }
+            deviceContext->DrawLine({ r.left - 2.f - TickSize, Label.Tick }, { r.left - 2.f, Label.Tick }, LineBrush);
     }
 
-    _FreqTextStyle._Brush->SetOpacity(Opacity);
-
+    TextBrush->SetOpacity(Opacity);
 }
 
 /// <summary>
@@ -622,14 +624,27 @@ bool spectrogram_t::RenderSpectrum(ID2D1BitmapRenderTarget * renderTarget) noexc
     if (_Analysis->_NyquistFrequency == 0.f)
         return false;
 
+    const bool IsHorizontalSpectrogram = _State->_IsHorizontalSpectrogram;
+    const bool IsScrollingSpectrogram  = _State->_IsScrollingSpectrogram;
+    const bool SuppressMirrorImage     = _State->_SuppressMirrorImage;
+    const bool FlipHorizontally        = _GraphOptions->_FlipHorizontally;
+    const bool FlipVertically          = _GraphOptions->_FlipVertically;
+
+    const FLOAT SpectrumSize = IsHorizontalSpectrogram ? _BitmapSize.height : _BitmapSize.width;
+
+    const auto Bands = (SpectrumSize < (FLOAT) _Analysis->_FrequencyBands.size()) ? ResampleSpectrum(_Analysis->_FrequencyBands, (size_t) SpectrumSize) : _Analysis->_FrequencyBands;
+
+    if (Bands.empty())
+        return false;
+
     renderTarget->BeginDraw();
 
     renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
 
-    if (_State->_IsHorizontalSpectrogram)
-    {
-        const auto Bands = (_BitmapSize.height < (FLOAT) _Analysis->_FrequencyBands.size()) ? ResampleSpectrum(_Analysis->_FrequencyBands, (size_t) _BitmapSize.height) : _Analysis->_FrequencyBands;
+    ID2D1Brush * SpectrogramBrush = _SpectrogramStyle._Brush.Get();
 
+    if (IsHorizontalSpectrogram)
+    {
         // Draw the next spectrogram line.
         {
             const FLOAT Bandwidth = _BitmapSize.height / (FLOAT) Bands.size();
@@ -637,59 +652,23 @@ bool spectrogram_t::RenderSpectrum(ID2D1BitmapRenderTarget * renderTarget) noexc
             FLOAT y1 = 0.f;
             FLOAT y2 = Bandwidth;
 
-            size_t i = 0;
-
             for (const auto & fb : Bands)
             {
-                if ((fb.Lo >= _Analysis->_NyquistFrequency) && _State->_SuppressMirrorImage)
+                if ((fb.Lo >= _Analysis->_NyquistFrequency) && SuppressMirrorImage)
                     break;
 
                 _SpectrogramStyle.SetBrushColor(fb.Value);
 
-                renderTarget->DrawLine({ _X, y1 }, { _X, y2 }, _SpectrogramStyle._Brush.Get());
+                renderTarget->DrawLine({ _X, y1 }, { _X, y2 }, SpectrogramBrush);
 
                 y1  = y2;
                 y2 += Bandwidth;
-
-                ++i;
             }
-        }
-
-        // Draw the Nyquist marker.
-        if (_NyquistMarkerStyle.IsEnabled())
-            RenderNyquistFrequencyMarker(renderTarget);
-
-        renderTarget->EndDraw();
-
-        // Update the time axis.
-        if (_State->_IsScrollingSpectrogram && (_State->_PlaybackTime != _PlaybackTime))
-        {
-            const FLOAT dx = (!_GraphOptions->_FlipHorizontally) ? -1.f : 1.f; // Move the labels by 1 pixel to the left or to the right.
-
-            for (auto & Label : _TimeLabels)
-                Label.X += dx;
-        }
-
-        if (_TrackTime != _State->_TrackTime) // in seconds
-        {
-            if (_State->_IsScrollingSpectrogram)
-            {
-                _TimeLabels.push_front({ pfc::wideFromUTF8(pfc::format_time((uint64_t) _State->_TrackTime)), !_GraphOptions->_FlipHorizontally ? _BitmapSize.width : 0.f });
-
-                if (_TimeLabels.back().X + _TimeTextStyle._Width < 0.f)
-                    _TimeLabels.pop_back();
-            }
-            else
-                _TimeLabels.push_back({ pfc::wideFromUTF8(pfc::format_time((uint64_t) _State->_TrackTime)), !_GraphOptions->_FlipHorizontally ? _X : _BitmapSize.width - _X });
-
-            _TrackTime = _State->_TrackTime;
         }
     }
     else
     {
-        const auto Bands = (_BitmapSize.width < (FLOAT) _Analysis->_FrequencyBands.size()) ? ResampleSpectrum(_Analysis->_FrequencyBands, (size_t) _BitmapSize.width) : _Analysis->_FrequencyBands;
-
-        // Draw the next Spectrogram line.
+        // Draw the next spectrogram line.
         {
             const FLOAT Bandwidth     = _State->_UseSpectrumBarMetrics ? std::max(std::floor(_BitmapSize.width / (FLOAT) Bands.size()), 2.f) : _BitmapSize.width / (FLOAT) Bands.size();
             const FLOAT SpectrumWidth = Bandwidth * (FLOAT) Bands.size();
@@ -699,50 +678,98 @@ bool spectrogram_t::RenderSpectrum(ID2D1BitmapRenderTarget * renderTarget) noexc
 
             for (const auto & fb : Bands)
             {
-                if ((fb.Lo >= _Analysis->_NyquistFrequency) && _State->_SuppressMirrorImage)
+                if ((fb.Lo >= _Analysis->_NyquistFrequency) && SuppressMirrorImage)
                     break;
 
                 _SpectrogramStyle.SetBrushColor(fb.Value);
 
-                renderTarget->DrawLine({ x1, _Y }, { x2, _Y }, _SpectrogramStyle._Brush.Get());
+                renderTarget->DrawLine({ x1, _Y }, { x2, _Y }, SpectrogramBrush);
 
                 x1  = x2;
                 x2 += Bandwidth;
             }
         }
+    }
 
-        // Draw the Nyquist marker.
-        if (_NyquistMarkerStyle.IsEnabled())
-            RenderNyquistFrequencyMarker(renderTarget);
+    // Draw the Nyquist marker.
+    if (_NyquistMarkerStyle.IsEnabled())
+        RenderNyquistFrequencyMarker(renderTarget);
 
-        renderTarget->EndDraw();
+    const HRESULT hr = renderTarget->EndDraw();
 
-        // Update the time axis.
-        if (_State->_IsScrollingSpectrogram && (_State->_PlaybackTime != _PlaybackTime))
+    if (FAILED(hr))
+        return false;
+
+    const double PlaybackTime = _State->_PlaybackTime;
+    const double TrackTime    = _State->_TrackTime;
+
+    // Update the time axis.
+    if (IsScrollingSpectrogram && (PlaybackTime != _PlaybackTime))
+    {
+        if (IsHorizontalSpectrogram)
         {
+            const FLOAT dx = FlipHorizontally ? 1.f : -1.f; // Move the labels 1 pixel to the left or to the right.
+
             for (auto & Label : _TimeLabels)
-            {
-                if (!_GraphOptions->_FlipVertically)
-                    Label.Y++; // Move each label down.
-                else
-                    Label.Y--; // Move each label up.
-            }
+                Label.X += dx;
         }
-
-        if (_TrackTime != _State->_TrackTime) // in seconds
+        else
         {
-            if (_State->_IsScrollingSpectrogram)
-            {
-                _TimeLabels.push_front({ pfc::wideFromUTF8(pfc::format_time((uint64_t) _State->_TrackTime)), 0.f, !_GraphOptions->_FlipVertically ? _BitmapRect.top : _BitmapSize.height });
+            const FLOAT dy = FlipVertically ? -1.f : 1.f;
 
-                if (_TimeLabels.back().Y > _BitmapSize.height + _TimeTextStyle._Height)
-                    _TimeLabels.pop_back();
+            for (auto & Label : _TimeLabels)
+                Label.Y += dy;
+        }
+    }
+
+    if (_TrackTime != TrackTime) // in seconds
+    {
+        const auto Text = pfc::wideFromUTF8(pfc::format_time((uint64_t) TrackTime));
+
+        if (IsHorizontalSpectrogram)
+        {
+            if (IsScrollingSpectrogram)
+            {
+                _TimeLabels.push_front({ Text, FlipHorizontally ? 0.f : _BitmapSize.width });
+
+                if (!_TimeLabels.empty())
+                {
+                    const auto & Label = _TimeLabels.back();
+
+                    const bool IsOutside = FlipHorizontally
+                        ? Label.X > _BitmapSize.width + _TimeTextStyle._Width
+                        : Label.X + _TimeTextStyle._Width < 0.f;
+
+                    if (IsOutside)
+                        _TimeLabels.pop_back();
+                }
             }
             else
-                _TimeLabels.push_back({ pfc::wideFromUTF8(pfc::format_time((uint64_t) _State->_TrackTime)), 0.f, !_GraphOptions->_FlipVertically ? _BitmapSize.height - _Y : _Y });
-
-            _TrackTime = _State->_TrackTime;
+                _TimeLabels.push_back({ Text, FlipHorizontally ? _BitmapSize.width - _X : _X });
         }
+        else
+        {
+            if (IsScrollingSpectrogram)
+            {
+                _TimeLabels.push_front({ Text, 0.f, FlipVertically ? _BitmapSize.height : _BitmapRect.top });
+
+                if (!_TimeLabels.empty())
+                {
+                    const auto & Label = _TimeLabels.back();
+
+                    const bool IsOutside = FlipVertically
+                        ? Label.Y + _TimeTextStyle._Height < 0.f
+                        : Label.Y > _BitmapSize.height + _TimeTextStyle._Height;
+
+                    if (IsOutside)
+                        _TimeLabels.pop_back();
+                }
+            }
+            else
+                _TimeLabels.push_back({ Text, 0.f, FlipVertically ? _Y : _BitmapSize.height - _Y });
+        }
+
+        _TrackTime = TrackTime;
     }
 
     return true;
@@ -924,19 +951,27 @@ HRESULT spectrogram_t::CreateDeviceSpecificResources(ID2D1DeviceContext * device
     if (_State->_ResizeResources)
         DeleteDeviceSpecificResources();
 
-    HRESULT hr = S_OK;
+#ifdef _DEBUG
+    if (_DebugBrush == nullptr)
+        (void) deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Green), _DebugBrush.GetAddressOf());
+#endif
 
-    if (_SpectrogramStyle._Brush == nullptr)
+    const auto InitializeStyle = [this, deviceContext](auto & Style, VisualElement Element, const wchar_t * Text) -> HRESULT
     {
-        _SpectrogramStyle = *_State->_StyleManager.GetStyle(VisualElement::Spectrogram);
+        if (Style._Brush != nullptr)
+            return S_OK;
 
-        _SpectrogramStyle.SetColor(_State);
+        Style = *_State->_StyleManager.GetStyle(Element);
 
-        hr = _SpectrogramStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
+        Style.SetColor(_State);
 
-        if (FAILED(hr))
-            return hr;
-    }
+        return Style.CreateDeviceSpecificResources(deviceContext, _Size, Text, 1.f);
+    };
+
+    HRESULT hr = InitializeStyle(_SpectrogramStyle, VisualElement::Spectrogram, L"");
+
+    if (FAILED(hr))
+        return hr;
 
     if (_GradientStyle._Brush == nullptr)
     {
@@ -945,17 +980,17 @@ HRESULT spectrogram_t::CreateDeviceSpecificResources(ID2D1DeviceContext * device
         _GradientStyle.SetColor(_State);
 
         // Remove these features.
+        _GradientStyle._Flags &= ~style_t::Features::AmplitudeBasedColor;
+
         if (_State->_IsHorizontalSpectrogram)
         {
-            _GradientStyle._Flags &= ~(style_t::Features::AmplitudeBasedColor | style_t::Features::HorizontalGradient);
+            _GradientStyle._Flags &= ~style_t::Features::HorizontalGradient;
 
             std::reverse(_GradientStyle._CurrentGradientStops.begin(), _GradientStyle._CurrentGradientStops.end());
 
-            for (auto & x : _GradientStyle._CurrentGradientStops)
-                x.position = 1.f - x.position;
+            for (auto & Stop : _GradientStyle._CurrentGradientStops)
+                Stop.position = 1.f - Stop.position;
         }
-        else
-            _GradientStyle._Flags &= ~(style_t::Features::AmplitudeBasedColor);
 
         hr = _GradientStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
 
@@ -963,70 +998,30 @@ HRESULT spectrogram_t::CreateDeviceSpecificResources(ID2D1DeviceContext * device
             return hr;
     }
 
-    if (_TimeLineStyle._Brush == nullptr)
-    {
-        _TimeLineStyle = *_State->_StyleManager.GetStyle(VisualElement::VerticalGridLine);
+    hr = InitializeStyle(_TimeLineStyle, VisualElement::VerticalGridLine, L"");
 
-        _TimeLineStyle.SetColor(_State);
+    if (FAILED(hr))
+        return hr;
 
-        hr = _TimeLineStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
+    hr = InitializeStyle(_TimeTextStyle, VisualElement::XAxisText, L"00:00");
 
-        if (FAILED(hr))
-            return hr;
-    }
+    if (FAILED(hr))
+        return hr;
 
-    if (_TimeTextStyle._Brush == nullptr)
-    {
-        _TimeTextStyle = *_State->_StyleManager.GetStyle(VisualElement::XAxisText);
+    hr = InitializeStyle(_FreqLineStyle, VisualElement::HorizontalGridLine, L"");
 
-        _TimeTextStyle.SetColor(_State);
+    if (FAILED(hr))
+        return hr;
 
-        hr = _TimeTextStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"00:00", 1.f);
+    hr = InitializeStyle(_FreqTextStyle, VisualElement::YAxisText, L"99.9fk");
 
-        if (FAILED(hr))
-            return hr;
-    }
+    if (FAILED(hr))
+        return hr;
 
-    if (_FreqLineStyle._Brush == nullptr)
-    {
-        _FreqLineStyle = *_State->_StyleManager.GetStyle(VisualElement::HorizontalGridLine);
+    hr = InitializeStyle(_NyquistMarkerStyle, VisualElement::NyquistMarker, L"");
 
-        _FreqLineStyle.SetColor(_State);
-
-        hr = _FreqLineStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
-
-        if (FAILED(hr))
-            return hr;
-    }
-
-    if (_FreqTextStyle._Brush == nullptr)
-    {
-        _FreqTextStyle = *_State->_StyleManager.GetStyle(VisualElement::YAxisText);
-
-        _FreqTextStyle.SetColor(_State);
-
-        hr = _FreqTextStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"99.9fk", 1.f);
-
-        if (FAILED(hr))
-            return hr;
-    }
-
-    if (_NyquistMarkerStyle._Brush == nullptr)
-    {
-        _NyquistMarkerStyle = *_State->_StyleManager.GetStyle(VisualElement::NyquistMarker);
-
-        _NyquistMarkerStyle.SetColor(_State);
-
-        hr = _NyquistMarkerStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
-
-        if (FAILED(hr))
-            return hr;
-    }
-
-#ifdef _DEBUG
-    if (_DebugBrush == nullptr)
-        (void) deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Green), _DebugBrush.GetAddressOf());
-#endif
+    if (FAILED(hr))
+        return hr;
 
     Resize();
 
@@ -1085,9 +1080,6 @@ HRESULT spectrogram_t::CreateDeviceSpecificResources(ID2D1DeviceContext * device
 /// </summary>
 void spectrogram_t::DeleteDeviceSpecificResources() noexcept
 {
-#ifdef _DEBUG
-    _DebugBrush.Reset();
-#endif
     _LegendBitmap.Reset();
     _LegendBitmapRenderTarget.Reset();
 
@@ -1101,6 +1093,10 @@ void spectrogram_t::DeleteDeviceSpecificResources() noexcept
     _TimeLineStyle.DeleteDeviceSpecificResources();
     _GradientStyle.DeleteDeviceSpecificResources();
     _SpectrogramStyle.DeleteDeviceSpecificResources();
+
+#ifdef _DEBUG
+    _DebugBrush.Reset();
+#endif
 }
 
 /// <summary>
