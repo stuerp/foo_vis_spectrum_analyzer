@@ -1,5 +1,5 @@
 
-/** $VER: Oscilloscope.cpp (2026.09.25) P. Stuer - Implements an oscilloscope. **/
+/** $VER: Oscilloscope.cpp (2026.10.08) P. Stuer - Implements an oscilloscope. **/
 
 #include <pch.h>
 
@@ -302,6 +302,8 @@ HRESULT oscilloscope_t::CreateSignalGeometry(const audio_chunk_impl & chunk, con
 
     const size_t ActiveChannelCount = (size_t) std::popcount(AvailableChannelMask & ActiveChannelMask);
 
+    const auto ChannelIndices = CreateChannelMap(AvailableChannelMask);
+
     const FLOAT ChannelHeight = clientSize.height / (FLOAT) ActiveChannelCount; // Height available to one channel.
     const FLOAT ChannelMax    = ChannelHeight * (_GraphOptions->HasYAxis() ? 1.0f : 0.5f);
 
@@ -343,6 +345,9 @@ HRESULT oscilloscope_t::CreateSignalGeometry(const audio_chunk_impl & chunk, con
         if (FAILED(hr))
             return hr;
 
+        const auto InputGain = _State->_YInputGain;
+        const auto DeltaX    = clientSize.width / (FLOAT) FrameCount;
+
         ComPtr<ID2D1GeometrySink> Sink;
 
         hr = geometry->Open(Sink.GetAddressOf());
@@ -351,45 +356,72 @@ HRESULT oscilloscope_t::CreateSignalGeometry(const audio_chunk_impl & chunk, con
             return hr;
 
         FLOAT ChannelBaseline = ChannelMax;
-        size_t ChannelOffset = 0;
             
-        while ((AvailableChannelMask != 0) && (ActiveChannelMask != 0))
+        auto ChannelIndex = (size_t) 0;
+
+        for (const auto & Channel : _State->_ChannelOrder)
         {
-            // Render the signal if the channel is in the chunk and if it has been selected.
-            if (AvailableChannelMask & 1)
+            if ((AvailableChannelMask == 0) || (ActiveChannelMask == 0))
+                break;
+
+            // The channel has been found in the chunk.
             {
-                if (ActiveChannelMask & 1)
+                if ((AvailableChannelMask & (uint32_t) Channel) == 0)
+                    continue;
+
+                // Find the index of the channel.
                 {
-                    const FLOAT dx = clientSize.width / (FLOAT) FrameCount;
+                    const auto Iterator = ChannelIndices.find(Channel);
 
-                    FLOAT x = 0.f;
-                    FLOAT y = ChannelBaseline - (std::clamp((FLOAT) (Scaler(Frames[ChannelOffset]) * _State->_YInputGain), -1.f, 1.f) * ChannelMax);
+                    if (Iterator == ChannelIndices.end())
+                        continue;
 
-                    Sink->BeginFigure(D2D1::Point2F(x, y), D2D1_FIGURE_BEGIN_HOLLOW);
+                    ChannelIndex = Iterator->second;
 
-                    const audio_sample * Samples = Frames + ChannelOffset;
-
-                    for (size_t FrameNumber = 1; FrameNumber < FrameCount; ++FrameNumber)
-                    {
-                        Samples += ChannelCount;
-
-                        x = (FLOAT) FrameNumber * dx;
-                        y = ChannelBaseline - (std::clamp((FLOAT) (Scaler(*Samples) * _State->_YInputGain), -1.f, 1.f) * ChannelMax);
-
-                        Sink->AddLine(D2D1::Point2F(x, y));
-                    }
-
-                    Sink->EndFigure(D2D1_FIGURE_END_OPEN);
-
-
-                    ChannelBaseline += ChannelHeight;
+                    assert(ChannelIndex < ChannelCount);
                 }
 
-                ChannelOffset++;
+                AvailableChannelMask &= ~(uint32_t) Channel;
             }
 
-            AvailableChannelMask >>= 1;
-            ActiveChannelMask >>= 1;
+            // The channel has been selected for display.
+            {
+                if ((ActiveChannelMask & (uint32_t) Channel) == 0)
+                    continue;
+
+                ActiveChannelMask &= ~(uint32_t) Channel;
+            }
+
+            {
+                const audio_sample * Samples = Frames + ChannelIndex;
+
+                // Calculate the y-coordinate of the sample.
+                const auto ScaleSample = [InputGain, ChannelMax, ChannelBaseline, &Scaler](const audio_sample sample) noexcept -> FLOAT
+                {
+                    const FLOAT NormalizedSample = std::clamp((FLOAT) (Scaler(sample) * InputGain), -1.f, 1.f);
+
+                    return ChannelBaseline - (NormalizedSample * ChannelMax);
+                };
+
+                FLOAT x = 0.f;
+                FLOAT y = ScaleSample(*Samples);
+
+                Sink->BeginFigure(D2D1::Point2F(x, y), D2D1_FIGURE_BEGIN_HOLLOW);
+
+                for (size_t FrameNumber = 1; FrameNumber < FrameCount; ++FrameNumber)
+                {
+                    Samples += ChannelCount;
+
+                    x += DeltaX;
+                    y = ScaleSample(*Samples);
+
+                    Sink->AddLine(D2D1::Point2F(x, y));
+                }
+
+                Sink->EndFigure(D2D1_FIGURE_END_OPEN);
+
+                ChannelBaseline += ChannelHeight;
+            }
         }
 
         hr = Sink->Close();
@@ -536,4 +568,30 @@ HRESULT oscilloscope_t::CreateStaticContent(uint32_t axesCount) noexcept
     _AxesCount = axesCount;
 
     return hr;
+}
+
+/// <summary>
+/// Creates a map of the channels of an audio chunk.
+/// </summary>
+[[nodiscard]]
+std::unordered_map<Channels, size_t> oscilloscope_t::CreateChannelMap(uint32_t channelMask)
+{
+    std::unordered_map<Channels, size_t> Map;
+
+    Map.reserve((size_t) std::popcount(channelMask));
+
+    size_t ChannelIndex = 0;
+
+    while (channelMask != 0)
+    {
+        // Isolate the least-significant configured channel bit.
+        const auto Channel = (Channels) (channelMask & (0u - channelMask));
+
+        Map.emplace(Channel, ChannelIndex++);
+
+        // Remove the least-significant configured channel bit.
+        channelMask &= channelMask - 1u;
+    }
+
+    return Map;
 }

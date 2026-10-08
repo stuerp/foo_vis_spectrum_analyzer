@@ -1,6 +1,14 @@
 
 # foo_vis_spectrum_analyzer History
 
+v0.13.0.0-rc1, 2026-10-07
+
+- New: You can modify the position of a gradient stop by clicking and dragging on the gradient control. The value will be constrained between the previous and next gradient stop position.
+- Changed: DirectX version requirements were relaxed.
+- Improved: Optimized the spectrum LED rendering.
+- Improved: Peak Meter and Bit Meter honor the channel order specified in the configuration dialog.
+- Fixed: Spectrum LED rendering when using two or more graphs.
+
 v0.13.0.0-alpha4, 2026-10-03
 
 - New: The channels in the configuration dialog can be reordered. [Forum request](https://hydrogenaudio.org/index.php/topic,125031.msg1087375.html#msg1087375)

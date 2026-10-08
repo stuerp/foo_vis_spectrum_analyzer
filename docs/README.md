@@ -1096,6 +1096,8 @@ Deselects all channels in the `Channels` list.
 
 Moves the highlighted channel up or down in the list.
 
+The Peak Meter, Bit Meter and Oscilloscope visualization use the configured channel order to generate their output.
+
 `Channel pair`
 
 Allows you to select the pair of channels that will be used to render a visualisation. Used by the [Peak / RMS](#peak--rms-group) and the [Oscilloscope](#oscilloscope).
