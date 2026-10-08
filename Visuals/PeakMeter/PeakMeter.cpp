@@ -1,5 +1,5 @@
 
-/** $VER: PeakMeter.cpp (2026.10.07) P. Stuer - Represents a peak meter. **/
+/** $VER: PeakMeter.cpp (2026.10.08) P. Stuer - Represents a peak meter. **/
 
 #include "pch.h"
 
@@ -304,6 +304,8 @@ HRESULT peak_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceC
     if (_State->_ResizeResources)
         DeleteDeviceSpecificResources();
 
+    auto & StyleManager = _GraphOptions->_UseLocalStyles ? _GraphOptions->_StyleManager : _State->_StyleManager;
+
     HRESULT hr = S_OK;
 
 #ifdef _DEBUG
@@ -319,12 +321,12 @@ HRESULT peak_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceC
             return hr;
     }
 
-    const auto InitializeStyle = [this, deviceContext](auto & style, VisualElement visualElement, const wchar_t * text) noexcept -> HRESULT
+    const auto InitializeStyle = [this, deviceContext, & StyleManager](auto & style, VisualElement visualElement, const wchar_t * text) noexcept -> HRESULT
     {
         if (style._Brush != nullptr)
             return S_OK;
 
-        style = *_State->_StyleManager.GetStyle(visualElement);
+        style = *StyleManager.GetStyle(visualElement);
 
         style.SetColor(_State);
 

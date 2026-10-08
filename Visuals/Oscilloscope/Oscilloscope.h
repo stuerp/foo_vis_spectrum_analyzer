@@ -39,8 +39,6 @@ private:
     HRESULT CreateSignalGeometry(const audio_chunk_impl & chunk, const D2D1_SIZE_F & size, ComPtr<ID2D1PathGeometry> & geometry) noexcept;
     HRESULT CreateStaticContent(uint32_t axesCount) noexcept;
 
-    static std::unordered_map<Channels, size_t> CreateChannelMap(uint32_t channelMask);
-
 private:
     downsampler_t _Downsampler;
 

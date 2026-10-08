@@ -1,5 +1,5 @@
 
-/** $VER: Graph.cpp (2026.10.07) P. Stuer - Implements a graph on which the visualizations are rendered. **/
+/** $VER: Graph.cpp (2026.10.08) P. Stuer - Implements a graph on which the visualizations are rendered. **/
 
 #include "pch.h"
 
@@ -323,48 +323,39 @@ HRESULT graph_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContex
 
     HRESULT hr = S_OK;
 
-    auto & StyleManager = _GraphOptions->_UseLocalStyles ? _GraphOptions->_StyleManager : _State->_StyleManager;
-
-    if (_BackgroundStyle._Brush == nullptr)
-    {
-        _BackgroundStyle = *StyleManager.GetStyle(VisualElement::GraphBackground);
-
-        _BackgroundStyle.SetColor(_State);
-
-        hr = _BackgroundStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
-
-        if (FAILED(hr))
-            return hr;
-    }
-
-    if (_DescriptionTextStyle._Brush == nullptr)
-    {
-        _DescriptionTextStyle = *StyleManager.GetStyle(VisualElement::GraphDescriptionText);
-
-        _DescriptionTextStyle.SetColor(_State);
-
-        hr = _DescriptionTextStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
-
-        if (FAILED(hr))
-            return hr;
-    }
-
-    if (_DescriptionBackgroundStyle._Brush == nullptr)
-    {
-        _DescriptionBackgroundStyle = *StyleManager.GetStyle(VisualElement::GraphDescriptionBackground);
-
-        _DescriptionBackgroundStyle.SetColor(_State);
-
-        hr = _DescriptionBackgroundStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
-
-        if (FAILED(hr))
-            return hr;
-    }
-
 #ifdef _DEBUG
     if (_DebugBrush == nullptr)
         (void) deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), _DebugBrush.GetAddressOf());
 #endif
+
+    auto & StyleManager = _GraphOptions->_UseLocalStyles ? _GraphOptions->_StyleManager : _State->_StyleManager;
+
+    const auto InitializeStyle = [this, deviceContext, & StyleManager](auto & style, VisualElement visualElement, const wchar_t * text) noexcept -> HRESULT
+    {
+        if (style._Brush != nullptr)
+            return S_OK;
+
+        style = *StyleManager.GetStyle(visualElement);
+
+        style.SetColor(_State);
+
+        return style.CreateDeviceSpecificResources(deviceContext, _Size, text, 1.f);
+    };
+
+    hr = InitializeStyle(_BackgroundStyle, VisualElement::GraphBackground, L"");
+
+    if (FAILED(hr))
+        return hr;
+
+    hr = InitializeStyle(_DescriptionTextStyle, VisualElement::GraphDescriptionText, L"");
+
+    if (FAILED(hr))
+        return hr;
+
+    hr = InitializeStyle(_DescriptionBackgroundStyle, VisualElement::GraphDescriptionBackground, L"");
+
+    if (FAILED(hr))
+        return hr;
 
     return hr;
 }

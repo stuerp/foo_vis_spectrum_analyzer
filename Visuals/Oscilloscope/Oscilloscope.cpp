@@ -295,14 +295,12 @@ HRESULT oscilloscope_t::CreateSignalGeometry(const audio_chunk_impl & chunk, con
 {
     size_t FrameCount = chunk.get_sample_count();                       // get_sample_count() actually returns the number of frames.
 
-    const uint32_t ChannelCount = chunk.get_channel_count();
+    const uint32_t ChannelCount         = chunk.get_channel_count();
+    const uint32_t AvailableChannelMask = chunk.get_channel_config();         // Mask containing the channels in the audio chunk.
 
-    uint32_t AvailableChannelMask = chunk.get_channel_config();         // Mask containing the channels in the audio chunk.
-    uint32_t ActiveChannelMask    = _GraphOptions->_ActiveChannelMask;  // Mask containing the channels selected by the user.
+          uint32_t ActiveChannelMask    = _GraphOptions->_ActiveChannelMask;  // Mask containing the channels selected by the user.
 
     const size_t ActiveChannelCount = (size_t) std::popcount(AvailableChannelMask & ActiveChannelMask);
-
-    const auto ChannelIndices = CreateChannelMap(AvailableChannelMask);
 
     const FLOAT ChannelHeight = clientSize.height / (FLOAT) ActiveChannelCount; // Height available to one channel.
     const FLOAT ChannelMax    = ChannelHeight * (_GraphOptions->HasYAxis() ? 1.0f : 0.5f);
@@ -359,29 +357,19 @@ HRESULT oscilloscope_t::CreateSignalGeometry(const audio_chunk_impl & chunk, con
             
         auto ChannelIndex = (size_t) 0;
 
+        uint32_t RemainingChannels = AvailableChannelMask;
+
         for (const auto & Channel : _State->_ChannelOrder)
         {
-            if ((AvailableChannelMask == 0) || (ActiveChannelMask == 0))
+            if ((RemainingChannels == 0) || (ActiveChannelMask == 0))
                 break;
 
             // The channel has been found in the chunk.
             {
-                if ((AvailableChannelMask & (uint32_t) Channel) == 0)
+                if ((RemainingChannels & (uint32_t) Channel) == 0)
                     continue;
 
-                // Find the index of the channel.
-                {
-                    const auto Iterator = ChannelIndices.find(Channel);
-
-                    if (Iterator == ChannelIndices.end())
-                        continue;
-
-                    ChannelIndex = Iterator->second;
-
-                    assert(ChannelIndex < ChannelCount);
-                }
-
-                AvailableChannelMask &= ~(uint32_t) Channel;
+                RemainingChannels &= ~(uint32_t) Channel;
             }
 
             // The channel has been selected for display.
@@ -392,6 +380,16 @@ HRESULT oscilloscope_t::CreateSignalGeometry(const audio_chunk_impl & chunk, con
                 ActiveChannelMask &= ~(uint32_t) Channel;
             }
 
+            // Determine the index of the channel in the chunk.
+            {
+                const uint32_t PrecedingChannels = AvailableChannelMask & ((uint32_t) Channel - 1u);
+
+                ChannelIndex = (size_t) std::popcount(PrecedingChannels);
+
+                assert(ChannelIndex < ChannelCount);
+            }
+
+            // Create the geometry.
             {
                 const audio_sample * Samples = Frames + ChannelIndex;
 
@@ -568,30 +566,4 @@ HRESULT oscilloscope_t::CreateStaticContent(uint32_t axesCount) noexcept
     _AxesCount = axesCount;
 
     return hr;
-}
-
-/// <summary>
-/// Creates a map of the channels of an audio chunk.
-/// </summary>
-[[nodiscard]]
-std::unordered_map<Channels, size_t> oscilloscope_t::CreateChannelMap(uint32_t channelMask)
-{
-    std::unordered_map<Channels, size_t> Map;
-
-    Map.reserve((size_t) std::popcount(channelMask));
-
-    size_t ChannelIndex = 0;
-
-    while (channelMask != 0)
-    {
-        // Isolate the least-significant configured channel bit.
-        const auto Channel = (Channels) (channelMask & (0u - channelMask));
-
-        Map.emplace(Channel, ChannelIndex++);
-
-        // Remove the least-significant configured channel bit.
-        channelMask &= channelMask - 1u;
-    }
-
-    return Map;
 }
