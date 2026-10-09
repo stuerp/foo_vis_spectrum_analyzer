@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2026.10.07) P. Stuer **/
+/** $VER: Resources.h (2026.10.08) P. Stuer **/
 
 #pragma once
 
@@ -16,7 +16,7 @@
 #define NUM_PRODUCT_PATCH       0
 #define NUM_PRODUCT_PRERELEASE  0
 
-#define STR_RELEASE_TAG         "-rc1"
+#define STR_RELEASE_TAG         "-rc2"
 
 /** Component specific **/
 
@@ -263,6 +263,7 @@
 
 #define IDC_FIT_MODE_LBL                6084
 #define IDC_FIT_MODE                    6086
+#define IDC_ALLOW_UPSCALING             6124
 #define IDC_FIT_WINDOW                  6088
 
 #define IDC_ARTWORK_OPACITY             6090

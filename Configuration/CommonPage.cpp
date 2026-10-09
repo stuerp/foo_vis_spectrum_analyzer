@@ -1,5 +1,5 @@
 
-/** $VER: CommonPage.cpp (2026.10.01) P. Stuer - Implements a configuration dialog page. **/
+/** $VER: CommonPage.cpp (2026.10.09) P. Stuer - Implements a configuration dialog page. **/
 
 #include "pch.h"
 
@@ -31,6 +31,7 @@ BOOL common_page_t::OnInitDialog(CWindow w, LPARAM lParam) noexcept
         { IDC_ARTWORK_TYPE, "Specifies which artwork will be shown on the graph background or will be used to extract colors from." },
 
         { IDC_FIT_MODE, "Determines how over- and undersized artwork is rendered." },
+        { IDC_ALLOW_UPSCALING, "Select to allow smaller artwork to be upscaled taking the Fit mode into account." },
         { IDC_FIT_WINDOW, "Use the component window size instead of the client area of the graph to fit the artwork." },
 
         { IDC_ARTWORK_OPACITY, "Determines the opacity of the artwork when displayed." },
@@ -84,12 +85,13 @@ void common_page_t::InitializeControls() noexcept
 
         w.ResetContent();
 
-        for (const auto & x : { L"Free", L"Fit big", L"Fit width", L"Fit height", L"Fill" })
+        for (const auto & x : { L"Free", L"Fit largest", L"Fit width", L"Fit height", L"Fit smallest" })
             w.AddString(x);
 
         w.SetCurSel((int) _State->_FitMode);
     }
     {
+        SendDlgItemMessageW(IDC_ALLOW_UPSCALING, BM_SETCHECK, _State->_AllowUpscaling);
         SendDlgItemMessageW(IDC_FIT_WINDOW, BM_SETCHECK, _State->_FitWindow);
     }
     {
@@ -232,6 +234,8 @@ void common_page_t::UpdateControls() noexcept
         IDC_ARTWORK_FILE_PATH
     })
         GetDlgItem(Id).EnableWindow(SupportsArtworkOnBackground && _State->_ShowArtworkOnBackground);
+
+    GetDlgItem(IDC_ALLOW_UPSCALING).EnableWindow(SupportsArtworkOnBackground && _State->_ShowArtworkOnBackground && (_State->_FitMode != FitMode::Free));
 
     // Diagnostics
     GetDlgItem(IDC_SHOW_WINDOW_FUNCTION).EnableWindow(IsSpectrum);
@@ -465,6 +469,12 @@ void common_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
             UpdateControls();
 
             ChangedSettings = ConfigurationChanges::RenderLoop;
+            break;
+        }
+
+        case IDC_ALLOW_UPSCALING:
+        {
+            _State->_AllowUpscaling = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
             break;
         }
 

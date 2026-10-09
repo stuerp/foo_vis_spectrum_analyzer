@@ -1,5 +1,5 @@
 
-/** $VER: CommonPageLayout.h (2026.06.09) P. Stuer - Defines the layout of a configuration dialog page. **/
+/** $VER: CommonPageLayout.h (2026.10.09) P. Stuer - Defines the layout of a configuration dialog page. **/
 
 #pragma once
 
@@ -132,13 +132,17 @@
     #define X_G31    X_G30 + W_G30 + IX
     #define Y_G31    Y_G30
 
-    /** Fit window **/
-
-    // Checkbox
-    #define W_G32    60
+    // Checkbox: Allow upscaling
+    #define W_G32    70
     #define H_G32    H_CHB
     #define X_G32    X_G31
     #define Y_G32    Y_G31 + H_G31 + IY
+
+    // Checkbox: Fit window
+    #define W_G34    60
+    #define H_G34    H_CHB
+    #define X_G34    X_G32 + W_G32 + IX
+    #define Y_G34    Y_G32
 
     // Label: Opacity
     #define W_G03    66

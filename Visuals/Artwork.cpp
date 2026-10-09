@@ -1,5 +1,5 @@
 
-/** $VER: Artwork.cpp (2026.10.01) P. Stuer **/
+/** $VER: Artwork.cpp (2026.10.09) P. Stuer **/
 
 #include "pch.h"
 
@@ -222,7 +222,7 @@ void artwork_t::Render(ID2D1DeviceContext * deviceContext, const D2D1_RECT_F & r
     FLOAT Scalar = 1.f;
     D2D1_RECT_F Rect = rect;
 
-    AdjustRect(state->_FitMode, Scalar, Rect);
+    AdjustRect(state->_FitMode, state->_AllowUpscaling, Scalar, Rect);
 
     if (state->_ArtworkBlurSigma == 0.f)
     {
@@ -269,10 +269,10 @@ void artwork_t::AdjustRect(const FitMode fitMode, FLOAT & scalar, D2D1_RECT_F & 
 
     if (msc::InRange(fitMode, FitMode::Free, FitMode::FitHeight))
     {
-        if ((fitMode == FitMode::FitWidth) || (fitMode == FitMode::FitBig))
+        if ((fitMode == FitMode::FitWidth) || (fitMode == FitMode::FitLargest))
             WScalar = (Size.width  > AreaWidth)  ? AreaWidth  / Size.width  : 1.f;
 
-        if ((fitMode == FitMode::FitHeight) || (fitMode == FitMode::FitBig))
+        if ((fitMode == FitMode::FitHeight) || (fitMode == FitMode::FitLargest))
             HScalar = (Size.height > AreaHeight) ? AreaHeight / Size.height : 1.f;
 
         scalar = std::min(WScalar, HScalar);
@@ -294,45 +294,68 @@ void artwork_t::AdjustRect(const FitMode fitMode, FLOAT & scalar, D2D1_RECT_F & 
     rect.bottom  = rect.top  + Size.height;
 }
 */
-void artwork_t::AdjustRect(const FitMode fitMode, FLOAT & scalar, D2D1_RECT_F & rect) const noexcept
+void artwork_t::AdjustRect(const FitMode fitMode, const bool allowUpscaling, FLOAT & scalar, D2D1_RECT_F & rect) const noexcept
 {
-    scalar = 1.f;
+    scalar = 1.0f;
 
-    const auto Size = _Bitmap->GetSize();
-
-    if (Size.width <= 0.f || Size.height <= 0.f)
+    if (_Bitmap == nullptr)
         return;
 
-    const FLOAT AreaW = rect.right  - rect.left;
-    const FLOAT AreaH = rect.bottom - rect.top;
+    const D2D1_SIZE_F Size = _Bitmap->GetSize();
 
-    if (AreaW <= 0.f || AreaH <= 0.f)
+    if (Size.width <= 0.0f || Size.height <= 0.0f)
         return;
 
-    const bool ShrinkOnly = msc::InRange(fitMode, FitMode::Free, FitMode::FitHeight);
+    const FLOAT AreaWidth  = rect.right  - rect.left;
+    const FLOAT AreaHeight = rect.bottom - rect.top;
 
-    if (ShrinkOnly)
+    if (AreaWidth <= 0.f || AreaHeight <= 0.f)
+        return;
+
+    switch (fitMode)
     {
-        const FLOAT w = (fitMode == FitMode::FitWidth  || fitMode == FitMode::FitBig) ? std::min(1.f, AreaW / Size.width)  : 1.f;
-        const FLOAT h = (fitMode == FitMode::FitHeight || fitMode == FitMode::FitBig) ? std::min(1.f, AreaH / Size.height) : 1.f;
+        case FitMode::FitWidth:
+        {
+            scalar = AreaWidth / Size.width;
+            break;
+        }
 
-        scalar = std::min(w, h);
+        case FitMode::FitHeight:
+        {
+            scalar = AreaHeight / Size.height;
+            break;
+        }
+
+        case FitMode::FitSmallest:
+        {
+            scalar = Size.width <= Size.height ? AreaWidth / Size.width : AreaHeight / Size.height;
+            break;
+        }
+
+        case FitMode::FitLargest:
+        {
+            scalar = Size.width >= Size.height ? AreaWidth / Size.width : AreaHeight / Size.height;
+            break;
+        }
+
+        case FitMode::Free:
+        default:
+        {
+            scalar = 1.0f;
+            break;
+        }
     }
-    else
-    {
-        if ((Size.width <= AreaW) && (Size.height <= AreaH))
-            scalar = std::min(std::max(Size.width / AreaW, AreaW / Size.width), std::max(Size.height / AreaH, AreaH / Size.height));
-        else
-            scalar = std::max(std::max(Size.width / AreaW, AreaW / Size.width), std::max(Size.height / AreaH, AreaH / Size.height));
-    }
 
-    const FLOAT w = Size.width  * scalar;
-    const FLOAT h = Size.height * scalar;
+    if (!allowUpscaling)
+        scalar = std::min(scalar, 1.0f);
 
-    const FLOAT Left = rect.left + (AreaW - w) / 2.f;
-    const FLOAT Top  = rect.top  + (AreaH - h) / 2.f;
+    const FLOAT ScaledWidth  = Size.width * scalar;
+    const FLOAT ScaledHeight = Size.height * scalar;
 
-    rect = D2D1::RectF(Left, Top, Left + w, Top + h);
+    const FLOAT Left = rect.left + (AreaWidth  - ScaledWidth)  / 2.f;
+    const FLOAT Top  = rect.top  + (AreaHeight - ScaledHeight) / 2.f;
+
+    rect = D2D1::RectF(Left, Top, Left + ScaledWidth, Top + ScaledHeight);
 }
 
 /// <summary>

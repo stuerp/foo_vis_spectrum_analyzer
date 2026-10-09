@@ -1,5 +1,5 @@
 
-/** $VER: State.cpp (2026.10.03) P. Stuer **/
+/** $VER: State.cpp (2026.10.08) P. Stuer **/
 
 #include "pch.h"
 #include "State.h"
@@ -200,8 +200,9 @@ void state_t::Reset() noexcept
     _ArtworkOpacity = 1.f;
     _ArtworkBlurSigma = 0.f;
     _ArtworkFilePath.clear();
-    _FitMode = FitMode::FitBig;
+    _FitMode = FitMode::FitLargest;
     _FitWindow = false;
+    _AllowUpscaling = false;
 
     _ShowWindowFunction   = false;
     _ShowWeighingFunction = false;
@@ -527,6 +528,7 @@ state_t & state_t::operator=(const state_t & other) noexcept
         _ArtworkFilePath = other._ArtworkFilePath;
         _FitMode = other._FitMode;
         _FitWindow = other._FitWindow;
+        _AllowUpscaling = other._AllowUpscaling;
 
         _ShowWindowFunction   = other._ShowWindowFunction;
         _ShowWeighingFunction = other._ShowWeighingFunction;
@@ -1671,6 +1673,7 @@ void state_t::FromJSON(const char * data, size_t size, bool isPreset)
         _ShowArtworkOnBackground = Artwork.value("showArtworkOnBackground",         _ShowArtworkOnBackground);
 
         _FitMode                 = std::clamp(Artwork.value("fitMode",              _FitMode),                  FitMode::Min,               FitMode::Max);
+        _AllowUpscaling          = Artwork.value("allowUpscaling",                  _AllowUpscaling);
         _FitWindow               = Artwork.value("fitWindow",                       _FitWindow);
         _ArtworkOpacity          = std::clamp(Artwork.value("opacity",              _ArtworkOpacity),           (FLOAT) MinArtworkOpacity,  (FLOAT) MaxArtworkOpacity);
         _ArtworkBlurSigma        = std::clamp(Artwork.value("blurSigma",            _ArtworkBlurSigma),         (FLOAT) MinArtworkBlurSigma,(FLOAT) MaxArtworkBlurSigma);
@@ -1995,6 +1998,7 @@ json state_t::ToJSON(bool isPreset) const
                 { "showArtworkOnBackground", _ShowArtworkOnBackground },
 
                 { "fitMode", _FitMode },
+                { "allowUpscaling", _AllowUpscaling },
                 { "fitWindow", _FitWindow },
                 { "opacity", _ArtworkOpacity },
                 { "blurSigma", _ArtworkBlurSigma },

@@ -1,5 +1,5 @@
 
-/** $VER: Artwork.h (2026.10.01) P. Stuer  **/
+/** $VER: Artwork.h (2026.10.09) P. Stuer  **/
 
 #pragma once
 
@@ -47,7 +47,7 @@ private:
     void DeleteDeviceSpecificResources() noexcept;
 
 private:
-    void AdjustRect(const FitMode fitMode, FLOAT & scalar, D2D1_RECT_F & rect) const noexcept;
+    void AdjustRect(const FitMode fitMode, const bool allowUpscaling, FLOAT & scalar, D2D1_RECT_F & rect) const noexcept;
 
 private:
     msc::critical_section_t _CriticalSection;

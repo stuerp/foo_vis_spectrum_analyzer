@@ -96,9 +96,12 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.13.0.0-rc2, 2026-10-xx
+v0.13.0.0-rc2, 2026-10-09
 
 - Improved: Oscilloscope honors the channel order specified in the configuration dialog.
+- Breaking change
+  - Artwork Fit Modes are now `Free`, `Fit largest`, `Fit smallest`, `Fit width` and `Fit height`. `Fill` has been dropped.
+  - Extra setting `Allow upscaling` will upscale the bitmap while respecting any Fit Mode except `Free`. [Forum request](https://hydrogenaudio.org/index.php/topic,125031.msg1088426.html#msg1088426)
 
 You can read the full history [here](docs/History.md).
 

@@ -1,5 +1,5 @@
 
-/** $VER: State.h (2026.10.03) P. Stuer **/
+/** $VER: State.h (2026.10.09) P. Stuer **/
 
 #pragma once
 
@@ -277,6 +277,7 @@ public:
         FLOAT _ArtworkBlurSigma;                                        // [0, 1]
         std::wstring _ArtworkFilePath;                                  // Script that generates a valid file path to load artwork from.
         FitMode _FitMode;                                               // Determines how over- or undersized artwork is rendered.
+        bool _AllowUpscaling;                                           // True if smaller artwork can be upscaled.
         bool _FitWindow;                                                // True when the component window instead of the client area of the graph is used to fit artwork.
 
     #pragma endregion
