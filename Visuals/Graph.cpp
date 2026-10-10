@@ -1,5 +1,5 @@
 
-/** $VER: Graph.cpp (2026.10.08) P. Stuer - Implements a graph on which the visualizations are rendered. **/
+/** $VER: Graph.cpp (2026.10.10) P. Stuer - Implements a graph on which the visualizations are rendered. **/
 
 #include "pch.h"
 
@@ -17,6 +17,7 @@
 #include "OscilloscopeXY.h"
 #include "BitMeter.h"
 #include "Goniometer.h"
+#include "EyeCandy.h"
 
 #include "Tester.h"
 #include "D3DTester.h"
@@ -24,27 +25,9 @@
 #pragma hdrstop
 
 /// <summary>
-/// Moves this instance on the canvas.
-/// </summary>
-void graph_t::Move(const D2D1_RECT_F & rect) noexcept
-{
-    const D2D1_RECT_F Rect =
-    {
-        .left   = rect.left   + _GraphOptions->_LPadding,
-        .top    = rect.top    + _GraphOptions->_TPadding,
-        .right  = rect.right  - _GraphOptions->_RPadding,
-        .bottom = rect.bottom - _GraphOptions->_BPadding
-    };
-
-    InitializeMetrics(Rect);
-
-    _Visualization->Move(Rect);
-}
-
-/// <summary>
 /// Initializes this instance.
 /// </summary>
-void graph_t::Initialize(state_t * state, graph_options_t * graphOptions, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext, IDXGISwapChain1 * swapChain, IDCompositionDevice * compositionDevice, IDCompositionVisual * compositionVisual) noexcept
+void graph_t::Configure(state_t * state, graph_options_t * graphOptions, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept
 {
     _State = state;
     _GraphOptions = graphOptions;
@@ -96,7 +79,8 @@ void graph_t::Initialize(state_t * state, graph_options_t * graphOptions, bool i
             break;
 
         case VisualizationType::Tester:
-            _Visualization = std::make_unique<tester_t>();
+//          _Visualization = std::make_unique<tester_t>();
+            _Visualization = std::make_unique<eye_candy_t>();
             break;
 
         case VisualizationType::D3DTester:
@@ -105,6 +89,31 @@ void graph_t::Initialize(state_t * state, graph_options_t * graphOptions, bool i
     }
 
     _Visualization->Configure(state, graphOptions, &_Analysis, _IsFirst, _IsLast, d3dDevice, d3dDeviceContext);
+}
+
+/// <summary>
+/// Moves this instance on the canvas.
+/// </summary>
+void graph_t::Move(const D2D1_RECT_F & rect) noexcept
+{
+    const D2D1_RECT_F Rect =
+    {
+        .left   = rect.left   + _GraphOptions->_LPadding,
+        .top    = rect.top    + _GraphOptions->_TPadding,
+        .right  = rect.right  - _GraphOptions->_RPadding,
+        .bottom = rect.bottom - _GraphOptions->_BPadding
+    };
+
+    InitializeMetrics(Rect);
+
+    _Visualization->Move(Rect);
+}
+
+void graph_t::Reset() noexcept
+{
+    _Visualization->Reset();
+
+    DeleteDeviceSpecificResources();
 }
 
 /// <summary>
@@ -146,21 +155,11 @@ void graph_t::Render(ID2D1DeviceContext * deviceContext, artwork_t & artwork, ID
 }
 
 /// <summary>
-/// Resets this instance.
+/// Initializes this instance.
 /// </summary>
-void graph_t::Reset() noexcept
+void graph_t::Initialize() noexcept
 {
     _Analysis.Reset();
-
-    _Visualization->Reset();
-}
-
-/// <summary>
-/// Releases this instance.
-/// </summary>
-void graph_t::Release() noexcept
-{
-    DeleteDeviceSpecificResources();
 }
 
 /// <summary>
@@ -318,7 +317,7 @@ void graph_t::RenderDescription(ID2D1DeviceContext * deviceContext) noexcept
 /// </summary>
 HRESULT graph_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept
 {
-    if (_State->_ResizeResources)
+    if (_State->_SizeHasChanged)
         DeleteDeviceSpecificResources();
 
     HRESULT hr = S_OK;
@@ -365,8 +364,6 @@ HRESULT graph_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContex
 /// </summary>
 void graph_t::DeleteDeviceSpecificResources() noexcept
 {
-    _Visualization->Release();
-
     _DescriptionBackgroundStyle.DeleteDeviceSpecificResources();
     _DescriptionTextStyle.DeleteDeviceSpecificResources();
     _BackgroundStyle.DeleteDeviceSpecificResources();

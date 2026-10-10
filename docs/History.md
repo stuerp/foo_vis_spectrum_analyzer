@@ -1,6 +1,13 @@
 
 # foo_vis_spectrum_analyzer History
 
+v0.13.0.0-rc2, 2026-10-09
+
+- Improved: Oscilloscope honors the channel order specified in the configuration dialog.
+- Breaking change
+  - Artwork Fit Modes are now `Free`, `Fit largest`, `Fit smallest`, `Fit width` and `Fit height`. `Fill` has been dropped.
+  - Extra setting `Allow upscaling` will upscale the bitmap while respecting any Fit Mode except `Free`. [Forum request](https://hydrogenaudio.org/index.php/topic,125031.msg1088426.html#msg1088426)
+
 v0.13.0.0-rc1, 2026-10-07
 
 - New: You can modify the position of a gradient stop by clicking and dragging on the gradient control. The value will be constrained between the previous and next gradient stop position.

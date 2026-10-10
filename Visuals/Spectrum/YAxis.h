@@ -1,5 +1,5 @@
 
-/** $VER: YAxis.h (2026.08.22) P. Stuer - Implements the Y axis of a graph. **/
+/** $VER: YAxis.h (2026.10.10) P. Stuer - Implements the Y axis of a graph. **/
 
 #pragma once
 
@@ -13,7 +13,6 @@
 
 #include "Visualization.h"
 #include "State.h"
-#include "FrequencyBand.h"
 
 #include <vector>
 #include <string>
@@ -49,7 +48,13 @@ public:
     }
 
 private:
-    void Resize() noexcept;
+    HRESULT CreateSizeDependentResources(ID2D1DeviceContext * deviceContext, style_manager_t & styleManager) noexcept;
+    void DeleteSizeDependentResources() noexcept;
+
+    HRESULT CreateColorDependentResources(ID2D1DeviceContext * deviceContext, style_manager_t & styleManager) noexcept;
+    void DeleteColorDependentResources() noexcept;
+
+    void Initialize() noexcept;
 
 private:
     bool _FlipVertically;

@@ -1,5 +1,5 @@
 
-/** $VER: State.h (2026.10.09) P. Stuer **/
+/** $VER: State.h (2026.10.10) P. Stuer **/
 
 #pragma once
 
@@ -44,9 +44,9 @@ public:
     size_t _PageIndex;                                                  // Index of the active configuration dialog page
 
 #ifdef _WIN64
-    int64_t _RefreshRateLimit;                                          // Target FPS in Hz
+    int64_t _TargetRefreshRate;                                         // Target FPS in Hz
 #else
-    int32_t _RefreshRateLimit;                                          // Target FPS in Hz
+    int32_t _TargetRefreshRate;                                         // Target FPS in Hz
 #endif
 
     int64_t _SleepTime;                                                 // Number of μs that the render thread is put to sleep to yield to the UI thread.
@@ -315,7 +315,7 @@ public:
 
     std::vector<D2D1_COLOR_F> _UserInterfaceColors;
 
-    bool _ResizeResources;                                               // True if the DirectX resources need to be recreated, e.g. because the artwork colors changed or the size of the back buffer changed.
+    bool _SizeHasChanged;                                              // True if the DirectX resources need to be recreated, e.g. because the artwork colors changed or the size of the back buffer changed.
 
     #pragma endregion
 
@@ -332,6 +332,7 @@ public:
     #pragma region Render thread only
 
     std::vector<D2D1_COLOR_F> _ArtworkColors;                           // The colors extracted from the artwork bitmap.
+    bool _ColorsHaveChanged;                                            // True if the colors have changed.
 
     size_t _BinCount;                                                   // The number of bins used by the spectrum analyzer.
 

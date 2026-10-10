@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.cpp (2026.10.04) P. Stuer - Implements a spectrum analyzer visualization **/
+/** $VER: Spectrum.cpp (2026.10.10) P. Stuer - Implements a spectrum analyzer visualization **/
 
 #include "pch.h"
 
@@ -20,7 +20,7 @@
 /// </summary>
 spectrum_t::~spectrum_t()
 {
-    DeleteDeviceSpecificResources();
+    Reset();
 }
 
 /// <summary>
@@ -35,7 +35,7 @@ void spectrum_t::Configure(state_t * state, graph_options_t * options, analysis_
     _IsFirst      = isFirst;
     _IsLast       = isLast;
 
-    DeleteDeviceSpecificResources();
+    Reset();
 
     _XAxis.Configure(state, options, analysis, isFirst, isLast);
     _YAxis.Configure(state, options, analysis, isFirst, isLast);
@@ -49,29 +49,9 @@ void spectrum_t::Configure(state_t * state, graph_options_t * options, analysis_
 void spectrum_t::Move(const D2D1_RECT_F & rect) noexcept
 {
     InitializeMetrics(rect);
-}
 
-/// <summary>
-/// Recalculates parameters that are render target and size-sensitive.
-/// </summary>
-void spectrum_t::Resize() noexcept
-{
-    if (!_ForceElementToResize || (_Size.width <= 0.f) || (_Size.height <= 0.f))
-        return;
-
-    const FLOAT xt = ((_GraphOptions->_XAxisMode != XAxisMode::None) && _GraphOptions->_XAxisTop)    ? _XAxis.GetTextHeight() : 0.f;
-    const FLOAT xb = ((_GraphOptions->_XAxisMode != XAxisMode::None) && _GraphOptions->_XAxisBottom) ? _XAxis.GetTextHeight() : 0.f;
-
-    const FLOAT yl = ((_GraphOptions->_YAxisMode != YAxisMode::None) && _GraphOptions->_YAxisLeft)   ? _YAxis.GetTextWidth()  : 0.f;
-    const FLOAT yr = ((_GraphOptions->_YAxisMode != YAxisMode::None) && _GraphOptions->_YAxisRight)  ? _YAxis.GetTextWidth()  : 0.f;
-
-    _XAxis.Move({ _Rect.left + yl, _Rect.top,      _Rect.right - yr, _Rect.bottom });
-    _YAxis.Move({ _Rect.left,      _Rect.top + xt, _Rect.right,      _Rect.bottom - xb });
-
-    _ClientRect = { _Rect.left + yl + PaddingX, _Rect.top + xt + PaddingY, _Rect.right - yr - PaddingX, _Rect.bottom - xb - PaddingY };
-    _ClientSize = { _ClientRect.right - _ClientRect.left, _ClientRect.bottom - _ClientRect.top };
-
-    _ForceElementToResize = false;
+    _XAxis.Move(rect);
+    _YAxis.Move(rect);
 }
 
 /// <summary>
@@ -711,14 +691,19 @@ void spectrum_t::RenderDiagnostics(ID2D1DeviceContext * deviceContext) const noe
 }
 
 /// <summary>
+/// Resets this instance.
+/// </summary>
+void spectrum_t::Reset() noexcept
+{
+    DeleteDeviceSpecificResources();
+}
+
+/// <summary>
 /// Creates resources which are bound to a particular D3D device.
 /// It's all centralized here, in case the resources need to be recreated in case of D3D device loss (eg. display change, remoting, removal of video card, etc).
 /// </summary>
 HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept
 {
-    if (_State->_ResizeResources)
-        DeleteDeviceSpecificResources();
-
     auto & StyleManager = _GraphOptions->_UseLocalStyles ? _GraphOptions->_StyleManager : _State->_StyleManager;
 
     HRESULT hr = _XAxis.CreateDeviceSpecificResources(deviceContext, StyleManager);
@@ -731,12 +716,87 @@ HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCon
     if (FAILED(hr))
         return hr;
 
-    Resize();
-
 #ifdef _DEBUG
     if (_DebugBrush == nullptr)
         (void) deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), _DebugBrush.GetAddressOf());
 #endif
+
+    if (_State->_ColorsHaveChanged || _State->_SizeHasChanged)
+    {
+        DeleteColorDependentResources();
+
+        Initialize();
+
+        hr = CreateColorDependentResources(deviceContext);
+
+        if (FAILED(hr))
+            return hr;
+    }
+
+    if (_State->_SizeHasChanged)
+    {
+        DeleteSizeDependentResources();
+
+        Initialize();
+
+        hr = CreateSizeDependentResources(deviceContext);
+
+        if (FAILED(hr))
+            return hr;
+    }
+
+    return S_OK;
+}
+
+/// <summary>
+/// Releases the device specific resources.
+/// </summary>
+void spectrum_t::DeleteDeviceSpecificResources() noexcept
+{
+    _YAxis.DeleteDeviceSpecificResources();
+    _XAxis.DeleteDeviceSpecificResources();
+
+    DeleteColorDependentResources();
+    DeleteSizeDependentResources();
+
+    _DebugBrush.Reset();
+}
+
+/// <summary>
+/// Creates the resources that depend on the size of the render target.
+/// </summary>
+HRESULT spectrum_t::CreateSizeDependentResources(ID2D1DeviceContext * deviceContext) noexcept
+{
+    if (_State->_VisualizationType != VisualizationType::Bars)
+        return S_OK;
+
+    if (_OpacityMask == nullptr)
+    {
+        _LEDSize = _State->_LEDLight + _State->_LEDGap;
+
+        HRESULT hr = CreateOpacityMask(deviceContext);
+
+        if (FAILED(hr))
+            return hr;
+    }
+
+    return S_OK;
+}
+
+/// <summary>
+/// Deletes the resources that depend on the size of the render target.
+/// </summary>
+void spectrum_t::DeleteSizeDependentResources() noexcept
+{
+    _OpacityMask.Reset();
+}
+
+/// <summary>
+/// Creates the resources that depend on the color palette.
+/// </summary>
+HRESULT spectrum_t::CreateColorDependentResources(ID2D1DeviceContext * deviceContext) noexcept
+{
+    auto & StyleManager = _GraphOptions->_UseLocalStyles ? _GraphOptions->_StyleManager : _State->_StyleManager;
 
     const auto InitializeStyle = [this, deviceContext, & StyleManager](auto & Style, VisualElement Element) noexcept -> HRESULT
     {
@@ -766,6 +826,8 @@ HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCon
 
         return Style.CreateDeviceSpecificResources(deviceContext, _ClientSize, Center, Offset, Radius, Radius, _State->_InnerRadius);
     };
+
+    HRESULT hr = S_OK;
 
     #pragma warning(push)
     #pragma warning(disable: 4062)
@@ -802,16 +864,6 @@ HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCon
 
             if (FAILED(hr))
                 return hr;
-
-            if (_OpacityMask == nullptr)
-            {
-                _LEDSize = _State->_LEDLight + _State->_LEDGap;
-
-                hr = CreateOpacityMask(deviceContext);
-
-                if (FAILED(hr))
-                    return hr;
-            }
 
             break;
         }
@@ -907,14 +959,12 @@ HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCon
 
     if (FAILED(hr))
         return hr;
-
-    return S_OK;
 }
 
 /// <summary>
-/// Releases the device specific resources.
+/// Deletes the resources that depend on the color palette.
 /// </summary>
-void spectrum_t::DeleteDeviceSpecificResources() noexcept
+void spectrum_t::DeleteColorDependentResources() noexcept
 {
     _WeighingFunctionStyle.DeleteDeviceSpecificResources();
     _WindowFunctionStyle.DeleteDeviceSpecificResources();
@@ -932,12 +982,6 @@ void spectrum_t::DeleteDeviceSpecificResources() noexcept
     _BarPeakTopStyle.DeleteDeviceSpecificResources();
     _DarkBackgroundStyle.DeleteDeviceSpecificResources();
     _LightBackgroundStyle.DeleteDeviceSpecificResources();
-
-    _OpacityMask.Reset();
-    _DebugBrush.Reset();
-
-    _YAxis.DeleteDeviceSpecificResources();
-    _XAxis.DeleteDeviceSpecificResources();
 }
 
 /// <summary>
@@ -1312,6 +1356,26 @@ HRESULT spectrum_t::CreateSegment(FLOAT a1, FLOAT a2, FLOAT r1, FLOAT r2, ID2D1P
 }
 
 /// <summary>
+/// Recalculates parameters that are render target and size-sensitive.
+/// </summary>
+void spectrum_t::Initialize() noexcept
+{
+    assert((_Size.width > 0.f) && (_Size.height > 0.f));
+
+    const FLOAT xt = ((_GraphOptions->_XAxisMode != XAxisMode::None) && _GraphOptions->_XAxisTop)    ? _XAxis.GetTextHeight() : 0.f;
+    const FLOAT xb = ((_GraphOptions->_XAxisMode != XAxisMode::None) && _GraphOptions->_XAxisBottom) ? _XAxis.GetTextHeight() : 0.f;
+
+    const FLOAT yl = ((_GraphOptions->_YAxisMode != YAxisMode::None) && _GraphOptions->_YAxisLeft)   ? _YAxis.GetTextWidth()  : 0.f;
+    const FLOAT yr = ((_GraphOptions->_YAxisMode != YAxisMode::None) && _GraphOptions->_YAxisRight)  ? _YAxis.GetTextWidth()  : 0.f;
+
+    _XAxis.Move({ _Rect.left + yl, _Rect.top,      _Rect.right - yr, _Rect.bottom });
+    _YAxis.Move({ _Rect.left,      _Rect.top + xt, _Rect.right,      _Rect.bottom - xb });
+
+    _ClientRect = { _Rect.left + yl + PaddingX, _Rect.top + xt + PaddingY, _Rect.right - yr - PaddingX, _Rect.bottom - xb - PaddingY };
+    _ClientSize = { _ClientRect.right - _ClientRect.left, _ClientRect.bottom - _ClientRect.top };
+}
+
+/// <summary>
 /// Handles a configuration change.
 /// </summary>
 void spectrum_t::OnConfigurationChanged(ConfigurationChanges configurationChanges) noexcept
@@ -1319,8 +1383,7 @@ void spectrum_t::OnConfigurationChanged(ConfigurationChanges configurationChange
     if (!IsSet(configurationChanges, ConfigurationChanges::Layout))
         return;
 
-    _State->_ResizeResources = true;
+    _State->_SizeHasChanged = true;
 
     _XAxis.Configure(_State, _GraphOptions, _Analysis, _IsFirst, _IsLast);
-    _XAxis.Resize(true);
 }

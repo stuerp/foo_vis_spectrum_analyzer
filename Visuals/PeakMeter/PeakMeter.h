@@ -1,5 +1,5 @@
 
-/** $VER: PeakMeter.h (2026.10.07) P. Stuer - Represents a peak meter. **/
+/** $VER: PeakMeter.h (2026.10.10) P. Stuer - Represents a peak meter. **/
 
 #pragma once
 
@@ -21,7 +21,7 @@
 class peak_meter_t : public visualization_t
 {
 public:
-    peak_meter_t();
+    peak_meter_t() = default;
 
     peak_meter_t(const peak_meter_t &) = delete;
     peak_meter_t & operator=(const peak_meter_t &) = delete;
@@ -44,12 +44,20 @@ private:
     HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept;
     void DeleteDeviceSpecificResources() noexcept;
 
+    HRESULT CreateSizeDependentResources(ID2D1DeviceContext * deviceContext) noexcept;
+    void DeleteSizeDependentResources() noexcept;
+
+    HRESULT CreateColorDependentResources(ID2D1DeviceContext * deviceContext) noexcept;
+    void DeleteColorDependentResources() noexcept;
+
     HRESULT CreateOpacityMask(ID2D1DeviceContext * deviceContext) noexcept;
 
     void CreateParts() noexcept;
     void DeleteParts() noexcept;
 
     void MeasureParts(ID2D1DeviceContext * deviceContext) noexcept;
+
+    void Initialize() noexcept;
 
 private:
     uint32_t _RenderedChannels { 0 };

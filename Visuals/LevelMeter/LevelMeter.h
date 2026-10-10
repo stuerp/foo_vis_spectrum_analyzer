@@ -1,5 +1,5 @@
 
-/** $VER: LevelMeter.h (2026.10.05) P. Stuer - Implements a left/right/mid/side level meter. **/
+/** $VER: LevelMeter.h (2026.10.10) P. Stuer - Implements a left/right/mid/side level meter. **/
 
 #pragma once
 
@@ -20,7 +20,7 @@
 class level_meter_t : public visualization_t
 {
 public:
-    level_meter_t();
+    level_meter_t() = default;
 
     level_meter_t(const level_meter_t &) = delete;
     level_meter_t & operator=(const level_meter_t &) = delete;
@@ -32,7 +32,7 @@ public:
     // element_t
     void Move(const D2D1_RECT_F & rect) noexcept override final;
     void Render(ID2D1DeviceContext * deviceContext) noexcept override final;
-    void Reset() noexcept override final { };
+    void Reset() noexcept override final;
 
     void OnConfigurationChanged(ConfigurationChanges configurationChanges) noexcept;
 
@@ -43,7 +43,15 @@ private:
     HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept;
     void DeleteDeviceSpecificResources() noexcept;
 
+    HRESULT CreateSizeDependentResources(ID2D1DeviceContext * deviceContext) noexcept;
+    void DeleteSizeDependentResources() noexcept;
+
+    HRESULT CreateColorDependentResources(ID2D1DeviceContext * deviceContext) noexcept;
+    void DeleteColorDependentResources() noexcept;
+
     HRESULT CreateOpacityMask(ID2D1DeviceContext * deviceContext) noexcept;
+
+    void Initialize() noexcept { }
 
 private:
     ComPtr<ID2D1Bitmap> _OpacityMask;

@@ -4,7 +4,6 @@
 #include "pch.h"
 
 #include "Element.h"
-#include "Log.h"
 
 #pragma hdrstop
 
@@ -19,7 +18,7 @@ void element_t::InitializeMetrics(const D2D1_RECT_F & rect) noexcept
     _Side     = std::min(_Size.width, _Size.height);
     _HalfSide = _Side / 2.f;
 
-    _ForceElementToResize = true;
+    _State->_SizeHasChanged = true;
 }
 
 /// <summary>

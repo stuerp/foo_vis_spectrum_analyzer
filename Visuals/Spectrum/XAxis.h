@@ -1,5 +1,5 @@
 
-/** $VER: XAxis.h (2026.09.25) P. Stuer - Implements the X axis of a graph. **/
+/** $VER: XAxis.h (2026.10.10) P. Stuer - Implements the X axis of a graph. **/
 
 #pragma once
 
@@ -13,7 +13,6 @@
 
 #include "Visualization.h"
 #include "State.h"
-#include "FrequencyBand.h"
 
 #include <vector>
 #include <string>
@@ -35,7 +34,7 @@ public:
     // element_t
     void Move(const D2D1_RECT_F & rect) noexcept override final;
     void Render(ID2D1DeviceContext * deviceContext) noexcept override final;
-    void Reset() noexcept override final { }
+    void Reset() noexcept override final {}
 
     // visualization_t
     void Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice = nullptr, ID3D11DeviceContext * d3dDeviceContext = nullptr) noexcept override final;
@@ -48,7 +47,14 @@ public:
         return _TextStyle._Height;
     }
 
-    void Resize(bool force = false) noexcept;
+private:
+    HRESULT CreateSizeDependentResources(ID2D1DeviceContext * deviceContext, style_manager_t & styleManager) noexcept;
+    void DeleteSizeDependentResources() noexcept;
+
+    HRESULT CreateColorDependentResources(ID2D1DeviceContext * deviceContext, style_manager_t & styleManager) noexcept;
+    void DeleteColorDependentResources() noexcept;
+
+    void Initialize() noexcept;
 
 private:
     size_t _BandCount { 0 };

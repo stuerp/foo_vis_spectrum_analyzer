@@ -1,5 +1,5 @@
 
-/** $VER: BitMeter.cpp (2026.10.07) P. Stuer - Implements a bit meter visualization. **/
+/** $VER: BitMeter.cpp (2026.10.10) P. Stuer - Implements a bit meter visualization. **/
 
 #include <pch.h>
 
@@ -8,19 +8,11 @@
 #pragma hdrstop
 
 /// <summary>
-/// Initializes a new instance.
-/// </summary>
-bit_meter_t::bit_meter_t()
-{
-    Reset();
-}
-
-/// <summary>
 /// Destroys this instance.
 /// </summary>
 bit_meter_t::~bit_meter_t() noexcept
 {
-    DeleteDeviceSpecificResources();
+    Reset();
 }
 
 /// <summary>
@@ -34,21 +26,7 @@ void bit_meter_t::Configure(state_t * state, graph_options_t * graphOptions, ana
 
     _MeasurementCount = 0;
 
-    _BitCount = (size_t) ((_State->_BitMeterMode == BitMeterMode::FloatingPoint) ? audio_sample_size : _State->_BitsPerInteger);
-
-    // Create the labels.
-    {
-        _Labels.clear();
-
-        for (uint32_t BitNumber = 1; BitNumber <= _BitCount; ++BitNumber)
-        {
-            WCHAR Text[4] = { };
-
-            ::StringCchPrintfW(Text, _countof(Text), L"%u", BitNumber);
-
-            _Labels.push_back(Text);
-        }
-    }
+    Reset();
 }
 
 /// <summary>
@@ -57,38 +35,6 @@ void bit_meter_t::Configure(state_t * state, graph_options_t * graphOptions, ana
 void bit_meter_t::Move(const D2D1_RECT_F & rect) noexcept
 {
     InitializeMetrics(rect);
-}
-
-/// <summary>
-/// Resets this instance.
-/// </summary>
-void bit_meter_t::Reset() noexcept
-{
-    if (_ForceElementToResize || (_Size.width <= 0.f) || (_Size.height <= 0.f))
-        return;
-
-    _ForceElementToResize = true;
-}
-
-/// <summary>
-/// Terminates this instance.
-/// </summary>
-void bit_meter_t::Release() noexcept
-{
-    DeleteDeviceSpecificResources();
-}
-
-/// <summary>
-/// Recalculates parameters that are render target and size-sensitive.
-/// </summary>
-void bit_meter_t::Resize() noexcept
-{
-    if (!_ForceElementToResize || (_Size.width <= 0.f) || (_Size.height <= 0.f))
-        return;
-
-    _StaticContentCommandList = nullptr;
-
-    _ForceElementToResize = false;
 }
 
 /// <summary>
@@ -249,33 +195,18 @@ void bit_meter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 }
 
 /// <summary>
+/// Resets this instance.
+/// </summary>
+void bit_meter_t::Reset() noexcept
+{
+    DeleteDeviceSpecificResources();
+}
+
+/// <summary>
 /// Creates resources which are bound to a particular D3D device.
 /// </summary>
 HRESULT bit_meter_t::CreateDeviceSpecificResources(_In_ ID2D1DeviceContext * deviceContext) noexcept
 {
-    if (_State->_ResizeResources)
-        DeleteDeviceSpecificResources();
-
-    if ((_Size.width <= 0.f) || _Size.height <= 0.f)
-        return E_INVALIDARG;
-
-    Resize();
-
-    if (_MeasurementCount != _Analysis->_BitMeasurements.size())
-    {
-        _MeasurementCount = _Analysis->_BitMeasurements.size();
-
-        _BarBackground.DeleteDeviceSpecificResources();
-        _BarSign.DeleteDeviceSpecificResources();
-        _BarExponent.DeleteDeviceSpecificResources();
-        _BarMantissa.DeleteDeviceSpecificResources();
-
-        _StaticContentCommandList.Reset();
-    }
-
-    if (_MeasurementCount == 0)
-        return E_FAIL;
-
     HRESULT hr = S_OK;
 
 #ifdef _DEBUG
@@ -283,9 +214,103 @@ HRESULT bit_meter_t::CreateDeviceSpecificResources(_In_ ID2D1DeviceContext * dev
         (void) deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), _DebugBrush.GetAddressOf());
 #endif
 
+    if (_MeasurementCount != _Analysis->_BitMeasurements.size())
+    {
+        _MeasurementCount = _Analysis->_BitMeasurements.size();
+
+        _State->_SizeHasChanged = true;
+        _State->_ColorsHaveChanged = true;
+    }
+
+    if (_State->_ColorsHaveChanged || _State->_SizeHasChanged)
+    {
+        DeleteColorDependentResources();
+
+        Initialize();
+
+        hr = CreateColorDependentResources(deviceContext);
+
+        if (FAILED(hr))
+            return hr;
+    }
+
+    if (_State->_SizeHasChanged)
+    {
+        DeleteSizeDependentResources();
+
+        Initialize();
+
+        hr = CreateSizeDependentResources(deviceContext);
+
+        if (FAILED(hr))
+            return hr;
+    }
+
+    return hr;
+}
+
+/// <summary>
+/// Releases the device specific resources.
+/// </summary>
+void bit_meter_t::DeleteDeviceSpecificResources() noexcept
+{
+    DeleteColorDependentResources();
+    DeleteSizeDependentResources();
+
+#ifdef _DEBUG
+    _DebugBrush.Reset();
+#endif
+}
+
+/// <summary>
+/// Creates the resources that depend on the size of the render target.
+/// </summary>
+HRESULT bit_meter_t::CreateSizeDependentResources(ID2D1DeviceContext * deviceContext) noexcept
+{
+    if (_DeviceContext == nullptr)
+    {
+        ComPtr<ID2D1Device> D2DDevice;
+
+        deviceContext->GetDevice(D2DDevice.GetAddressOf());
+
+        HRESULT hr = D2DDevice->CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_ENABLE_MULTITHREADED_OPTIMIZATIONS, _DeviceContext.GetAddressOf());
+
+        if (FAILED(hr))
+            return hr;
+    }
+
+    if (_StaticContentCommandList == nullptr)
+    {
+        HRESULT hr = CreateStaticContentCommandList();
+
+        if (FAILED(hr))
+            return hr;
+    }
+
+    return S_OK;
+}
+
+/// <summary>
+/// Deletes the resources that depend on the size of the render target.
+/// </summary>
+void bit_meter_t::DeleteSizeDependentResources() noexcept
+{
+    _StaticContentCommandList.Reset();
+
+    _DeviceContext.Reset();
+}
+
+/// <summary>
+/// Creates the resources that depend on the color palette.
+/// </summary>
+HRESULT bit_meter_t::CreateColorDependentResources(ID2D1DeviceContext * deviceContext) noexcept
+{
+    if (_MeasurementCount == 0)
+        return E_FAIL;
+
     const D2D1_SIZE_F TextSize = { _Size.width, _Size.height / (FLOAT) _MeasurementCount };
 
-    const auto CreateStyle = [this, deviceContext](auto & Style, VisualElement Element, const D2D1_SIZE_F & Size, const wchar_t * Text) noexcept -> HRESULT
+    const auto InitializeStyle = [this, deviceContext](auto & Style, VisualElement Element, const D2D1_SIZE_F & Size, const wchar_t * Text) noexcept -> HRESULT
     {
         if (Style._Brush != nullptr)
             return S_OK;
@@ -297,29 +322,29 @@ HRESULT bit_meter_t::CreateDeviceSpecificResources(_In_ ID2D1DeviceContext * dev
         return Style.CreateDeviceSpecificResources(deviceContext, Size, Text, 1.f);
     };
 
-    hr = CreateStyle(_BarBackground, VisualElement::BarBackground, TextSize, L"");
+    HRESULT hr = InitializeStyle(_BarBackground, VisualElement::BarBackground, TextSize, L"");
 
     if (FAILED(hr))
         return hr;
 
-    hr = CreateStyle(_BarSign, VisualElement::BarSign, TextSize, L"");
+    hr = InitializeStyle(_BarSign, VisualElement::BarSign, TextSize, L"");
 
     if (FAILED(hr))
         return hr;
 
-    hr = CreateStyle(_BarExponent, VisualElement::BarExponent, TextSize, L"");
+    hr = InitializeStyle(_BarExponent, VisualElement::BarExponent, TextSize, L"");
 
     if (FAILED(hr))
         return hr;
 
-    hr = CreateStyle(_BarMantissa, VisualElement::BarMantissa, TextSize, L"");
+    hr = InitializeStyle(_BarMantissa, VisualElement::BarMantissa, TextSize, L"");
 
     if (FAILED(hr))
         return hr;
 
     if (_XAxisText._Brush == nullptr)
     {
-        hr = CreateStyle(_XAxisText, VisualElement::XAxisText, _Size, L"");
+        hr = InitializeStyle(_XAxisText, VisualElement::XAxisText, _Size, L"");
 
         if (FAILED(hr))
             return hr;
@@ -330,32 +355,12 @@ HRESULT bit_meter_t::CreateDeviceSpecificResources(_In_ ID2D1DeviceContext * dev
 
     if (_YAxisText._Brush == nullptr)
     {
-        hr = CreateStyle(_YAxisText, VisualElement::YAxisText, _Size, L"WW");
+        hr = InitializeStyle(_YAxisText, VisualElement::YAxisText, _Size, L"WW");
 
         if (FAILED(hr))
             return hr;
 
         _YAxisText.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
-    }
-
-    if (_DeviceContext == nullptr)
-    {
-        ComPtr<ID2D1Device> D2DDevice;
-
-        deviceContext->GetDevice(D2DDevice.GetAddressOf());
-
-        hr = D2DDevice->CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_ENABLE_MULTITHREADED_OPTIMIZATIONS, _DeviceContext.GetAddressOf());
-
-        if (FAILED(hr))
-            return hr;
-    }
-
-    if (_StaticContentCommandList == nullptr)
-    {
-        hr = CreateStaticContentCommandList();
-
-        if (FAILED(hr))
-            return hr;
     }
 
     // Predetermine the style for each bit.
@@ -372,20 +377,14 @@ HRESULT bit_meter_t::CreateDeviceSpecificResources(_In_ ID2D1DeviceContext * dev
         }
     }
 
-    return hr;
+    return S_OK;
 }
 
 /// <summary>
-/// Releases the device specific resources.
+/// Deletes the resources that depend on the color palette.
 /// </summary>
-void bit_meter_t::DeleteDeviceSpecificResources() noexcept
+void bit_meter_t::DeleteColorDependentResources() noexcept
 {
-    _Styles.clear();
-
-    _StaticContentCommandList.Reset();
-
-    _DeviceContext.Reset();
-
     _YAxisText.DeleteDeviceSpecificResources();
     _XAxisText.DeleteDeviceSpecificResources();
 
@@ -394,9 +393,7 @@ void bit_meter_t::DeleteDeviceSpecificResources() noexcept
     _BarSign.DeleteDeviceSpecificResources();
     _BarBackground.DeleteDeviceSpecificResources();
 
-#ifdef _DEBUG
-    _DebugBrush.Reset();
-#endif
+    _Styles.clear();
 }
 
 /// <summary>
@@ -404,6 +401,9 @@ void bit_meter_t::DeleteDeviceSpecificResources() noexcept
 /// </summary>
 HRESULT bit_meter_t::CreateStaticContentCommandList() noexcept
 {
+    if (_MeasurementCount == 0)
+        return E_FAIL;
+
     HRESULT hr = _DeviceContext->CreateCommandList(_StaticContentCommandList.GetAddressOf());
 
     if (FAILED(hr))
@@ -509,6 +509,28 @@ HRESULT bit_meter_t::CreateStaticContentCommandList() noexcept
 }
 
 /// <summary>
+/// Recalculates parameters that are render target and size-sensitive.
+/// </summary>
+void bit_meter_t::Initialize() noexcept
+{
+    _BitCount = (size_t) ((_State->_BitMeterMode == BitMeterMode::FloatingPoint) ? audio_sample_size : _State->_BitsPerInteger);
+
+    // Create the labels.
+    {
+        _Labels.clear();
+
+        for (uint32_t BitNumber = 1; BitNumber <= _BitCount; ++BitNumber)
+        {
+            WCHAR Text[4] = { };
+
+            ::StringCchPrintfW(Text, _countof(Text), L"%u", BitNumber);
+
+            _Labels.push_back(Text);
+        }
+    }
+}
+
+/// <summary>
 /// Handles a configuration change event.
 /// </summary>
 void bit_meter_t::OnConfigurationChanged(ConfigurationChanges configurationChanges) noexcept
@@ -516,5 +538,5 @@ void bit_meter_t::OnConfigurationChanged(ConfigurationChanges configurationChang
     if (!IsSet(configurationChanges, ConfigurationChanges::Layout))
         _StaticContentCommandList.Reset();
 
-    _State->_ResizeResources = true;
+    _State->_SizeHasChanged = true;
 }

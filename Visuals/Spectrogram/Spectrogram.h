@@ -1,5 +1,5 @@
 
-/** $VER: Spectrogram.h (2026.10.05) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
+/** $VER: Spectrogram.h (2026.10.10) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
 
 #pragma once
 
@@ -34,6 +34,7 @@ public:
     // element_t
     void Move(const D2D1_RECT_F & rect) noexcept override final;
     void Render(ID2D1DeviceContext * deviceContext) noexcept override final;
+    void Reset() noexcept override final;
 
     void OnConfigurationChanged(ConfigurationChanges configurationChanges) noexcept;
 
@@ -49,14 +50,19 @@ private:
     void RenderTimeAxis(ID2D1DeviceContext * deviceContext, bool top) const noexcept;
     void RenderFreqAxis(ID2D1DeviceContext * deviceContext, bool left) const noexcept;
 
-    void CreateLegend(ID2D1BitmapRenderTarget * renderTarget) const noexcept;
-
-    void InitFreqAxis() noexcept;
-
-    HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext);
+    HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept;
     void DeleteDeviceSpecificResources() noexcept;
 
-    void Resize() noexcept;
+    HRESULT CreateSizeDependentResources(ID2D1DeviceContext * deviceContext) noexcept;
+    void DeleteSizeDependentResources() noexcept;
+
+    HRESULT CreateColorDependentResources(ID2D1DeviceContext * deviceContext) noexcept;
+    void DeleteColorDependentResources() noexcept;
+
+    void CreateLegend(ID2D1BitmapRenderTarget * renderTarget) const noexcept;
+
+    void Initialize() noexcept;
+    void InitializeFrequencyAxis() noexcept;
 
     static frequency_bands_t DecimateSpectrum(const frequency_bands_t & fb, size_t targetCount) noexcept;
     static frequency_bands_t ResampleSpectrum(const frequency_bands_t & fb, size_t targetCount, int lobe = 3) noexcept;

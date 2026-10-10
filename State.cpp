@@ -43,7 +43,7 @@ void state_t::Reset() noexcept
     _Bounds = { };
     _PageIndex = 0;
 
-    _RefreshRateLimit = 20; // Hz
+    _TargetRefreshRate = 60; // Hz
     _SleepTime = 200; // μs
 
     _UseHardwareRendering = true;
@@ -345,7 +345,7 @@ state_t & state_t::operator=(const state_t & other) noexcept
     _Bounds = other._Bounds;
     _PageIndex = other._PageIndex;
 
-    _RefreshRateLimit = other._RefreshRateLimit;
+    _TargetRefreshRate = other._TargetRefreshRate;
 
     _UseHardwareRendering = other._UseHardwareRendering;
     _UseAntialiasing = other._UseAntialiasing;
@@ -658,7 +658,7 @@ void state_t::Read(stream_reader * stream, size_t size, abort_callback & abortHa
 
         stream->read(&_Bounds, sizeof(_Bounds), abortHandler);
 
-        stream->read(&_RefreshRateLimit, sizeof(_RefreshRateLimit), abortHandler);
+        stream->read(&_TargetRefreshRate, sizeof(_TargetRefreshRate), abortHandler);
 
         stream->read(&_UseHardwareRendering, sizeof(_UseHardwareRendering), abortHandler);
         stream->read(&_UseAntialiasing, sizeof(_UseAntialiasing), abortHandler);
@@ -1087,7 +1087,7 @@ void state_t::Write(stream_writer * stream, abort_callback & abortHandler, bool 
 
         stream->write(&_Bounds, sizeof(_Bounds), abortHandler);
 
-        stream->write(&_RefreshRateLimit, sizeof(_RefreshRateLimit), abortHandler);
+        stream->write(&_TargetRefreshRate, sizeof(_TargetRefreshRate), abortHandler);
 
         stream->write(&_UseHardwareRendering, sizeof(_UseHardwareRendering), abortHandler);
         stream->write(&_UseAntialiasing, sizeof(_UseAntialiasing), abortHandler);
@@ -1428,7 +1428,7 @@ void state_t::FromJSON(const char * data, size_t size, bool isPreset)
     const uint32_t SchemaVersion = Object.value("schemaVersion", _SchemaVersion);
 
     // User Interface
-    _RefreshRateLimit = std::clamp(Object.value("refreshRateLimit", _RefreshRateLimit), MinRefreshRate, MaxRefreshRate);
+    _TargetRefreshRate = std::clamp(Object.value("refreshRateLimit", _TargetRefreshRate), MinRefreshRate, MaxRefreshRate);
 
     // Configuration Dialog
     const auto & Dialog = Object.value("configurationDialog", json::object());
@@ -1731,7 +1731,7 @@ json state_t::ToJSON(bool isPreset) const
         { "schemaVersion", _SchemaVersion },
 
         // User Interface
-        { "refreshRateLimit", _RefreshRateLimit },
+        { "refreshRateLimit", _TargetRefreshRate },
 
         // Configuration Dialog
         json::object_t::value_type

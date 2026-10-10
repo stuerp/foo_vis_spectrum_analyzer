@@ -1,5 +1,5 @@
 
-/** $VER: Visualization.h (2026.10.07) P. Stuer - Base class for all visualization elements. **/
+/** $VER: Visualization.h (2026.10.10) P. Stuer - Base class for all visualization elements. **/
 
 #pragma once
 
@@ -12,9 +12,9 @@
 class visualization_t : public element_t
 {
 public:
-    visualization_t() {}
+    visualization_t() = default;
 
-    virtual ~visualization_t() noexcept {}
+    virtual ~visualization_t() noexcept = default;
 
     virtual void Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice = nullptr, ID3D11DeviceContext * d3dDeviceContext = nullptr) noexcept = 0;
 

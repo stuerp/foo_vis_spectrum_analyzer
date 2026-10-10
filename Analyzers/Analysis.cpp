@@ -92,16 +92,11 @@ void analysis_t::Reset() noexcept
     }
 
     // FFT-based visualizations
-    for (auto & fb : _FrequencyBands)
     {
-        fb.Value = 0.;
+        for (auto & fb : _FrequencyBands)
+            fb.Value = 0.;
 
-        if (_State->_ResetPeaksOnTrackChange)
-        {
-            fb.PeakValue = 0.;
-            fb.FallRate = 0.;
-            fb.Opacity  = 1.;
-        }
+        ResetFFTPeaks();
     }
 
     // Peak/RMS Meter
@@ -195,6 +190,19 @@ void analysis_t::Process(const audio_chunk & chunk) noexcept
 }
 
 /// <summary>
+/// Resets the FFT peaks.
+/// </summary>
+void analysis_t::ResetFFTPeaks() noexcept
+{
+    for (auto & fb : _FrequencyBands)
+    {
+        fb.PeakValue = 0.;
+        fb.FallRate  = 0.;
+        fb.Opacity   = 1.;
+    }
+}
+
+/// <summary>
 /// Resets the peak measurements.
 /// </summary>
 void analysis_t::ResetPeakMeasurements() noexcept
@@ -232,7 +240,7 @@ void analysis_t::UpdatePeakValues(bool isStopped) noexcept
     const double Elapsed = _Chrono.Elapsed();
     const double AmplitudeRange = _GraphOptions->_AmplitudeHi - _GraphOptions->_AmplitudeLo;
 
-    const double HoldTime = _State->_HoldTime * (double) _State->_RefreshRateLimit;
+    const double HoldTime = _State->_HoldTime * (double) _State->_TargetRefreshRate;
     const double FallRate = (_State->_FallRate != 0) ? msc::Map(Elapsed, 0., AmplitudeRange / _State->_FallRate, 0., 1.) : 0.;
 
     const bool IsAIMP = (_State->_PeakMode == PeakMode::AIMP) || (_State->_PeakMode == PeakMode::FadingAIMP);
@@ -259,8 +267,8 @@ void analysis_t::UpdatePeakValues(bool isStopped) noexcept
                         fb.HoldTime = HoldTime;
 
                     fb.PeakValue = fb.Value;
-                    fb.FallRate = 0.;
-                    fb.Opacity  = 1.;
+                    fb.FallRate  = 0.;
+                    fb.Opacity   = 1.;
                 }
                 else
                 {

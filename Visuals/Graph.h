@@ -30,11 +30,12 @@ public:
     void Move(const D2D1_RECT_F & rect) noexcept override final;
     void Render(ID2D1DeviceContext * deviceContext) noexcept override final { };
     void Reset() noexcept override final;
-    void Release() noexcept override final;
 
-    void Initialize(state_t * state, graph_options_t * graphOptions, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext, IDXGISwapChain1 * swapChain, IDCompositionDevice * compositionDevice, IDCompositionVisual * compositionVisual) noexcept;
+    void Configure(state_t * state, graph_options_t * graphOptions, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept;
     void Process(const audio_chunk & chunk) noexcept;
     void Render(ID2D1DeviceContext * deviceContext, artwork_t & artwork, IDXGISwapChain1 * swapChain) noexcept;
+
+    void Initialize() noexcept;
 
     void InitToolInfo(HWND hParent, TTTOOLINFOW & ti) const noexcept;
 

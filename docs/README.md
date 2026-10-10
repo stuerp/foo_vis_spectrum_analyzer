@@ -931,10 +931,14 @@ Determines how over- and undersized artwork is rendered.
 | Name | Description |
 | --- | --- |
 | Free | The artwork will not be scaled. |
-| Fit big | Artwork that is bigger than the available area will be proportionally scaled. |
-| Fit width | The width of the artwork is scaled to fit in the available area. |
-| Fit height | The height of the artwork is scaled to fit in the available area. |
-| Fill | The artwork is scaled to fill the available area. |
+| Fit largest | The largest side of the artwork is made to fit the available area. The other side will be scaled proportionally. |
+| Fit width | The width of the artwork is made to fit the available area. The other side will be scaled proportionally. |
+| Fit height | The height side of the artwork is made to fit the available area. The other side will be scaled proportionally. |
+| Fit smallest | The smallest side of the artwork is made to fit the available area. The other side will be scaled proportionally. |
+
+`Allow upscaling`
+
+Enable to upscale smaller artwork while respecting the selected `Fit mode` except `Free`.
 
 `Fit window`
 

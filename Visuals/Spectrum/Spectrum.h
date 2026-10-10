@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.h (2026.06.17) P. Stuer -  Implements a spectrum analyzer visualization **/
+/** $VER: Spectrum.h (2026.10.10) P. Stuer -  Implements a spectrum analyzer visualization **/
 
 #pragma once
 
@@ -32,7 +32,7 @@ public:
     // element_t
     void Move(const D2D1_RECT_F & rect) noexcept override final;
     void Render(ID2D1DeviceContext * deviceContext) noexcept override final;
-    void Reset() noexcept override final { }
+    void Reset() noexcept override final;
 
     void OnConfigurationChanged(ConfigurationChanges configurationChanges) noexcept override final;
 
@@ -43,9 +43,15 @@ private:
     HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept;
     void DeleteDeviceSpecificResources() noexcept;
 
+    HRESULT CreateSizeDependentResources(ID2D1DeviceContext * deviceContext) noexcept;
+    void DeleteSizeDependentResources() noexcept;
+
+    HRESULT CreateColorDependentResources(ID2D1DeviceContext * deviceContext) noexcept;
+    void DeleteColorDependentResources() noexcept;
+
     const D2D1_RECT_F & GetClientRect() const noexcept { return _ClientRect; }
 
-    void Resize() noexcept;
+    void Initialize() noexcept;
 
     void RenderBars(ID2D1DeviceContext * deviceContext) noexcept;
     void RenderBar(ID2D1DeviceContext * deviceContext, D2D1_RECT_F & rect, const style_t & areaStyle, const style_t & topStyle, double value, double opacity) noexcept;

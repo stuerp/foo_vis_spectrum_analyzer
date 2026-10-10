@@ -191,7 +191,7 @@ void uielement_t::OnContextMenu(CWindow wnd, CPoint position) noexcept
 
                 RefreshRateLimitMenu.AppendMenu
                 (
-                    (UINT) MF_STRING | ((_UIState._RefreshRateLimit == RefreshRates[i]) ? MF_CHECKED : 0),
+                    (UINT) MF_STRING | ((_UIState._TargetRefreshRate == RefreshRates[i]) ? MF_CHECKED : 0),
                     IDM_REFRESH_RATE_LIMIT + i,
                     Text
                 );
@@ -254,8 +254,8 @@ void uielement_t::OnContextMenu(CWindow wnd, CPoint position) noexcept
         {
             if (msc::InRange(CommandId, (int) IDM_REFRESH_RATE_LIMIT, (int) IDM_REFRESH_RATE_LIMIT + 999))
             {
-                _UIState    ._RefreshRateLimit =
-                _RenderState._RefreshRateLimit = (int32_t) RefreshRates[CommandId - IDM_REFRESH_RATE_LIMIT]; // Near-atomic
+                _UIState    ._TargetRefreshRate =
+                _RenderState._TargetRefreshRate = (int32_t) RefreshRates[CommandId - IDM_REFRESH_RATE_LIMIT]; // Near-atomic
             }
             else
             if (CommandId >= IDM_PRESET_NAME)
@@ -275,17 +275,12 @@ void uielement_t::OnContextMenu(CWindow wnd, CPoint position) noexcept
 
                     _UIState = NewState;
 
-                    _UIState._ResizeResources = true;
+                    _UIState._SizeHasChanged    = true;
+                    _UIState._ColorsHaveChanged = true;
 
                     UpdateState(ConfigurationChanges::All);
 
-                    // Notify the configuration dialog about the loaded preset.
-                    if (_ConfigurationDialog.IsWindow())
-                    {
-                        _ConfigurationDialog.PostMessageW(UM_CONFIGURATION_CHANGED, CC_PRESET_LOADED); // Must be sent outside the critical section.
-
-                        Log.AtDebug().Write(STR_COMPONENT_BASENAME " notified configuration dialog of configuration change (Preset loaded).");
-                    }
+                    NotifyDialog(CC_PRESET_LOADED);
                 }
             }
         }
@@ -370,7 +365,7 @@ void uielement_t::Resize()
 
             _Grid.Resize(SizeF.width, SizeF.height);
 
-            _RenderState._ResizeResources = true;
+            _RenderState._SizeHasChanged = true;
         }
 
         AddTools();
@@ -384,8 +379,6 @@ void uielement_t::OnColorsChanged() noexcept
 {
     GetColors();
 
-    _UIState._ResizeResources = true;
-
     {
         msc::lock_t Lock(_CriticalSection);
 
@@ -397,13 +390,7 @@ void uielement_t::OnColorsChanged() noexcept
         _Event.Raise(event_t::UserInterfaceColorsChanged);
     }
 
-    // Notify the configuration dialog about the changed UI colors.
-    if (_ConfigurationDialog.IsWindow())
-    {
-        _ConfigurationDialog.PostMessageW(UM_CONFIGURATION_CHANGED, CC_COLORS); // Must be sent outside the critical section.
-
-        Log.AtDebug().Write(STR_COMPONENT_BASENAME " notified configuration dialog of configuration change (User interface colors).");
-    }
+    NotifyDialog(CC_COLORS);
 }
 
 /// <summary>
@@ -500,7 +487,9 @@ void uielement_t::UpdateState(ConfigurationChanges configurationChanges) noexcep
             case ConfigurationChanges::All:
             {
                 _RenderState._SampleRate = 0;
-                _RenderState._ResizeResources = true;
+
+                _RenderState._SizeHasChanged    = true;
+                _RenderState._ColorsHaveChanged = true;
 
                 // Recreate the resources that depend on the artwork.
                 CreateArtworkDependentResources();
@@ -520,7 +509,7 @@ void uielement_t::UpdateState(ConfigurationChanges configurationChanges) noexcep
                         const bool IsFirst = !OverlapGraphs || (OverlapGraphs && (i == 0));
                         const bool IsLast  = !OverlapGraphs || (OverlapGraphs && (i == _RenderState._GraphOptions.size() - 1));
 
-                        Graph->Initialize(&_RenderState, &GraphOptions, IsFirst, IsLast, _D3DDevice.Get(), _D3DDeviceContext.Get(), _SwapChain.Get(), _CompositionDevice.Get(), _CompositionVisual.Get());
+                        Graph->Configure(&_RenderState, &GraphOptions, IsFirst, IsLast, _D3DDevice.Get(), _D3DDeviceContext.Get());
 
                         _Grid.push_back(Graph);
                         ++i;
@@ -540,7 +529,8 @@ void uielement_t::UpdateState(ConfigurationChanges configurationChanges) noexcep
             case ConfigurationChanges::UserInterfaceColors:
             {
                 _RenderState._UserInterfaceColors = _UIState._UserInterfaceColors;
-                _RenderState._ResizeResources = true;
+
+                _RenderState._ColorsHaveChanged = true;
                 break;
             }
 
@@ -576,6 +566,19 @@ graph_t * uielement_t::GetGraph(const CPoint & pt) noexcept
     }
 
     return nullptr;
+}
+
+/// <summary>
+/// Notifies the configuration dialog about certain changes.
+/// </summary>
+void uielement_t::NotifyDialog(WPARAM wParam) noexcept
+{
+    if (!_ConfigurationDialog.IsWindow())
+        return;
+
+    _ConfigurationDialog.PostMessageW(UM_CONFIGURATION_CHANGED, wParam); // Must be sent outside the critical section.
+
+    Log.AtDebug().Write(STR_COMPONENT_BASENAME " notified configuration dialog.");
 }
 
 #pragma endregion

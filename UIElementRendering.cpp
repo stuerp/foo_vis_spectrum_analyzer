@@ -38,10 +38,10 @@ void uielement_t::RenderThreadProc() noexcept
 
     int64_t Now = Chrono.Now();
 
-    int64_t MaxFrameTime = Chrono.SecondsToTicks(1.0 / (double) _RenderState._RefreshRateLimit);
+    int64_t MaxFrameTime = Chrono.SecondsToTicks(1.0 / (double) _RenderState._TargetRefreshRate);
     int64_t NextFrameTime = Now + MaxFrameTime;
 
-    Log.AtDebug().Write("Render thread started: Target %d fps / Max. frame time %d ticks",  _RenderState._RefreshRateLimit, MaxFrameTime);
+    Log.AtDebug().Write("Render thread started: Target %d fps / Max. frame time %d ticks",  _RenderState._TargetRefreshRate, MaxFrameTime);
 
     for (;;)
     {
@@ -105,18 +105,16 @@ void uielement_t::RenderThreadProc() noexcept
         }
 
         // Notify the configuration dialog about the changed artwork colors.
-        if (HaveArtworkColorsChanged && _ConfigurationDialog.IsWindow())
+        if (HaveArtworkColorsChanged)
         {
-            _ConfigurationDialog.PostMessageW(UM_CONFIGURATION_CHANGED, CC_COLORS); // Must be sent outside the critical section.
-
-            Log.AtDebug().Write(STR_COMPONENT_BASENAME " notified configuration dialog of configuration change (Artwork colors).");
+            NotifyDialog(CC_COLORS);
 
             HaveArtworkColorsChanged = false;
         }
 
         // Determine the presentation time of the next frame.
         {
-            MaxFrameTime = Chrono.SecondsToTicks(1. / (double) _RenderState._RefreshRateLimit);
+            MaxFrameTime = Chrono.SecondsToTicks(1. / (double) _RenderState._TargetRefreshRate);
             NextFrameTime += MaxFrameTime;
 
             const int64_t Latency = Chrono.Now() - NextFrameTime;
@@ -143,17 +141,20 @@ void uielement_t::ProcessEvents() noexcept
     {
         _RenderState._PlaybackTime = 0.;
         _RenderState._TrackTime = 0.;
-/*
-        for (auto & Item : _Grid)
-            Item->Reset();
-*/
+
+        if (_RenderState._ResetPeaksOnTrackChange)
+        {
+            for (auto & Graph : _Grid)
+                Graph->_Analysis.ResetFFTPeaks();
+        }
+
         _RenderState._IsPaused = false;
 
         // Set the default dominant color and gradient for the artwork color scheme.
         _RenderState._ArtworkDominantColor = _RenderState._ArtworkColors[0];
         _RenderState._ArtworkGradientStops = gradient_t::GetBuiltIn(_Artwork.Bitmap() ? ColorScheme::Artwork : ColorScheme::Solid);
 
-        _RenderState._ResizeResources = true;
+        _RenderState._ColorsHaveChanged = true;
 
         _IsConfigurationChanged = true;
     }
@@ -163,18 +164,14 @@ void uielement_t::ProcessEvents() noexcept
         _RenderState._PlaybackTime = 0.;
         _RenderState._TrackTime = 0.;
 
-        for (auto & Item : _Grid)
-            Item->Reset();
+        for (auto & Graph : _Grid)
+            Graph->Initialize();
 
         _RenderState._IsPaused = false;
     }
     else
     if (event_t::IsRaised(Flags, event_t::PlaybackPaused))
     {
-/*
-        for (auto & Item : _Grid)
-            Item->Reset();
-*/
         _RenderState._IsPaused = true;
     }
     else
@@ -184,7 +181,7 @@ void uielement_t::ProcessEvents() noexcept
     }
 
     if (event_t::IsRaised(Flags, event_t::UserInterfaceColorsChanged))
-        _RenderState._ResizeResources = true;
+        _RenderState._ColorsHaveChanged = true;
 }
 
 /// <summary>
@@ -278,7 +275,9 @@ void uielement_t::Render() noexcept
     if (hr == D2DERR_RECREATE_TARGET || hr == DXGI_ERROR_DEVICE_REMOVED)
         DeleteDeviceSpecificResources();
 
-    _RenderState._ResizeResources = false;
+    // Reset the flags for the next loop.
+    _RenderState._SizeHasChanged    = false;
+    _RenderState._ColorsHaveChanged = false;
 }
 
 /// <summary>
@@ -575,7 +574,7 @@ HRESULT uielement_t::CreateDeviceSpecificResources() noexcept
                 _Grid.Resize(SizeF.width, SizeF.height);
                 _FrameCounter.Resize(SizeF.width, SizeF.height);
 
-                _RenderState._ResizeResources = true;
+                _RenderState._SizeHasChanged = true;
             }
         }
 
@@ -596,7 +595,7 @@ HRESULT uielement_t::CreateDeviceSpecificResources() noexcept
             CreateArtworkDependentResources();
 
             for (auto & Item : _Grid)
-                Item->Release();
+                Item->Initialize();
         }
     }
 
@@ -613,7 +612,7 @@ void uielement_t::DeleteDeviceSpecificResources() noexcept
 #endif
 
     for (auto & Item : _Grid)
-        Item->Release();
+        Item->Reset();
 
     _Artwork.DeleteWICResources();
 
@@ -719,10 +718,10 @@ HRESULT uielement_t::CreateArtworkDependentResources() noexcept
     if (FAILED(hr))
         return S_FALSE; // Make sure resource creation continues even if something goes wrong while creating the gradient.
 
+    _RenderState._ArtworkDominantColor = _RenderState._ArtworkColors[0];
+
     // Sort the colors.
     {
-        _RenderState._ArtworkDominantColor = _RenderState._ArtworkColors[0];
-
         #pragma warning(disable: 4061) // Enumerator not handled
         switch (_RenderState._ColorOrder)
         {
@@ -758,11 +757,9 @@ HRESULT uielement_t::CreateArtworkDependentResources() noexcept
 
     // Create the gradient stops.
     _RenderState._ArtworkGradientStops = gradient_t::CreateGradientStops(_RenderState._ArtworkColors);
+    _RenderState._ColorsHaveChanged = true;
 
-    {
-        _RenderState._ResizeResources = true;
-        _IsConfigurationChanged = true;
-    }
+    _IsConfigurationChanged = true;
 
     return S_OK;
 }

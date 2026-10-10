@@ -1,9 +1,19 @@
 
-/** $VER: Goniometer.h (2026.09.25) P. Stuer - Implements a goniometer. **/
+/** $VER: Goniometer.h (2026.10.10) P. Stuer - Implements a goniometer. **/
 
 #pragma once
 
-#include <pch.h>
+#include <CppCoreCheck/Warnings.h>
+
+#pragma warning(disable: 4100 4625 4626 4710 4711 5045 ALL_CPPCORECHECK_WARNINGS)
+
+#define NOMINMAX
+
+#include <SDKDDKVer.h>
+#include <WinSock2.h>
+#include <Windows.h>
+
+#include <d2d1_2.h>
 
 #include "Visualization.h"
 #include "AudioProcessor.h"
@@ -24,7 +34,6 @@ public:
     void Move(const D2D1_RECT_F & rect) noexcept override final;
     void Render(ID2D1DeviceContext * deviceContext) noexcept override final;
     void Reset() noexcept override final;
-    void Release() noexcept override final;
 
     void OnConfigurationChanged(ConfigurationChanges configurationChanges) noexcept override final;
 
@@ -41,10 +50,15 @@ private:
     HRESULT CreateSizeDependentResources(ID2D1DeviceContext * deviceContext) noexcept;
     void DeleteSizeDependentResources() noexcept;
 
+    HRESULT CreateColorDependentResources(ID2D1DeviceContext * deviceContext) noexcept;
+    void DeleteColorDependentResources() noexcept;
+
     HRESULT CreateSprites() noexcept;
     HRESULT ClearBitmaps() noexcept;
     HRESULT CreatePointSprite(ComPtr<ID2D1Bitmap1> & bitmap) noexcept;
     HRESULT CreateStaticContent() noexcept;
+
+    void Initialize() noexcept { }
 
     double _LowBand  { 0. }; // Hz
     double _HighBand { 0. }; // Hz

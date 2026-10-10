@@ -96,12 +96,9 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.13.0.0-rc2, 2026-10-09
+v0.13.0.0, 2026-10-xx
 
-- Improved: Oscilloscope honors the channel order specified in the configuration dialog.
-- Breaking change
-  - Artwork Fit Modes are now `Free`, `Fit largest`, `Fit smallest`, `Fit width` and `Fit height`. `Fill` has been dropped.
-  - Extra setting `Allow upscaling` will upscale the bitmap while respecting any Fit Mode except `Free`. [Forum request](https://hydrogenaudio.org/index.php/topic,125031.msg1088426.html#msg1088426)
+- 
 
 You can read the full history [here](docs/History.md).
 
@@ -120,6 +117,7 @@ You can read the full history [here](docs/History.md).
 - [Niels Lohmann](https://github.com/nlohmann) for [JSON for Modern C++](https://json.nlohmann.me/).
 - Anton Mikhailov for the [Turbo](https://research.google/blog/turbo-an-improved-rainbow-colormap-for-visualization/) color map.
 - [Matplotlib](https://matplotlib.org/) for the [Perceptually Uniform Sequential](https://research.google/blog/turbo-an-improved-rainbow-colormap-for-visualization/) color maps.
+- [PosixAlchemist](https://github.com/PosixAlchemist) for [cli-visualizer](https://github.com/PosixAlchemist/cli-visualizer)
 
 ## Reference Material
 
@@ -131,6 +129,7 @@ You can read the full history [here](docs/History.md).
 - [Mel-frequency cepstrum](https://en.wikipedia.org/wiki/Mel-frequency_cepstrum)
 - [Mel scale](https://en.wikipedia.org/wiki/Mel_scale)
 - [Sliding windowed infinite Fourier transform](https://en.wikipedia.org/wiki/Sliding_DFT)
+- [Lorenz system](https://en.wikipedia.org/wiki/Lorenz_system)
 
 ## Test Material
 

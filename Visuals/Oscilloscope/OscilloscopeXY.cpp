@@ -14,7 +14,7 @@
 /// </summary>
 oscilloscope_xy_t::~oscilloscope_xy_t() noexcept
 {
-    DeleteDeviceSpecificResources();
+    Reset();
 }
 
 /// <summary>
@@ -38,7 +38,7 @@ void oscilloscope_xy_t::Configure(state_t * state, graph_options_t * graphOption
 
     _SquareBitmaps = true;
 
-    DeleteDeviceSpecificResources();
+    Reset();
 
     CreateDeviceIndependentResources();
 }
@@ -67,7 +67,7 @@ void oscilloscope_xy_t::Render(ID2D1DeviceContext * deviceContext) noexcept
         TransformedGeometry.Reset();
 
     {
-        const FLOAT Opacity = (_State->_Afterglow != 0.f) ? std::expf(-(1000.f / (FLOAT) _State->_RefreshRateLimit) / _State->_Afterglow) : 0.f;
+        const FLOAT Opacity = (_State->_Afterglow != 0.f) ? std::expf(-(1000.f / (FLOAT) _State->_TargetRefreshRate) / _State->_Afterglow) : 0.f;
 
         _OpacityEffect->SetValue(D2D1_OPACITY_PROP_OPACITY, Opacity);
 
@@ -147,81 +147,14 @@ void oscilloscope_xy_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 }
 
 /// <summary>
-/// Creates the path geometry for the signal.
+/// Resets this instance.
 /// </summary>
-HRESULT oscilloscope_xy_t::CreateSignalGeometry(const audio_chunk_impl & chunk, ComPtr<ID2D1TransformedGeometry> & transformedGeometry) noexcept
+void oscilloscope_xy_t::Reset() noexcept
 {
-    size_t FrameCount = chunk.get_sample_count();                                               // get_sample_count() actually returns the number of frames.
+    DeleteDeviceSpecificResources();
+    DeleteDeviceIndependentResources();
 
-    const uint32_t ChannelCount         = chunk.get_channel_count();
-    const uint32_t AvailableChannelMask = chunk.get_channel_config();                           // Mask containing the channels in the audio chunk.
-    const uint32_t ActiveChannelMask    = _GraphOptions->_ActiveChannelMask;                                // Mask containing the channels selected by the user.
-    const uint32_t PairedChannelMask    = analysis_t::ChannelPairs[(size_t) _GraphOptions->_ChannelPair];   // Mask containing the channels selected by the user as a channel pair.
-
-    const uint32_t ChannelMask = AvailableChannelMask & ActiveChannelMask & PairedChannelMask;
-
-    if ((ChannelCount < 2) || (ChannelMask == 0))
-        return S_FALSE;
-
-    const audio_sample * Frames = chunk.get_data();
-
-    if (_State->_ZeroCrossingTrigger && (FrameCount >= 4))
-    {
-        FrameCount /= 2;
-
-        const size_t CrossIndex = FindZeroCrossing(Frames, FrameCount, ChannelCount);
-        
-        Frames += CrossIndex * ChannelCount;
-    }
-
-    if (FrameCount < 2)
-        return S_FALSE;
-
-    size_t Channel1 = (size_t) std::countr_zero(ChannelMask);         // Index of the channel 1 sample in the audio chunk.
-    size_t Channel2 = (size_t) (31 - std::countl_zero(ChannelMask));  // Index of the channel 2 sample in the audio chunk.
-
-    if (_GraphOptions->_SwapChannels)
-        std::swap(Channel1, Channel2);
-
-    // Create the signal geometry.
-    {
-        ComPtr<ID2D1PathGeometry> Geometry;
-
-        HRESULT hr = Direct2DFactory::Get()->CreatePathGeometry(Geometry.GetAddressOf());
-
-        if (SUCCEEDED(hr))
-        {
-            ComPtr<ID2D1GeometrySink> Sink;
-
-            hr = Geometry->Open(Sink.GetAddressOf());
-
-            auto x = (FLOAT) std::clamp(Frames[Channel1] * _State->_XInputGain, -1., 1.);
-            auto y = (FLOAT) std::clamp(Frames[Channel2] * _State->_YInputGain, -1., 1.);
-
-            Sink->BeginFigure(D2D1::Point2F(x, y), D2D1_FIGURE_BEGIN_HOLLOW);
-
-            for (size_t i = ChannelCount; i < FrameCount; i += ChannelCount)
-            {
-                x = (FLOAT) std::clamp(Frames[Channel1 + i] * _State->_XInputGain, -1., 1.);
-                y = (FLOAT) std::clamp(Frames[Channel2 + i] * _State->_YInputGain, -1., 1.);
-
-                Sink->AddLine(D2D1::Point2F(x, y));
-            }
-
-            Sink->EndFigure(D2D1_FIGURE_END_OPEN);
-
-            hr = Sink->Close();
-        }
-
-        if (SUCCEEDED(hr))
-        {
-            const auto Rotate = D2D1::Matrix3x2F::Rotation(_State->_Rotation, D2D1::Point2F(0.f, 0.f));
-
-            hr = Direct2DFactory::Get()->CreateTransformedGeometry(Geometry.Get(), Rotate * _ScaleTransform * _TranslateTransform, transformedGeometry.GetAddressOf());
-        }
-
-        return hr;
-    }
+    __super::Reset();
 }
 
 /// <summary>
@@ -247,7 +180,7 @@ void oscilloscope_xy_t::DeleteDeviceIndependentResources() noexcept
 /// </summary>
 HRESULT oscilloscope_xy_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept
 {
-    if (_State->_ResizeResources)
+    if (_State->_SizeHasChanged)
         DeleteDeviceSpecificResources();
 
     HRESULT hr = oscilloscope_base_t::CreateDeviceSpecificResources(deviceContext);
@@ -424,4 +357,82 @@ HRESULT oscilloscope_xy_t::CreateStaticContent() noexcept
         hr = _StaticContent->Close();
 
     return hr;
+}
+
+/// <summary>
+/// Creates the path geometry for the signal.
+/// </summary>
+HRESULT oscilloscope_xy_t::CreateSignalGeometry(const audio_chunk_impl & chunk, ComPtr<ID2D1TransformedGeometry> & transformedGeometry) noexcept
+{
+    size_t FrameCount = chunk.get_sample_count();                                               // get_sample_count() actually returns the number of frames.
+
+    const uint32_t ChannelCount         = chunk.get_channel_count();
+    const uint32_t AvailableChannelMask = chunk.get_channel_config();                           // Mask containing the channels in the audio chunk.
+    const uint32_t ActiveChannelMask    = _GraphOptions->_ActiveChannelMask;                                // Mask containing the channels selected by the user.
+    const uint32_t PairedChannelMask    = analysis_t::ChannelPairs[(size_t) _GraphOptions->_ChannelPair];   // Mask containing the channels selected by the user as a channel pair.
+
+    const uint32_t ChannelMask = AvailableChannelMask & ActiveChannelMask & PairedChannelMask;
+
+    if ((ChannelCount < 2) || (ChannelMask == 0))
+        return S_FALSE;
+
+    const audio_sample * Frames = chunk.get_data();
+
+    if (_State->_ZeroCrossingTrigger && (FrameCount >= 4))
+    {
+        FrameCount /= 2;
+
+        const size_t CrossIndex = FindZeroCrossing(Frames, FrameCount, ChannelCount);
+        
+        Frames += CrossIndex * ChannelCount;
+    }
+
+    if (FrameCount < 2)
+        return S_FALSE;
+
+    size_t Channel1 = (size_t) std::countr_zero(ChannelMask);         // Index of the channel 1 sample in the audio chunk.
+    size_t Channel2 = (size_t) (31 - std::countl_zero(ChannelMask));  // Index of the channel 2 sample in the audio chunk.
+
+    if (_GraphOptions->_SwapChannels)
+        std::swap(Channel1, Channel2);
+
+    // Create the signal geometry.
+    {
+        ComPtr<ID2D1PathGeometry> Geometry;
+
+        HRESULT hr = Direct2DFactory::Get()->CreatePathGeometry(Geometry.GetAddressOf());
+
+        if (SUCCEEDED(hr))
+        {
+            ComPtr<ID2D1GeometrySink> Sink;
+
+            hr = Geometry->Open(Sink.GetAddressOf());
+
+            auto x = (FLOAT) std::clamp(Frames[Channel1] * _State->_XInputGain, -1., 1.);
+            auto y = (FLOAT) std::clamp(Frames[Channel2] * _State->_YInputGain, -1., 1.);
+
+            Sink->BeginFigure(D2D1::Point2F(x, y), D2D1_FIGURE_BEGIN_HOLLOW);
+
+            for (size_t i = ChannelCount; i < FrameCount; i += ChannelCount)
+            {
+                x = (FLOAT) std::clamp(Frames[Channel1 + i] * _State->_XInputGain, -1., 1.);
+                y = (FLOAT) std::clamp(Frames[Channel2 + i] * _State->_YInputGain, -1., 1.);
+
+                Sink->AddLine(D2D1::Point2F(x, y));
+            }
+
+            Sink->EndFigure(D2D1_FIGURE_END_OPEN);
+
+            hr = Sink->Close();
+        }
+
+        if (SUCCEEDED(hr))
+        {
+            const auto Rotate = D2D1::Matrix3x2F::Rotation(_State->_Rotation, D2D1::Point2F(0.f, 0.f));
+
+            hr = Direct2DFactory::Get()->CreateTransformedGeometry(Geometry.Get(), Rotate * _ScaleTransform * _TranslateTransform, transformedGeometry.GetAddressOf());
+        }
+
+        return hr;
+    }
 }

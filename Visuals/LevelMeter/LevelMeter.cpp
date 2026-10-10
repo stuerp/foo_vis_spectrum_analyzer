@@ -1,22 +1,11 @@
 
-/** $VER: LevelMeter.cpp (2026.10.07) P. Stuer - Implements a left/right/mid/side level meter. **/
+/** $VER: LevelMeter.cpp (2026.10.10) P. Stuer - Implements a left/right/mid/side level meter. **/
 
 #include "pch.h"
 
 #include "LevelMeter.h"
 
 #pragma hdrstop
-
-/// <summary>
-/// Initializes a new instance.
-/// </summary>
-level_meter_t::level_meter_t()
-{
-    _Rect = { };
-    _Size = { };
-
-    Reset();
-}
 
 /// <summary>
 /// Destroys this instance.
@@ -247,13 +236,18 @@ void level_meter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 }
 
 /// <summary>
+/// Resets this instance.
+/// </summary>
+void level_meter_t::Reset() noexcept
+{
+    DeleteDeviceSpecificResources();
+}
+
+/// <summary>
 /// Creates resources which are bound to a particular D3D device.
 /// </summary>
 HRESULT level_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept
 {
-    if (_State->_ResizeResources)
-        DeleteDeviceSpecificResources();
-
     HRESULT hr = S_OK;
 
 #ifdef _DEBUG
@@ -261,16 +255,75 @@ HRESULT level_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * device
         (void) deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), _DebugBrush.GetAddressOf());
 #endif
 
-//  D2D1_SIZE_F Size = deviceContext->GetSize();
-
-    if (_OpacityMask == nullptr)
+    if (_State->_ColorsHaveChanged || _State->_SizeHasChanged)
     {
-        hr = CreateOpacityMask(deviceContext);
+        DeleteColorDependentResources();
+
+        Initialize();
+
+        hr = CreateColorDependentResources(deviceContext);
 
         if (FAILED(hr))
             return hr;
     }
 
+    if (_State->_SizeHasChanged)
+    {
+        DeleteSizeDependentResources();
+
+        Initialize();
+
+        hr = CreateSizeDependentResources(deviceContext);
+
+        if (FAILED(hr))
+            return hr;
+    }
+
+    return hr;
+}
+
+/// <summary>
+/// Releases the device specific resources.
+/// </summary>
+void level_meter_t::DeleteDeviceSpecificResources() noexcept
+{
+    DeleteColorDependentResources();
+    DeleteSizeDependentResources();
+
+#ifdef _DEBUG
+    _DebugBrush.Reset();
+#endif
+}
+
+/// <summary>
+/// Creates the resources that depend on the size of the render target.
+/// </summary>
+HRESULT level_meter_t::CreateSizeDependentResources(ID2D1DeviceContext * deviceContext) noexcept
+{
+    if (_OpacityMask == nullptr)
+    {
+        HRESULT hr = CreateOpacityMask(deviceContext);
+
+        if (FAILED(hr))
+            return hr;
+    }
+
+    return S_OK;
+}
+
+/// <summary>
+/// Deletes the resources that depend on the size of the render target.
+/// </summary>
+void level_meter_t::DeleteSizeDependentResources() noexcept
+{
+    _OpacityMask.Reset();
+}
+
+/// <summary>
+/// Creates the resources that depend on the color palette.
+/// </summary>
+HRESULT level_meter_t::CreateColorDependentResources(ID2D1DeviceContext * deviceContext) noexcept
+{
     const auto InitializeStyle = [this, deviceContext](auto & style, VisualElement visualElement, const wchar_t * text) noexcept -> HRESULT
     {
         if (style._Brush != nullptr)
@@ -283,7 +336,7 @@ HRESULT level_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * device
         return style.CreateDeviceSpecificResources(deviceContext, _Size, text, 1.f);
     };
 
-    hr = InitializeStyle(_LeftRightStyle, VisualElement::BarLeftRight, L"");
+    HRESULT hr = InitializeStyle(_LeftRightStyle, VisualElement::BarLeftRight, L"");
 
     if (FAILED(hr))
         return hr;
@@ -308,25 +361,19 @@ HRESULT level_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * device
     if (FAILED(hr))
         return hr;
 
-    return hr;
+    return S_OK;
 }
 
 /// <summary>
-/// Releases the device specific resources.
+/// Deletes the resources that depend on the color palette.
 /// </summary>
-void level_meter_t::DeleteDeviceSpecificResources() noexcept
+void level_meter_t::DeleteColorDependentResources() noexcept
 {
     _AxisStyle.DeleteDeviceSpecificResources();
     _MidSideIndicatorStyle.DeleteDeviceSpecificResources();
     _MidSideStyle.DeleteDeviceSpecificResources();
     _LeftRightIndicatorStyle.DeleteDeviceSpecificResources();
     _LeftRightStyle.DeleteDeviceSpecificResources();
-
-    _OpacityMask.Reset();
-
-#ifdef _DEBUG
-    _DebugBrush.Reset();
-#endif
 }
 
 /// <summary>
@@ -400,5 +447,5 @@ void level_meter_t::OnConfigurationChanged(ConfigurationChanges configurationCha
     if (!IsSet(configurationChanges, ConfigurationChanges::Layout))
         return;
 
-    _State->_ResizeResources = true;
+    _State->_SizeHasChanged = true;
 }

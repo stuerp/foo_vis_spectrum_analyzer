@@ -1,5 +1,5 @@
 
-/** $VER: PeakMeter.cpp (2026.10.08) P. Stuer - Represents a peak meter. **/
+/** $VER: PeakMeter.cpp (2026.10.10) P. Stuer - Represents a peak meter. **/
 
 #include "pch.h"
 
@@ -8,19 +8,11 @@
 #pragma hdrstop
 
 /// <summary>
-/// Initializes a new instance.
-/// </summary>
-peak_meter_t::peak_meter_t()
-{
-    Reset();
-}
-
-/// <summary>
 /// Destroys this instance.
 /// </summary>
 peak_meter_t::~peak_meter_t() noexcept
 {
-    DeleteDeviceSpecificResources();
+    Reset();
 }
 
 /// <summary>
@@ -32,7 +24,9 @@ void peak_meter_t::Configure(state_t * state, graph_options_t * graphOptions, an
     _GraphOptions = graphOptions;
     _Analysis = analysis;
 
-    DeleteDeviceSpecificResources();
+    Reset();
+
+    _RenderedChannels = 0;
 }
 
 /// <summary>
@@ -41,19 +35,6 @@ void peak_meter_t::Configure(state_t * state, graph_options_t * graphOptions, an
 void peak_meter_t::Move(const D2D1_RECT_F & rect) noexcept
 {
     InitializeMetrics(rect);
-
-    _RenderedChannels = 0;
-
-    DeleteDeviceSpecificResources();
-}
-
-/// <summary>
-/// Resets this instance.
-/// </summary>
-void peak_meter_t::Reset() noexcept
-{
-    _RenderedChannels = 0;
-    _ForceElementToResize = true;
 }
 
 /// <summary>
@@ -72,6 +53,264 @@ void peak_meter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 
     for (const auto & Part : _Parts)
         Part->Render();
+}
+
+/// <summary>
+/// Resets this instance.
+/// </summary>
+void peak_meter_t::Reset() noexcept
+{
+    DeleteDeviceSpecificResources();
+}
+
+/// <summary>
+/// Creates resources which are bound to a particular D3D device.
+/// </summary>
+HRESULT peak_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept
+{
+    HRESULT hr = S_OK;
+
+#ifdef _DEBUG
+    if (_DebugBrush == nullptr)
+        (void) deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), _DebugBrush.GetAddressOf());
+#endif
+
+    if (_State->_ColorsHaveChanged || _State->_SizeHasChanged)
+    {
+        DeleteColorDependentResources();
+
+        Initialize();
+
+        hr = CreateColorDependentResources(deviceContext);
+
+        if (FAILED(hr))
+            return hr;
+    }
+
+    if (_State->_SizeHasChanged)
+    {
+        DeleteSizeDependentResources();
+
+        Initialize();
+
+        hr = CreateSizeDependentResources(deviceContext);
+
+        if (FAILED(hr))
+            return hr;
+    }
+
+    return S_OK;
+}
+
+/// <summary>
+/// Releases the device specific resources.
+/// </summary>
+void peak_meter_t::DeleteDeviceSpecificResources() noexcept
+{
+    DeleteColorDependentResources();
+    DeleteSizeDependentResources();
+
+#ifdef _DEBUG
+    _DebugBrush.Reset();
+#endif
+}
+
+/// <summary>
+/// Creates the resources that depend on the size of the render target.
+/// </summary>
+HRESULT peak_meter_t::CreateSizeDependentResources(ID2D1DeviceContext * deviceContext) noexcept
+{
+    if (_OpacityMask == nullptr)
+    {
+        HRESULT hr = CreateOpacityMask(deviceContext);
+
+        if (FAILED(hr))
+            return hr;
+    }
+
+    if ((_RenderedChannels != _Analysis->_PeakActiveChannelMask) || _State->_SizeHasChanged)
+    {
+        DeleteParts();
+
+        CreateParts();
+
+        MeasureParts(deviceContext);
+
+        _RenderedChannels = _Analysis->_PeakActiveChannelMask;
+    }
+
+    return S_OK;
+}
+
+/// <summary>
+/// Deletes the resources that depend on the size of the render target.
+/// </summary>
+void peak_meter_t::DeleteSizeDependentResources() noexcept
+{
+    for (const auto & Part : _Parts)
+        Part->Unbind();
+
+    DeleteParts();
+
+    _OpacityMask.Reset();
+
+}
+
+/// <summary>
+/// Creates the resources that depend on the color palette.
+/// </summary>
+HRESULT peak_meter_t::CreateColorDependentResources(ID2D1DeviceContext * deviceContext) noexcept
+{
+    auto & StyleManager = _GraphOptions->_UseLocalStyles ? _GraphOptions->_StyleManager : _State->_StyleManager;
+
+    const auto InitializeStyle = [this, deviceContext, & StyleManager](auto & style, VisualElement visualElement, const wchar_t * text) noexcept -> HRESULT
+    {
+        if (style._Brush != nullptr)
+            return S_OK;
+
+        style = *StyleManager.GetStyle(visualElement);
+
+        style.SetColor(_State);
+
+        return style.CreateDeviceSpecificResources(deviceContext, _Size, text, 1.f);
+    };
+
+    HRESULT hr = InitializeStyle(_BarBackgroundStyle, VisualElement::BarBackground, L"");
+
+    if (FAILED(hr))
+        return hr;
+
+    hr = InitializeStyle(_PeakStyle, VisualElement::BarPeakLevel, L"");
+
+    if (FAILED(hr))
+        return hr;
+
+    hr = InitializeStyle(_Peak0dBStyle, VisualElement::Bar0dBPeakLevel, L"");
+
+    if (FAILED(hr))
+        return hr;
+
+    hr = InitializeStyle(_PeakTextStyle, VisualElement::BarPeakLevelText, L"+199.9");
+
+    if (FAILED(hr))
+        return hr;
+
+    hr = InitializeStyle(_MaxPeakStyle, VisualElement::BarMaxPeakLevel, L"");
+
+    if (FAILED(hr))
+        return hr;
+
+    hr = InitializeStyle(_RMSStyle, VisualElement::BarRMSLevel, L"");
+
+    if (FAILED(hr))
+        return hr;
+
+    hr = InitializeStyle(_RMS0dBStyle, VisualElement::Bar0dBRMSLevel, L"");
+
+    if (FAILED(hr))
+        return hr;
+
+    hr = InitializeStyle(_RMSTextStyle, VisualElement::BarRMSLevelText, L"+199.9");
+
+    if (FAILED(hr))
+        return hr;
+
+    hr = InitializeStyle(_NameStyle, VisualElement::XAxisText, L"LFE");
+
+    if (FAILED(hr))
+        return hr;
+
+    hr = InitializeStyle(_ScaleTextStyle, VisualElement::YAxisText, L"+999");
+
+    if (FAILED(hr))
+        return hr;
+
+    hr = InitializeStyle(_ScaleLineStyle, VisualElement::HorizontalGridLine, L"");
+
+    if (FAILED(hr))
+        return hr;
+
+    return S_OK;
+}
+
+/// <summary>
+/// Deletes the resources that depend on the color palette.
+/// </summary>
+void peak_meter_t::DeleteColorDependentResources() noexcept
+{
+    _BarBackgroundStyle.DeleteDeviceSpecificResources();
+
+    _PeakStyle.DeleteDeviceSpecificResources();
+    _Peak0dBStyle.DeleteDeviceSpecificResources();
+    _MaxPeakStyle.DeleteDeviceSpecificResources();
+    _PeakTextStyle.DeleteDeviceSpecificResources();
+
+    _RMSStyle.DeleteDeviceSpecificResources();
+    _RMS0dBStyle.DeleteDeviceSpecificResources();
+    _RMSTextStyle.DeleteDeviceSpecificResources();
+
+    _NameStyle.DeleteDeviceSpecificResources();
+
+    _ScaleTextStyle.DeleteDeviceSpecificResources();
+    _ScaleLineStyle.DeleteDeviceSpecificResources();
+}
+
+/// <summary>
+/// Creates an opacity mask to render the LEDs.
+/// </summary>
+HRESULT peak_meter_t::CreateOpacityMask(ID2D1DeviceContext * deviceContext) noexcept
+{
+    ComPtr<ID2D1BitmapRenderTarget> rt;
+
+    HRESULT hr = deviceContext->CreateCompatibleRenderTarget(D2D1::SizeF(_Size.width, _Size.height), rt.GetAddressOf());
+
+    if (FAILED(hr))
+        return hr;
+
+    rt->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
+
+    ComPtr<ID2D1SolidColorBrush> Brush;
+
+    hr = rt->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Black), Brush.GetAddressOf()); // Black parts will be masked out.
+
+    if (FAILED(hr))
+        return hr;
+
+    rt->BeginDraw();
+
+    rt->Clear(); // Transparent
+
+    const FLOAT LEDSize = _State->_LEDLight + _State->_LEDGap;
+
+    if (LEDSize > 0.f)
+    {
+        if (_State->_IsHorizontalPeakMeter)
+        {
+            for (FLOAT x = 0.f; x < _Size.width; x += LEDSize)
+                rt->FillRectangle(D2D1::RectF(x, 0.f, x + _State->_LEDLight, _Size.height), Brush.Get());
+        }
+        else
+        {
+            for (FLOAT y = 0.f; y < _Size.height; y += LEDSize)
+                rt->FillRectangle(D2D1::RectF(0.f, y, _Size.width, y + _State->_LEDLight), Brush.Get());
+        }
+    }
+
+    hr = rt->EndDraw();
+
+    if (FAILED(hr))
+        return hr;
+
+    hr = rt->GetBitmap(_OpacityMask.GetAddressOf());
+
+    return hr;
+}
+
+/// <summary>
+/// Recalculates parameters that are render target and size-sensitive.
+/// </summary>
+void peak_meter_t::Initialize() noexcept
+{
 }
 
 /// <summary>
@@ -297,196 +536,6 @@ void peak_meter_t::MeasureParts(ID2D1DeviceContext * deviceContext) noexcept
 }
 
 /// <summary>
-/// Creates resources which are bound to a particular D3D device.
-/// </summary>
-HRESULT peak_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept
-{
-    if (_State->_ResizeResources)
-        DeleteDeviceSpecificResources();
-
-    auto & StyleManager = _GraphOptions->_UseLocalStyles ? _GraphOptions->_StyleManager : _State->_StyleManager;
-
-    HRESULT hr = S_OK;
-
-#ifdef _DEBUG
-    if (_DebugBrush == nullptr)
-        (void) deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), _DebugBrush.GetAddressOf());
-#endif
-
-    if (_OpacityMask == nullptr)
-    {
-        hr = CreateOpacityMask(deviceContext);
-
-        if (FAILED(hr))
-            return hr;
-    }
-
-    const auto InitializeStyle = [this, deviceContext, & StyleManager](auto & style, VisualElement visualElement, const wchar_t * text) noexcept -> HRESULT
-    {
-        if (style._Brush != nullptr)
-            return S_OK;
-
-        style = *StyleManager.GetStyle(visualElement);
-
-        style.SetColor(_State);
-
-        return style.CreateDeviceSpecificResources(deviceContext, _Size, text, 1.f);
-    };
-
-    hr = InitializeStyle(_BarBackgroundStyle, VisualElement::BarBackground, L"");
-
-    if (FAILED(hr))
-        return hr;
-
-    hr = InitializeStyle(_PeakStyle, VisualElement::BarPeakLevel, L"");
-
-    if (FAILED(hr))
-        return hr;
-
-    hr = InitializeStyle(_Peak0dBStyle, VisualElement::Bar0dBPeakLevel, L"");
-
-    if (FAILED(hr))
-        return hr;
-
-    hr = InitializeStyle(_PeakTextStyle, VisualElement::BarPeakLevelText, L"+199.9");
-
-    if (FAILED(hr))
-        return hr;
-
-    hr = InitializeStyle(_MaxPeakStyle, VisualElement::BarMaxPeakLevel, L"");
-
-    if (FAILED(hr))
-        return hr;
-
-    hr = InitializeStyle(_RMSStyle, VisualElement::BarRMSLevel, L"");
-
-    if (FAILED(hr))
-        return hr;
-
-    hr = InitializeStyle(_RMS0dBStyle, VisualElement::Bar0dBRMSLevel, L"");
-
-    if (FAILED(hr))
-        return hr;
-
-    hr = InitializeStyle(_RMSTextStyle, VisualElement::BarRMSLevelText, L"+199.9");
-
-    if (FAILED(hr))
-        return hr;
-
-    hr = InitializeStyle(_NameStyle, VisualElement::XAxisText, L"LFE");
-
-    if (FAILED(hr))
-        return hr;
-
-    hr = InitializeStyle(_ScaleTextStyle, VisualElement::YAxisText, L"+999");
-
-    if (FAILED(hr))
-        return hr;
-
-    hr = InitializeStyle(_ScaleLineStyle, VisualElement::HorizontalGridLine, L"");
-
-    if (FAILED(hr))
-        return hr;
-
-    if ((_RenderedChannels != _Analysis->_PeakActiveChannelMask) || _State->_ResizeResources)
-    {
-        DeleteParts();
-
-        CreateParts();
-
-        MeasureParts(deviceContext);
-
-        _RenderedChannels = _Analysis->_PeakActiveChannelMask;
-    }
-
-    return S_OK;
-}
-
-/// <summary>
-/// Releases the device specific resources.
-/// </summary>
-void peak_meter_t::DeleteDeviceSpecificResources() noexcept
-{
-    for (const auto & Part : _Parts)
-        Part->Unbind();
-
-    DeleteParts();
-
-    _BarBackgroundStyle.DeleteDeviceSpecificResources();
-
-    _PeakStyle.DeleteDeviceSpecificResources();
-    _Peak0dBStyle.DeleteDeviceSpecificResources();
-    _MaxPeakStyle.DeleteDeviceSpecificResources();
-    _PeakTextStyle.DeleteDeviceSpecificResources();
-
-    _RMSStyle.DeleteDeviceSpecificResources();
-    _RMS0dBStyle.DeleteDeviceSpecificResources();
-    _RMSTextStyle.DeleteDeviceSpecificResources();
-
-    _NameStyle.DeleteDeviceSpecificResources();
-
-    _ScaleTextStyle.DeleteDeviceSpecificResources();
-    _ScaleLineStyle.DeleteDeviceSpecificResources();
-
-    _OpacityMask.Reset();
-
-#ifdef _DEBUG
-    _DebugBrush.Reset();
-#endif
-}
-
-/// <summary>
-/// Creates an opacity mask to render the LEDs.
-/// </summary>
-HRESULT peak_meter_t::CreateOpacityMask(ID2D1DeviceContext * deviceContext) noexcept
-{
-    ComPtr<ID2D1BitmapRenderTarget> rt;
-
-    HRESULT hr = deviceContext->CreateCompatibleRenderTarget(D2D1::SizeF(_Size.width, _Size.height), rt.GetAddressOf());
-
-    if (FAILED(hr))
-        return hr;
-
-    rt->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
-
-    ComPtr<ID2D1SolidColorBrush> Brush;
-
-    hr = rt->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Black), Brush.GetAddressOf()); // Black parts will be masked out.
-
-    if (FAILED(hr))
-        return hr;
-
-    rt->BeginDraw();
-
-    rt->Clear(); // Transparent
-
-    const FLOAT LEDSize = _State->_LEDLight + _State->_LEDGap;
-
-    if (LEDSize > 0.f)
-    {
-        if (_State->_IsHorizontalPeakMeter)
-        {
-            for (FLOAT x = 0.f; x < _Size.width; x += LEDSize)
-                rt->FillRectangle(D2D1::RectF(x, 0.f, x + _State->_LEDLight, _Size.height), Brush.Get());
-        }
-        else
-        {
-            for (FLOAT y = 0.f; y < _Size.height; y += LEDSize)
-                rt->FillRectangle(D2D1::RectF(0.f, y, _Size.width, y + _State->_LEDLight), Brush.Get());
-        }
-    }
-
-    hr = rt->EndDraw();
-
-    if (FAILED(hr))
-        return hr;
-
-    hr = rt->GetBitmap(_OpacityMask.GetAddressOf());
-
-    return hr;
-}
-
-/// <summary>
 /// Handles a configuration change.
 /// </summary>
 void peak_meter_t::OnConfigurationChanged(ConfigurationChanges configurationChanges) noexcept
@@ -494,5 +543,5 @@ void peak_meter_t::OnConfigurationChanged(ConfigurationChanges configurationChan
     if (!IsSet(configurationChanges, ConfigurationChanges::Layout))
         return;
 
-    _State->_ResizeResources = true;
+    _State->_SizeHasChanged = true;
 }

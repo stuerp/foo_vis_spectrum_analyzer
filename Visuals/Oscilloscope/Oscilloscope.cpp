@@ -1,5 +1,5 @@
 
-/** $VER: Oscilloscope.cpp (2026.10.08) P. Stuer - Implements an oscilloscope. **/
+/** $VER: Oscilloscope.cpp (2026.10.10) P. Stuer - Implements an oscilloscope. **/
 
 #include <pch.h>
 
@@ -18,7 +18,7 @@
 /// </summary>
 oscilloscope_t::~oscilloscope_t() noexcept
 {
-    DeleteDeviceSpecificResources();
+    Reset();
 }
 
 /// <summary>
@@ -42,7 +42,7 @@ void oscilloscope_t::Configure(state_t * state, graph_options_t * graphOptions, 
 
     _SquareBitmaps = false;
 
-    DeleteDeviceSpecificResources();
+    Reset();
 
     // Create the labels.
     {
@@ -138,7 +138,7 @@ void oscilloscope_t::Render(ID2D1DeviceContext * deviceContext) noexcept
         Geometry.Reset();
 
     {
-        const FLOAT Opacity = (_State->_Afterglow != 0.f) ? std::expf(-(1000.f / (FLOAT) _State->_RefreshRateLimit) / _State->_Afterglow) : 0.f;
+        const FLOAT Opacity = (_State->_Afterglow != 0.f) ? std::expf(-(1000.f / (FLOAT) _State->_TargetRefreshRate) / _State->_Afterglow) : 0.f;
 
         _OpacityEffect->SetValue(D2D1_OPACITY_PROP_OPACITY, Opacity);
 
@@ -210,6 +210,17 @@ void oscilloscope_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 }
 
 /// <summary>
+/// Resets this instance.
+/// </summary>
+void oscilloscope_t::Reset() noexcept
+{
+    DeleteDeviceSpecificResources();
+    DeleteDeviceIndependentResources();
+
+    __super::Reset();
+}
+
+/// <summary>
 /// Creates resources which are not bound to any D3D device. Their lifetime effectively extends for the duration of the app.
 /// </summary>
 HRESULT oscilloscope_t::CreateDeviceIndependentResources() noexcept
@@ -232,7 +243,7 @@ void oscilloscope_t::DeleteDeviceIndependentResources() noexcept
 /// </summary>
 HRESULT oscilloscope_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept
 {
-    if (_State->_ResizeResources)
+    if (_State->_SizeHasChanged)
         DeleteDeviceSpecificResources();
 
     HRESULT hr = oscilloscope_base_t::CreateDeviceSpecificResources(deviceContext);

@@ -1,5 +1,5 @@
 
-/** $VER: Goniometer.cpp (2026.09.25) P. Stuer - Implements a goniometer. **/
+/** $VER: Goniometer.cpp (2026.10.10) P. Stuer - Implements a goniometer. **/
 
 #include <pch.h>
 
@@ -13,7 +13,7 @@
 /// </summary>
 goniometer_t::~goniometer_t()
 {
-    DeleteDeviceSpecificResources();
+    Reset();
 }
 
 /// <summary>
@@ -34,6 +34,11 @@ void goniometer_t::Configure(state_t * state, graph_options_t * graphOptions, an
     _AudioProcessor.SetCrossoverMode(_State->_CrossoverMode);
     _AudioProcessor.SetVisualGain(_State->_LowVisualGain, _State->_MidVisualGain, _State->_HighVisualGain);
 
+    _SpriteDestinations.resize(0);
+    _SpriteSources     .resize(0);
+    _SpriteColors      .resize(0);
+    _SpriteTransforms  .resize(0);
+
     CreateDeviceIndependentResources();
 }
 
@@ -45,38 +50,6 @@ void goniometer_t::Move(const D2D1_RECT_F & rect) noexcept
     InitializeMetrics(rect);
 
     _TranslationMatrix = D2D1::Matrix3x2F::Translation(_Size.width / 2.f, _Size.height / 2.f);
-}
-
-/// <summary>
-/// Resets this instance.
-/// </summary>
-void goniometer_t::Reset() noexcept
-{
-    _SpriteDestinations.resize(0);
-    _SpriteSources     .resize(0);
-    _SpriteColors      .resize(0);
-    _SpriteTransforms  .resize(0);
-}
-
-/// <summary>
-/// Terminates this instance.
-/// </summary>
-void goniometer_t::Release() noexcept
-{
-    DeleteDeviceSpecificResources();
-}
-
-/// <summary>
-/// Handles a configuration change.
-/// </summary>
-void goniometer_t::OnConfigurationChanged(ConfigurationChanges configurationChanges) noexcept
-{
-    if (!IsSet(configurationChanges, ConfigurationChanges::Goniometer))
-        return;
-
-    _AudioProcessor.SetColorMode(_State->_GoniometerColorMode);
-    _AudioProcessor.SetCrossoverMode(_State->_CrossoverMode);
-    _AudioProcessor.SetVisualGain(_State->_LowVisualGain, _State->_MidVisualGain, _State->_HighVisualGain);
 }
 
 /// <summary>
@@ -122,7 +95,7 @@ void goniometer_t::Render(ID2D1DeviceContext * deviceContext) noexcept
         if (_State->_HasPhosphorDecay)
         {
             {
-                const FLOAT Opacity = (_State->_Afterglow != 0.f) ? std::expf(-(1000.f / (FLOAT) _State->_RefreshRateLimit) / _State->_Afterglow) : 0.f;
+                const FLOAT Opacity = (_State->_Afterglow != 0.f) ? std::expf(-(1000.f / (FLOAT) _State->_TargetRefreshRate) / _State->_Afterglow) : 0.f;
 
                 _OpacityEffect->SetValue(D2D1_OPACITY_PROP_OPACITY, Opacity);
 
@@ -176,6 +149,15 @@ void goniometer_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 }
 
 /// <summary>
+/// Resets this instance.
+/// </summary>
+void goniometer_t::Reset() noexcept
+{
+    DeleteDeviceSpecificResources();
+    DeleteDeviceIndependentResources();
+}
+
+/// <summary>
 /// Creates resources which are not bound to any D3D device. Their lifetime effectively extends for the duration of the app.
 /// </summary>
 HRESULT goniometer_t::CreateDeviceIndependentResources() noexcept
@@ -203,6 +185,9 @@ HRESULT goniometer_t::CreateDeviceIndependentResources() noexcept
 /// </summary>
 void goniometer_t::DeleteDeviceIndependentResources() noexcept
 {
+    DeleteColorDependentResources();
+    DeleteSizeDependentResources();
+
     _StaticStrokeStyle.Reset();
 }
 
@@ -211,9 +196,6 @@ void goniometer_t::DeleteDeviceIndependentResources() noexcept
 /// </summary>
 HRESULT goniometer_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept
 {
-    if (_State->_ResizeResources)
-        DeleteDeviceSpecificResources();
-
     HRESULT hr = S_OK;
 
 #ifdef _DEBUG
@@ -277,7 +259,29 @@ HRESULT goniometer_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceC
             return hr;
     }
 
-    hr = CreateSizeDependentResources(deviceContext);
+    if (_State->_ColorsHaveChanged || _State->_SizeHasChanged)
+    {
+        DeleteColorDependentResources();
+
+        Initialize();
+
+        hr = CreateColorDependentResources(deviceContext);
+
+        if (FAILED(hr))
+            return hr;
+    }
+
+    if (_State->_SizeHasChanged)
+    {
+        DeleteSizeDependentResources();
+
+        Initialize();
+
+        hr = CreateSizeDependentResources(deviceContext);
+
+        if (FAILED(hr))
+            return hr;
+    }
 
     return hr;
 }
@@ -287,8 +291,6 @@ HRESULT goniometer_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceC
 /// </summary>
 void goniometer_t::DeleteDeviceSpecificResources() noexcept
 {
-    DeleteSizeDependentResources();
-
     _SpriteBatch.Reset();
     _Sprite.Reset();
 
@@ -442,6 +444,21 @@ void goniometer_t::DeleteSizeDependentResources() noexcept
     _StaticLinesStyle.DeleteDeviceSpecificResources();
 
     _SignalStyle.DeleteDeviceSpecificResources();
+}
+
+/// <summary>
+/// Creates the resources that depend on the color palette.
+/// </summary>
+HRESULT goniometer_t::CreateColorDependentResources(ID2D1DeviceContext * deviceContext) noexcept
+{
+    return S_OK;
+}
+
+/// <summary>
+/// Deletes the resources that depend on the color palette.
+/// </summary>
+void goniometer_t::DeleteColorDependentResources() noexcept
+{
 }
 
 /// <summary>
@@ -726,4 +743,17 @@ HRESULT goniometer_t::CreateStaticContent() noexcept
     hr = _StaticContent->Close();
 
     return hr;
+}
+
+/// <summary>
+/// Handles a configuration change.
+/// </summary>
+void goniometer_t::OnConfigurationChanged(ConfigurationChanges configurationChanges) noexcept
+{
+    if (!IsSet(configurationChanges, ConfigurationChanges::Goniometer))
+        return;
+
+    _AudioProcessor.SetColorMode(_State->_GoniometerColorMode);
+    _AudioProcessor.SetCrossoverMode(_State->_CrossoverMode);
+    _AudioProcessor.SetVisualGain(_State->_LowVisualGain, _State->_MidVisualGain, _State->_HighVisualGain);
 }
