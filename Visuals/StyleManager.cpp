@@ -677,7 +677,15 @@ std::unordered_map<VisualElement, style_t> style_manager_t::_DefaultStyles
             /* Name                */ L"Bar Top",
             /* UsedBy              */ VisualizationTypes::Bars | VisualizationTypes::RadialBars,
             /* Flags               */ style_t::Features::SupportsOpacity | style_t::Features::SupportsThickness,
-            /* CustomColor         */ ColorSource::None, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Prism1, gradient_t::GetBuiltIn(ColorScheme::Custom), 1.f, 5.f, L"", 0.f
+            /* CustomColor         */ ColorSource::None,
+            D2D1::ColorF(D2D1::ColorF::White),
+            0,
+            ColorScheme::Prism1,
+            gradient_t::GetBuiltIn(ColorScheme::Custom),
+            1.f,
+            5.f,
+            L"",
+            0.f
         )
     },
 
@@ -710,7 +718,14 @@ std::unordered_map<VisualElement, style_t> style_manager_t::_DefaultStyles
             /* Name                */ L"Bar Dark Background",
             /* UsedBy              */ VisualizationTypes::Bars,
             style_t::Features::SupportsOpacity,
-            ColorSource::Solid, D2D1::ColorF(.2f, .2f, .2f, .7f), 0, ColorScheme::Solid, gradient_t::GetBuiltIn(ColorScheme::Custom), 1.f, 0.f, L"", 0.f
+            ColorSource::Solid, D2D1::ColorF(.2f, .2f, .2f, .7f),
+            0,
+            ColorScheme::Solid,
+            gradient_t::GetBuiltIn(ColorScheme::Custom),
+            1.f,
+            0.f,
+            L"",
+            0.f
         )
     },
 
@@ -721,7 +736,15 @@ std::unordered_map<VisualElement, style_t> style_manager_t::_DefaultStyles
             /* Name                */ L"Bar Light Background",
             /* UsedBy              */ VisualizationTypes::Bars,
             style_t::Features::SupportsOpacity,
-            ColorSource::Solid, D2D1::ColorF(.2f, .2f, .2f, .7f), 0, ColorScheme::Solid, gradient_t::GetBuiltIn(ColorScheme::Custom), 1.f, 0.f, L"", 0.f
+            ColorSource::Solid,
+            D2D1::ColorF(.2f, .2f, .2f, .7f),
+            0,
+            ColorScheme::Solid,
+            gradient_t::GetBuiltIn(ColorScheme::Custom),
+            1.f,
+            0.f,
+            L"",
+            0.f
         )
     },
     #pragma endregion
@@ -753,8 +776,16 @@ std::unordered_map<VisualElement, style_t> style_manager_t::_DefaultStyles
         (
             /* Name                */ L"Curve Area",
             /* UsedBy              */ VisualizationTypes::Curve | VisualizationTypes::RadialCurve,
-            style_t::Features::SupportsOpacity,
-            ColorSource::Gradient, D2D1::ColorF(D2D1::ColorF::Black), 0, ColorScheme::Artwork, gradient_t::GetBuiltIn(ColorScheme::Custom), .5f, 0.f, L"", 0.f
+            /* Flags               */ style_t::Features::SupportsOpacity,
+            /* ColorSource         */ ColorSource::Gradient,
+            /* CustomColor         */ D2D1::ColorF(D2D1::ColorF::Black),
+            /* ColorIndex          */ 0,
+            /* ColorScheme         */ ColorScheme::Artwork,
+            /* CustomGradientStops */ gradient_t::GetBuiltIn(ColorScheme::Custom),
+            /* Opacity             */ 0.5f,
+            /* Thickness           */ 0.f,
+            /* FontName            */ L"",
+            /* FontSize            */ 0.f
         )
     },
 
@@ -764,8 +795,16 @@ std::unordered_map<VisualElement, style_t> style_manager_t::_DefaultStyles
         (
             /* Name                */ L"Curve Peak Line",
             /* UsedBy              */ VisualizationTypes::Curve | VisualizationTypes::RadialCurve,
-            style_t::Features::SupportsOpacity | style_t::Features::SupportsThickness,
-            ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Artwork, gradient_t::GetBuiltIn(ColorScheme::Custom), 1.f, 2.f, L"", 0.f
+            /* Flags               */ style_t::Features::SupportsOpacity | style_t::Features::SupportsThickness,
+            /* ColorSource         */ ColorSource::Solid,
+            /* CustomColor         */ D2D1::ColorF(D2D1::ColorF::White),
+            /* ColorIndex          */ 0,
+            /* ColorScheme         */ ColorScheme::Artwork,
+            /* CustomGradientStops */ gradient_t::GetBuiltIn(ColorScheme::Custom),
+            /* Opacity             */ 1.f,
+            /* Thickness           */ 2.f,
+            /* FontName            */ L"",
+            /* FontSize            */ 0.f
         )
     },
 
@@ -775,8 +814,16 @@ std::unordered_map<VisualElement, style_t> style_manager_t::_DefaultStyles
         (
             /* Name                */ L"Curve Peak Area",
             /* UsedBy              */ VisualizationTypes::Curve | VisualizationTypes::RadialCurve,
-            style_t::Features::SupportsOpacity,
-            ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Artwork, gradient_t::GetBuiltIn(ColorScheme::Custom), .25f, 0.f, L"", 0.f
+            /* Flags               */ style_t::Features::SupportsOpacity,
+            /* ColorSource         */ ColorSource::Solid,
+            /* CustomColor         */ D2D1::ColorF(D2D1::ColorF::White),
+            /* ColorIndex          */ 0,
+            /* ColorScheme         */ ColorScheme::Artwork,
+            /* CustomGradientStops */ gradient_t::GetBuiltIn(ColorScheme::Custom),
+            /* Opacity             */ .25f,
+            /* Thickness           */ 0.f,
+            /* FontName            */ L"",
+            /* FontSize            */ 0.f
         )
     },
     #pragma endregion

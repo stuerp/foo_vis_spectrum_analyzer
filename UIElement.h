@@ -53,7 +53,11 @@ protected:
     virtual void GetColors() noexcept = 0;
     virtual void ToggleFullScreen() noexcept = 0; // Handled by DUIElement and CUIElement
 
+    #pragma region UI thread
+
     void UpdateState(ConfigurationChanges settings) noexcept;
+
+    #pragma endregion
 
 private:
     // These methods (must) run on the main foobar2000 UI thread.
@@ -165,13 +169,18 @@ private:
 
     HRESULT ResizeSwapChain(UINT width, UINT height) noexcept;
     HRESULT CreateBackBuffer() noexcept;
-    HRESULT CreateArtworkDependentResources() noexcept;
-
-    #pragma endregion
 
 #ifdef _DEBUG
     void RenderDebug() noexcept;
 #endif
+
+    #pragma endregion
+
+    #pragma region Both threads
+
+    HRESULT GetArtworkColors() noexcept;
+
+    #pragma endregion
 
 protected:
     state_t _UIState;

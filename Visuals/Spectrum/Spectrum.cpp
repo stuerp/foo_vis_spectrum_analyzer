@@ -798,21 +798,21 @@ HRESULT spectrum_t::CreateColorDependentResources(ID2D1DeviceContext * deviceCon
 {
     auto & StyleManager = _GraphOptions->_UseLocalStyles ? _GraphOptions->_StyleManager : _State->_StyleManager;
 
-    const auto InitializeStyle = [this, deviceContext, & StyleManager](auto & Style, VisualElement Element) noexcept -> HRESULT
+    const auto InitializeStyle = [this, deviceContext, & StyleManager](style_t & style, VisualElement element) noexcept -> HRESULT
     {
-        if (Style._Brush != nullptr)
+        if (style._Brush != nullptr)
             return S_OK;
 
-        Style = *StyleManager.GetStyle(Element);
+        style = *StyleManager.GetStyle(element);
 
-        Style.SetColor(_State);
+        style.SetColor(_State);
 
-        return Style.CreateDeviceSpecificResources(deviceContext, _ClientSize, L"", 1.f);
+        return style.CreateDeviceSpecificResources(deviceContext, _ClientSize, L"", 1.f);
     };
 
-    const auto InitializeRadialStyle = [this, deviceContext, &StyleManager](auto & Style, VisualElement Element) noexcept -> HRESULT
+    const auto InitializeRadialStyle = [this, deviceContext, &StyleManager](style_t & style, VisualElement element) noexcept -> HRESULT
     {
-        if (Style._Brush != nullptr)
+        if (style._Brush != nullptr)
             return S_OK;
 
         constexpr D2D1_POINT_2F Center = { };
@@ -820,11 +820,11 @@ HRESULT spectrum_t::CreateColorDependentResources(ID2D1DeviceContext * deviceCon
 
         const FLOAT Radius = _ClientSize.height / 2.f;
 
-        Style = *StyleManager.GetStyle(Element);
+        style = *StyleManager.GetStyle(element);
 
-        Style.SetColor(_State);
+        style.SetColor(_State);
 
-        return Style.CreateDeviceSpecificResources(deviceContext, _ClientSize, Center, Offset, Radius, Radius, _State->_InnerRadius);
+        return style.CreateDeviceSpecificResources(deviceContext, _ClientSize, Center, Offset, Radius, Radius, _State->_InnerRadius);
     };
 
     HRESULT hr = S_OK;

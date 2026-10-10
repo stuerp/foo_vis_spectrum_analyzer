@@ -99,6 +99,7 @@ To create the component first build the x86 configuration and next the x64 confi
 v0.13.0.0, 2026-10-xx
 
 - Added: Artwork Fit Mode `Cover`.
+- Fixed: Color sorting did not work correctly due to a bug in the HSL to RGB conversion code.
 
 You can read the full history [here](docs/History.md).
 

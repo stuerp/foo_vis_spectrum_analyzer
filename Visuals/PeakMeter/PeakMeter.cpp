@@ -419,7 +419,7 @@ void peak_meter_t::MeasureParts(ID2D1DeviceContext * deviceContext) noexcept
             _OpacityMask.Get()
         );
 
-        auto Scale = dynamic_cast<scale_t *>(Part.get());
+        auto Scale = (scale_t *) Part.get();
 
         if (Scale != nullptr)
         {
@@ -475,7 +475,7 @@ void peak_meter_t::MeasureParts(ID2D1DeviceContext * deviceContext) noexcept
 
         for (auto & Part : _Parts)
         {
-            auto * Scale = dynamic_cast<scale_t *>(Part.get());
+            auto * Scale = (scale_t *) Part.get();
 
             if (Scale != nullptr) // Scale
             {
@@ -506,7 +506,7 @@ void peak_meter_t::MeasureParts(ID2D1DeviceContext * deviceContext) noexcept
 
         for (auto & Part : _Parts)
         {
-            auto * Scale = dynamic_cast<scale_t *>(Part.get());
+            auto * Scale = (scale_t *) Part.get();
 
             // A scale determines its own width.
             if (Scale != nullptr)

@@ -89,7 +89,7 @@ HRESULT DXGI::GetRefreshRate(IDXGIDevice1 * dxgiDevice, double & refreshRate) no
 
     if (SUCCEEDED(hr))
     {
-        refreshRate = static_cast<double>(MatchedMode.RefreshRate.Numerator) / MatchedMode.RefreshRate.Denominator;
+        refreshRate = (double) MatchedMode.RefreshRate.Numerator / MatchedMode.RefreshRate.Denominator;
 
         return hr;
     }
@@ -115,7 +115,7 @@ HRESULT DXGI::GetRefreshRate(IDXGIDevice1 * dxgiDevice, double & refreshRate) no
     {
         if (Mode.Width == TargetMode.Width && Mode.Height == TargetMode.Height)
         {
-            refreshRate = static_cast<double>(Mode.RefreshRate.Numerator) / Mode.RefreshRate.Denominator;
+            refreshRate = (double) Mode.RefreshRate.Numerator / Mode.RefreshRate.Denominator;
             break;
         }
     }

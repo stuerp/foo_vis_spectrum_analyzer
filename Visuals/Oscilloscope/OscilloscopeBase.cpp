@@ -146,16 +146,16 @@ HRESULT oscilloscope_base_t::CreateSizeDependentResources(ID2D1DeviceContext * d
 
     HRESULT hr = S_OK;
 
-    const auto CreateStyle = [this, deviceContext](auto & Style, VisualElement Element) noexcept -> HRESULT
+    const auto CreateStyle = [this, deviceContext](style_t & style, VisualElement element) noexcept -> HRESULT
     {
-        if (Style._Brush != nullptr)
+        if (style._Brush != nullptr)
             return S_OK;
 
-        Style = *_State->_StyleManager.GetStyle(Element);
+        style = *_State->_StyleManager.GetStyle(element);
 
-        Style.SetColor(_State);
+        style.SetColor(_State);
 
-        return Style.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
+        return style.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
     };
 
     hr = CreateStyle(_SignalLineStyle, VisualElement::Signal);

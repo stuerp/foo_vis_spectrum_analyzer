@@ -470,6 +470,8 @@ void uielement_t::Configure() noexcept
 /// </summary>
 void uielement_t::UpdateState(ConfigurationChanges configurationChanges) noexcept
 {
+    assert(fb2k::is_main_thread());
+
     if (configurationChanges == ConfigurationChanges::All)
     {
         DeleteTrackingToolTip();
@@ -491,8 +493,8 @@ void uielement_t::UpdateState(ConfigurationChanges configurationChanges) noexcep
                 _RenderState._SizeHasChanged    = true;
                 _RenderState._ColorsHaveChanged = true;
 
-                // Recreate the resources that depend on the artwork.
-                CreateArtworkDependentResources();
+                // Get the artwork colors.
+                GetArtworkColors();
 
                 // Create the graphs.
                 {

@@ -1,5 +1,5 @@
 
-/** $VER: Gradients.cpp (2026.02.10) P. Stuer - Built-in gradients. **/
+/** $VER: Gradient.cpp (2026.02.10) P. Stuer - Built-in gradients. **/
 
 #include "pch.h"
 

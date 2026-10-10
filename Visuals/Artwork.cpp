@@ -170,7 +170,7 @@ HRESULT artwork_t::GetColors(uint32_t colorCount, FLOAT lightnessThreshold, FLOA
         {
             const FLOAT Normalized = std::clamp(value, 0.f, 1.f);
 
-            return static_cast<uint8_t>(Normalized * 255.f + 0.5f);
+            return (uint8_t) (Normalized * 255.f + 0.5f);
         };
 
         std::vector<ColorThief::color_t> Palette;

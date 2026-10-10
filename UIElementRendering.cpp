@@ -89,8 +89,8 @@ void uielement_t::RenderThreadProc() noexcept
 
             if (_IsConfigurationChanged)
             {
-                _UIState._ArtworkGradientStops = _RenderState._ArtworkGradientStops;
                 _UIState._ArtworkDominantColor = _RenderState._ArtworkDominantColor;
+                _UIState._ArtworkGradientStops = _RenderState._ArtworkGradientStops;
 
                 _IsConfigurationChanged = false;
 
@@ -150,11 +150,14 @@ void uielement_t::ProcessEvents() noexcept
 
         _RenderState._IsPaused = false;
 
-        // Set the default dominant color and gradient for the artwork color scheme.
-        _RenderState._ArtworkDominantColor = _RenderState._ArtworkColors[0];
-        _RenderState._ArtworkGradientStops = gradient_t::GetBuiltIn(_Artwork.Bitmap() ? ColorScheme::Artwork : ColorScheme::Solid);
+        // Set the artwork dominant color and gradient to default if there is no artwork.
+        if (_Artwork.Bitmap() == nullptr)
+        {
+            _RenderState._ArtworkDominantColor = D2D1::ColorF(D2D1::ColorF::Black);
+            _RenderState._ArtworkGradientStops = gradient_t::GetBuiltIn(ColorScheme::Artwork);
 
-        _RenderState._ColorsHaveChanged = true;
+            _RenderState._ColorsHaveChanged = true;
+        }
 
         _IsConfigurationChanged = true;
     }
@@ -592,7 +595,7 @@ HRESULT uielement_t::CreateDeviceSpecificResources() noexcept
         if (SUCCEEDED(hr))
         {
             // Create the resources that depend on the artwork. Done at least once per artwork because the configuration dialog needs it for the dominant color and ColorScheme::Artwork.
-            CreateArtworkDependentResources();
+            GetArtworkColors();
 
             for (auto & Item : _Grid)
                 Item->Initialize();
@@ -708,9 +711,9 @@ HRESULT uielement_t::CreateBackBuffer() noexcept
 }
 
 /// <summary>
-/// Creates the DirectX resources that are dependent on the artwork.
+/// Gets the colors from the artwork.
 /// </summary>
-HRESULT uielement_t::CreateArtworkDependentResources() noexcept
+HRESULT uielement_t::GetArtworkColors() noexcept
 {
     // Get the colors from the artwork.
     HRESULT hr = _Artwork.GetColors(_RenderState._NumArtworkColors, _RenderState._LightnessThreshold, _RenderState._TransparencyThreshold, _RenderState._ArtworkColors);
