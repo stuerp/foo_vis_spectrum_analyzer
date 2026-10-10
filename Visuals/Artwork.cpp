@@ -1,5 +1,5 @@
 
-/** $VER: Artwork.cpp (2026.10.09) P. Stuer **/
+/** $VER: Artwork.cpp (2026.10.10) P. Stuer **/
 
 #include "pch.h"
 
@@ -252,48 +252,6 @@ void artwork_t::Render(ID2D1DeviceContext * deviceContext, const D2D1_RECT_F & r
 /// <summary>
 /// Adjusts the bitmap destination rectangle depending on the selected fit mode.
 /// </summary>
-/*
-void artwork_t::AdjustRect(const FitMode fitMode, FLOAT & scalar, D2D1_RECT_F & rect) const noexcept
-{
-    scalar = 1.f;
-
-    D2D1_SIZE_F Size = _Bitmap->GetSize();
-
-    if ((Size.width == 0) || (Size.height == 0))
-        return;
-
-    const FLOAT AreaWidth  = rect.right  - rect.left;
-    const FLOAT AreaHeight = rect.bottom - rect.top;
-
-    FLOAT WScalar = 1.f, HScalar = 1.f;
-
-    if (msc::InRange(fitMode, FitMode::Free, FitMode::FitHeight))
-    {
-        if ((fitMode == FitMode::FitWidth) || (fitMode == FitMode::FitLargest))
-            WScalar = (Size.width  > AreaWidth)  ? AreaWidth  / Size.width  : 1.f;
-
-        if ((fitMode == FitMode::FitHeight) || (fitMode == FitMode::FitLargest))
-            HScalar = (Size.height > AreaHeight) ? AreaHeight / Size.height : 1.f;
-
-        scalar = std::min(WScalar, HScalar);
-    }
-    else
-    {
-        WScalar = (Size.width  > AreaWidth)  ? Size.width  / AreaWidth  : AreaWidth  / Size.width;
-        HScalar = (Size.height > AreaHeight) ? Size.height / AreaHeight : AreaHeight / Size.height;
-
-        scalar = std::max(WScalar, HScalar);
-    }
-
-    Size.width  *= scalar;
-    Size.height *= scalar;
-
-    rect.left   += (AreaWidth  - Size.width)  / 2.f;
-    rect.top    += (AreaHeight - Size.height) / 2.f;
-    rect.right   = rect.left + Size.width;
-    rect.bottom  = rect.top  + Size.height;
-}
-*/
 void artwork_t::AdjustRect(const FitMode fitMode, const bool allowUpscaling, FLOAT & scalar, D2D1_RECT_F & rect) const noexcept
 {
     scalar = 1.0f;
@@ -303,7 +261,7 @@ void artwork_t::AdjustRect(const FitMode fitMode, const bool allowUpscaling, FLO
 
     const D2D1_SIZE_F Size = _Bitmap->GetSize();
 
-    if (Size.width <= 0.0f || Size.height <= 0.0f)
+    if (Size.width <= 0.f || Size.height <= 0.f)
         return;
 
     const FLOAT AreaWidth  = rect.right  - rect.left;
@@ -312,42 +270,51 @@ void artwork_t::AdjustRect(const FitMode fitMode, const bool allowUpscaling, FLO
     if (AreaWidth <= 0.f || AreaHeight <= 0.f)
         return;
 
+    const FLOAT ScaleX = AreaWidth  / Size.width;
+    const FLOAT ScaleY = AreaHeight / Size.height;
+
     switch (fitMode)
     {
         case FitMode::FitWidth:
         {
-            scalar = AreaWidth / Size.width;
+            scalar = ScaleX;
             break;
         }
 
         case FitMode::FitHeight:
         {
-            scalar = AreaHeight / Size.height;
+            scalar = ScaleY;
             break;
         }
 
         case FitMode::FitSmallest:
         {
-            scalar = Size.width <= Size.height ? AreaWidth / Size.width : AreaHeight / Size.height;
+            scalar = (Size.width <= Size.height) ? ScaleX : ScaleY;
             break;
         }
 
         case FitMode::FitLargest:
         {
-            scalar = Size.width >= Size.height ? AreaWidth / Size.width : AreaHeight / Size.height;
+            scalar = (Size.width >= Size.height) ? ScaleX : ScaleY;
+            break;
+        }
+
+        case FitMode::Cover:
+        {
+            scalar = std::max(ScaleX, ScaleY);
             break;
         }
 
         case FitMode::Free:
         default:
         {
-            scalar = 1.0f;
+            scalar = 1.f;
             break;
         }
     }
 
     if (!allowUpscaling)
-        scalar = std::min(scalar, 1.0f);
+        scalar = std::min(scalar, 1.f);
 
     const FLOAT ScaledWidth  = Size.width * scalar;
     const FLOAT ScaledHeight = Size.height * scalar;

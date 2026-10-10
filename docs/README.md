@@ -926,7 +926,7 @@ Displays artwork on the graph background. By default the front cover of the play
 
 `Fit mode`
 
-Determines how over- and undersized artwork is rendered.
+Determines how over- and undersized artwork is scaled before rendering.
 
 | Name | Description |
 | --- | --- |
@@ -935,6 +935,7 @@ Determines how over- and undersized artwork is rendered.
 | Fit width | The width of the artwork is made to fit the available area. The other side will be scaled proportionally. |
 | Fit height | The height side of the artwork is made to fit the available area. The other side will be scaled proportionally. |
 | Fit smallest | The smallest side of the artwork is made to fit the available area. The other side will be scaled proportionally. |
+| Cover | The artwork scales to completely fill the area, maintaining its original aspect ratio. If the artwork's aspect ratio doesn't match the area, it will be cropped. |
 
 `Allow upscaling`
 

@@ -12,8 +12,6 @@
 #include <Windows.h>
 #include <d2d1.h>
 
-#include <RAII.h>
-
 #include "State.h"
 #include <Constants.h>
 
@@ -29,11 +27,17 @@ public:
         DeleteWICResources();
     }
 
-    D2D1_SIZE_F Size() const noexcept { return (_Bitmap != nullptr) ? _Bitmap->GetSize() : D2D1::SizeF(); }
+    D2D1_SIZE_F Size() const noexcept
+    {
+        return (_Bitmap != nullptr) ? _Bitmap->GetSize() : D2D1::SizeF();
+    }
 
     void Render(ID2D1DeviceContext * deviceContext, const D2D1_RECT_F & rect, const state_t * state) noexcept;
 
-    ID2D1Bitmap * Bitmap() const noexcept { return _Bitmap.Get(); }
+    ID2D1Bitmap * Bitmap() const noexcept
+    {
+        return _Bitmap.Get();
+    }
 
     HRESULT GetColors(uint32_t colorCount, FLOAT lightnessThreshold, FLOAT transparencyThreshold, std::vector<D2D1_COLOR_F> & colors) noexcept;
 

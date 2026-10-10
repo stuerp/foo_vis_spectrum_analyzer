@@ -29,4 +29,5 @@ static constexpr uint8_t DefaultTransparencyThreshold = 125;
 
 HRESULT GetPalette      (IWICBitmapSource * bitmapSource, uint32_t colorCount, uint32_t quality, bool ignoreLightColors, uint8_t lightnessThreshold, uint8_t transparencyThreshold, std::vector<color_t> & palette);
 HRESULT GetDominantColor(IWICBitmapSource * bitmapSource, uint32_t quality, bool ignoreLightColors, uint8_t lightnessThreshold, uint8_t transparencyThreshold, color_t & color);
+
 }

@@ -1,5 +1,5 @@
 
-/** $VER: Constants.h (2026.10.08) P. Stuer **/
+/** $VER: Constants.h (2026.10.10) P. Stuer **/
 
 #pragma once
 
@@ -97,9 +97,10 @@ enum class FitMode
     FitWidth,
     FitHeight,
     FitSmallest,
+    Cover,
 
     Min = Free,
-    Max = FitSmallest,
+    Max = Cover,
 };
 
 // Visualization

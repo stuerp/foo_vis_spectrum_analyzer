@@ -85,7 +85,7 @@ void common_page_t::InitializeControls() noexcept
 
         w.ResetContent();
 
-        for (const auto & x : { L"Free", L"Fit largest", L"Fit width", L"Fit height", L"Fit smallest" })
+        for (const auto & x : { L"Free", L"Fit largest", L"Fit width", L"Fit height", L"Fit smallest", L"Cover" })
             w.AddString(x);
 
         w.SetCurSel((int) _State->_FitMode);
