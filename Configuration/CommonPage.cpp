@@ -1,5 +1,5 @@
 
-/** $VER: CommonPage.cpp (2026.10.09) P. Stuer - Implements a configuration dialog page. **/
+/** $VER: CommonPage.cpp (2026.10.11) P. Stuer - Implements a configuration dialog page. **/
 
 #include "pch.h"
 
@@ -65,6 +65,8 @@ void common_page_t::InitializeControls() noexcept
         for (const auto & x : { L"None", L"Average", L"Peak" })
             w.AddString(x);
 
+        assert(w.GetCount() == (int) SmoothingMethod::Max + 1);
+
         w.SetCurSel((int) _State->_SmoothingMethod);
 
         SetDouble(IDC_SMOOTHING_FACTOR, _State->_SmoothingFactor, 0, 2);
@@ -87,6 +89,8 @@ void common_page_t::InitializeControls() noexcept
 
         for (const auto & x : { L"Free", L"Fit largest", L"Fit width", L"Fit height", L"Fit smallest", L"Cover" })
             w.AddString(x);
+
+        assert(w.GetCount() == (int) FitMode::Max + 1);
 
         w.SetCurSel((int) _State->_FitMode);
     }
@@ -158,8 +162,10 @@ void common_page_t::InitializeControls() noexcept
 
         w.ResetContent();
 
-        for (const auto & x : { L"None", L"Increasing hue", L"Decreasing hue", L"Increasing lightness", L"Decreasing lightness", L"Increasing saturation", L"Decreasing saturation" })
+        for (const auto & x : { L"None", L"Increasing hue", L"Decreasing hue", L"Increasing lightness", L"Decreasing lightness", L"Increasing saturation", L"Decreasing saturation", L"Dark to light", L"Light to dark" })
             w.AddString(x);
+
+        assert(w.GetCount() == (int) ColorOrder::Max + 1);
 
         w.SetCurSel((int) _State->_ColorOrder);
     }
@@ -170,6 +176,8 @@ void common_page_t::InitializeControls() noexcept
 
         for (const auto & x : { L"Front", L"Back", L"Disc", L"Icon", L"Artist" })
             w.AddString(x);
+
+        assert(w.GetCount() == (int) ArtworkType::Max + 1);
 
         w.SetCurSel((int) _State->_ArtworkType);
     }
@@ -192,6 +200,8 @@ void common_page_t::InitializeControls() noexcept
             if (++i == CfgLogLevel)
                 w.SetCurSel((int) i);
         }
+
+        assert(w.GetCount() == (int) LogLevel::Max + 1);
 
         SendDlgItemMessageW(IDC_SHOW_WINDOW_FUNCTION, BM_SETCHECK, _State->_ShowWindowFunction);
         SendDlgItemMessageW(IDC_SHOW_WEIGHING_FUNCTION, BM_SETCHECK, _State->_ShowWeighingFunction);

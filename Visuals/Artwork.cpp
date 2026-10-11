@@ -1,5 +1,5 @@
 
-/** $VER: Artwork.cpp (2026.10.10) P. Stuer **/
+/** $VER: Artwork.cpp (2026.10.11) P. Stuer **/
 
 #include "pch.h"
 
@@ -127,6 +127,8 @@ HRESULT artwork_t::DeleteWICResources() noexcept
 /// </summary>
 HRESULT artwork_t::GetColors(uint32_t colorCount, FLOAT lightnessThreshold, FLOAT transparencyThreshold, std::vector<D2D1_COLOR_F> & colors) noexcept
 {
+    assert(fb2k::is_main_thread());
+
     msc::lock_t Lock(_CriticalSection);
 
     try
@@ -209,12 +211,12 @@ HRESULT artwork_t::GetColors(uint32_t colorCount, FLOAT lightnessThreshold, FLOA
 /// </summary>
 void artwork_t::Render(render_context_t & renderContext, const D2D1_RECT_F & rect, const state_t * state) noexcept
 {
+    msc::lock_t Lock(_CriticalSection);
+
     HRESULT hr = CreateDeviceSpecificResources(renderContext.D2DDeviceContext);
 
     if (FAILED(hr))
         return;
-
-    msc::lock_t Lock(_CriticalSection);
 
     if (_Bitmap == nullptr)
         return;
@@ -254,6 +256,7 @@ void artwork_t::Render(render_context_t & renderContext, const D2D1_RECT_F & rec
 /// </summary>
 void artwork_t::AdjustRect(const FitMode fitMode, const bool allowUpscaling, FLOAT & scalar, D2D1_RECT_F & rect) const noexcept
 {
+    // Guarded by critical section
     scalar = 1.0f;
 
     if (_Bitmap == nullptr)
@@ -327,30 +330,26 @@ void artwork_t::AdjustRect(const FitMode fitMode, const bool allowUpscaling, FLO
 
 /// <summary>
 /// Creates resources which are bound to a particular D3D device.
-/// It's all centralized here, in case the resources need to be recreated in case of D3D device loss (eg. display change, remoting, removal of video card, etc).
 /// </summary>
 HRESULT artwork_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept
 {
+    // Guarded by critical section
     HRESULT hr = S_OK;
 
+    // No format converter means no artwork.
+    if (_FormatConverter == nullptr)
+        return E_FAIL;
+
+    // Create a Direct2D bitmap from the WIC bitmap source.
+    if (_Bitmap == nullptr)
     {
-        msc::lock_t Lock(_CriticalSection);
+        hr = deviceContext->CreateBitmapFromWicBitmap(_FormatConverter.Get(), nullptr, _Bitmap.GetAddressOf());
 
-        // No format converter means no artwork.
-        if (_FormatConverter == nullptr)
-            return E_FAIL;
-
-        // Create a Direct2D bitmap from the WIC bitmap source.
-        if (_Bitmap == nullptr)
+        if (FAILED(hr))
         {
-            hr = deviceContext->CreateBitmapFromWicBitmap(_FormatConverter.Get(), nullptr, _Bitmap.GetAddressOf());
+            Log.AtWarn().Write(STR_COMPONENT_BASENAME " failed to create Direct2D bitmap from WIC bitmap: 0x%08X", hr);
 
-            if (FAILED(hr))
-            {
-                Log.AtWarn().Write(STR_COMPONENT_BASENAME " failed to create Direct2D bitmap from WIC bitmap: 0x%08X", hr);
-
-                return hr;
-            }
+            return hr;
         }
     }
 
@@ -393,13 +392,10 @@ HRESULT artwork_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCont
 /// </summary>
 void artwork_t::DeleteDeviceSpecificResources() noexcept
 {
+    // Guarded by critical section
     _OpacityEffect.Reset();
     _BlurEffect.Reset();
     _ScaleEffect.Reset();
 
-    {
-        msc::lock_t Lock(_CriticalSection);
-
-        _Bitmap.Reset();
-    }
+    _Bitmap.Reset();
 }

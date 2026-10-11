@@ -919,6 +919,7 @@ Determines how to sort the colors selected from the artwork.
 - `Increasing hue` and `Decreasing hue` sort by hue.
 - `Increasing lightness` and `Decreasing lightness` sort by lightness.
 - `Increasing saturation` and `Decreasing saturation` sort by saturation.
+- `Dark to light` and `Light to dark` use the perceived lumaninance of color to sort from dark to light and vice versa.
 
 `Show artwork on background`
 

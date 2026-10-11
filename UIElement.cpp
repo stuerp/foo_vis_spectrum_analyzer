@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.cpp (2026.09.30) P. Stuer - UIElement methods that run on the UI thread. **/
+/** $VER: UIElement.cpp (2026.10.11) P. Stuer - UIElement methods that run on the UI thread. **/
 
 #include "pch.h"
 
@@ -8,6 +8,7 @@
 #include "Support.h"
 #include "Log.h"
 
+#include "Color.h"
 #include "PresetManager.h"
 #include "CustomTitleFormatHook.h"
 
@@ -83,12 +84,15 @@ LRESULT uielement_t::OnCreate(LPCREATESTRUCT cs) noexcept
         return -1;
     }
 
-    // Get the artwork for the currently playing track (in case we get instantiated when playback is already ongoing).
+    // Get the artwork for the currently playing track (in case we get instantiated when playback is already ongoing f.e. when going fullscreen in DUI).
     {
         metadb_handle_ptr CurrentTrack;
 
         if (playback_control::get()->get_now_playing(CurrentTrack))
-            GetArtwork(CurrentTrack);
+        {
+            if (GetArtwork(CurrentTrack))
+                GetArtworkColors();
+        }
     }
 
     // Create the tooltip control.
@@ -96,8 +100,6 @@ LRESULT uielement_t::OnCreate(LPCREATESTRUCT cs) noexcept
 
     // Apply the initial configuration.
     UpdateState(ConfigurationChanges::All);
-
-    _hStopRendering = ::CreateEventW(nullptr, TRUE, FALSE, nullptr);
 
     StartRenderer();
 
@@ -114,8 +116,6 @@ LRESULT uielement_t::OnCreate(LPCREATESTRUCT cs) noexcept
 void uielement_t::OnDestroy() noexcept
 {
     StopRenderer();
-
-    ::CloseHandle(_hStopRendering);
 
     {
         msc::lock_t Lock(_CriticalSection);
@@ -410,6 +410,8 @@ void uielement_t::StartRenderer() noexcept
 {
     assert(_hThread == NULL);
 
+    _hStopRendering = ::CreateEventW(nullptr, TRUE, FALSE, nullptr);
+
     DWORD ThreadId;
 
     _hThread = ::CreateThread(nullptr, 0, [](LPVOID context) noexcept -> DWORD
@@ -439,6 +441,9 @@ void uielement_t::StopRenderer() noexcept
 
     ::CloseHandle(_hThread);
     _hThread = NULL;
+
+    ::CloseHandle(_hStopRendering);
+    _hStopRendering = NULL;
 }
 
 /// <summary>
@@ -465,6 +470,76 @@ void uielement_t::Configure() noexcept
         _ConfigurationDialog.BringWindowToTop();
 }
 
+/// <summary>
+/// Gets the colors from the artwork.
+/// </summary>
+HRESULT uielement_t::GetArtworkColors() noexcept
+{
+    assert(fb2k::is_main_thread());
+
+    // Get the colors from the artwork.
+    HRESULT hr = _Artwork.GetColors(_RenderState._NumArtworkColors, _RenderState._LightnessThreshold, _RenderState._TransparencyThreshold, _RenderState._ArtworkColors);
+
+    if (FAILED(hr))
+        return S_FALSE; // Make sure resource creation continues.
+
+    // Get the dominant color before sorting.
+    _RenderState._ArtworkDominantColor = _RenderState._ArtworkColors[0];
+
+    // Sort the colors.
+    {
+        #pragma warning(disable: 4061) // Enumerator not handled
+        switch (_RenderState._ColorOrder)
+        {
+            case ColorOrder::None:
+                break;
+
+            case ColorOrder::HueAscending:
+                color_t::SortColorsByHue(_RenderState._ArtworkColors, true);
+                break;
+
+            case ColorOrder::HueDescending:
+                color_t::SortColorsByHue(_RenderState._ArtworkColors, false);
+                break;
+
+            case ColorOrder::SaturationAscending:
+                color_t::SortColorsBySaturation(_RenderState._ArtworkColors, true);
+                break;
+
+            case ColorOrder::SaturationDescending:
+                color_t::SortColorsBySaturation(_RenderState._ArtworkColors, false);
+                break;
+
+            case ColorOrder::LightnessAscending:
+                color_t::SortColorsByLightness(_RenderState._ArtworkColors, true);
+                break;
+
+            case ColorOrder::LightnessDescending:
+                color_t::SortColorsByLightness(_RenderState._ArtworkColors, false);
+                break;
+
+            case ColorOrder::DarkToLight:
+                color_t::SortColorsDarkToLight(_RenderState._ArtworkColors, true);
+                break;
+
+            case ColorOrder::LightToDark:
+                color_t::SortColorsDarkToLight(_RenderState._ArtworkColors, false);
+                break;
+        }
+        #pragma warning(default: 4061)
+    }
+
+    // Create the gradient stops.
+    _RenderState._ArtworkGradientStops = gradient_t::CreateGradientStops(_RenderState._ArtworkColors);
+//  _RenderState._ColorsHaveChanged = true;
+
+    // Notify the render thread.
+    _Event.Raise(event_t::ArtworkColorsChanged);
+
+//  _IsConfigurationChanged = true;
+
+    return S_OK;
+}
 /// <summary>
 /// Updates the state.
 /// </summary>
@@ -592,9 +667,11 @@ void uielement_t::NotifyDialog(WPARAM wParam) noexcept
 /// </summary>
 void uielement_t::on_playback_new_track(metadb_handle_ptr track)
 {
-    // Always get the album art in case the user enables the _ShowArtworkOnBackground setting while playing a track.
     if (track.is_valid())
-        GetArtwork(track);
+    {
+        if (GetArtwork(track))
+            GetArtworkColors();
+    }
 
     // Notify the render thread.
     _Event.Raise(event_t::PlaybackNewTrack);

@@ -29,17 +29,24 @@ public:
         DeleteWICResources();
     }
 
-    D2D1_SIZE_F Size() const noexcept
+    bool Empty() noexcept
     {
-        return (_Bitmap != nullptr) ? _Bitmap->GetSize() : D2D1::SizeF();
+        msc::lock_t Lock(_CriticalSection);
+
+        return (_FormatConverter == nullptr);
+    }
+
+    D2D1_SIZE_F Size() noexcept
+    {
+        msc::lock_t Lock(_CriticalSection);
+
+        if (_Bitmap == nullptr)
+            return { };
+
+        return _Bitmap->GetSize();
     }
 
     void Render(render_context_t & renderContext, const D2D1_RECT_F & rect, const state_t * state) noexcept;
-
-    ID2D1Bitmap * Bitmap() const noexcept
-    {
-        return _Bitmap.Get();
-    }
 
     HRESULT GetColors(uint32_t colorCount, FLOAT lightnessThreshold, FLOAT transparencyThreshold, std::vector<D2D1_COLOR_F> & colors) noexcept;
 
@@ -47,12 +54,10 @@ public:
     HRESULT CreateWICResources(const std::wstring & filePath) noexcept;
     HRESULT DeleteWICResources() noexcept;
 
-    HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept;
-
 private:
+    HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept;
     void DeleteDeviceSpecificResources() noexcept;
 
-private:
     void AdjustRect(const FitMode fitMode, const bool allowUpscaling, FLOAT & scalar, D2D1_RECT_F & rect) const noexcept;
 
 private:
@@ -63,6 +68,7 @@ private:
 
     ComPtr<IWICBitmapFrameDecode> _Frame;
     ComPtr<IWICFormatConverter> _FormatConverter;
+
     ComPtr<ID2D1Bitmap> _Bitmap;
 
     ComPtr<ID2D1Effect> _ScaleEffect;

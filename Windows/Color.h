@@ -52,4 +52,6 @@ public:
     static void SortColorsByHue(std::vector<D2D1_COLOR_F> & colors, bool ascending) noexcept;
     static void SortColorsBySaturation(std::vector<D2D1_COLOR_F> & colors, bool ascending) noexcept;
     static void SortColorsByLightness(std::vector<D2D1_COLOR_F> & colors, bool ascending) noexcept;
+
+    static void SortColorsDarkToLight(std::vector<D2D1_COLOR_F> & colors, bool ascending) noexcept;
 };

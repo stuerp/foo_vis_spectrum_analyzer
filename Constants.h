@@ -1,5 +1,5 @@
 
-/** $VER: Constants.h (2026.10.10) P. Stuer **/
+/** $VER: Constants.h (2026.10.11) P. Stuer **/
 
 #pragma once
 
@@ -73,8 +73,11 @@ enum class ColorOrder
     LightnessAscending = 5,
     LightnessDescending = 6,
 
+    DarkToLight = 7,
+    LightToDark = 8,
+
     Min = None,
-    Max = LightnessDescending,
+    Max = LightToDark,
 };
 
 enum class ArtworkType

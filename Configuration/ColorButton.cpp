@@ -265,7 +265,6 @@ LRESULT color_button_t::NotifyParent(UINT code, float position) const noexcept
 
 /// <summary>
 /// Creates resources which are bound to a particular D3D device.
-/// It's all centralized here, in case the resources need to be recreated in case of D3D device loss (eg. display change, remoting, removal of video card, etc).
 /// </summary>
 HRESULT color_button_t::CreateDeviceSpecificResources() noexcept
 {

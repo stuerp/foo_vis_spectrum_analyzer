@@ -1,9 +1,13 @@
 
-/** $VER: Color.cpp (2026.10.10) P. Stuer - Color support **/
+/** $VER: Color.cpp (2026.10.11) P. Stuer - Color support **/
 
 #include "pch.h"
 
 #include "Color.h"
+
+#include <algorithm>
+#include <cmath>
+#include <vector>
 
 struct hsl_t
 {
@@ -18,7 +22,7 @@ D2D1_COLOR_F HSL2RGB(const hsl_t & hsl) noexcept;
 FLOAT EvalHSL(FLOAT x, FLOAT y, FLOAT z) noexcept;
 
 /// <summary>
-/// Sorts a color vector by hue, then saturation, then lightness.
+/// Sorts a color vector by hue, then lightness, then saturation.
 /// </summary>
 void color_t::SortColorsByHue(std::vector<D2D1_COLOR_F> & colors, bool ascending) noexcept
 {
@@ -30,11 +34,11 @@ void color_t::SortColorsByHue(std::vector<D2D1_COLOR_F> & colors, bool ascending
         if (lhs.H != rhs.H)
             return ascending ? lhs.H < rhs.H : lhs.H > rhs.H;
 
-        if (lhs.S != rhs.S)
-            return ascending ? lhs.S < rhs.S : lhs.S > rhs.S;
-
         if (lhs.L != rhs.L)
             return ascending ? lhs.L < rhs.L : lhs.L > rhs.L;
+
+        if (lhs.S != rhs.S)
+            return ascending ? lhs.S < rhs.S : lhs.S > rhs.S;
 
         return false;
     });
@@ -162,4 +166,33 @@ FLOAT EvalHSL(FLOAT p, FLOAT q, FLOAT hue) noexcept
         return p + (q - p) * (2.f / 3.f - hue) * 6.f;
 
     return p;
+}
+
+/// <summary>
+/// The coefficients account for human vision being much more sensitive to green than blue. The sRGB channels must be linearized before applying those weights.
+/// </summary>
+constexpr float GetPerceivedLuminance(const D2D1_COLOR_F & color) noexcept
+{
+    // Relative luminance, https://www.w3.org/WAI/GL/wiki/Relative_luminance
+    constexpr auto sRGBToLinear = [](float value) noexcept -> float
+    {
+        return (value <= 0.04045f) ? value / 12.92f : std::pow((value + 0.055f) / 1.055f, 2.4f);
+    };
+
+    const float r = sRGBToLinear(color.r);
+    const float g = sRGBToLinear(color.g);
+    const float b = sRGBToLinear(color.b);
+
+    return (0.2126f * r) + (0.7152f * g) + (0.0722f * b);
+}
+
+/// <summary>
+/// Sorts a color vector from dark to light by relative luminence.
+/// </summary>
+void color_t::SortColorsDarkToLight(std::vector<D2D1_COLOR_F> & colors, bool ascending) noexcept
+{
+    std::ranges::sort(colors, std::ranges::less{}, GetPerceivedLuminance);
+
+    if (!ascending)
+        std::reverse(colors.begin(), colors.end());
 }

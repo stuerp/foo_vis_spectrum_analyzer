@@ -96,9 +96,34 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.13.0.0, 2026-10-xx
+v0.13.0.0, 2026-10-11
 
-- Added: Artwork Fit Mode `Cover`.
+- New: Goniometer with a 1st order or 4-th order Linkwitz-Riley crossover filter.
+  - Has a mono, RGB and Triband mode.
+  - The crossover filter can be configured on the `Filters` configuration page.
+- New: *Gold* and *Triband* gradient.
+- New: `Reset on track change` setting to reset the FFT peaks when a track starts or stops. Useful when you set the fall rate to 0 dB/s. [Forum request](https://hydrogenaudio.org/index.php/topic,125031.msg1087330.html#msg1087330)
+- New: Compiled with foobar2000 SDK 2026-09-17.
+- New: Gradient stops can have color source `Solid`, `Dominant Color`, `Windows` and `User Interface`. [Forum Request](https://hydrogenaudio.org/index.php/topic,125031.msg1087413.html#msg1087413)
+- New: The channels in the configuration dialog can be reordered. [Forum request](https://hydrogenaudio.org/index.php/topic,125031.msg1087375.html#msg1087375)
+- New: You can modify the position of a gradient stop by clicking and dragging on the gradient control. The value will be constrained between the previous and next gradient stop position.
+- Changed: `Decay Factor` is now `Afterglow`, expressed in ms, and independent of the refresh rate. Use values between 80 and 150 ms to imitate the afterglow of an analog oscilloscope.
+- Breaking change
+  - Artwork Fit Modes are now `Free`, `Fit largest`, `Fit smallest`, `Fit width`, `Fit height` and `Cover`. `Fill` has been dropped.
+  - Extra setting `Allow upscaling` will upscale the bitmap while respecting any Fit Mode except `Free`. [Forum request](https://hydrogenaudio.org/index.php/topic,125031.msg1088426.html#msg1088426)
+- Improved: Optimized the render path of the oscilloscope and goniometer.
+- Improved: The file path of the fixed artwork path can contain Windows environment variables.
+- Improved: Curve visualization is 4 times faster.
+- Improved: Optimized the spectrum LED rendering.
+- Improved: Peak Meter, Bit Meter and Oscilloscope honor the channel order specified in the configuration dialog.
+- Fixed: Controls on the Graphs page were not always enabled or disabled correctly when the visualization changed.
+- Fixed: A 3-year old bug in the non-radix 2 FFT.
+- Fixed: 32-bit Bit Meter interpreted the audio sample as 64-bit.
+- Fixed: Enabling and disabling Bit Meter opacity mode did not reset the opacity of the bit styles.
+- Fixed: Axis settings were disabled for the peak meter.
+- Fixed: Some visualizations did not pick up changes to the user interface colors. (Regression)
+- Fixed: Vertical Grid style of the Oscilloscope visualization did not react to changes. (Regression)
+- Fixed: Spectrum LED rendering when using two or more graphs.
 - Fixed: Color sorting did not work completely correct due to a bug in the HSL to RGB conversion code.
 - Fixed: Peak Meter did not handle mono tracks correctly.
 

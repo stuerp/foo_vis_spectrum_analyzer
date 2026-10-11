@@ -1,5 +1,5 @@
 
-/**$VER: Event.h (2026.08.17) P. Stuer - Implements a very simple thread-safe event class. **/
+/**$VER: Event.h (2026.10.11) P. Stuer - Implements a very simple thread-safe event class. **/
 
 #pragma once
 
@@ -16,9 +16,6 @@
 class event_t final
 {
 public:
-    /// <summary>
-    /// Initializes a new instance.
-    /// </summary>
     constexpr event_t() noexcept = default;
 
     event_t(const event_t &) = delete;
@@ -33,7 +30,8 @@ public:
         PlaybackPaused              = 1LL << 2,
         PlaybackResumed             = 1LL << 3,
 
-        UserInterfaceColorsChanged  = 1LL << 4,
+        ArtworkColorsChanged        = 1LL << 4,
+        UserInterfaceColorsChanged  = 1LL << 5,
     };
 
     /// <summary>

@@ -383,6 +383,7 @@
     <ClCompile Include="Visuals\StyleManager.cpp" />
     <ClCompile Include="Visuals\Tester\Tester.cpp" />
     <ClCompile Include="Windows\Color.cpp" />
+    <ClCompile Include="Windows\ColorSorting.cpp" />
     <ClCompile Include="Windows\Direct2D.cpp" />
     <ClCompile Include="Windows\Direct3D.cpp" />
     <ClCompile Include="Windows\DirectWrite.cpp" />

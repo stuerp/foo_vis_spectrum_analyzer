@@ -1,5 +1,5 @@
 
-/** $VER: UIElementRendering.cpp (2026.10.03) P. Stuer - UIElement methods that run on the render thread. **/
+/** $VER: UIElementRendering.cpp (2026.10.11) P. Stuer - UIElement methods that run on the render thread. **/
 
 #include "pch.h"
 
@@ -12,7 +12,6 @@
 
 #include "Constants.h"
 #include "Resources.h"
-#include "Color.h"
 #include "Gradient.h"
 #include "Event.h"
 #include "Support.h"
@@ -151,7 +150,7 @@ void uielement_t::ProcessEvents() noexcept
         _RenderState._IsPaused = false;
 
         // Set the artwork dominant color and gradient to default if there is no artwork.
-        if (_Artwork.Bitmap() == nullptr)
+        if (_Artwork.Empty())
         {
             _RenderState._ArtworkDominantColor = D2D1::ColorF(D2D1::ColorF::Black);
             _RenderState._ArtworkGradientStops = gradient_t::GetBuiltIn(ColorScheme::Artwork);
@@ -182,6 +181,9 @@ void uielement_t::ProcessEvents() noexcept
     {
         _RenderState._IsPaused = false;
     }
+
+    if (event_t::IsRaised(Flags, event_t::ArtworkColorsChanged))
+        _RenderState._ColorsHaveChanged = true;
 
     if (event_t::IsRaised(Flags, event_t::UserInterfaceColorsChanged))
         _RenderState._ColorsHaveChanged = true;
@@ -464,7 +466,6 @@ void uielement_t::DeleteDeviceIndependentResources() noexcept
 
 /// <summary>
 /// Creates resources which are bound to a particular D3D device.
-/// It's all centralized here, in case the resources need to be recreated in case of D3D device loss (eg. display change, remoting, removal of video card, etc).
 /// </summary>
 HRESULT uielement_t::CreateDeviceSpecificResources() noexcept
 {
@@ -566,51 +567,36 @@ HRESULT uielement_t::CreateDeviceSpecificResources() noexcept
             if (FAILED(hr))
                 return hr;
         }
-
-        if (_BackBuffer == nullptr)
-        {
-            hr = CreateBackBuffer();
-
-            if (FAILED(hr))
-                return hr;
-
-            _D2DDeviceContext->SetTarget(_BackBuffer.Get());
-
-            _D2DDeviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
-            _D2DDeviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
-            _D2DDeviceContext->SetTextAntialiasMode(D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE); // https://learn.microsoft.com/en-us/windows/win32/direct2d/improving-direct2d-performance
-
-            // Initialize the size-dependent resources.
-            {
-                const D2D1_SIZE_F SizeF = _D2DDeviceContext->GetSize(); // Gets the size in DPIs.
-
-                _Grid.Resize(SizeF.width, SizeF.height);
-                _FrameCounter.Resize(SizeF.width, SizeF.height);
-
-                _RenderState._SizeHasChanged = true;
-            }
-        }
-
-    #ifdef _DEBUG
-        if (_DebugBrush == nullptr)
-            (void) _D2DDeviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), _DebugBrush.GetAddressOf());
-    #endif
     }
 
-    // Create the background bitmap from the artwork.
-    if (_Artwork.Bitmap() == nullptr)
+    if (_BackBuffer == nullptr)
     {
-        hr = _Artwork.CreateDeviceSpecificResources(_D2DDeviceContext.Get());
+        hr = CreateBackBuffer();
 
-        if (SUCCEEDED(hr))
+        if (FAILED(hr))
+            return hr;
+
+        _D2DDeviceContext->SetTarget(_BackBuffer.Get());
+
+        _D2DDeviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
+        _D2DDeviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+        _D2DDeviceContext->SetTextAntialiasMode(D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE); // https://learn.microsoft.com/en-us/windows/win32/direct2d/improving-direct2d-performance
+
+        // Initialize the size-dependent resources.
         {
-            // Create the resources that depend on the artwork. Done at least once per artwork because the configuration dialog needs it for the dominant color and ColorScheme::Artwork.
-            GetArtworkColors();
+            const D2D1_SIZE_F SizeF = _D2DDeviceContext->GetSize(); // Gets the size in DPIs.
 
-            for (auto & Item : _Grid)
-                Item->Initialize();
+            _Grid.Resize(SizeF.width, SizeF.height);
+            _FrameCounter.Resize(SizeF.width, SizeF.height);
+
+            _RenderState._SizeHasChanged = true;
         }
     }
+
+#ifdef _DEBUG
+    if (_DebugBrush == nullptr)
+        (void) _D2DDeviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), _DebugBrush.GetAddressOf());
+#endif
 
     return S_OK;
 }
@@ -722,63 +708,6 @@ HRESULT uielement_t::CreateBackBuffer() noexcept
     }
 */
     return hr;
-}
-
-/// <summary>
-/// Gets the colors from the artwork.
-/// </summary>
-HRESULT uielement_t::GetArtworkColors() noexcept
-{
-    // Get the colors from the artwork.
-    HRESULT hr = _Artwork.GetColors(_RenderState._NumArtworkColors, _RenderState._LightnessThreshold, _RenderState._TransparencyThreshold, _RenderState._ArtworkColors);
-
-    if (FAILED(hr))
-        return S_FALSE; // Make sure resource creation continues even if something goes wrong while creating the gradient.
-
-    _RenderState._ArtworkDominantColor = _RenderState._ArtworkColors[0];
-
-    // Sort the colors.
-    {
-        #pragma warning(disable: 4061) // Enumerator not handled
-        switch (_RenderState._ColorOrder)
-        {
-            case ColorOrder::None:
-                break;
-
-            case ColorOrder::HueAscending:
-                color_t::SortColorsByHue(_RenderState._ArtworkColors, true);
-                break;
-
-            case ColorOrder::HueDescending:
-                color_t::SortColorsByHue(_RenderState._ArtworkColors, false);
-                break;
-
-            case ColorOrder::SaturationAscending:
-                color_t::SortColorsBySaturation(_RenderState._ArtworkColors, true);
-                break;
-
-            case ColorOrder::SaturationDescending:
-                color_t::SortColorsBySaturation(_RenderState._ArtworkColors, false);
-                break;
-
-            case ColorOrder::LightnessAscending:
-                color_t::SortColorsByLightness(_RenderState._ArtworkColors, true);
-                break;
-
-            case ColorOrder::LightnessDescending:
-                color_t::SortColorsByLightness(_RenderState._ArtworkColors, false);
-                break;
-        }
-        #pragma warning(default: 4061)
-    }
-
-    // Create the gradient stops.
-    _RenderState._ArtworkGradientStops = gradient_t::CreateGradientStops(_RenderState._ArtworkColors);
-    _RenderState._ColorsHaveChanged = true;
-
-    _IsConfigurationChanged = true;
-
-    return S_OK;
 }
 
 #ifdef _DEBUG

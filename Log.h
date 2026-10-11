@@ -1,5 +1,5 @@
 
-/** $VER: Log.h (2025.10.08) **/
+/** $VER: Log.h (2026.10.11) **/
 
 #pragma once
 
@@ -14,7 +14,10 @@ enum LogLevel
     Debug,      // Detailed information useful for debugging.
     Trace,      // Very detailed information used to trace execution.
 
-    Always      // Enables all logging
+    Always,      // Enables all logging
+
+    Min = Never,
+    Max = Always,
 };
 
 class ilog_t

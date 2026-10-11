@@ -1,6 +1,12 @@
 
 # foo_vis_spectrum_analyzer History
 
+v0.13.0.0, 2026-10-11
+
+- Added: Artwork Fit Mode `Cover`.
+- Fixed: Color sorting did not work completely correct due to a bug in the HSL to RGB conversion code.
+- Fixed: Peak Meter did not handle mono tracks correctly.
+
 v0.13.0.0-rc2, 2026-10-09
 
 - Improved: Oscilloscope honors the channel order specified in the configuration dialog.
