@@ -262,6 +262,7 @@
     <ClInclude Include="Visuals\Oscilloscope\OscilloscopeXY.h" />
     <ClInclude Include="Visuals\PeakMeter\PeakMeter.h" />
     <ClInclude Include="Visuals\PeakMeter\PeakMeterParts.h" />
+    <ClInclude Include="Visuals\RenderContext.h" />
     <ClInclude Include="Visuals\Spectrogram\Spectrogram.h" />
     <ClInclude Include="Visuals\Goniometer\AudioProcessor.h" />
     <ClInclude Include="Visuals\Goniometer\Goniometer.h" />
@@ -352,6 +353,8 @@
     <ClCompile Include="Configuration\MenuListBox.cpp" />
     <ClCompile Include="Tests.cpp" />
     <ClCompile Include="UIElementToolTips.cpp" />
+    <ClCompile Include="Visuals\RenderContext.cpp" />
+    <ClCompile Include="Visuals\Visualization.cpp" />
     <ClCompile Include="Visuals\BitMeter\BitMeter.cpp" />
     <ClCompile Include="Visuals\D3DTester\D3DTester.cpp" />
     <ClCompile Include="Visuals\EyeCandy\DynamicSystems\LorenzAttractor.cpp" />

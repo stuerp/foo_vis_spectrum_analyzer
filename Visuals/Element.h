@@ -1,5 +1,5 @@
 
-/** $VER: Element.h (2026.10.10) P. Stuer - Base class for all visual elements (both graph and visualizations). **/
+/** $VER: Element.h (2026.10.11) P. Stuer - Base class for all visual elements (both graph and visualizations). **/
 
 #pragma once
 
@@ -10,6 +10,7 @@
 #include "State.h"
 #include "Graphoptions.h"
 #include "Analysis.h"
+#include "RenderContext.h"
 
 class element_t
 {
@@ -18,9 +19,10 @@ public:
     virtual ~element_t() = default;
 
     virtual void Move(const D2D1_RECT_F & rect) noexcept { }
-    virtual void Render3D(IDXGISwapChain1 * swapChain) noexcept { }
     virtual void Render(ID2D1DeviceContext * deviceContext) noexcept { }
     virtual void Reset() noexcept { };
+
+    virtual void Render3D(render_context_t & renderContext) noexcept { }
 
     virtual const D2D1_RECT_F & GetRect() const noexcept { return _Rect; }
     virtual const D2D1_RECT_F & GetClientRect() const noexcept { return _Rect; };

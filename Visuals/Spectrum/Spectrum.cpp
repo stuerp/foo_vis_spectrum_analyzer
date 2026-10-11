@@ -959,6 +959,8 @@ HRESULT spectrum_t::CreateColorDependentResources(ID2D1DeviceContext * deviceCon
 
     if (FAILED(hr))
         return hr;
+
+    return S_OK;
 }
 
 /// <summary>

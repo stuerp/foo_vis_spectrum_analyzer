@@ -1,5 +1,5 @@
 
-/** $VER: PeakMeter.h (2026.10.10) P. Stuer - Represents a peak meter. **/
+/** $VER: PeakMeter.h (2026.10.11) P. Stuer - Represents a peak meter. **/
 
 #pragma once
 
@@ -60,7 +60,7 @@ private:
     void Initialize() noexcept;
 
 private:
-    uint32_t _RenderedChannels { 0 };
+    uint32_t _RenderedChannelMask { 0 };
 
     static constexpr FLOAT _TickSize = 4.f;
 
@@ -80,8 +80,11 @@ private:
     style_t _ScaleTextStyle;
     style_t _ScaleLineStyle;
 
+    std::vector<std::unique_ptr<part_t>> _Parts;
+
+    size_t _BarCount { 0 }; // Number bars in the part list.
+
+private:
     ComPtr<ID2D1Bitmap> _OpacityMask;
     ComPtr<ID2D1SolidColorBrush> _DebugBrush;
-
-    std::vector<std::unique_ptr<part_t>> _Parts;
 };

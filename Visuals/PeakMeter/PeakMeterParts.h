@@ -1,5 +1,5 @@
 
-/** $VER: PeakMeterParts.h (2026.06.15) P. Stuer - Defines the various parts of a peak meter. **/
+/** $VER: PeakMeterParts.h (2026.10.11) P. Stuer - Defines the various parts of a peak meter. **/
 
 #pragma once
 
@@ -125,7 +125,7 @@ public:
     void Render() const noexcept override final;
 
 private:
-    HRESULT CreateScaleLinesCommandList() noexcept;
+    HRESULT CreateStaticContent() noexcept;
 
     void DrawHorizontalRectangle(D2D1_RECT_F & rect, const style_t * style) const noexcept;
     void DrawVerticalRectangle(D2D1_RECT_F & rect, const style_t * style) const noexcept;
@@ -138,7 +138,7 @@ private:
 
     FLOAT _LEDSize { };
 
-    ComPtr<ID2D1CommandList> _ScaleLinesCommandList;
+    ComPtr<ID2D1CommandList> _StaticContent;
 };
 
 /// <summary>
@@ -166,8 +166,8 @@ public:
     bool IsCenter() const noexcept { return (_TextAlignment == DWRITE_TEXT_ALIGNMENT_CENTER) && (_ParagraphAlignment == DWRITE_PARAGRAPH_ALIGNMENT_CENTER); } // True if this scale is drawn between the bars.
 
 private:
-    HRESULT CreateAxisCommandList() noexcept;
+    HRESULT CreateStaticContent() noexcept;
 
 private:
-    ComPtr<ID2D1CommandList> _AxisCommandList;
+    ComPtr<ID2D1CommandList> _StaticContent;
 };

@@ -1,5 +1,5 @@
 
-/** $VER: PeakMeterParts.cpp (2026.06.15) P. Stuer - Implements the parts of a peak meter. **/
+/** $VER: PeakMeterParts.cpp (2026.10.11) P. Stuer - Implements the parts of a peak meter. **/
 
 #include "pch.h"
 
@@ -416,7 +416,7 @@ void part_t::CreateAxis() noexcept
 /// </summary>
 void bar_t::Unbind() noexcept
 {
-    _ScaleLinesCommandList.Reset();
+    _StaticContent.Reset();
     _NameTextLayout.Reset();
 
     __super::Unbind();
@@ -461,8 +461,8 @@ void bar_t::InitializeMetrics(const D2D1_RECT_F & rect) noexcept
         hr = DirectWriteFactory::Get()->CreateTextLayout(_Measurement->ChannelName.c_str(), (UINT32) _Measurement->ChannelName.length(), _NameStyle->_TextFormat.Get(), Width, Height, _NameTextLayout.GetAddressOf());
     }
 
-    if (SUCCEEDED(hr) && (_ScaleLinesCommandList == nullptr) && _State->_HasScaleLines)
-        hr = CreateScaleLinesCommandList();
+    if (SUCCEEDED(hr) && (_StaticContent == nullptr) && _State->_HasScaleLines)
+        hr = CreateStaticContent();
 }
 
 /// <summary>
@@ -490,8 +490,8 @@ void bar_t::Render() const noexcept
     }
 */
 
-    if (_ScaleLinesCommandList != nullptr)
-        _DeviceContext->DrawImage(_ScaleLinesCommandList.Get());
+    if (_StaticContent != nullptr)
+        _DeviceContext->DrawImage(_StaticContent.Get());
 
     // Draw the bars.
     if (!_State->_IsPaused || (_State->_IsPaused && _State->_VisualizeDuringPause))
@@ -694,7 +694,7 @@ void bar_t::Render() const noexcept
 /// <summary>
 /// Creates a command list that renders the scale lines (The lines between labels that cover the bar area).
 /// </summary>
-HRESULT bar_t::CreateScaleLinesCommandList() noexcept
+HRESULT bar_t::CreateStaticContent() noexcept
 {
     // BeginDraw() was already called by the graph. End drawing on the old target.
     HRESULT hr = _DeviceContext->EndDraw();
@@ -706,11 +706,11 @@ HRESULT bar_t::CreateScaleLinesCommandList() noexcept
 
     _DeviceContext->GetTarget(OldTarget.GetAddressOf());
 
-    hr = _DeviceContext->CreateCommandList(_ScaleLinesCommandList.GetAddressOf());
+    hr = _DeviceContext->CreateCommandList(_StaticContent.GetAddressOf());
 
     if (SUCCEEDED(hr))
     {
-        _DeviceContext->SetTarget(_ScaleLinesCommandList.Get());
+        _DeviceContext->SetTarget(_StaticContent.Get());
 
         _DeviceContext->BeginDraw();
 
@@ -731,7 +731,7 @@ HRESULT bar_t::CreateScaleLinesCommandList() noexcept
     }
 
     if (SUCCEEDED(hr))
-        hr = _ScaleLinesCommandList->Close();
+        hr = _StaticContent->Close();
 
     // Resume drawing on the old target.
     _DeviceContext->SetTarget(OldTarget.Get());
@@ -800,7 +800,7 @@ void bar_t::DrawVerticalRectangle(D2D1_RECT_F & rect, const style_t * style) con
 /// </summary>
 void scale_t::Unbind() noexcept
 {
-    _AxisCommandList.Reset();
+    _StaticContent.Reset();
 
     __super::Unbind();
 }
@@ -812,8 +812,8 @@ void scale_t::InitializeMetrics(const D2D1_RECT_F & rect) noexcept
 {
     __super::InitializeMetrics(rect);
 
-    if (_AxisCommandList == nullptr)
-        CreateAxisCommandList();
+    if (_StaticContent == nullptr)
+        CreateStaticContent();
 }
 
 /// <summary>
@@ -823,7 +823,7 @@ void scale_t::Render() const noexcept
 {
     _DeviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
 
-    _DeviceContext->DrawImage(_AxisCommandList.Get());
+    _DeviceContext->DrawImage(_StaticContent.Get());
 /*
     _DeviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
 
@@ -848,7 +848,7 @@ void scale_t::Render() const noexcept
 /// <summary>
 /// Creates a command list that renders the axis.
 /// </summary>
-HRESULT scale_t::CreateAxisCommandList() noexcept
+HRESULT scale_t::CreateStaticContent() noexcept
 {
     HRESULT hr = S_OK;
 
@@ -865,11 +865,11 @@ HRESULT scale_t::CreateAxisCommandList() noexcept
             return hr;
     }
 
-    hr = DeviceContext->CreateCommandList(_AxisCommandList.GetAddressOf());
+    hr = DeviceContext->CreateCommandList(_StaticContent.GetAddressOf());
 
     if (SUCCEEDED(hr))
     {
-        DeviceContext->SetTarget(_AxisCommandList.Get());
+        DeviceContext->SetTarget(_StaticContent.Get());
 
         DeviceContext->BeginDraw();
 
@@ -895,7 +895,7 @@ HRESULT scale_t::CreateAxisCommandList() noexcept
     }
 
     if (SUCCEEDED(hr))
-        hr = _AxisCommandList->Close();
+        hr = _StaticContent->Close();
 
     return hr;
 }

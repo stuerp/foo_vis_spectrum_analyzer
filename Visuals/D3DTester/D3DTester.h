@@ -24,7 +24,7 @@ public:
 
     // element_t
     void Move(const D2D1_RECT_F & rect) noexcept override final;
-    void Render3D(IDXGISwapChain1 * swapChain) noexcept override final;
+    void Render3D(render_context_t & renderContext) noexcept override final;
     void Reset() noexcept override final;
 
     // visualization_t

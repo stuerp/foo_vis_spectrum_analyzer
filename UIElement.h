@@ -261,7 +261,7 @@ private:
     ComPtr<IDXGISwapChain1> _SwapChain;
 
     ComPtr<ID2D1Device> _D2DDevice;
-    ComPtr<ID2D1DeviceContext> _DeviceContext;
+    ComPtr<ID2D1DeviceContext> _D2DDeviceContext;
 
     ComPtr<IDCompositionVisual>  _CompositionVisual;
     ComPtr<IDCompositionTarget>  _CompositionTarget;
@@ -271,6 +271,8 @@ private:
 #ifdef _DEBUG
     ComPtr<ID2D1SolidColorBrush> _DebugBrush;
 #endif
+
+    render_context_t _RenderContext;
 
     visualisation_stream_v2::ptr _VisualisationStream;
     bool _IsFrozen { false };   // True if the component should stop rendering.

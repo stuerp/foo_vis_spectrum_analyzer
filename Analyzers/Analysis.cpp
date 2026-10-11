@@ -1,5 +1,5 @@
 
-/** $VER: Analysis.cpp (2026.09.20) P. Stuer **/
+/** $VER: Analysis.cpp (2026.10.11) P. Stuer **/
 
 #include "pch.h"
 
@@ -12,9 +12,9 @@
 #pragma hdrstop
 
 /// <summary>
-/// Initializes this instance.
+/// Configures this instance.
 /// </summary>
-void analysis_t::Initialize(const state_t * state, const graph_options_t * graphOptions) noexcept
+void analysis_t::Configure(const state_t * state, const graph_options_t * graphOptions) noexcept
 {
     _State = state;
     _GraphOptions = graphOptions;

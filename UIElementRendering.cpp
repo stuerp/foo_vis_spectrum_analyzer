@@ -255,21 +255,21 @@ void uielement_t::Render() noexcept
     if (FAILED(hr))
         return;
 
-    _DeviceContext->BeginDraw();
+    _D2DDeviceContext->BeginDraw();
 
-    _DeviceContext->Clear(); // Required for alpha transparency. Do this once for all graphs. A graph can overlay a background color with a semi-transparent style.
+    _D2DDeviceContext->Clear(); // Required for alpha transparency. Do this once for all graphs. A graph can overlay a background color with a semi-transparent style.
 
     for (auto & Item : _Grid)
-        Item->Render(_DeviceContext.Get(), _Artwork, _SwapChain.Get());
+        Item->Render(_Artwork);
 
     if (_UIState._ShowFrameCounter)
-        _FrameCounter.Render(_DeviceContext.Get());
+        _FrameCounter.Render(_D2DDeviceContext.Get());
 
 #ifdef _DEBUG
     RenderDebug();
 #endif
 
-    hr = _DeviceContext->EndDraw();
+    hr = _D2DDeviceContext->EndDraw();
 
     // Present the swap chain immediately.
     if (SUCCEEDED(hr))
@@ -425,6 +425,9 @@ HRESULT uielement_t::CreateDeviceIndependentResources() noexcept
         }
     }
 
+    _RenderContext.D3DDevice        = _D3DDevice.Get();
+    _RenderContext.D3DDeviceContext = _D3DDeviceContext.Get();
+
     hr = _FrameCounter.CreateDeviceIndependentResources();
 
     if (FAILED(hr))
@@ -444,6 +447,9 @@ HRESULT uielement_t::CreateDeviceIndependentResources() noexcept
 /// </summary>
 void uielement_t::DeleteDeviceIndependentResources() noexcept
 {
+    _RenderContext.D3DDevice = nullptr;
+    _RenderContext.D3DDeviceContext = nullptr;
+
     _FrameCounter.DeleteDeviceIndependentResources();
 
     _CompositionDevice.Reset();
@@ -465,7 +471,7 @@ HRESULT uielement_t::CreateDeviceSpecificResources() noexcept
     HRESULT hr = S_OK;
 
     // Create the device context.
-    if (_DeviceContext == nullptr)
+    if (_D2DDeviceContext == nullptr)
     {
         CRect cr;
 
@@ -495,7 +501,7 @@ HRESULT uielement_t::CreateDeviceSpecificResources() noexcept
             if (FAILED(hr))
                 return hr;
 
-            hr = _D2DDevice->CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_ENABLE_MULTITHREADED_OPTIMIZATIONS, _DeviceContext.GetAddressOf());
+            hr = _D2DDevice->CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_ENABLE_MULTITHREADED_OPTIMIZATIONS, _D2DDeviceContext.GetAddressOf());
 
             if (FAILED(hr))
                 return hr;
@@ -505,7 +511,9 @@ HRESULT uielement_t::CreateDeviceSpecificResources() noexcept
             if (FAILED(hr))
                 return hr;
 
-            _DeviceContext->SetDpi((FLOAT) _DPI, (FLOAT) _DPI);
+            _D2DDeviceContext->SetDpi((FLOAT) _DPI, (FLOAT) _DPI);
+
+            _RenderContext.D2DDeviceContext = _D2DDeviceContext.Get();
         }
 
         if (_SwapChain == nullptr)
@@ -527,6 +535,8 @@ HRESULT uielement_t::CreateDeviceSpecificResources() noexcept
 
             if (FAILED(hr))
                 return hr;
+
+            _RenderContext.SwapChain = _SwapChain.Get();
         }
 
         // Set up DirectComposition.
@@ -564,15 +574,15 @@ HRESULT uielement_t::CreateDeviceSpecificResources() noexcept
             if (FAILED(hr))
                 return hr;
 
-            _DeviceContext->SetTarget(_BackBuffer.Get());
+            _D2DDeviceContext->SetTarget(_BackBuffer.Get());
 
-            _DeviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
-            _DeviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
-            _DeviceContext->SetTextAntialiasMode(D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE); // https://learn.microsoft.com/en-us/windows/win32/direct2d/improving-direct2d-performance
+            _D2DDeviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
+            _D2DDeviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+            _D2DDeviceContext->SetTextAntialiasMode(D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE); // https://learn.microsoft.com/en-us/windows/win32/direct2d/improving-direct2d-performance
 
             // Initialize the size-dependent resources.
             {
-                const D2D1_SIZE_F SizeF = _DeviceContext->GetSize(); // Gets the size in DPIs.
+                const D2D1_SIZE_F SizeF = _D2DDeviceContext->GetSize(); // Gets the size in DPIs.
 
                 _Grid.Resize(SizeF.width, SizeF.height);
                 _FrameCounter.Resize(SizeF.width, SizeF.height);
@@ -583,14 +593,14 @@ HRESULT uielement_t::CreateDeviceSpecificResources() noexcept
 
     #ifdef _DEBUG
         if (_DebugBrush == nullptr)
-            (void) _DeviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), _DebugBrush.GetAddressOf());
+            (void) _D2DDeviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), _DebugBrush.GetAddressOf());
     #endif
     }
 
     // Create the background bitmap from the artwork.
     if (_Artwork.Bitmap() == nullptr)
     {
-        hr = _Artwork.CreateDeviceSpecificResources(_DeviceContext.Get());
+        hr = _Artwork.CreateDeviceSpecificResources(_D2DDeviceContext.Get());
 
         if (SUCCEEDED(hr))
         {
@@ -621,12 +631,16 @@ void uielement_t::DeleteDeviceSpecificResources() noexcept
 
     _FrameCounter.DeleteDeviceSpecificResources();
 
+    _RenderContext.SwapChain = nullptr;
+    _RenderContext.D2DDeviceContext = nullptr;
+
     _BackBuffer.Reset();
     _CompositionVisual.Reset();
     _CompositionTarget.Reset();
 
     _SwapChain.Reset();
-    _DeviceContext.Reset();
+
+    _D2DDeviceContext.Reset();
     _D2DDevice.Reset();
 }
 
@@ -635,13 +649,13 @@ void uielement_t::DeleteDeviceSpecificResources() noexcept
 /// </summary>
 HRESULT uielement_t::ResizeSwapChain(UINT width, UINT height) noexcept
 {
-    if ((_DeviceContext == nullptr) || (width == 0) || (height == 0))
+    if ((_D2DDeviceContext == nullptr) || (width == 0) || (height == 0))
         return E_INVALIDARG;
 
     msc::lock_t Lock(_CriticalSection);
 
     // Remove the bitmap from the device context.
-    _DeviceContext->SetTarget(nullptr);
+    _D2DDeviceContext->SetTarget(nullptr);
 
     // Release the bitmap so that the swap chain can be resized.
     _BackBuffer.Reset();
@@ -656,7 +670,7 @@ HRESULT uielement_t::ResizeSwapChain(UINT width, UINT height) noexcept
         return hr;
 
     // Set the target buffer of the device context.
-    _DeviceContext->SetTarget(_BackBuffer.Get());
+    _D2DDeviceContext->SetTarget(_BackBuffer.Get());
 
     return S_OK;
 }
@@ -685,7 +699,7 @@ HRESULT uielement_t::CreateBackBuffer() noexcept
             (FLOAT) _DPI, (FLOAT) _DPI
         );
 
-        hr = _DeviceContext->CreateBitmapFromDxgiSurface(Surface.Get(), &Properties, _BackBuffer.GetAddressOf());
+        hr = _D2DDeviceContext->CreateBitmapFromDxgiSurface(Surface.Get(), &Properties, _BackBuffer.GetAddressOf());
 
         if (FAILED(hr))
             return hr;
@@ -835,7 +849,7 @@ void uielement_t::RenderDebug() noexcept
 
     std::wstring Text = msc::FormatText(L"%.2fs", _RenderState._PlaybackTime);
 
-    _DeviceContext->DrawText(Text.c_str(), (UINT) Text.size(), TextFormat.Get(), Rect, _DebugBrush.Get(), D2D1_DRAW_TEXT_OPTIONS_NONE);
+    _D2DDeviceContext->DrawText(Text.c_str(), (UINT) Text.size(), TextFormat.Get(), Rect, _DebugBrush.Get(), D2D1_DRAW_TEXT_OPTIONS_NONE);
 }
 
 #endif

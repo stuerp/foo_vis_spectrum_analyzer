@@ -1,5 +1,5 @@
 
-/** $VER: Artwork.h (2026.10.09) P. Stuer  **/
+/** $VER: Artwork.h (2026.10.11) P. Stuer  **/
 
 #pragma once
 
@@ -13,6 +13,8 @@
 #include <d2d1.h>
 
 #include "State.h"
+#include "RenderContext.h"
+
 #include <Constants.h>
 
 class artwork_t
@@ -32,7 +34,7 @@ public:
         return (_Bitmap != nullptr) ? _Bitmap->GetSize() : D2D1::SizeF();
     }
 
-    void Render(ID2D1DeviceContext * deviceContext, const D2D1_RECT_F & rect, const state_t * state) noexcept;
+    void Render(render_context_t & renderContext, const D2D1_RECT_F & rect, const state_t * state) noexcept;
 
     ID2D1Bitmap * Bitmap() const noexcept
     {

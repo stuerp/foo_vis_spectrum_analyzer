@@ -170,16 +170,15 @@ HRESULT d3d_tester_t::CreatePipeline() noexcept
 /// <summary>
 /// Renders the 3D content.
 /// </summary>
-void d3d_tester_t::Render3D(IDXGISwapChain1 * swapChain) noexcept
+void d3d_tester_t::Render3D(render_context_t & renderContext) noexcept
 {
-    if ((swapChain == nullptr) || (_D3DDevice == nullptr))
-        return;
+    assert(renderContext.D3DDevice && renderContext.SwapChain);
 
     // Create and bind a render target view for the swap-chain back buffer.
     {
         ComPtr<ID3D11Texture2D> BackBuffer;
 
-        HRESULT hr = swapChain->GetBuffer(0, IID_PPV_ARGS(BackBuffer.GetAddressOf()));
+        HRESULT hr = renderContext.SwapChain->GetBuffer(0, IID_PPV_ARGS(BackBuffer.GetAddressOf()));
 
         if (FAILED(hr))
             return;

@@ -98,7 +98,7 @@ public:
 
     virtual ~analysis_t() noexcept { Reset(); };
 
-    void Initialize(const state_t * state, const graph_options_t * settings) noexcept;
+    void Configure(const state_t * state, const graph_options_t * settings) noexcept;
     void Process(const audio_chunk & chunk) noexcept;
 
     void Reset() noexcept;

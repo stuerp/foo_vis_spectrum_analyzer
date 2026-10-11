@@ -207,9 +207,9 @@ HRESULT artwork_t::GetColors(uint32_t colorCount, FLOAT lightnessThreshold, FLOA
 /// <summary>
 /// Renders this instance to the specified render target.
 /// </summary>
-void artwork_t::Render(ID2D1DeviceContext * deviceContext, const D2D1_RECT_F & rect, const state_t * state) noexcept
+void artwork_t::Render(render_context_t & renderContext, const D2D1_RECT_F & rect, const state_t * state) noexcept
 {
-    HRESULT hr = CreateDeviceSpecificResources(deviceContext);
+    HRESULT hr = CreateDeviceSpecificResources(renderContext.D2DDeviceContext);
 
     if (FAILED(hr))
         return;
@@ -226,13 +226,13 @@ void artwork_t::Render(ID2D1DeviceContext * deviceContext, const D2D1_RECT_F & r
 
     if (state->_ArtworkBlurSigma == 0.f)
     {
-        deviceContext->DrawBitmap(_Bitmap.Get(), Rect, state->_ArtworkOpacity, D2D1_BITMAP_INTERPOLATION_MODE::D2D1_BITMAP_INTERPOLATION_MODE_LINEAR);
+        renderContext.D2DDeviceContext->DrawBitmap(_Bitmap.Get(), Rect, state->_ArtworkOpacity, D2D1_BITMAP_INTERPOLATION_MODE::D2D1_BITMAP_INTERPOLATION_MODE_LINEAR);
     }
     else
     {
         FLOAT DPIX, DPIY;
 
-        deviceContext->GetDpi(&DPIX, &DPIY);
+        renderContext.D2DDeviceContext->GetDpi(&DPIX, &DPIY);
 
         const FLOAT DPIScale = DPIX / 96.f;
 
@@ -245,7 +245,7 @@ void artwork_t::Render(ID2D1DeviceContext * deviceContext, const D2D1_RECT_F & r
 
         const D2D1_POINT_2F Offset = { Rect.left, Rect.top };
 
-        deviceContext->DrawImage(_OpacityEffect.Get(), Offset);
+        renderContext.D2DDeviceContext->DrawImage(_OpacityEffect.Get(), Offset);
     }
 }
 

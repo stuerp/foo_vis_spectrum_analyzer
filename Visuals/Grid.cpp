@@ -46,19 +46,19 @@ void grid_t::Resize(FLOAT width, FLOAT height) noexcept
 
             for (size_t j = 0; j < _ColCount; ++j)
             {
-                // Move the grid item.
+                // Move the graph.
                 {
-                    const auto & gi = _Items[(i * _ColCount) + j];
+                    const auto & Graph = _Items[(i * _ColCount) + j];
 
-                    w = width  * gi->_Analysis._GraphOptions->_HRatio;
-                    h = height * gi->_Analysis._GraphOptions->_VRatio;
+                    w = width  * Graph->_Analysis._GraphOptions->_HRatio;
+                    h = height * Graph->_Analysis._GraphOptions->_VRatio;
 
                     if (!_VerticalLayout)
                         Rect.right += w;
                     else
                         Rect.bottom = Rect.top + h;
 
-                    gi->Move(Rect);
+                    Graph->Move(Rect);
                 }
 
                 Rect.left = Rect.right;

@@ -346,12 +346,12 @@ LRESULT uielement_t::OnDPIChanged(UINT dpiX, UINT dpiY, PRECT newRect) noexcept
 /// </summary>
 void uielement_t::Resize()
 {
-    if (_DeviceContext == nullptr)
+    if (_D2DDeviceContext == nullptr)
         return;
 
     DeleteTrackingToolTip();
 
-    const D2D1_SIZE_F SizeF = _DeviceContext->GetSize(); // Gets the size in DPIs.
+    const D2D1_SIZE_F SizeF = _D2DDeviceContext->GetSize(); // Gets the size in DPIs.
 
     // Reposition the frame counter.
     _FrameCounter.Resize(SizeF.width, SizeF.height);
@@ -506,12 +506,12 @@ void uielement_t::UpdateState(ConfigurationChanges configurationChanges) noexcep
 
                     for (auto & GraphOptions : _RenderState._GraphOptions)
                     {
-                        auto * Graph = new graph_t();
+                        auto * Graph = new graph_t(_RenderState, _RenderContext);
 
                         const bool IsFirst = !OverlapGraphs || (OverlapGraphs && (i == 0));
                         const bool IsLast  = !OverlapGraphs || (OverlapGraphs && (i == _RenderState._GraphOptions.size() - 1));
 
-                        Graph->Configure(&_RenderState, &GraphOptions, IsFirst, IsLast, _D3DDevice.Get(), _D3DDeviceContext.Get());
+                        Graph->Configure(&GraphOptions, IsFirst, IsLast);
 
                         _Grid.push_back(Graph);
                         ++i;

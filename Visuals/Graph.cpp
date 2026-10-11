@@ -1,5 +1,5 @@
 
-/** $VER: Graph.cpp (2026.10.10) P. Stuer - Implements a graph on which the visualizations are rendered. **/
+/** $VER: Graph.cpp (2026.10.11) P. Stuer - Implements a graph on which the visualizations are rendered. **/
 
 #include "pch.h"
 
@@ -9,86 +9,28 @@
 #include "Direct2D.h"
 #include "DirectWrite.h"
 
-#include "Spectrum.h"
-#include "Spectrogram.h"
-#include "PeakMeter.h"
-#include "LevelMeter.h"
-#include "Oscilloscope.h"
-#include "OscilloscopeXY.h"
-#include "BitMeter.h"
-#include "Goniometer.h"
-#include "EyeCandy.h"
-
-#include "Tester.h"
-#include "D3DTester.h"
-
 #pragma hdrstop
 
 /// <summary>
-/// Initializes this instance.
+/// Configures this instance.
 /// </summary>
-void graph_t::Configure(state_t * state, graph_options_t * graphOptions, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept
+void graph_t::Configure(graph_options_t * graphOptions, bool isFirst, bool isLast) noexcept
 {
-    _State = state;
     _GraphOptions = graphOptions;
     _IsFirst = isFirst;
     _IsLast = isLast;
 
     _Description = graphOptions->_Description;
 
-    _Analysis.Initialize(state, graphOptions);
+    // Configure the analysis.
+    _Analysis.Configure(&_State, graphOptions);
 
+    // Configure the visualization.
     _Visualization.reset();
 
-    switch (_State->_VisualizationType)
-    {
-        default:
+    _Visualization = visualization_t::Create(_State);
 
-        case VisualizationType::Bars:
-        case VisualizationType::Curve:
-        case VisualizationType::RadialBars:
-        case VisualizationType::RadialCurve:
-            _Visualization = std::make_unique<spectrum_t>();
-            break;
-
-        case VisualizationType::Spectrogram:
-            _Visualization = std::make_unique<spectrogram_t>();
-            break;
-
-        case VisualizationType::PeakMeter:
-            _Visualization = std::make_unique<peak_meter_t>();
-            break;
-
-        case VisualizationType::LevelMeter:
-            _Visualization = std::make_unique<level_meter_t>();
-            break;
-
-        case VisualizationType::Oscilloscope:
-            if (!_State->_XYMode)
-                _Visualization = std::make_unique<oscilloscope_t>();
-            else
-                _Visualization = std::make_unique<oscilloscope_xy_t>();
-            break;
-
-        case VisualizationType::BitMeter:
-            _Visualization = std::make_unique<bit_meter_t>();
-            break;
-
-        case VisualizationType::Goniometer:
-            _Visualization = std::make_unique<goniometer_t>();
-            break;
-
-        case VisualizationType::Tester:
-//          _Visualization = std::make_unique<tester_t>();
-            _Visualization = std::make_unique<eye_candy_t>();
-            break;
-
-        case VisualizationType::D3DTester:
-            _Visualization = std::make_unique<d3d_tester_t>();
-            break;
-    }
-
-    _Visualization->Configure(state, graphOptions, &_Analysis, _IsFirst, _IsLast, d3dDevice, d3dDeviceContext);
+    _Visualization->Configure(&_State, graphOptions, &_Analysis, _IsFirst, _IsLast, _RenderContext.D3DDevice, _RenderContext.D3DDeviceContext);
 }
 
 /// <summary>
@@ -109,6 +51,9 @@ void graph_t::Move(const D2D1_RECT_F & rect) noexcept
     _Visualization->Move(Rect);
 }
 
+/// <summary>
+/// Resets this instance.
+/// </summary>
 void graph_t::Reset() noexcept
 {
     _Visualization->Reset();
@@ -127,28 +72,28 @@ void graph_t::Process(const audio_chunk & chunk) noexcept
 /// <summary>
 /// Renders this instance to the specified render target.
 /// </summary>
-void graph_t::Render(ID2D1DeviceContext * deviceContext, artwork_t & artwork, IDXGISwapChain1 * swapChain) noexcept
+void graph_t::Render(artwork_t & artwork) noexcept
 {
-    HRESULT hr = CreateDeviceSpecificResources(deviceContext);
+    HRESULT hr = CreateDeviceSpecificResources(_RenderContext.D2DDeviceContext);
 
     if (FAILED(hr))
         return;
 
-    RenderBackground(deviceContext, artwork);
+    RenderBackground(artwork);
 
     {
         // FIXME
-        deviceContext->EndDraw();
+        _RenderContext.D2DDeviceContext->EndDraw();
 
-        Render3D(swapChain);
+        _Visualization->Render3D(_RenderContext);
 
         // FIXME
-        deviceContext->BeginDraw();
+        _RenderContext.D2DDeviceContext->BeginDraw();
     }
 
-    Render2D(deviceContext);
+    _Visualization->Render(_RenderContext.D2DDeviceContext);
 
-    RenderDescription(deviceContext);
+    RenderDescription();
 
     // Erase the copy of the chunk.
     _Analysis._Chunk.reset();
@@ -177,7 +122,7 @@ void graph_t::InitToolInfo(HWND hWnd, TTTOOLINFOW & ti) const noexcept
 /// </summary>
 bool graph_t::GetToolTipText(FLOAT x, FLOAT y, std::wstring & toolTip, size_t & bandIndex) const noexcept
 {
-    if ((_State->_VisualizationType == VisualizationType::Bars) || (_State->_VisualizationType == VisualizationType::Curve))
+    if ((_State._VisualizationType == VisualizationType::Bars) || (_State._VisualizationType == VisualizationType::Curve))
     {
         const rect_t & cr = (const rect_t &) _Visualization->GetClientRect();
 
@@ -188,7 +133,7 @@ bool graph_t::GetToolTipText(FLOAT x, FLOAT y, std::wstring & toolTip, size_t & 
             t = ::floor(t);
 
         const FLOAT BarWidth = std::max(t, 2.f);
-        const FLOAT SpectrumWidth = (_State->_VisualizationType == VisualizationType::Bars) ? BarWidth * (FLOAT) _Analysis._FrequencyBands.size() : cr.Width();
+        const FLOAT SpectrumWidth = (_State._VisualizationType == VisualizationType::Bars) ? BarWidth * (FLOAT) _Analysis._FrequencyBands.size() : cr.Width();
         const FLOAT HOffset = GetHOffset(_GraphOptions->_HorizontalAlignment, cr.Width() - SpectrumWidth);
 
         const FLOAT x1 = cr.x1 + HOffset;
@@ -203,11 +148,11 @@ bool graph_t::GetToolTipText(FLOAT x, FLOAT y, std::wstring & toolTip, size_t & 
         bandIndex = std::clamp((size_t) ::floor(msc::Map(x, x1, x2, 0., (double) _Analysis._FrequencyBands.size())), (size_t) 0, _Analysis._FrequencyBands.size() - (size_t) 1);
     }
     else
-    if (_State->_VisualizationType == VisualizationType::Spectrogram)
+    if (_State._VisualizationType == VisualizationType::Spectrogram)
     {
         const D2D1_RECT_F & cr = _Visualization->GetClientRect();
 
-        if (_State->_IsHorizontalSpectrogram)
+        if (_State._IsHorizontalSpectrogram)
         {
             if (!msc::InRange(y, cr.top, cr.bottom))
                 return false;
@@ -236,45 +181,29 @@ bool graph_t::GetToolTipText(FLOAT x, FLOAT y, std::wstring & toolTip, size_t & 
 /// <summary>
 /// Renders the background.
 /// </summary>
-void graph_t::RenderBackground(ID2D1DeviceContext * deviceContext, artwork_t & artwork) noexcept
+void graph_t::RenderBackground(artwork_t & artwork) noexcept
 {
     if (_BackgroundStyle.IsEnabled())
-        deviceContext->FillRectangle(_Rect, _BackgroundStyle._Brush.Get());
+        _RenderContext.D2DDeviceContext->FillRectangle(_Rect, _BackgroundStyle._Brush.Get());
 
-    if (!_State->_ShowArtworkOnBackground)
+    if (!_State._ShowArtworkOnBackground)
         return;
 
-    if ((_State->_VisualizationType == VisualizationType::PeakMeter) || (_State->_VisualizationType == VisualizationType::LevelMeter) || (_State->_VisualizationType == VisualizationType::Oscilloscope))
+    if ((_State._VisualizationType == VisualizationType::PeakMeter) || (_State._VisualizationType == VisualizationType::LevelMeter) || (_State._VisualizationType == VisualizationType::Oscilloscope))
         return;
 
     if (artwork.Bitmap() == nullptr)
         return;
 
-    artwork.Render(deviceContext, _State->_FitWindow ? _Visualization->GetRect() : _Visualization->GetClientRect(), _State);
-}
-
-/// <summary>
-/// Renders the foreground.
-/// </summary>
-void graph_t::Render3D(IDXGISwapChain1 * swapChain) noexcept
-{
-    _Visualization->Render3D(swapChain);
-}
-
-/// <summary>
-/// Renders the foreground.
-/// </summary>
-void graph_t::Render2D(ID2D1DeviceContext * deviceContext) noexcept
-{
-    _Visualization->Render(deviceContext);
+    artwork.Render(_RenderContext, _State._FitWindow ? _Visualization->GetRect() : _Visualization->GetClientRect(), &_State);
 }
 
 /// <summary>
 /// Renders the description.
 /// </summary>
-void graph_t::RenderDescription(ID2D1DeviceContext * deviceContext) noexcept
+void graph_t::RenderDescription() noexcept
 {
-    if ((_State->_VisualizationType == VisualizationType::PeakMeter) || (_State->_VisualizationType == VisualizationType::LevelMeter))
+    if ((_State._VisualizationType == VisualizationType::PeakMeter) || (_State._VisualizationType == VisualizationType::LevelMeter))
         return;
 
     if (_Description.empty())
@@ -306,10 +235,10 @@ void graph_t::RenderDescription(ID2D1DeviceContext * deviceContext) noexcept
     Rect.bottom = Rect.top  + TextMetrics.height + (Inset * 2.f);
 
     if (_DescriptionBackgroundStyle.IsEnabled())
-        deviceContext->FillRoundedRectangle(D2D1::RoundedRect(Rect, Inset, Inset), _DescriptionBackgroundStyle._Brush.Get());
+        _RenderContext.D2DDeviceContext->FillRoundedRectangle(D2D1::RoundedRect(Rect, Inset, Inset), _DescriptionBackgroundStyle._Brush.Get());
 
     if (_DescriptionTextStyle.IsEnabled())
-        deviceContext->DrawText(_Description.c_str(), (UINT) _Description.length(), _DescriptionTextStyle._TextFormat.Get(), Rect, _DescriptionTextStyle._Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_NONE);
+        _RenderContext.D2DDeviceContext->DrawText(_Description.c_str(), (UINT) _Description.length(), _DescriptionTextStyle._TextFormat.Get(), Rect, _DescriptionTextStyle._Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_NONE);
 }
 
 /// <summary>
@@ -317,7 +246,7 @@ void graph_t::RenderDescription(ID2D1DeviceContext * deviceContext) noexcept
 /// </summary>
 HRESULT graph_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept
 {
-    if (_State->_SizeHasChanged)
+    if (_State._SizeHasChanged)
         DeleteDeviceSpecificResources();
 
     HRESULT hr = S_OK;
@@ -327,7 +256,7 @@ HRESULT graph_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContex
         (void) deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), _DebugBrush.GetAddressOf());
 #endif
 
-    auto & StyleManager = _GraphOptions->_UseLocalStyles ? _GraphOptions->_StyleManager : _State->_StyleManager;
+    auto & StyleManager = _GraphOptions->_UseLocalStyles ? _GraphOptions->_StyleManager : _State._StyleManager;
 
     const auto InitializeStyle = [this, deviceContext, & StyleManager](auto & style, VisualElement visualElement, const wchar_t * text) noexcept -> HRESULT
     {
@@ -336,7 +265,7 @@ HRESULT graph_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContex
 
         style = *StyleManager.GetStyle(visualElement);
 
-        style.SetColor(_State);
+        style.SetColor(&_State);
 
         return style.CreateDeviceSpecificResources(deviceContext, _Size, text, 1.f);
     };

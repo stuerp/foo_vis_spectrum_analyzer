@@ -1,5 +1,5 @@
 
-/** $VER: Graph.h (2026.09.25) P. Stuer - Implements a graph on which the visualizations are rendered. **/
+/** $VER: Graph.h (2026.10.11) P. Stuer - Implements a graph on which the visualizations are rendered. **/
 
 #pragma once
 
@@ -12,8 +12,8 @@
 #include <Windows.h>
 
 #include "Artwork.h"
-
 #include "Element.h"
+#include "RenderContext.h"
 #include "Visualization.h"
 
 /// <summary>
@@ -22,7 +22,10 @@
 class graph_t : public element_t
 {
 public:
-    graph_t() = default;
+    graph_t(state_t & state, render_context_t & renderContext) : _State(state), _RenderContext(renderContext)
+    {
+        __super::_State = &state;
+    }
 
     virtual ~graph_t() = default;
 
@@ -31,9 +34,9 @@ public:
     void Render(ID2D1DeviceContext * deviceContext) noexcept override final { };
     void Reset() noexcept override final;
 
-    void Configure(state_t * state, graph_options_t * graphOptions, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept;
+    void Configure(graph_options_t * graphOptions, bool isFirst, bool isLast) noexcept;
     void Process(const audio_chunk & chunk) noexcept;
-    void Render(ID2D1DeviceContext * deviceContext, artwork_t & artwork, IDXGISwapChain1 * swapChain) noexcept;
+    void Render(artwork_t & artwork) noexcept;
 
     void Initialize() noexcept;
 
@@ -67,15 +70,16 @@ private:
     HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept;
     void DeleteDeviceSpecificResources() noexcept;
 
-    void RenderBackground(ID2D1DeviceContext * deviceContext, artwork_t & artwork) noexcept;
-    void Render3D(IDXGISwapChain1 * swapChain) noexcept;
-    void Render2D(ID2D1DeviceContext * deviceContext) noexcept;
-    void RenderDescription(ID2D1DeviceContext * deviceContext) noexcept;
+    void RenderBackground(artwork_t & artwork) noexcept;
+    void RenderDescription() noexcept;
 
 public:
     analysis_t _Analysis;
 
 private:
+    state_t & _State;
+    render_context_t & _RenderContext;
+
     std::wstring _Description;
     std::unique_ptr<visualization_t> _Visualization;
 

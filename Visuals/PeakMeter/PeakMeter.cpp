@@ -1,5 +1,5 @@
 
-/** $VER: PeakMeter.cpp (2026.10.10) P. Stuer - Represents a peak meter. **/
+/** $VER: PeakMeter.cpp (2026.10.11) P. Stuer - Represents a peak meter. **/
 
 #include "pch.h"
 
@@ -26,7 +26,7 @@ void peak_meter_t::Configure(state_t * state, graph_options_t * graphOptions, an
 
     Reset();
 
-    _RenderedChannels = 0;
+    _RenderedChannelMask = 0;
 }
 
 /// <summary>
@@ -74,6 +74,9 @@ HRESULT peak_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceC
     if (_DebugBrush == nullptr)
         (void) deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), _DebugBrush.GetAddressOf());
 #endif
+
+    if (_BarCount != _Analysis->_PeakMeasurements.size())
+        _State->_SizeHasChanged = true;
 
     if (_State->_ColorsHaveChanged || _State->_SizeHasChanged)
     {
@@ -128,7 +131,7 @@ HRESULT peak_meter_t::CreateSizeDependentResources(ID2D1DeviceContext * deviceCo
             return hr;
     }
 
-    if ((_RenderedChannels != _Analysis->_PeakActiveChannelMask) || _State->_SizeHasChanged)
+    if ((_BarCount != _Analysis->_PeakMeasurements.size()) || (_RenderedChannelMask != _Analysis->_PeakActiveChannelMask))
     {
         DeleteParts();
 
@@ -136,7 +139,7 @@ HRESULT peak_meter_t::CreateSizeDependentResources(ID2D1DeviceContext * deviceCo
 
         MeasureParts(deviceContext);
 
-        _RenderedChannels = _Analysis->_PeakActiveChannelMask;
+        _RenderedChannelMask = _Analysis->_PeakActiveChannelMask;
     }
 
     return S_OK;
@@ -361,6 +364,8 @@ void peak_meter_t::CreateParts() noexcept
         {
             std::for_each(ChannelOrder.cbegin(), ChannelOrder.cend(), AddMeter);
         }
+
+        _BarCount = _Analysis->_PeakMeasurements.size();
     }
 
     if (_GraphOptions->_YAxisRight)
@@ -383,6 +388,8 @@ void peak_meter_t::DeleteParts() noexcept
         Part.reset();
 
     _Parts.clear();
+
+    _BarCount = 0;
 }
 
 /// <summary>
@@ -392,8 +399,6 @@ void peak_meter_t::MeasureParts(ID2D1DeviceContext * deviceContext) noexcept
 {
     const FLOAT ScaleWidth  = _ScaleTextStyle._Width  + _TickSize;
     const FLOAT ScaleHeight = _ScaleTextStyle._Height + _TickSize;
-
-    uint32_t BarCount = 0;
 
     FLOAT TotalScaleWidth  = 0.f;
     FLOAT TotalScaleHeight = 0.f;
@@ -419,7 +424,7 @@ void peak_meter_t::MeasureParts(ID2D1DeviceContext * deviceContext) noexcept
             _OpacityMask.Get()
         );
 
-        auto Scale = (scale_t *) Part.get();
+        auto Scale = dynamic_cast<scale_t *>(Part.get());
 
         if (Scale != nullptr)
         {
@@ -428,11 +433,9 @@ void peak_meter_t::MeasureParts(ID2D1DeviceContext * deviceContext) noexcept
             else
                 TotalScaleWidth  += Scale->IsCenter() ? _ScaleTextStyle._Width  : ScaleWidth;
         }
-        else
-            ++BarCount;
     }
 
-    const FLOAT TotalBarGap = _State->_HasCenterScale ? 0.f : _State->_BarGap * (FLOAT) (BarCount - 1);
+    const FLOAT TotalBarGap = _State->_HasCenterScale ? 0.f : ((_BarCount > 1) ? _State->_BarGap * (FLOAT) (_BarCount - 1) : 0.f);
 
     FLOAT Offset = 0.f;
     FLOAT BarWidth = 0.f;
@@ -442,23 +445,23 @@ void peak_meter_t::MeasureParts(ID2D1DeviceContext * deviceContext) noexcept
     {
         if (_State->_IsHorizontalPeakMeter)
         {
-            BarHeight = (_Size.height - TotalScaleHeight - TotalBarGap) / (FLOAT) BarCount;
+            BarHeight = (_Size.height - TotalScaleHeight - TotalBarGap) / (FLOAT) _BarCount;
 
             if ((_State->_MaxBarSize != 0.f) && (BarHeight > _State->_MaxBarSize))
                 BarHeight = _State->_MaxBarSize;
 
-            const FLOAT TotalBarHeight = (BarHeight * (FLOAT) BarCount) + TotalBarGap;
+            const FLOAT TotalBarHeight = (BarHeight * (FLOAT) _BarCount) + TotalBarGap;
 
             Offset = (_Size.height - TotalScaleHeight - TotalBarHeight) / 2.f;
         }
         else
         {
-            BarWidth = (_Size.width  - TotalScaleWidth  - TotalBarGap) / (FLOAT) BarCount;
+            BarWidth = (_Size.width  - TotalScaleWidth  - TotalBarGap) / (FLOAT) _BarCount;
 
             if ((_State->_MaxBarSize != 0.f) && (BarWidth > _State->_MaxBarSize))
                 BarWidth = _State->_MaxBarSize;
 
-            const FLOAT TotalBarWidth  = (BarWidth  * (FLOAT) BarCount) + TotalBarGap;
+            const FLOAT TotalBarWidth  = (BarWidth  * (FLOAT) _BarCount) + TotalBarGap;
 
             Offset = (_Size.width - TotalScaleWidth - TotalBarWidth) / 2.f;
         }
@@ -475,7 +478,7 @@ void peak_meter_t::MeasureParts(ID2D1DeviceContext * deviceContext) noexcept
 
         for (auto & Part : _Parts)
         {
-            auto * Scale = (scale_t *) Part.get();
+            auto * Scale = dynamic_cast<scale_t *>(Part.get());
 
             if (Scale != nullptr) // Scale
             {
@@ -506,7 +509,7 @@ void peak_meter_t::MeasureParts(ID2D1DeviceContext * deviceContext) noexcept
 
         for (auto & Part : _Parts)
         {
-            auto * Scale = (scale_t *) Part.get();
+            auto * Scale = dynamic_cast<scale_t *>(Part.get());
 
             // A scale determines its own width.
             if (Scale != nullptr)
