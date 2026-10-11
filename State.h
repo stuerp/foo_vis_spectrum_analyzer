@@ -1,5 +1,5 @@
 
-/** $VER: State.h (2026.09.08) P. Stuer **/
+/** $VER: State.h (2026.10.10) P. Stuer **/
 
 #pragma once
 
@@ -44,9 +44,9 @@ public:
     size_t _PageIndex;                                                  // Index of the active configuration dialog page
 
 #ifdef _WIN64
-    int64_t _RefreshRateLimit;                                          // Target FPS in Hz
+    int64_t _TargetRefreshRate;                                         // Target FPS in Hz
 #else
-    int32_t _RefreshRateLimit;                                          // Target FPS in Hz
+    int32_t _TargetRefreshRate;                                         // Target FPS in Hz
 #endif
 
     int64_t _SleepTime;                                                 // Number of μs that the render thread is put to sleep to yield to the UI thread.
@@ -61,9 +61,14 @@ public:
 
         VisualizationType _VisualizationType;
 
-        PeakMode _PeakMode;
-        double _HoldTime;                                               // Peak hold time, in seconds
-        double _FallRate;                                               // Peak fall rate, in dB/s
+        #pragma region Peaks
+
+            PeakMode _PeakMode;
+            double _HoldTime;                                           // Peak hold time, in seconds
+            double _FallRate;                                           // Peak fall rate, in dB/s
+            bool _ResetPeaksOnTrackChange;                              // Reset peaks on track change.
+
+        #pragma endregion
 
         #pragma region Bars
 
@@ -110,18 +115,23 @@ public:
 
         #pragma endregion
 
-        #pragma region Oscilloscope
+        #pragma region Oscilloscope / Goniometer
 
             bool _XYMode;                                               // Oscilloscope in X-Y mode
-            double _XGain;
-            double _YGain;
+            double _XInputGain;                                         // Audio input gain
+            double _YInputGain;                                         // Audio input gain
             FLOAT _Rotation;
             bool _HasPhosphorDecay;
             FLOAT _BlurSigma;
-            FLOAT _DecayFactor;
+            FLOAT _Afterglow;                                         // ms
             uint32_t _FrameCount;
             bool _Downmix;                                              // Downmix the input audio to mono.
             bool _ZeroCrossingTrigger;                                  // Use a zero-crossing trigger.
+
+            goniometer::ColorMode _GoniometerColorMode;
+            double _LowVisualGain;                                      // dB, [-12, 12]
+            double _MidVisualGain;                                      // dB, [-12, 12]
+            double _HighVisualGain;                                     // dB, [-12, 12]
 
         #pragma endregion
 
@@ -229,11 +239,15 @@ public:
         double _FrequencyTilt;                                          // [-12, 12], Adjusts the spectrum by the specified number of decibels per octave.
         double _FrequencyTiltPivot;                                     // Hz, [0, 96000], Frequency at which the tilt adjustment is 0 dB.
 
-        double _EqualizationAmount;                                         // [-12, 12], Equalize amount
-        double _EqualizationFreqScale;                                         // Hz, [0, 96000], Equalize offset
-        double _EqualizationDepth;                                          // Hz, [0, 96000], Equalize depth
+        double _EqualizationAmount;                                     // [-12, 12], Equalize amount
+        double _EqualizationFreqScale;                                  // Hz, [0, 96000], Equalize offset
+        double _EqualizationDepth;                                      // Hz, [0, 96000], Equalize depth
 
         double _WeightingAmount;                                        // [-1, 1], Weighting amount
+
+        crossover::Mode _CrossoverMode;
+        double _LowBand;                                                // Hz, [0, 96000], End of the low band
+        double _HighBand;                                               // Hz, [0, 96000], Start of the high band
 
     #pragma endregion
 
@@ -263,6 +277,7 @@ public:
         FLOAT _ArtworkBlurSigma;                                        // [0, 1]
         std::wstring _ArtworkFilePath;                                  // Script that generates a valid file path to load artwork from.
         FitMode _FitMode;                                               // Determines how over- or undersized artwork is rendered.
+        bool _AllowUpscaling;                                           // True if smaller artwork can be upscaled.
         bool _FitWindow;                                                // True when the component window instead of the client area of the graph is used to fit artwork.
 
     #pragma endregion
@@ -284,6 +299,7 @@ public:
     style_manager_t _StyleManager;                                      // Styles shared by all graphs.
     std::vector<graph_options_t> _GraphOptions;
 
+    std::vector<Channels> _ChannelOrder;
     #pragma endregion
 
     std::wstring _PresetsDirectoryPath;
@@ -295,11 +311,11 @@ public:
     #pragma region UI + Render thread
 
     D2D1_COLOR_F _ArtworkDominantColor;                                 // The current dominant color extracted from the artwork bitmap.
-    gradient_stops_t _ArtworkGradientStops;                             // The current gradient stops extracted from the artwork bitmap.
+    std::vector<D2D1_GRADIENT_STOP> _ArtworkGradientStops;              // The current gradient stops extracted from the artwork bitmap.
 
     std::vector<D2D1_COLOR_F> _UserInterfaceColors;
 
-    bool _RecreateStyles;                                               // True if the DirectX resources of the styles need to be recreated, e.g. because the artwork colors changed.
+    bool _SizeHasChanged;                                              // True if the DirectX resources need to be recreated, e.g. because the artwork colors changed or the size of the back buffer changed.
 
     #pragma endregion
 
@@ -316,6 +332,7 @@ public:
     #pragma region Render thread only
 
     std::vector<D2D1_COLOR_F> _ArtworkColors;                           // The colors extracted from the artwork bitmap.
+    bool _ColorsHaveChanged;                                            // True if the colors have changed.
 
     size_t _BinCount;                                                   // The number of bins used by the spectrum analyzer.
 
@@ -387,13 +404,13 @@ private:
     bool _DrawBandBackground_Deprecated;                                // True if the background for each band should be drawn.
     bool _HorizontalGradient_Deprecated;                                // True if the gradient will be used to paint horizontally.
 
-    const gradient_stops_t SelectGradientStops_Deprecated(ColorScheme colorScheme) const noexcept;
+    const std::vector<D2D1_GRADIENT_STOP> SelectGradientStops_Deprecated(ColorScheme colorScheme) const noexcept;
 
     #pragma endregion
 
 private:
     static constexpr size_t _CurrentVersion = 35; // v0.10.0.0-beta1
-    static constexpr uint32_t _SchemaVersion = 2; // v0.12.0.0
+    static constexpr uint32_t _SchemaVersion = 3; // v0.13.0.0-alpha2
 };
 
 const LogLevel DefaultCfgLogLevel = LogLevel::Info;

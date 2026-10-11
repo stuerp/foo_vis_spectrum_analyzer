@@ -1,5 +1,5 @@
 
-/** $VER: VisualizationPageLayout.h (2026.09.08) P. Stuer - Defines the layout of a configuration dialog page. **/
+/** $VER: VisualizationPageLayout.h (2026.09.21) P. Stuer - Defines the layout of a configuration dialog page. **/
 
 #pragma once
 
@@ -77,8 +77,14 @@
     #define Y_A56    Y_A54
     #pragma endregion
 
+    // Checkbox: Reset on track change
+    #define W_A58    100
+    #define H_A58    H_CHB
+    #define X_A58    X_A53
+    #define Y_A58    Y_A54 + H_A54 + IY
+
 #define W_B13   116
-#define H_B13   11 + H_A12 + IY + H_A52 + IY + H_A54 + 7
+#define H_B13   11 + H_A12 + IY + H_A52 + IY + H_A54 + IY + H_A58 + 7
 
 /** LEDs **/
 
@@ -253,17 +259,17 @@
     // Checkbox: Spectrum Bar Metrics
     #define W_C28    90
     #define H_C28    H_CHB
-    #define X_C28    X_C27
-    #define Y_C28    Y_C27 + H_C27 + IY
+    #define X_C28    X_C15 + W_C15 + IX
+    #define Y_C28    Y_C15
 
     // Checkbox: Legend
     #define W_C36    90
     #define H_C36    H_CHB
-    #define X_C36    X_C28
-    #define Y_C36    Y_C28 + H_C28 + IY
+    #define X_C36    X_C27 + W_C27 + IX
+    #define Y_C36    Y_C27
 
 #define W_B08   232
-#define H_B08   11 + H_C15 + IY + H_C27 + IY + H_C28 + IY + H_C36 + 7
+#define H_B08   11 + H_C15 + IY + H_C27 + 7
 
 /** Peak Meter **/
 
@@ -357,7 +363,7 @@
 #define W_B14  W_B12
 #define H_B14  11 + H_C52 + 7
 
-/** Oscilloscope **/
+/** Oscilloscope / Goniometer **/
 
 // Groupbox
 #define X_B18   X_B14
@@ -369,32 +375,32 @@
     #define X_C54    X_B18 +  5
     #define Y_C54    Y_B18 + 11
 
-    // Label: X gain
-    #define W_C56    34
+    // Label: X input gain
+    #define W_C56    40
     #define H_C56    H_LBL
     #define X_C56    X_C54 + W_C54 + IX
     #define Y_C56    Y_C54
 
-    // Textbox: X gain
+    // Textbox: X input gain
     #define W_C58    30
     #define H_C58    H_TBX
     #define X_C58    X_C56 + W_C56 + IX
     #define Y_C58    Y_C56
 
-    // Label: Y gain
-    #define W_C60    48
+    // Label: Y input gain
+    #define W_C60    42
     #define H_C60    H_LBL
     #define X_C60    X_C58 + W_C58 + IX
     #define Y_C60    Y_C58
 
-    // Textbox: Y gain
+    // Textbox: Y input gain
     #define W_C62    30
     #define H_C62    H_TBX
     #define X_C62    X_C60 + W_C60 + IX
     #define Y_C62    Y_C60
 
     // Label: Rotation
-    #define W_C78    34
+    #define W_C78    W_C56
     #define H_C78    H_LBL
     #define X_C78    X_C56
     #define Y_C78    Y_C62 + H_C62 + IY
@@ -406,7 +412,7 @@
     #define Y_C79    Y_C78
 
     // Label: Frame Count
-    #define W_C90    48
+    #define W_C90    W_C60
     #define H_C90    H_LBL
     #define X_C90    X_C60
     #define Y_C90    Y_C78
@@ -424,7 +430,7 @@
     #define Y_C64    Y_C79 + H_C79 + IY
 
     // Label: Blur sigma
-    #define W_C66    34
+    #define W_C66    W_C78
     #define H_C66    H_LBL
     #define X_C66    X_C64 + W_C64 + IX
     #define Y_C66    Y_C64
@@ -436,7 +442,7 @@
     #define Y_C68    Y_C66
 
     // Label: Decay factor
-    #define W_C70    48
+    #define W_C70    W_C60
     #define H_C70    H_LBL
     #define X_C70    X_C68 + W_C68 + IX
     #define Y_C70    Y_C68
@@ -459,5 +465,60 @@
     #define X_A42    X_A40 + W_A40 + IX
     #define Y_A42    Y_A40
 
+    // Label: Goniometer Mode
+    #define W_A44    58
+    #define H_A44    H_LBL
+    #define X_A44    X_A40
+    #define Y_A44    Y_A40 + H_A40 + IY
+
+    // Combobox: Goniometer Mode
+    #define W_A46    42
+    #define H_A46    H_CBX
+    #define X_A46    X_A44 + W_A44 + IX
+    #define Y_A46    Y_A44
+
+    // Groupbox: Visual Gain (dB)
+    #define X_A01   X_A44
+    #define Y_A01   Y_A44 + H_A44 + 11
+
+        // Label: Low
+        #define W_A02   20
+        #define H_A02   H_LBL
+        #define X_A02   X_A01 +  5
+        #define Y_A02   Y_A01 + 11
+
+        // Editbox: Low
+        #define W_A03   28
+        #define H_A03   H_TBX
+        #define X_A03   X_A02 + W_A02 + IX
+        #define Y_A03   Y_A02
+
+        // Label: Mid
+        #define W_A04   W_A02
+        #define H_A04   H_LBL
+        #define X_A04   X_A03 + W_A03 + IX
+        #define Y_A04   Y_A03
+
+        // Editbox: Mid
+        #define W_A05   W_A03
+        #define H_A05   H_TBX
+        #define X_A05   X_A04 + W_A04 + IX
+        #define Y_A05   Y_A04
+
+        // Label: High
+        #define W_A06   W_A04
+        #define H_A06   H_LBL
+        #define X_A06   X_A05 + W_A05 + IX
+        #define Y_A06   Y_A05
+
+        // Editbox: High
+        #define W_A07   W_A05
+        #define H_A07   H_TBX
+        #define X_A07   X_A06 + W_A06 + IX
+        #define Y_A07   Y_A06
+
+    #define W_A01   W_B14 - 10
+    #define H_A01   11 + H_A03 + 7
+
 #define W_B18  W_B14
-#define H_B18  11 + H_C56 + IY + H_C79 + IY + H_C68 + IY + H_A40 + IY + 7
+#define H_B18  11 + H_C56 + IY + H_C79 + IY + H_C68 + IY + H_A40 + IY + H_A46 + IY + H_A01 + IY + 7

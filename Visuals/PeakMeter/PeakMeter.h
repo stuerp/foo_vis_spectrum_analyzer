@@ -1,5 +1,5 @@
 
-/** $VER: PeakMeter.h (2026.06.15) P. Stuer - Represents a peak meter. **/
+/** $VER: PeakMeter.h (2026.10.11) P. Stuer - Represents a peak meter. **/
 
 #pragma once
 
@@ -15,15 +15,13 @@
 
 #include <d2d1_2.h>
 
-#include <atlbase.h>
-
 #include "Visualization.h"
 #include "PeakMeterParts.h"
 
 class peak_meter_t : public visualization_t
 {
 public:
-    peak_meter_t();
+    peak_meter_t() = default;
 
     peak_meter_t(const peak_meter_t &) = delete;
     peak_meter_t & operator=(const peak_meter_t &) = delete;
@@ -37,11 +35,20 @@ public:
     void Render(ID2D1DeviceContext * deviceContext) noexcept override final;
     void Reset() noexcept override final;
 
-    void Initialize(state_t * state, graph_options_t * graphOptions, const analysis_t * analysis, bool isFirst, bool isLast) noexcept;
+    void OnConfigurationChanged(ConfigurationChanges configurationChanges) noexcept;
+
+    // visualization_t
+    void Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice = nullptr, ID3D11DeviceContext * d3dDeviceContext = nullptr) noexcept override final;
 
 private:
     HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept;
     void DeleteDeviceSpecificResources() noexcept;
+
+    HRESULT CreateSizeDependentResources(ID2D1DeviceContext * deviceContext) noexcept;
+    void DeleteSizeDependentResources() noexcept;
+
+    HRESULT CreateColorDependentResources(ID2D1DeviceContext * deviceContext) noexcept;
+    void DeleteColorDependentResources() noexcept;
 
     HRESULT CreateOpacityMask(ID2D1DeviceContext * deviceContext) noexcept;
 
@@ -50,12 +57,14 @@ private:
 
     void MeasureParts(ID2D1DeviceContext * deviceContext) noexcept;
 
+    void Initialize() noexcept;
+
 private:
-    uint32_t _RenderedChannels;
+    uint32_t _RenderedChannelMask { 0 };
 
-    const FLOAT _TickSize = 4.f;
+    static constexpr FLOAT _TickSize = 4.f;
 
-    style_t _BackgroundStyle;
+    style_t _BarBackgroundStyle;
 
     style_t _PeakStyle;
     style_t _Peak0dBStyle;
@@ -71,9 +80,11 @@ private:
     style_t _ScaleTextStyle;
     style_t _ScaleLineStyle;
 
-    CComPtr<ID2D1Bitmap> _OpacityMask;
+    std::vector<std::unique_ptr<part_t>> _Parts;
 
-    CComPtr<ID2D1SolidColorBrush> _DebugBrush;
+    size_t _BarCount { 0 }; // Number bars in the part list.
 
-    std::vector<part_t *> _Parts;
+private:
+    ComPtr<ID2D1Bitmap> _OpacityMask;
+    ComPtr<ID2D1SolidColorBrush> _DebugBrush;
 };

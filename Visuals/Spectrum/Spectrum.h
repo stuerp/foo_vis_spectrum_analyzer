@@ -1,11 +1,7 @@
 
-/** $VER: Spectrum.h (2026.06.17) P. Stuer -  Implements a spectrum analyzer visualization **/
+/** $VER: Spectrum.h (2026.10.10) P. Stuer -  Implements a spectrum analyzer visualization **/
 
 #pragma once
-
-#include <CppCoreCheck/Warnings.h>
-
-#pragma warning(disable: 4100 4625 4626 4710 4711 5045 ALL_CPPCORECHECK_WARNINGS)
 
 #include <SDKDDKVer.h>
 #include <WinSock2.h>
@@ -16,8 +12,6 @@
 #include "XAxis.h"
 #include "YAxis.h"
 
-#include "Chrono.h"
-
 #include <vector>
 
 /// <summary>
@@ -26,7 +20,7 @@
 class spectrum_t : public visualization_t
 {
 public:
-    spectrum_t() {}
+    spectrum_t() = default;
 
     spectrum_t(const spectrum_t &) = delete;
     spectrum_t & operator=(const spectrum_t &) = delete;
@@ -38,25 +32,31 @@ public:
     // element_t
     void Move(const D2D1_RECT_F & rect) noexcept override final;
     void Render(ID2D1DeviceContext * deviceContext) noexcept override final;
-    void Reset() noexcept override final { }
+    void Reset() noexcept override final;
 
-    void OnConfigurationChange(ConfigurationChanges configurationChanges) noexcept override final;
+    void OnConfigurationChanged(ConfigurationChanges configurationChanges) noexcept override final;
 
     // visualization_t
-    void Initialize(state_t * state, graph_options_t * graphOptions, const analysis_t * analysis, bool isFirst, bool isLast) noexcept override final;
+    void Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice = nullptr, ID3D11DeviceContext * d3dDeviceContext = nullptr) noexcept override final;
 
 private:
     HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept;
     void DeleteDeviceSpecificResources() noexcept;
 
+    HRESULT CreateSizeDependentResources(ID2D1DeviceContext * deviceContext) noexcept;
+    void DeleteSizeDependentResources() noexcept;
+
+    HRESULT CreateColorDependentResources(ID2D1DeviceContext * deviceContext) noexcept;
+    void DeleteColorDependentResources() noexcept;
+
     const D2D1_RECT_F & GetClientRect() const noexcept { return _ClientRect; }
 
-    void Resize() noexcept;
+    void Initialize() noexcept;
 
     void RenderBars(ID2D1DeviceContext * deviceContext) noexcept;
     void RenderBar(ID2D1DeviceContext * deviceContext, D2D1_RECT_F & rect, const style_t & areaStyle, const style_t & topStyle, double value, double opacity) noexcept;
 
-    void RenderBarPart(ID2D1DeviceContext * deviceContext, D2D1_RECT_F & rect, const style_t & style) const noexcept;
+    void RenderBarSegment(ID2D1DeviceContext * deviceContext, D2D1_RECT_F & rect, const style_t & style) const noexcept;
 
     void RenderCurve(ID2D1DeviceContext * deviceContext) noexcept;
     void RenderRadialBars(ID2D1DeviceContext * deviceContext) noexcept;
@@ -102,11 +102,11 @@ private:
 
     FLOAT _LEDSize;
 
-    chrono_t _Chrono;
+    msc::chrono_t _Chrono;
 
     // Device-dependent resources
-    CComPtr<ID2D1SolidColorBrush> _DebugBrush;
-    CComPtr<ID2D1Bitmap> _OpacityMask;
+    ComPtr<ID2D1SolidColorBrush> _DebugBrush;
+    ComPtr<ID2D1Bitmap> _OpacityMask;
 
     style_t _BarAreaStyle;
     style_t _BarTopStyle;

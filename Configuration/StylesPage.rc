@@ -1,9 +1,10 @@
 
-/** $VER: StylesPage.rc (2026.06.10) P. Stuer **/
+/** $VER: StylesPage.rc (2026.09.30) P. Stuer **/
 
 #include "Resources.h"
 
 #include <winres.h>
+#include <commctrl.h>
 
 #include "StylesPageLayout.h"
 
@@ -33,19 +34,25 @@ style DS_SETFONT | DS_CONTROL | WS_CHILD | WS_CLIPCHILDREN
 
     ltext           "",                         IDC_GRADIENT,                   X_A67, Y_A67,     W_A67, H_A67, SS_NOTIFY, WS_EX_STATICEDGE
 
-    listbox                                     IDC_COLOR_LIST,                 X_A68, Y_A68,     W_A68, H_A68, LBS_OWNERDRAWVARIABLE | LBS_NOINTEGRALHEIGHT | LBS_WANTKEYBOARDINPUT | LBS_NOTIFY | WS_VSCROLL | WS_TABSTOP
+    listbox                                     IDC_GRADIENT_COLORS,            X_A68, Y_A68,     W_A68, H_A68, LBS_OWNERDRAWVARIABLE | LBS_NOINTEGRALHEIGHT | LBS_WANTKEYBOARDINPUT | LBS_NOTIFY | WS_VSCROLL | WS_TABSTOP
 
     pushbutton      "Add",                      IDC_ADD,                        X_A69, Y_A69,     W_A69, H_A69
     pushbutton      "Remove",                   IDC_REMOVE,                     X_A70, Y_A70,     W_A70, H_A70
     pushbutton      "Reverse",                  IDC_REVERSE,                    X_A71, Y_A71,     W_A71, H_A71
 
     edittext                                    IDC_POSITION,                   X_F01, Y_F01,     W_F01, H_F01, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
-    ltext           "%"                         IDC_POSITION_LBL,               X_F02, Y_F02 + 2, W_F02, H_F02
+    ltext           "%"                         IDC_STATIC,                     X_F02, Y_F02 + 2, W_F02, H_F02
 
     pushbutton      "Spread",                   IDC_SPREAD,                     X_F03, Y_F03,     W_F03, H_F03
 
     control         "Horizontal gradient",      IDC_HORIZONTAL_GRADIENT,        "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C13, Y_C13, W_C13, H_C13
     control         "Amplitude-based",          IDC_AMPLITUDE_BASED,            "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_C14, Y_C14, W_C14, H_C14
+
+    ltext           "Gradient color source:",   IDC_STATIC,                     X_I20, Y_I20 + 2, W_I20, H_I20
+    combobox                                    IDC_GRADIENT_COLOR_SOURCE,       X_I21, Y_I21,     W_I21, H_I21, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+
+    ltext           "Gradient color index:",    IDC_STATIC,                     X_I22, Y_I22 + 2, W_I22, H_I22
+    combobox                                    IDC_GRADIENT_COLOR_INDEX,        X_I23, Y_I23,     W_I23, H_I23, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
 
     rtext           "Opacity:"                  IDC_OPACITY_LBL,                X_I08, Y_I08 + 2, W_I08, H_I08
     edittext                                    IDC_OPACITY,                    X_I09, Y_I09,     W_I09, H_I09, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP

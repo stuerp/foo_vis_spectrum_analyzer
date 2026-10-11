@@ -1,5 +1,5 @@
 
-/** $VER: LevelMeter.h (2026.06.17) P. Stuer - Implements a left/right/mid/side level meter. **/
+/** $VER: LevelMeter.h (2026.10.10) P. Stuer - Implements a left/right/mid/side level meter. **/
 
 #pragma once
 
@@ -15,14 +15,12 @@
 
 #include <d2d1_2.h>
 
-#include <atlbase.h>
-
 #include "Visualization.h"
 
 class level_meter_t : public visualization_t
 {
 public:
-    level_meter_t();
+    level_meter_t() = default;
 
     level_meter_t(const level_meter_t &) = delete;
     level_meter_t & operator=(const level_meter_t &) = delete;
@@ -34,19 +32,29 @@ public:
     // element_t
     void Move(const D2D1_RECT_F & rect) noexcept override final;
     void Render(ID2D1DeviceContext * deviceContext) noexcept override final;
-    void Reset() noexcept override final { };
+    void Reset() noexcept override final;
+
+    void OnConfigurationChanged(ConfigurationChanges configurationChanges) noexcept;
 
     // visualization_t
-    void Initialize(state_t * state, graph_options_t * graphOptions, const analysis_t * analysis, bool isFirst, bool isLast) noexcept override final;
+    void Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice = nullptr, ID3D11DeviceContext * d3dDeviceContext = nullptr) noexcept override final;
 
 private:
     HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept;
     void DeleteDeviceSpecificResources() noexcept;
 
+    HRESULT CreateSizeDependentResources(ID2D1DeviceContext * deviceContext) noexcept;
+    void DeleteSizeDependentResources() noexcept;
+
+    HRESULT CreateColorDependentResources(ID2D1DeviceContext * deviceContext) noexcept;
+    void DeleteColorDependentResources() noexcept;
+
     HRESULT CreateOpacityMask(ID2D1DeviceContext * deviceContext) noexcept;
 
+    void Initialize() noexcept { }
+
 private:
-    CComPtr<ID2D1Bitmap> _OpacityMask;
+    ComPtr<ID2D1Bitmap> _OpacityMask;
 
     style_t _LeftRightStyle;
     style_t _LeftRightIndicatorStyle;
@@ -55,6 +63,6 @@ private:
     style_t _AxisStyle;
 
 #ifdef _DEBUG
-    CComPtr<ID2D1SolidColorBrush> _DebugBrush;
+    ComPtr<ID2D1SolidColorBrush> _DebugBrush;
 #endif
 };

@@ -1,5 +1,5 @@
 
-/** $VER: GraphOptions.cpp (2026.08.22) P. Stuer - Describes the layout and settings of a graph. **/
+/** $VER: GraphOptions.cpp (2026.09.20) P. Stuer - Describes the layout and settings of a graph. **/
 
 #include "pch.h"
 
@@ -17,7 +17,7 @@
 /// </summary>
 void graph_options_t::Reset() noexcept
 {
-    _SelectedChannels        = (uint32_t) Channels::ConfigStereo;
+    _ActiveChannelMask       = (uint32_t) Channels::ConfigStereo;
 
     _ChannelPair             = ChannelPair::FrontLeftRight;
     _SwapChannels            = false;
@@ -98,7 +98,7 @@ graph_options_t graph_options_t::FromJSON(const json & object) noexcept
             Options._VerticalTextAlignment   = std::clamp((VerticalTextAlignment)   Description.value("verticalAlignment",   Options._VerticalTextAlignment),   VerticalTextAlignment::Min,   VerticalTextAlignment::Max);
         }
 
-        Options._SelectedChannels        = std::clamp((uint32_t) object.value("channels", Options._SelectedChannels), (uint32_t) Channels::None, (uint32_t) Channels::All);
+        Options._ActiveChannelMask       = std::clamp((uint32_t) object.value("channels", Options._ActiveChannelMask), (uint32_t) Channels::None, (uint32_t) Channels::All);
         Options._ChannelPair             = std::clamp((ChannelPair) object.value("channelPair", Options._ChannelPair), ChannelPair::Min, ChannelPair::Max);
         Options._SwapChannels            = object.value("swapChannels", Options._SwapChannels);
 
@@ -175,7 +175,7 @@ json graph_options_t::ToJSON() const noexcept
                 })
             },
 
-            { "channels", _SelectedChannels },
+            { "channels", _ActiveChannelMask },
             { "channelPair", _ChannelPair },
             { "swapChannels", _SwapChannels },
 

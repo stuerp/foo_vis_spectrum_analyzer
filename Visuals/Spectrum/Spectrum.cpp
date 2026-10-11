@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.cpp (2026.09.09) P. Stuer - Implements a spectrum analyzer visualization **/
+/** $VER: Spectrum.cpp (2026.10.10) P. Stuer - Implements a spectrum analyzer visualization **/
 
 #include "pch.h"
 
@@ -20,13 +20,13 @@
 /// </summary>
 spectrum_t::~spectrum_t()
 {
-    DeleteDeviceSpecificResources();
+    Reset();
 }
 
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void spectrum_t::Initialize(state_t * state, graph_options_t * options, const analysis_t * analysis, bool isFirst, bool isLast) noexcept
+void spectrum_t::Configure(state_t * state, graph_options_t * options, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept
 {
     _State        = state;
     _GraphOptions = options;
@@ -35,10 +35,10 @@ void spectrum_t::Initialize(state_t * state, graph_options_t * options, const an
     _IsFirst      = isFirst;
     _IsLast       = isLast;
 
-    DeleteDeviceSpecificResources();
+    Reset();
 
-    _XAxis.Initialize(state, options, analysis, isFirst, isLast);
-    _YAxis.Initialize(state, options, analysis, isFirst, isLast);
+    _XAxis.Configure(state, options, analysis, isFirst, isLast);
+    _YAxis.Configure(state, options, analysis, isFirst, isLast);
 
     _Chrono.Reset();
 }
@@ -48,32 +48,10 @@ void spectrum_t::Initialize(state_t * state, graph_options_t * options, const an
 /// </summary>
 void spectrum_t::Move(const D2D1_RECT_F & rect) noexcept
 {
-    SetRect(rect);
+    InitializeMetrics(rect);
 
-    _OpacityMask.Release(); // Forces the opacity mask to be regenerated.
-}
-
-/// <summary>
-/// Recalculates parameters that are render target and size-sensitive.
-/// </summary>
-void spectrum_t::Resize() noexcept
-{
-    if (!_IsResized ||(_Size.width == 0.f) || (_Size.height == 0.f))
-        return;
-
-    const FLOAT xt = ((_GraphOptions->_XAxisMode != XAxisMode::None) && _GraphOptions->_XAxisTop)    ? _XAxis.GetTextHeight() : 0.f;
-    const FLOAT xb = ((_GraphOptions->_XAxisMode != XAxisMode::None) && _GraphOptions->_XAxisBottom) ? _XAxis.GetTextHeight() : 0.f;
-
-    const FLOAT yl = ((_GraphOptions->_YAxisMode != YAxisMode::None) && _GraphOptions->_YAxisLeft)   ? _YAxis.GetTextWidth()  : 0.f;
-    const FLOAT yr = ((_GraphOptions->_YAxisMode != YAxisMode::None) && _GraphOptions->_YAxisRight)  ? _YAxis.GetTextWidth()  : 0.f;
-
-    _XAxis.Move({ _Rect.left + yl, _Rect.top,      _Rect.right - yr, _Rect.bottom });
-    _YAxis.Move({ _Rect.left,      _Rect.top + xt, _Rect.right,      _Rect.bottom - xb });
-
-    _ClientRect = { _Rect.left + yl + PaddingX, _Rect.top + xt + PaddingY, _Rect.right - yr - PaddingX, _Rect.bottom - xb - PaddingY };
-    _ClientSize = { _ClientRect.right - _ClientRect.left, _ClientRect.bottom - _ClientRect.top };
-
-    _IsResized = false;
+    _XAxis.Move(rect);
+    _YAxis.Move(rect);
 }
 
 /// <summary>
@@ -83,7 +61,7 @@ void spectrum_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 {
     HRESULT hr = CreateDeviceSpecificResources(deviceContext);
 
-    if (!SUCCEEDED(hr))
+    if (FAILED(hr))
         return;
 
     switch (_State->_VisualizationType)
@@ -141,8 +119,10 @@ void spectrum_t::Render(ID2D1DeviceContext * deviceContext) noexcept
         case VisualizationType::LevelMeter:
         case VisualizationType::Oscilloscope:
         case VisualizationType::BitMeter:
+        case VisualizationType::Goniometer:
 
         case VisualizationType::Tester:
+        case VisualizationType::D3DTester:
 
         default:
             break;
@@ -152,25 +132,11 @@ void spectrum_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 }
 
 /// <summary>
-/// Handles a configuration change.
-/// </summary>
-void spectrum_t::OnConfigurationChange(ConfigurationChanges configurationChanges) noexcept
-{
-    if (configurationChanges != ConfigurationChanges::Layout)
-        return;
-
-    _XAxis.Initialize(_State, _GraphOptions, _Analysis, _IsFirst, _IsLast);
-    _XAxis.Resize(true);
-}
-
-/// <summary>
 /// Renders the spectrum analysis as bars.
 /// Note: Created in a top-left (0,0) coordinate system and later translated and flipped as necessary.
 /// </summary>
 void spectrum_t::RenderBars(ID2D1DeviceContext * deviceContext) noexcept
 {
-    _LEDSize = _State->_LEDLight + _State->_LEDGap;
-
     FLOAT t = _ClientSize.width / (FLOAT) _Analysis->_FrequencyBands.size();
 
     // Use the full width of the graph?
@@ -185,7 +151,11 @@ void spectrum_t::RenderBars(ID2D1DeviceContext * deviceContext) noexcept
     FLOAT x1 = HOffset;
     FLOAT x2 = x1 + BarWidth;
 
+    const bool HasPeaks = (_State->_PeakMode != PeakMode::None);
+
     deviceContext->SetAntialiasMode( D2D1_ANTIALIAS_MODE_ALIASED); // Required by FillOpacityMask() and results in crispier graphics.
+
+//  _DebugBrush->SetColor(D2D1::ColorF(0x000000FF)); deviceContext->DrawRectangle({ 0.f, 0.f, _ClientSize.width, _ClientSize.height }, _DebugBrush.Get());
 
     for (const auto & fb : _Analysis->_FrequencyBands)
     {
@@ -200,12 +170,12 @@ void spectrum_t::RenderBars(ID2D1DeviceContext * deviceContext) noexcept
             if (fb.HasDarkBackground)
             {
                 if (_DarkBackgroundStyle.IsEnabled())
-                    RenderBarPart(deviceContext, Rect, _DarkBackgroundStyle);
+                    RenderBarSegment(deviceContext, Rect, _DarkBackgroundStyle);
             }
             else
             {
                 if (_LightBackgroundStyle.IsEnabled())
-                    RenderBarPart(deviceContext, Rect, _LightBackgroundStyle);
+                    RenderBarSegment(deviceContext, Rect, _LightBackgroundStyle);
             }
         }
 
@@ -215,7 +185,7 @@ void spectrum_t::RenderBars(ID2D1DeviceContext * deviceContext) noexcept
 
             if (!GreaterThanNyquist || (GreaterThanNyquist && !_State->_SuppressMirrorImage))
             {
-                if ((_State->_PeakMode != PeakMode::None) && (fb.PeakValue > 0.))
+                if (HasPeaks && (fb.PeakValue > 0.))
                     RenderBar(deviceContext, Rect, _BarPeakAreaStyle, _BarPeakTopStyle, fb.PeakValue, fb.Opacity);
 
                 if (fb.Value > 0.)
@@ -233,25 +203,39 @@ void spectrum_t::RenderBars(ID2D1DeviceContext * deviceContext) noexcept
 /// </summary>
 void spectrum_t::RenderBar(ID2D1DeviceContext * deviceContext, D2D1_RECT_F & rect, const style_t & areaStyle, const style_t & topStyle, double value, double opacity) noexcept
 {
-    rect.top    = 0.f;
-    rect.bottom = _ClientSize.height * (FLOAT) value;
+    rect.top = 0.f;
 
     // Draw the bar area.
     if (areaStyle.IsEnabled())
     {
+        rect.bottom = _ClientSize.height * (FLOAT) value;
+
+        if (_State->_LEDMode)
+        {
+            if ( _State->_LEDIntegralSize)
+                rect.bottom = std::ceil(rect.bottom / _LEDSize) * _LEDSize;
+
+            rect.bottom -= _State->_LEDGap;
+        }
+
         if (_BarAreaStyle.IsAmplitudeBased())
             _BarAreaStyle.SetBrushColor(value);
 
-        RenderBarPart(deviceContext, rect, areaStyle);
+        RenderBarSegment(deviceContext, rect, areaStyle);
     }
 
     // Draw the bar top.
     if (topStyle.IsEnabled())
     {
+        rect.bottom = _ClientSize.height * (FLOAT) value;
+
         if (_State->_LEDMode)
         {
-            rect.bottom = _ClientSize.height * (FLOAT) value;
-            rect.top    = rect.bottom - _LEDSize;
+            if ( _State->_LEDIntegralSize)
+                rect.bottom = std::ceil(rect.bottom / _LEDSize) * _LEDSize;
+
+            rect.bottom -= _State->_LEDGap;
+            rect.top     = rect.bottom - _LEDSize;
         }
         else
         {
@@ -262,33 +246,21 @@ void spectrum_t::RenderBar(ID2D1DeviceContext * deviceContext, D2D1_RECT_F & rec
         if ((_State->_PeakMode == PeakMode::FadeOut) || (_State->_PeakMode == PeakMode::FadingAIMP))
             topStyle._Brush->SetOpacity((FLOAT) opacity);
 
-        RenderBarPart(deviceContext, rect, topStyle);
+        RenderBarSegment(deviceContext, rect, topStyle);
     }
 }
 
 /// <summary>
-/// Renders a part of a bar.
+/// Renders a segment of a bar.
 /// </summary>
-void spectrum_t::RenderBarPart(ID2D1DeviceContext * deviceContext, D2D1_RECT_F & rect, const style_t & style) const noexcept
+void spectrum_t::RenderBarSegment(ID2D1DeviceContext * deviceContext, D2D1_RECT_F & rect, const style_t & style) const noexcept
 {
+//  _DebugBrush->SetColor(D2D1::ColorF(0x00FF0000)); deviceContext->DrawRectangle(rect, _DebugBrush.Get());
+
     if (_State->_LEDMode)
-    {
-        if (_State->_LEDIntegralSize)
-        {
-            rect.top    = std::clamp(std::ceilf(rect.top    / _LEDSize) * _LEDSize, _ClientRect.top, _ClientRect.bottom);
-            rect.bottom = std::clamp(std::ceilf(rect.bottom / _LEDSize) * _LEDSize, _ClientRect.top, _ClientRect.bottom);
-        }
-
-        deviceContext->PushAxisAlignedClip(rect, D2D1_ANTIALIAS_MODE_ALIASED);
-
-        const D2D1_RECT_F Src = { rect.left, 0.f, rect.right, _ClientSize.height };
-
-        deviceContext->FillOpacityMask(_OpacityMask, style._Brush, Src, Src);
-
-        deviceContext->PopAxisAlignedClip();
-    }
+        deviceContext->FillOpacityMask(_OpacityMask.Get(), style._Brush.Get(), rect, rect);
     else
-        deviceContext->FillRectangle(rect, style._Brush);
+        deviceContext->FillRectangle(rect, style._Brush.Get());
 }
 
 /// <summary>
@@ -305,34 +277,35 @@ void spectrum_t::RenderCurve(ID2D1DeviceContext * deviceContext) noexcept
     deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
     geometry_points_t Points;
-    CComPtr<ID2D1PathGeometry> Curve;
+
+    ComPtr<ID2D1PathGeometry> Curve;
 
     if ((_State->_PeakMode != PeakMode::None) && (_CurvePeakAreaStyle.IsEnabled() || _CurvePeakLineStyle.IsEnabled()))
     {
-    //  Points.Clear();
+        Points.Clear();
 
         hr = CreateGeometryPointsFromAmplitude(Points, true);
 
         // Draw the area with the peak values.
         if (SUCCEEDED(hr) && _CurvePeakAreaStyle.IsEnabled())
         {
-            hr = CreateCurve(Points, true, &Curve);
+            hr = CreateCurve(Points, true, Curve.GetAddressOf());
 
             if (SUCCEEDED(hr))
-                deviceContext->FillGeometry(Curve, _CurvePeakAreaStyle._Brush);
+                deviceContext->FillGeometry(Curve.Get(), _CurvePeakAreaStyle._Brush.Get());
 
-            Curve.Release();
+            Curve.Reset();
         }
 
         // Draw the line with the peak values.
         if (SUCCEEDED(hr) && _CurvePeakLineStyle.IsEnabled())
         {
-            hr = CreateCurve(Points, false, &Curve);
+            hr = CreateCurve(Points, false, Curve.GetAddressOf());
 
             if (SUCCEEDED(hr))
-                deviceContext->DrawGeometry(Curve, _CurvePeakLineStyle._Brush, _CurvePeakLineStyle._Thickness);
+                deviceContext->DrawGeometry(Curve.Get(), _CurvePeakLineStyle._Brush.Get(), _CurvePeakLineStyle._Thickness);
 
-            Curve.Release();
+            Curve.Reset();
         }
     }
 
@@ -345,23 +318,23 @@ void spectrum_t::RenderCurve(ID2D1DeviceContext * deviceContext) noexcept
         // Draw the area with the current values.
         if (SUCCEEDED(hr) && _CurveAreaStyle.IsEnabled())
         {
-            hr = CreateCurve(Points, true, &Curve);
+            hr = CreateCurve(Points, true, Curve.GetAddressOf());
 
             if (SUCCEEDED(hr))
-                deviceContext->FillGeometry(Curve, _CurveAreaStyle._Brush);
+                deviceContext->FillGeometry(Curve.Get(), _CurveAreaStyle._Brush.Get());
 
-            Curve.Release();
+            Curve.Reset();
         }
 
         // Draw the line with the current values.
         if (SUCCEEDED(hr) && _CurveLineStyle.IsEnabled())
         {
-            hr = CreateCurve(Points, false, &Curve);
+            hr = CreateCurve(Points, false, Curve.GetAddressOf());
 
             if (SUCCEEDED(hr))
-                deviceContext->DrawGeometry(Curve, _CurveLineStyle._Brush, _CurveLineStyle._Thickness);
+                deviceContext->DrawGeometry(Curve.Get(), _CurveLineStyle._Brush.Get(), _CurveLineStyle._Thickness);
 
-            Curve.Release();
+            Curve.Reset();
         }
     }
 }
@@ -384,7 +357,7 @@ void spectrum_t::RenderRadialBars(ID2D1DeviceContext * deviceContext) noexcept
 
     const FLOAT MaxSegmentHeight = OuterRadius - InnerRadius;
 
-    FLOAT a = (FLOAT) ::fmod((std::numbers::pi / 2.) + (_Chrono.Elapsed() * -Degrees2Radians(_State->_AngularVelocity)), 2. * std::numbers::pi);
+    FLOAT a = (FLOAT) ::fmod((std::numbers::pi / 2.) + (_Chrono.Elapsed() * -DegreesToRadians(_State->_AngularVelocity)), 2. * std::numbers::pi);
 //  FLOAT a = (FLOAT) ::fmod((std::numbers::pi / 2.) + ::cos(_Chrono.Elapsed() * -_State->_AngularVelocity), 2. * std::numbers::pi);
 
     const FLOAT da = (FLOAT)(2. * std::numbers::pi) / (FLOAT) _Analysis->_FrequencyBands.size();
@@ -394,7 +367,12 @@ void spectrum_t::RenderRadialBars(ID2D1DeviceContext * deviceContext) noexcept
     size_t i = 0;
     double n = (double) (_Analysis->_FrequencyBands.size() - 1);
 
-    CComPtr<ID2D1PathGeometry> Path;
+    ComPtr<ID2D1PathGeometry> Path;
+
+    ID2D1Brush * BarPeakAreaBrush = _BarPeakAreaStyle._Brush.Get();
+    ID2D1Brush * BarPeakTopBrush  = _BarPeakTopStyle._Brush.Get();
+    ID2D1Brush * BarAreaBrush     = _BarAreaStyle._Brush.Get();
+    ID2D1Brush * BarTopBrush      = _BarTopStyle._Brush.Get();
 
     for (const auto & fb : _Analysis->_FrequencyBands)
     {
@@ -408,7 +386,7 @@ void spectrum_t::RenderRadialBars(ID2D1DeviceContext * deviceContext) noexcept
                 const FLOAT r1 = InnerRadius;
                 const FLOAT r2 = InnerRadius + (MaxSegmentHeight * (FLOAT) fb.PeakValue);
 
-                if (SUCCEEDED(CreateSegment(a, a - da, r1, r2, &Path)))
+                if (SUCCEEDED(CreateSegment(a, a - da, r1, r2, Path.GetAddressOf())))
                 {
                     if (_BarPeakAreaStyle.Has(style_t::Features::HorizontalGradient))
                     {
@@ -417,9 +395,9 @@ void spectrum_t::RenderRadialBars(ID2D1DeviceContext * deviceContext) noexcept
                         _BarPeakAreaStyle.SetBrushColor(Value);
                     }
 
-                    deviceContext->FillGeometry(Path, _BarPeakAreaStyle._Brush);
+                    deviceContext->FillGeometry(Path.Get(), BarPeakAreaBrush);
 
-                    Path.Release();
+                    Path.Reset();
                 }
             }
 
@@ -429,7 +407,7 @@ void spectrum_t::RenderRadialBars(ID2D1DeviceContext * deviceContext) noexcept
                 const FLOAT r1 = InnerRadius + (MaxSegmentHeight * (FLOAT) fb.PeakValue) - _BarPeakTopStyle._Thickness / 2.f;
                 const FLOAT r2 = InnerRadius + (MaxSegmentHeight * (FLOAT) fb.PeakValue) + _BarPeakTopStyle._Thickness;
 
-                if (SUCCEEDED(CreateSegment(a, a - da, r1, r2, &Path)))
+                if (SUCCEEDED(CreateSegment(a, a - da, r1, r2, Path.GetAddressOf())))
                 {
                     if (_BarPeakTopStyle.Has(style_t::Features::HorizontalGradient))
                     {
@@ -442,9 +420,9 @@ void spectrum_t::RenderRadialBars(ID2D1DeviceContext * deviceContext) noexcept
 
                     _BarPeakTopStyle._Brush->SetOpacity(Opacity);
 
-                    deviceContext->FillGeometry(Path, _BarPeakTopStyle._Brush);
+                    deviceContext->FillGeometry(Path.Get(), BarPeakTopBrush);
 
-                    Path.Release();
+                    Path.Reset();
                 }
             }
 
@@ -454,7 +432,7 @@ void spectrum_t::RenderRadialBars(ID2D1DeviceContext * deviceContext) noexcept
                 const FLOAT r1 = InnerRadius;
                 const FLOAT r2 = InnerRadius + (MaxSegmentHeight * (FLOAT) fb.Value);
 
-                if (SUCCEEDED(CreateSegment(a, a - da, r1, r2, &Path)))
+                if (SUCCEEDED(CreateSegment(a, a - da, r1, r2, Path.GetAddressOf())))
                 {
                     if (_BarAreaStyle.Has(style_t::Features::HorizontalGradient))
                     {
@@ -463,9 +441,9 @@ void spectrum_t::RenderRadialBars(ID2D1DeviceContext * deviceContext) noexcept
                         _BarAreaStyle.SetBrushColor(Value);
                     }
 
-                    deviceContext->FillGeometry(Path, _BarAreaStyle._Brush);
+                    deviceContext->FillGeometry(Path.Get(), BarAreaBrush);
 
-                    Path.Release();
+                    Path.Reset();
                 }
             }
 
@@ -475,7 +453,7 @@ void spectrum_t::RenderRadialBars(ID2D1DeviceContext * deviceContext) noexcept
                 const FLOAT r1 = InnerRadius + (MaxSegmentHeight * (FLOAT) fb.Value) - _BarTopStyle._Thickness / 2.f;
                 const FLOAT r2 = InnerRadius + (MaxSegmentHeight * (FLOAT) fb.Value) + _BarTopStyle._Thickness;
 
-                if (SUCCEEDED(CreateSegment(a, a - da, r1, r2, &Path)))
+                if (SUCCEEDED(CreateSegment(a, a - da, r1, r2, Path.GetAddressOf())))
                 {
                     if (_BarTopStyle.Has(style_t::Features::HorizontalGradient))
                     {
@@ -484,9 +462,9 @@ void spectrum_t::RenderRadialBars(ID2D1DeviceContext * deviceContext) noexcept
                         _BarTopStyle.SetBrushColor(Value);
                     }
 
-                    deviceContext->FillGeometry(Path, _BarTopStyle._Brush);
+                    deviceContext->FillGeometry(Path.Get(), BarTopBrush);
 
-                    Path.Release();
+                    Path.Reset();
                 }
             }
         }
@@ -510,7 +488,8 @@ void spectrum_t::RenderRadialCurve(ID2D1DeviceContext * deviceContext) noexcept
     deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
     geometry_points_t Points;
-    CComPtr<ID2D1PathGeometry> Curve;
+
+    ComPtr<ID2D1PathGeometry> Curve;
 
     const FLOAT Side = std::min(_ClientSize.width / 2.f, _ClientSize.height / 2.f);
     const FLOAT InnerRadius = Side * _State->_InnerRadius;
@@ -524,23 +503,23 @@ void spectrum_t::RenderRadialCurve(ID2D1DeviceContext * deviceContext) noexcept
         // Draw the area with the peak values.
         if (SUCCEEDED(hr) && _CurvePeakAreaStyle.IsEnabled())
         {
-            hr = CreateRadialCurve(Points, InnerRadius, true, &Curve);
+            hr = CreateRadialCurve(Points, InnerRadius, true, Curve.GetAddressOf());
 
             if (SUCCEEDED(hr))
-                deviceContext->FillGeometry(Curve, _CurvePeakAreaStyle._Brush);
+                deviceContext->FillGeometry(Curve.Get(), _CurvePeakAreaStyle._Brush.Get());
 
-            Curve.Release();
+            Curve.Reset();
         }
 
         // Draw the line with the peak values.
         if (SUCCEEDED(hr) && _CurvePeakLineStyle.IsEnabled())
         {
-            hr = CreateRadialCurve(Points, InnerRadius, false, &Curve);
+            hr = CreateRadialCurve(Points, InnerRadius, false, Curve.GetAddressOf());
 
             if (SUCCEEDED(hr))
-                deviceContext->DrawGeometry(Curve, _CurvePeakLineStyle._Brush, _CurvePeakLineStyle._Thickness);
+                deviceContext->DrawGeometry(Curve.Get(), _CurvePeakLineStyle._Brush.Get(), _CurvePeakLineStyle._Thickness);
 
-            Curve.Release();
+            Curve.Reset();
         }
     }
 
@@ -553,23 +532,23 @@ void spectrum_t::RenderRadialCurve(ID2D1DeviceContext * deviceContext) noexcept
         // Draw the area with the current values.
         if (SUCCEEDED(hr) && _CurveAreaStyle.IsEnabled())
         {
-            hr = CreateRadialCurve(Points, InnerRadius, true, &Curve);
+            hr = CreateRadialCurve(Points, InnerRadius, true, Curve.GetAddressOf());
 
             if (SUCCEEDED(hr))
-                deviceContext->FillGeometry(Curve, _CurveAreaStyle._Brush);
+                deviceContext->FillGeometry(Curve.Get(), _CurveAreaStyle._Brush.Get());
 
-            Curve.Release();
+            Curve.Reset();
         }
 
         // Draw the line with the current values.
         if (SUCCEEDED(hr) && _CurveLineStyle.IsEnabled())
         {
-            hr = CreateRadialCurve(Points, InnerRadius, false, &Curve);
+            hr = CreateRadialCurve(Points, InnerRadius, false, Curve.GetAddressOf());
 
             if (SUCCEEDED(hr))
-                deviceContext->DrawGeometry(Curve, _CurveLineStyle._Brush, _CurveLineStyle._Thickness);
+                deviceContext->DrawGeometry(Curve.Get(), _CurveLineStyle._Brush.Get(), _CurveLineStyle._Thickness);
 
-            Curve.Release();
+            Curve.Reset();
         }
     }
 }
@@ -605,7 +584,7 @@ void spectrum_t::RenderNyquistFrequencyMarker(ID2D1DeviceContext * deviceContext
     // Draw the line
     deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
 
-    deviceContext->DrawLine(D2D1_POINT_2F(x, 0.f), D2D1_POINT_2F(x, _ClientSize.height), _NyquistMarkerStyle._Brush, _NyquistMarkerStyle._Thickness, nullptr);
+    deviceContext->DrawLine(D2D1_POINT_2F(x, 0.f), D2D1_POINT_2F(x, _ClientSize.height), _NyquistMarkerStyle._Brush.Get(), _NyquistMarkerStyle._Thickness, nullptr);
 }
 
 /// <summary>
@@ -622,7 +601,7 @@ void spectrum_t::RenderDiagnostics(ID2D1DeviceContext * deviceContext) const noe
 
         r.top++;
 
-        _DebugBrush->SetColor(D2D1::ColorF(0.0f, 0.0f, 1.0f));
+        _DebugBrush->SetColor(D2D1::ColorF(D2D1::ColorF::Blue));
 
         deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
 
@@ -633,6 +612,8 @@ void spectrum_t::RenderDiagnostics(ID2D1DeviceContext * deviceContext) const noe
     if (_State->_ShowWindowFunction)
     {
         deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+
+        ID2D1Brush * Brush = _WindowFunctionStyle._Brush.Get();
 
         const FLOAT y1 = _ClientRect.bottom;
         const FLOAT y2 = _ClientRect.top + 1.f;
@@ -649,7 +630,7 @@ void spectrum_t::RenderDiagnostics(ID2D1DeviceContext * deviceContext) const noe
 
             auto p2 = D2D1_POINT_2F(msc::Map(x, -1., 1., _ClientRect.left, _ClientRect.right), msc::Map(y, 0., 1., y1, y2));
 
-            deviceContext->DrawLine(p1, p2, _WindowFunctionStyle._Brush, _WindowFunctionStyle._Thickness);
+            deviceContext->DrawLine(p1, p2, Brush, _WindowFunctionStyle._Thickness);
 
             p1 = p2;
         }
@@ -658,8 +639,7 @@ void spectrum_t::RenderDiagnostics(ID2D1DeviceContext * deviceContext) const noe
 
         auto p2 = D2D1_POINT_2F(_ClientRect.right, msc::Map(y, 0., 1., y1, y2));
 
-        deviceContext->DrawLine(p1, p2, _WindowFunctionStyle._Brush, _WindowFunctionStyle._Thickness);
-
+        deviceContext->DrawLine(p1, p2, Brush, _WindowFunctionStyle._Thickness);
     }
 
     // Render the weighing function.
@@ -669,6 +649,8 @@ void spectrum_t::RenderDiagnostics(ID2D1DeviceContext * deviceContext) const noe
         const double Offset   = _State->_FrequencyShift * BinWidth;
 
         deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+
+        ID2D1Brush * Brush = _WeighingFunctionStyle._Brush.Get();
 
         const FLOAT x1 = _ClientRect.left;
         const FLOAT x2 = _ClientRect.right;
@@ -692,7 +674,7 @@ void spectrum_t::RenderDiagnostics(ID2D1DeviceContext * deviceContext) const noe
 
             auto p2 = D2D1_POINT_2F(x, msc::Map(y, _GraphOptions->_AmplitudeLo, _GraphOptions->_AmplitudeHi, y1, y2));
 
-            deviceContext->DrawLine(p1, p2, _WeighingFunctionStyle._Brush, _WeighingFunctionStyle._Thickness);
+            deviceContext->DrawLine(p1, p2, Brush, _WeighingFunctionStyle._Thickness);
 
             p1 = p2;
         }
@@ -704,330 +686,65 @@ void spectrum_t::RenderDiagnostics(ID2D1DeviceContext * deviceContext) const noe
 
         auto p2 = D2D1_POINT_2F(x, msc::Map(y, _GraphOptions->_AmplitudeLo, _GraphOptions->_AmplitudeHi, y1, y2));
 
-        deviceContext->DrawLine(p1, p2, _WeighingFunctionStyle._Brush, _WeighingFunctionStyle._Thickness);
+        deviceContext->DrawLine(p1, p2, Brush, _WeighingFunctionStyle._Thickness);
     }
 }
 
 /// <summary>
+/// Resets this instance.
+/// </summary>
+void spectrum_t::Reset() noexcept
+{
+    DeleteDeviceSpecificResources();
+}
+
+/// <summary>
 /// Creates resources which are bound to a particular D3D device.
-/// It's all centralized here, in case the resources need to be recreated in case of D3D device loss (eg. display change, remoting, removal of video card, etc).
 /// </summary>
 HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept
 {
-    if (_State->_RecreateStyles)
-        DeleteDeviceSpecificResources();
-
     auto & StyleManager = _GraphOptions->_UseLocalStyles ? _GraphOptions->_StyleManager : _State->_StyleManager;
 
     HRESULT hr = _XAxis.CreateDeviceSpecificResources(deviceContext, StyleManager);
 
-    if (!SUCCEEDED(hr))
+    if (FAILED(hr))
         return hr;
 
     hr = _YAxis.CreateDeviceSpecificResources(deviceContext, StyleManager);
 
-    if (!SUCCEEDED(hr))
+    if (FAILED(hr))
         return hr;
-
-    Resize();
 
 #ifdef _DEBUG
     if (_DebugBrush == nullptr)
-        (void) deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), &_DebugBrush);
+        (void) deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), _DebugBrush.GetAddressOf());
 #endif
 
-    #pragma warning(disable: 4062)
-    switch (_State->_VisualizationType)
+    if (_State->_ColorsHaveChanged || _State->_SizeHasChanged)
     {
-        case VisualizationType::Bars:
-        {
-            if (_BarAreaStyle._Brush == nullptr)
-            {
-                _BarAreaStyle = *StyleManager.GetStyle(VisualElement::BarArea);
+        DeleteColorDependentResources();
 
-                _BarAreaStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+        Initialize();
 
-                hr = _BarAreaStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, L"", 1.f);
+        hr = CreateColorDependentResources(deviceContext);
 
-                if (!SUCCEEDED(hr))
-                    return hr;
-            }
-
-            if (_BarTopStyle._Brush == nullptr)
-            {
-                _BarTopStyle = *StyleManager.GetStyle(VisualElement::BarTop);
-
-                _BarTopStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
-
-                hr = _BarTopStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, L"", 1.f);
-
-                if (!SUCCEEDED(hr))
-                    return hr;
-            }
-
-            if (_BarPeakAreaStyle._Brush == nullptr)
-            {
-                _BarPeakAreaStyle = *StyleManager.GetStyle(VisualElement::BarPeakArea);
-
-                _BarPeakAreaStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
-
-                hr = _BarPeakAreaStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, L"", 1.f);
-
-                if (!SUCCEEDED(hr))
-                    return hr;
-            }
-
-            if (_BarPeakTopStyle._Brush == nullptr)
-            {
-                _BarPeakTopStyle = *StyleManager.GetStyle(VisualElement::BarPeakTop);
-
-                _BarPeakTopStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
-
-                hr = _BarPeakTopStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, L"", 1.f);
-
-                if (!SUCCEEDED(hr))
-                    return hr;
-            }
-
-            if (_DarkBackgroundStyle._Brush == nullptr)
-            {
-                _DarkBackgroundStyle = *StyleManager.GetStyle(VisualElement::BarDarkBackground);
-
-                _DarkBackgroundStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
-
-                hr = _DarkBackgroundStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, L"", 1.f);
-
-                if (!SUCCEEDED(hr))
-                    return hr;
-            }
-
-            if (_LightBackgroundStyle._Brush == nullptr)
-            {
-                _LightBackgroundStyle = *StyleManager.GetStyle(VisualElement::BarLightBackground);
-
-                _LightBackgroundStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
-
-                hr = _LightBackgroundStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, L"", 1.f);
-
-                if (!SUCCEEDED(hr))
-                    return hr;
-            }
-
-            if (_OpacityMask == nullptr)
-            {
-                hr = CreateOpacityMask(deviceContext);
-
-                if (!SUCCEEDED(hr))
-                    return hr;
-            }
-            break;
-        }
-
-        case VisualizationType::Curve:
-        {
-            if (_CurveLineStyle._Brush == nullptr)
-            {
-                _CurveLineStyle = *StyleManager.GetStyle(VisualElement::CurveLine);
-
-                _CurveLineStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
-
-                hr = _CurveLineStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, L"", 1.f);
-
-                if (!SUCCEEDED(hr))
-                    return hr;
-            }
-
-            if (_CurveAreaStyle._Brush == nullptr)
-            {
-                _CurveAreaStyle = *StyleManager.GetStyle(VisualElement::CurveArea);
-
-                _CurveAreaStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
-
-                hr = _CurveAreaStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, L"", 1.f);
-
-                if (!SUCCEEDED(hr))
-                    return hr;
-            }
-
-            if (_CurvePeakLineStyle._Brush == nullptr)
-            {
-                _CurvePeakLineStyle = *StyleManager.GetStyle(VisualElement::CurvePeakLine);
-
-                _CurvePeakLineStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
-
-                hr = _CurvePeakLineStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, L"", 1.f);
-
-                if (!SUCCEEDED(hr))
-                    return hr;
-            }
-
-            if (_CurvePeakAreaStyle._Brush == nullptr)
-            {
-                _CurvePeakAreaStyle = *StyleManager.GetStyle(VisualElement::CurvePeakArea);
-
-                _CurvePeakAreaStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
-
-                hr = _CurvePeakAreaStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, L"", 1.f);
-
-                if (!SUCCEEDED(hr))
-                    return hr;
-            }
-            break;
-        }
-
-        case VisualizationType::RadialBars:
-        {
-            constexpr D2D1_POINT_2F Center = { };
-            constexpr D2D1_POINT_2F Offset = { };
-
-            const FLOAT rx = _ClientSize.height / 2.f;
-            const FLOAT ry = _ClientSize.height / 2.f;
-
-            if (_BarAreaStyle._Brush == nullptr)
-            {
-                _BarAreaStyle = *StyleManager.GetStyle(VisualElement::BarArea);
-
-                _BarAreaStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
-
-                hr = _BarAreaStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, Center, Offset, rx, ry, _State->_InnerRadius);
-
-                if (!SUCCEEDED(hr))
-                    return hr;
-            }
-
-            if (_BarTopStyle._Brush == nullptr)
-            {
-                _BarTopStyle = *StyleManager.GetStyle(VisualElement::BarTop);
-
-                _BarTopStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
-
-                hr = _BarTopStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, Center, Offset, rx, ry, _State->_InnerRadius);
-
-                if (!SUCCEEDED(hr))
-                    return hr;
-            }
-
-            if (_BarPeakAreaStyle._Brush == nullptr)
-            {
-                _BarPeakAreaStyle = *StyleManager.GetStyle(VisualElement::BarPeakArea);
-
-                _BarPeakAreaStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
-
-                hr = _BarPeakAreaStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, Center, Offset, rx, ry, _State->_InnerRadius);
-
-                if (!SUCCEEDED(hr))
-                    return hr;
-            }
-
-            if (_BarPeakTopStyle._Brush == nullptr)
-            {
-                _BarPeakTopStyle = *StyleManager.GetStyle(VisualElement::BarPeakTop);
-
-                _BarPeakTopStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
-
-                hr = _BarPeakTopStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, Center, Offset, rx, ry, _State->_InnerRadius);
-
-                if (!SUCCEEDED(hr))
-                    return hr;
-            }
-
-            break;
-        }
-
-        case VisualizationType::RadialCurve:
-        {
-            constexpr D2D1_POINT_2F Center = { };
-            constexpr D2D1_POINT_2F Offset = { };
-
-            const FLOAT rx = _ClientSize.height / 2.f;
-            const FLOAT ry = _ClientSize.height / 2.f;
-
-            if (_CurveLineStyle._Brush == nullptr)
-            {
-                _CurveLineStyle = *StyleManager.GetStyle(VisualElement::CurveLine);
-
-                _CurveLineStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
-
-                hr = _CurveLineStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, Center, Offset, rx, ry, _State->_InnerRadius);
-
-                if (!SUCCEEDED(hr))
-                    return hr;
-            }
-
-            if (_CurveAreaStyle._Brush == nullptr)
-            {
-                _CurveAreaStyle = *StyleManager.GetStyle(VisualElement::CurveArea);
-
-                _CurveAreaStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
-
-                hr = _CurveAreaStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, Center, Offset, rx, ry, _State->_InnerRadius);
-
-                if (!SUCCEEDED(hr))
-                    return hr;
-            }
-
-            if (_CurvePeakLineStyle._Brush == nullptr)
-            {
-                _CurvePeakLineStyle = *StyleManager.GetStyle(VisualElement::CurvePeakLine);
-
-                _CurvePeakLineStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
-
-                hr = _CurvePeakLineStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, Center, Offset, rx, ry, _State->_InnerRadius);
-
-                if (!SUCCEEDED(hr))
-                    return hr;
-            }
-
-            if (_CurvePeakAreaStyle._Brush == nullptr)
-            {
-                _CurvePeakAreaStyle = *StyleManager.GetStyle(VisualElement::CurvePeakArea);
-
-                _CurvePeakAreaStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
-
-                hr = _CurvePeakAreaStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, Center, Offset, rx, ry, _State->_InnerRadius);
-
-                if (!SUCCEEDED(hr))
-                    return hr;
-            }
-
-            break;
-        }
-    }
-
-    if (_NyquistMarkerStyle._Brush == nullptr)
-    {
-        _NyquistMarkerStyle = *StyleManager.GetStyle(VisualElement::NyquistMarker);
-
-        _NyquistMarkerStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
-
-        hr = _NyquistMarkerStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, L"", 1.f);
-    }
-
-    if (_WindowFunctionStyle._Brush == nullptr)
-    {
-        _WindowFunctionStyle = *StyleManager.GetStyle(VisualElement::WindowFunction);
-
-        _WindowFunctionStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
-
-        hr = _WindowFunctionStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, L"", 1.f);
-
-        if (!SUCCEEDED(hr))
+        if (FAILED(hr))
             return hr;
     }
 
-    if (_WeighingFunctionStyle._Brush == nullptr)
+    if (_State->_SizeHasChanged)
     {
-        _WeighingFunctionStyle = *StyleManager.GetStyle(VisualElement::WeighingFunction);
+        DeleteSizeDependentResources();
 
-        _WeighingFunctionStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+        Initialize();
 
-        hr = _WeighingFunctionStyle.CreateDeviceSpecificResources(deviceContext, _ClientSize, L"", 1.f);
+        hr = CreateSizeDependentResources(deviceContext);
 
-        if (!SUCCEEDED(hr))
+        if (FAILED(hr))
             return hr;
     }
 
-    return hr;
+    return S_OK;
 }
 
 /// <summary>
@@ -1038,10 +755,227 @@ void spectrum_t::DeleteDeviceSpecificResources() noexcept
     _YAxis.DeleteDeviceSpecificResources();
     _XAxis.DeleteDeviceSpecificResources();
 
-    _CurveLineStyle.DeleteDeviceSpecificResources();
-    _CurveAreaStyle.DeleteDeviceSpecificResources();
-    _CurvePeakLineStyle.DeleteDeviceSpecificResources();
+    DeleteColorDependentResources();
+    DeleteSizeDependentResources();
+
+    _DebugBrush.Reset();
+}
+
+/// <summary>
+/// Creates the resources that depend on the size of the render target.
+/// </summary>
+HRESULT spectrum_t::CreateSizeDependentResources(ID2D1DeviceContext * deviceContext) noexcept
+{
+    if (_State->_VisualizationType != VisualizationType::Bars)
+        return S_OK;
+
+    if (_OpacityMask == nullptr)
+    {
+        _LEDSize = _State->_LEDLight + _State->_LEDGap;
+
+        HRESULT hr = CreateOpacityMask(deviceContext);
+
+        if (FAILED(hr))
+            return hr;
+    }
+
+    return S_OK;
+}
+
+/// <summary>
+/// Deletes the resources that depend on the size of the render target.
+/// </summary>
+void spectrum_t::DeleteSizeDependentResources() noexcept
+{
+    _OpacityMask.Reset();
+}
+
+/// <summary>
+/// Creates the resources that depend on the color palette.
+/// </summary>
+HRESULT spectrum_t::CreateColorDependentResources(ID2D1DeviceContext * deviceContext) noexcept
+{
+    auto & StyleManager = _GraphOptions->_UseLocalStyles ? _GraphOptions->_StyleManager : _State->_StyleManager;
+
+    const auto InitializeStyle = [this, deviceContext, & StyleManager](style_t & style, VisualElement element) noexcept -> HRESULT
+    {
+        if (style._Brush != nullptr)
+            return S_OK;
+
+        style = *StyleManager.GetStyle(element);
+
+        style.SetColor(_State);
+
+        return style.CreateDeviceSpecificResources(deviceContext, _ClientSize, L"", 1.f);
+    };
+
+    const auto InitializeRadialStyle = [this, deviceContext, &StyleManager](style_t & style, VisualElement element) noexcept -> HRESULT
+    {
+        if (style._Brush != nullptr)
+            return S_OK;
+
+        constexpr D2D1_POINT_2F Center = { };
+        constexpr D2D1_POINT_2F Offset = { };
+
+        const FLOAT Radius = _ClientSize.height / 2.f;
+
+        style = *StyleManager.GetStyle(element);
+
+        style.SetColor(_State);
+
+        return style.CreateDeviceSpecificResources(deviceContext, _ClientSize, Center, Offset, Radius, Radius, _State->_InnerRadius);
+    };
+
+    HRESULT hr = S_OK;
+
+    #pragma warning(push)
+    #pragma warning(disable: 4062)
+    switch (_State->_VisualizationType)
+    {
+        case VisualizationType::Bars:
+        {
+            hr = InitializeStyle(_BarAreaStyle, VisualElement::BarArea);
+
+            if (FAILED(hr))
+                return hr;
+
+            hr = InitializeStyle(_BarTopStyle, VisualElement::BarTop);
+
+            if (FAILED(hr))
+                return hr;
+
+            hr = InitializeStyle(_BarPeakAreaStyle, VisualElement::BarPeakArea);
+
+            if (FAILED(hr))
+                return hr;
+
+            hr = InitializeStyle(_BarPeakTopStyle, VisualElement::BarPeakTop);
+
+            if (FAILED(hr))
+                return hr;
+
+            hr = InitializeStyle(_DarkBackgroundStyle, VisualElement::BarDarkBackground);
+
+            if (FAILED(hr))
+                return hr;
+
+            hr = InitializeStyle(_LightBackgroundStyle, VisualElement::BarLightBackground);
+
+            if (FAILED(hr))
+                return hr;
+
+            break;
+        }
+
+        case VisualizationType::Curve:
+        {
+            hr = InitializeStyle(_CurveLineStyle, VisualElement::CurveLine);
+
+            if (FAILED(hr))
+                return hr;
+
+            hr = InitializeStyle(_CurveAreaStyle, VisualElement::CurveArea);
+
+            if (FAILED(hr))
+                return hr;
+
+            hr = InitializeStyle(_CurvePeakLineStyle, VisualElement::CurvePeakLine);
+
+            if (FAILED(hr))
+                return hr;
+
+            hr = InitializeStyle(_CurvePeakAreaStyle, VisualElement::CurvePeakArea);
+
+            if (FAILED(hr))
+                return hr;
+
+            break;
+        }
+
+        case VisualizationType::RadialBars:
+        {
+            hr = InitializeRadialStyle(_BarAreaStyle, VisualElement::BarArea);
+
+            if (FAILED(hr))
+                return hr;
+
+            hr = InitializeRadialStyle(_BarTopStyle, VisualElement::BarTop);
+
+            if (FAILED(hr))
+                return hr;
+
+            hr = InitializeRadialStyle(_BarPeakAreaStyle, VisualElement::BarPeakArea);
+
+            if (FAILED(hr))
+                return hr;
+
+            hr = InitializeRadialStyle(_BarPeakTopStyle, VisualElement::BarPeakTop);
+
+            if (FAILED(hr))
+                return hr;
+
+            break;
+        }
+
+        case VisualizationType::RadialCurve:
+        {
+            hr = InitializeRadialStyle(_CurveLineStyle, VisualElement::CurveLine);
+
+            if (FAILED(hr))
+                return hr;
+
+            hr = InitializeRadialStyle(_CurveAreaStyle, VisualElement::CurveArea);
+
+            if (FAILED(hr))
+                return hr;
+
+            hr = InitializeRadialStyle(_CurvePeakLineStyle, VisualElement::CurvePeakLine);
+
+            if (FAILED(hr))
+                return hr;
+
+            hr = InitializeRadialStyle(_CurvePeakAreaStyle, VisualElement::CurvePeakArea);
+
+            if (FAILED(hr))
+                return hr;
+
+            break;
+        }
+    }
+    #pragma warning(pop)
+
+    hr = InitializeStyle(_NyquistMarkerStyle, VisualElement::NyquistMarker);
+
+    if (FAILED(hr))
+        return hr;
+
+    hr = InitializeStyle(_WindowFunctionStyle, VisualElement::WindowFunction);
+
+    if (FAILED(hr))
+        return hr;
+
+    hr = InitializeStyle(_WeighingFunctionStyle, VisualElement::WeighingFunction);
+
+    if (FAILED(hr))
+        return hr;
+
+    return S_OK;
+}
+
+/// <summary>
+/// Deletes the resources that depend on the color palette.
+/// </summary>
+void spectrum_t::DeleteColorDependentResources() noexcept
+{
+    _WeighingFunctionStyle.DeleteDeviceSpecificResources();
+    _WindowFunctionStyle.DeleteDeviceSpecificResources();
+
+    _NyquistMarkerStyle.DeleteDeviceSpecificResources();
+
     _CurvePeakAreaStyle.DeleteDeviceSpecificResources();
+    _CurvePeakLineStyle.DeleteDeviceSpecificResources();
+    _CurveAreaStyle.DeleteDeviceSpecificResources();
+    _CurveLineStyle.DeleteDeviceSpecificResources();
 
     _BarAreaStyle.DeleteDeviceSpecificResources();
     _BarTopStyle.DeleteDeviceSpecificResources();
@@ -1049,11 +983,6 @@ void spectrum_t::DeleteDeviceSpecificResources() noexcept
     _BarPeakTopStyle.DeleteDeviceSpecificResources();
     _DarkBackgroundStyle.DeleteDeviceSpecificResources();
     _LightBackgroundStyle.DeleteDeviceSpecificResources();
-
-    _NyquistMarkerStyle.DeleteDeviceSpecificResources();
-
-    _OpacityMask.Release();
-    _DebugBrush.Release();
 }
 
 /// <summary>
@@ -1061,38 +990,39 @@ void spectrum_t::DeleteDeviceSpecificResources() noexcept
 /// </summary>
 HRESULT spectrum_t::CreateOpacityMask(ID2D1DeviceContext * deviceContext) noexcept
 {
-    CComPtr<ID2D1BitmapRenderTarget> rt;
+    ComPtr<ID2D1BitmapRenderTarget> rt;
 
-    HRESULT hr = deviceContext->CreateCompatibleRenderTarget(D2D1::SizeF(1.f, _ClientSize.height), &rt);
+    HRESULT hr = deviceContext->CreateCompatibleRenderTarget(D2D1::SizeF(1.f, _ClientSize.height), rt.GetAddressOf());
 
-    if (SUCCEEDED(hr))
+    if (FAILED(hr))
+        return hr;
+
+    ComPtr<ID2D1SolidColorBrush> Brush;
+    {
+        hr = rt->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Black), Brush.GetAddressOf());
+
+        if (FAILED(hr))
+            return hr;
+    }
+
+    rt->BeginDraw();
+
+    rt->Clear(); // Transparent
+
+    if (_LEDSize > 0.f)
     {
         rt->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
 
-        CComPtr<ID2D1SolidColorBrush> Brush;
-
-        hr = rt->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Black), &Brush);
-
-        if (SUCCEEDED(hr))
-        {
-            rt->BeginDraw();
-
-            rt->Clear(); // Transparent
-
-            const FLOAT LEDSize = _State->_LEDLight + _State->_LEDGap;
-
-            if (LEDSize > 0.f)
-            {
-                for (FLOAT y = 0.f; y < _ClientSize.height; y += LEDSize)
-                    rt->FillRectangle(D2D1::RectF(0.f, y, 1.f, y + _State->_LEDLight), Brush);
-            }
-
-            hr = rt->EndDraw();
-        }
-
-        if (SUCCEEDED(hr))
-            hr = rt->GetBitmap(&_OpacityMask);
+        for (FLOAT y = 0.f; y < _ClientSize.height; y += _LEDSize)
+            rt->FillRectangle(D2D1::RectF(0.f, y, 1.f, y + _State->_LEDLight), Brush.Get());
     }
+
+    hr = rt->EndDraw();
+
+    if (FAILED(hr))
+        return hr;
+
+    hr = rt->GetBitmap(_OpacityMask.GetAddressOf());
 
     return hr;
 }
@@ -1169,37 +1099,39 @@ HRESULT spectrum_t::CreateCurve(const geometry_points_t & gp, bool isFilled, ID2
     if (gp.p0.size() < 2)
         return E_FAIL;
 
-    HRESULT hr = _Direct2D.Factory->CreatePathGeometry(curve);
+    HRESULT hr = Direct2DFactory::Get()->CreatePathGeometry(curve);
 
-    CComPtr<ID2D1GeometrySink> Sink;
+    if (FAILED(hr))
+        return hr;
 
-    if (SUCCEEDED(hr))
-        hr = (*curve)->Open(&Sink);
+    ComPtr<ID2D1GeometrySink> Sink;
 
-    if (SUCCEEDED(hr))
+    hr = (*curve)->Open(Sink.GetAddressOf());
+
+    if (FAILED(hr))
+        return hr;
+
+    Sink->SetFillMode(D2D1_FILL_MODE_WINDING);
+
+    if (isFilled)
     {
-        Sink->SetFillMode(D2D1_FILL_MODE_WINDING);
-
-        if (isFilled)
-        {
-            Sink->BeginFigure(D2D1::Point2F(0.f, 0.f), D2D1_FIGURE_BEGIN_FILLED); // Start with a vertical line going up.
-            Sink->AddLine(D2D1::Point2F(0.f, gp.p0[0].y));
-        }
-        else
-            Sink->BeginFigure(D2D1::Point2F(0.f, gp.p0[0].y), D2D1_FIGURE_BEGIN_HOLLOW);
-
-        const size_t n = gp.p1.size();
-
-        for (size_t i = 0; i < n; ++i)
-            Sink->AddBezier(D2D1::BezierSegment(gp.p1[i], gp.p2[i], gp.p0[i + 1]));
-
-        if (isFilled)
-            Sink->AddLine(D2D1::Point2F(gp.p0[n].x, 0.f)); // End with a vertical line going down.
-
-        Sink->EndFigure(D2D1_FIGURE_END_OPEN);
-
-        hr = Sink->Close();
+        Sink->BeginFigure(D2D1::Point2F(0.f, 0.f), D2D1_FIGURE_BEGIN_FILLED); // Start with a vertical line going up.
+        Sink->AddLine(D2D1::Point2F(0.f, gp.p0[0].y));
     }
+    else
+        Sink->BeginFigure(D2D1::Point2F(0.f, gp.p0[0].y), D2D1_FIGURE_BEGIN_HOLLOW);
+
+    const size_t n = gp.p1.size();
+
+    for (size_t i = 0; i < n; ++i)
+        Sink->AddBezier(D2D1::BezierSegment(gp.p1[i], gp.p2[i], gp.p0[i + 1]));
+
+    if (isFilled)
+        Sink->AddLine(D2D1::Point2F(gp.p0[n].x, 0.f)); // End with a vertical line going down.
+
+    Sink->EndFigure(D2D1_FIGURE_END_OPEN);
+
+    hr = Sink->Close();
 
     return hr;
 }
@@ -1221,7 +1153,7 @@ HRESULT spectrum_t::CreateRadialGeometryPointsFromAmplitude(geometry_points_t & 
 
     const FLOAT MaxHeight = OuterRadius - InnerRadius;
 
-    FLOAT a = (FLOAT) ::fmod((std::numbers::pi / 2.) + (_Chrono.Elapsed() * -Degrees2Radians(_State->_AngularVelocity)), 2. * std::numbers::pi);
+    FLOAT a = (FLOAT) ::fmod((std::numbers::pi / 2.) + (_Chrono.Elapsed() * -DegreesToRadians(_State->_AngularVelocity)), 2. * std::numbers::pi);
 //  FLOAT a = (FLOAT) ::fmod((std::numbers::pi / 2.) + ::cos(_Chrono.Elapsed() * -_State->_AngularVelocity), 2. * std::numbers::pi);
 
     const FLOAT da = (FLOAT)(2. * std::numbers::pi) / (FLOAT) _Analysis->_FrequencyBands.size();
@@ -1319,49 +1251,52 @@ HRESULT spectrum_t::CreateRadialCurve(const geometry_points_t & gp, FLOAT innerR
     if (gp.p0.size() < 2)
         return E_FAIL;
 
-    HRESULT hr = _Direct2D.Factory->CreatePathGeometry(curve);
+    HRESULT hr = Direct2DFactory::Get()->CreatePathGeometry(curve);
 
-    CComPtr<ID2D1GeometrySink> Sink;
+    if (FAILED(hr))
+        return hr;
 
-    if (SUCCEEDED(hr))
-        hr = (*curve)->Open(&Sink);
+    ComPtr<ID2D1GeometrySink> Sink;
 
-    if (SUCCEEDED(hr))
+    hr = (*curve)->Open(Sink.GetAddressOf());
+
+    if (FAILED(hr))
+        return hr;
+
+    D2D1_FIGURE_BEGIN BeginMode = D2D1_FIGURE_BEGIN_HOLLOW;
+
+    if (isFilled)
     {
-        D2D1_FIGURE_BEGIN BeginMode = D2D1_FIGURE_BEGIN_HOLLOW;
+        BeginMode = D2D1_FIGURE_BEGIN_FILLED;
+
+        Sink->SetFillMode(D2D1_FILL_MODE_ALTERNATE); // Even-odd fill
+    }
+
+    // Add the curve.
+    {
+        Sink->BeginFigure(D2D1::Point2F(gp.p0[0].x, gp.p0[0].y), BeginMode);
+
+        const size_t n = gp.p1.size();
+
+        for (size_t i = 0; i < n; ++i)
+            Sink->AddBezier(D2D1::BezierSegment(gp.p1[i], gp.p2[i], gp.p0[i + 1]));
 
         if (isFilled)
-        {
-            BeginMode = D2D1_FIGURE_BEGIN_FILLED;
-            Sink->SetFillMode(D2D1_FILL_MODE_ALTERNATE); // Even-odd fill
-        }
-
-        // Add the curve.
-        {
-            Sink->BeginFigure(D2D1::Point2F(gp.p0[0].x, gp.p0[0].y), BeginMode);
-
-            const size_t n = gp.p1.size();
-
-            for (size_t i = 0; i < n; ++i)
-                Sink->AddBezier(D2D1::BezierSegment(gp.p1[i], gp.p2[i], gp.p0[i + 1]));
-
-            if (isFilled)
-                Sink->EndFigure(D2D1_FIGURE_END_CLOSED);
-            else
-                Sink->EndFigure(D2D1_FIGURE_END_OPEN);
-        }
-
-        // Add the inner circle.
-        {
-            Sink->BeginFigure(D2D1::Point2F(innerRadius, 0.f), BeginMode);
-
-            Sink->AddArc(D2D1::ArcSegment(D2D1::Point2F(-innerRadius, 0.f), D2D1::SizeF(innerRadius, innerRadius), 0.0f, D2D1_SWEEP_DIRECTION_CLOCKWISE, D2D1_ARC_SIZE_LARGE));
-            Sink->AddArc(D2D1::ArcSegment(D2D1::Point2F( innerRadius, 0.f), D2D1::SizeF(innerRadius, innerRadius), 0.0f, D2D1_SWEEP_DIRECTION_CLOCKWISE, D2D1_ARC_SIZE_LARGE));
-
             Sink->EndFigure(D2D1_FIGURE_END_CLOSED);
+        else
+            Sink->EndFigure(D2D1_FIGURE_END_OPEN);
+    }
 
-            hr = Sink->Close();
-        }
+    // Add the inner circle.
+    {
+        Sink->BeginFigure(D2D1::Point2F(innerRadius, 0.f), BeginMode);
+
+        Sink->AddArc(D2D1::ArcSegment(D2D1::Point2F(-innerRadius, 0.f), D2D1::SizeF(innerRadius, innerRadius), 0.0f, D2D1_SWEEP_DIRECTION_CLOCKWISE, D2D1_ARC_SIZE_LARGE));
+        Sink->AddArc(D2D1::ArcSegment(D2D1::Point2F( innerRadius, 0.f), D2D1::SizeF(innerRadius, innerRadius), 0.0f, D2D1_SWEEP_DIRECTION_CLOCKWISE, D2D1_ARC_SIZE_LARGE));
+
+        Sink->EndFigure(D2D1_FIGURE_END_CLOSED);
+
+        hr = Sink->Close();
     }
 
     return hr;
@@ -1372,53 +1307,84 @@ HRESULT spectrum_t::CreateRadialCurve(const geometry_points_t & gp, FLOAT innerR
 /// </summary>
 HRESULT spectrum_t::CreateSegment(FLOAT a1, FLOAT a2, FLOAT r1, FLOAT r2, ID2D1PathGeometry ** pathGeometry) const noexcept
 {
-    HRESULT hr = _Direct2D.Factory->CreatePathGeometry(pathGeometry);
+    HRESULT hr = Direct2DFactory::Get()->CreatePathGeometry(pathGeometry);
 
-    if (!SUCCEEDED(hr))
+    if (FAILED(hr))
         return hr;
 
-    CComPtr<ID2D1GeometrySink> Sink;
+    ComPtr<ID2D1GeometrySink> Sink;
 
-    hr = (*pathGeometry)->Open(&Sink);
+    hr = (*pathGeometry)->Open(Sink.GetAddressOf());
 
-    if (SUCCEEDED(hr))
-    {
-        FLOAT Sin, Cos;
+    if (FAILED(hr))
+        return hr;
 
-        // Inner arc
-        ::D2D1SinCos(a1, &Sin, &Cos);
+    FLOAT Sin, Cos;
 
-        auto x = (FLOAT) (Cos * r1);
-        auto y = (FLOAT) (Sin * r1);
+    // Inner arc
+    ::D2D1SinCos(a1, &Sin, &Cos);
 
-        Sink->BeginFigure(D2D1::Point2F(x, y), D2D1_FIGURE_BEGIN_FILLED);
+    auto x = (FLOAT) (Cos * r1);
+    auto y = (FLOAT) (Sin * r1);
 
-        // Vertical from inner to outer arc.
-        x = (FLOAT) (Cos * r2);
-        y = (FLOAT) (Sin * r2);
+    Sink->BeginFigure(D2D1::Point2F(x, y), D2D1_FIGURE_BEGIN_FILLED);
 
-        Sink->AddLine(D2D1::Point2F(x, y));
+    // Vertical from inner to outer arc.
+    x = (FLOAT) (Cos * r2);
+    y = (FLOAT) (Sin * r2);
 
-        // Outer arc
-        ::D2D1SinCos(a2, &Sin, &Cos);
+    Sink->AddLine(D2D1::Point2F(x, y));
 
-        x = (FLOAT) (Cos * r2);
-        y = (FLOAT) (Sin * r2);
+    // Outer arc
+    ::D2D1SinCos(a2, &Sin, &Cos);
 
-        Sink->AddArc(D2D1::ArcSegment(D2D1::Point2F(x, y), D2D1::SizeF(r2, r2), 0.0f, D2D1_SWEEP_DIRECTION_COUNTER_CLOCKWISE, D2D1_ARC_SIZE_SMALL));      
+    x = (FLOAT) (Cos * r2);
+    y = (FLOAT) (Sin * r2);
 
-        // Vertical from outer to inner arc.
-        x = (FLOAT) (Cos * r1);
-        y = (FLOAT) (Sin * r1);
+    Sink->AddArc(D2D1::ArcSegment(D2D1::Point2F(x, y), D2D1::SizeF(r2, r2), 0.0f, D2D1_SWEEP_DIRECTION_COUNTER_CLOCKWISE, D2D1_ARC_SIZE_SMALL));      
 
-        Sink->AddLine(D2D1::Point2F(x, y));
+    // Vertical from outer to inner arc.
+    x = (FLOAT) (Cos * r1);
+    y = (FLOAT) (Sin * r1);
 
-        Sink->EndFigure(D2D1_FIGURE_END_CLOSED);
+    Sink->AddLine(D2D1::Point2F(x, y));
 
-        Sink->Close();
+    Sink->EndFigure(D2D1_FIGURE_END_CLOSED);
 
-        Sink.Release();
-    }
+    Sink->Close();
 
     return hr;
+}
+
+/// <summary>
+/// Recalculates parameters that are render target and size-sensitive.
+/// </summary>
+void spectrum_t::Initialize() noexcept
+{
+    assert((_Size.width > 0.f) && (_Size.height > 0.f));
+
+    const FLOAT xt = ((_GraphOptions->_XAxisMode != XAxisMode::None) && _GraphOptions->_XAxisTop)    ? _XAxis.GetTextHeight() : 0.f;
+    const FLOAT xb = ((_GraphOptions->_XAxisMode != XAxisMode::None) && _GraphOptions->_XAxisBottom) ? _XAxis.GetTextHeight() : 0.f;
+
+    const FLOAT yl = ((_GraphOptions->_YAxisMode != YAxisMode::None) && _GraphOptions->_YAxisLeft)   ? _YAxis.GetTextWidth()  : 0.f;
+    const FLOAT yr = ((_GraphOptions->_YAxisMode != YAxisMode::None) && _GraphOptions->_YAxisRight)  ? _YAxis.GetTextWidth()  : 0.f;
+
+    _XAxis.Move({ _Rect.left + yl, _Rect.top,      _Rect.right - yr, _Rect.bottom });
+    _YAxis.Move({ _Rect.left,      _Rect.top + xt, _Rect.right,      _Rect.bottom - xb });
+
+    _ClientRect = { _Rect.left + yl + PaddingX, _Rect.top + xt + PaddingY, _Rect.right - yr - PaddingX, _Rect.bottom - xb - PaddingY };
+    _ClientSize = { _ClientRect.right - _ClientRect.left, _ClientRect.bottom - _ClientRect.top };
+}
+
+/// <summary>
+/// Handles a configuration change.
+/// </summary>
+void spectrum_t::OnConfigurationChanged(ConfigurationChanges configurationChanges) noexcept
+{
+    if (!IsSet(configurationChanges, ConfigurationChanges::Layout))
+        return;
+
+    _State->_SizeHasChanged = true;
+
+    _XAxis.Configure(_State, _GraphOptions, _Analysis, _IsFirst, _IsLast);
 }

@@ -6,15 +6,15 @@
 #include "ConfigurationDialogLayout.h"
 
 // Groupbox
-#define X_B09   0
-#define Y_B09   0
+#define X_H00   0
+#define Y_H00   0
 
     #pragma region Acoustic Filter
     // Label
     #define W_H01    50
     #define H_H01    H_LBL
-    #define X_H01    X_B09 + 5
-    #define Y_H01    Y_B09 + 11
+    #define X_H01    X_H00 + 5
+    #define Y_H01    Y_H00 + 11
 
     // Combobox
     #define W_H02    100
@@ -151,5 +151,49 @@
     #define Y_H20    Y_H19
     #pragma endregion
 
-#define W_B09   198
-#define H_B09   11 + H_H02 + IY + H_H04 + IY + H_H06 + IY + H_H09 + IY + H_H12 + IY + H_H14 + IY + H_H17 + IY + H_H20 + 7
+#define W_H00   198
+#define H_H00   11 + H_H02 + IY + H_H04 + IY + H_H06 + IY + H_H09 + IY + H_H12 + IY + H_H14 + IY + H_H17 + IY + H_H20 + 7
+
+// Groupbox Crossover Filter
+#define X_I00   X_H00
+#define Y_I00   Y_H00 + H_H00 + IY
+
+    // Label: Crossover Mode
+    #define W_I01    50
+    #define H_I01    H_LBL
+    #define X_I01    X_I00 + 5
+    #define Y_I01    Y_I00 + 11
+
+    // Combobox: Crossover Mode
+    #define W_I02    100
+    #define H_I02    H_CBX
+    #define X_I02    X_I01 + W_I01 + IX
+    #define Y_I02    Y_I01
+    #pragma endregion
+
+    // Label: Low band
+    #define W_I03    W_I01
+    #define H_I03    H_LBL
+    #define X_I03    X_I01
+    #define Y_I03    Y_I02 + H_I02 + IY
+
+    // Textbox: Low band
+    #define W_I04    36
+    #define H_I04    H_TBX
+    #define X_I04    X_I03 + W_I03 + IX
+    #define Y_I04    Y_I03
+
+    // Label: High band
+    #define W_I05    W_I01
+    #define H_I05    H_LBL
+    #define X_I05    X_I04 + W_I04 + IX
+    #define Y_I05    Y_I04
+
+    // Textbox: High band
+    #define W_I06    36
+    #define H_I06    H_TBX
+    #define X_I06    X_I05 + W_I05 + IX
+    #define Y_I06    Y_I05
+
+#define W_I00   W_H00
+#define H_I00   11 + H_I02 + IY + H_I04 + 7

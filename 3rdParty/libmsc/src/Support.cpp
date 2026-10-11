@@ -17,9 +17,7 @@ std::string GetErrorMessage(const std::string & errorMessage, DWORD errorCode, .
 
     va_start(args, errorCode);
 
-    std::string Text;
-
-    Text.resize(256);
+    std::string Text(256, '\0');
 
     DWORD Result = ::FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, nullptr, errorCode, 0, Text.data(), (DWORD) Text.size(), &args);
 

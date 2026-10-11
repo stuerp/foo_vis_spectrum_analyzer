@@ -129,9 +129,9 @@ bool PresetManager::Delete(const path_t & rootPath, const std::wstring & presetN
 
     if (!Success)
     {
-        error_t LastError(::GetLastError());
+        msc::error_t LastError(::GetLastError());
 
-        Log.AtError().Write(STR_COMPONENT_BASENAME " failed to delete preset \"%s\": %s", presetName.c_str(), LastError.Message().c_str());
+        Log.AtError().Write(STR_COMPONENT_BASENAME " failed to delete preset \"%s\": %s (0x%08X)", presetName.c_str(), msc::WideToUTF8(LastError.Message()).c_str(), (int) LastError.Number());
 
         return false;
     }
@@ -149,9 +149,9 @@ bool PresetManager::GetPresetNames(const path_t & rootPath, std::vector<std::wst
     {
         pfc::string Result;
 
-        HRESULT hResult = EvaluateTitleFormatScript(rootPath, Result);
+        HRESULT hr = EvaluateTitleFormatScript(rootPath, Result);
 
-        if (!SUCCEEDED(hResult))
+        if (FAILED(hr))
             return false;
 
         PresetsDirectoryPath = msc::UTF8ToWide(Result.c_str());
@@ -165,7 +165,7 @@ bool PresetManager::GetPresetNames(const path_t & rootPath, std::vector<std::wst
 
     HRESULT hr = path_t::Combine(SearchPath, L"*.fvsa", SearchPath);
 
-    if (!SUCCEEDED(hr))
+    if (FAILED(hr))
         return false;
 
     WIN32_FIND_DATAW ffd;

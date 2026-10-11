@@ -1,5 +1,5 @@
 
-/** $VER: Path.h (2026.02.21) P. Stuer **/
+/** $VER: Path.h (2026.10.02) P. Stuer **/
 
 #pragma once
 
@@ -14,25 +14,53 @@
 
 #pragma comment(lib, "pathcch")
 
-class path_t
+class path_t final
 {
 public:
-    path_t() { }
+    path_t() = default;
 
-    path_t(const path_t &);
-    path_t & operator =(const path_t &);
-    path_t(path_t &&);
-    path_t & operator =(path_t &&);
+    path_t(const path_t &) = default;
+    path_t & operator =(const path_t &) = default;
+    path_t(path_t &&) = default;
+    path_t & operator =(path_t &&) = default;
 
-    virtual ~path_t() { }
+    ~path_t() = default;
 
-    path_t(const std::wstring & text) noexcept { _Text = text; }
-    path_t & operator =(const std::wstring & text) noexcept { _Text = text; return *this; }
+    path_t(std::wstring text) : _Text(std::move(text)) { }
 
-    operator const std::wstring & () const noexcept { return _Text; }
-    operator LPCWSTR () const noexcept { return _Text.c_str(); }
+    explicit path_t(const std::wstring & text) noexcept
+    {
+        _Text = text;
+    }
 
-    std::wstring c_str() const noexcept { return _Text; }
+    path_t & operator =(const std::wstring & text) noexcept
+    {
+        _Text = text;
+
+        return *this;
+    }
+
+    path_t & operator =(LPCWSTR text) noexcept
+    {
+        _Text = text;
+
+        return *this;
+    }
+
+    operator const std::wstring & () const noexcept
+    {
+        return _Text;
+    }
+
+    operator LPCWSTR () const noexcept
+    {
+        return _Text.c_str();
+    }
+
+    std::wstring c_str() const noexcept
+    {
+        return _Text;
+    }
 
     static HRESULT AddExtension(const path_t & src, const std::wstring & extension, path_t & dst) noexcept;
     static HRESULT AddExtension(const std::wstring & src, const std::wstring & extension, path_t & dst) noexcept;
@@ -43,7 +71,7 @@ public:
 private:
     std::wstring _Text;
 };
-
+/*
 inline path_t::path_t(const path_t & other)
 {
     _Text = other._Text;
@@ -71,7 +99,7 @@ inline path_t & path_t::operator =(path_t && other)
 
     return *this;
 }
-
+*/
 inline HRESULT path_t::AddExtension(const path_t & src, const std::wstring & extension, path_t & dst) noexcept
 {
     return AddExtension(src._Text, extension, dst);

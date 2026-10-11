@@ -1,5 +1,5 @@
 
-/**$VER: Event.h (2026.08.17) P. Stuer - Implements a very simple thread-safe event class. **/
+/**$VER: Event.h (2026.10.11) P. Stuer - Implements a very simple thread-safe event class. **/
 
 #pragma once
 
@@ -10,27 +10,28 @@
 #include <SDKDDKVer.h>
 #include <Windows.h>
 
-class event_t
+/// <summary>
+/// Implements a very simple thread-safe event class.
+/// </summary>
+class event_t final
 {
 public:
-    /// <summary>
-    /// Initializes a new instance.
-    /// </summary>
-    event_t()
-    {
-        Reset();
-    }
+    constexpr event_t() noexcept = default;
+
+    event_t(const event_t &) = delete;
+    event_t & operator=(const event_t &) = delete;
 
     enum Flags
     {
         None = 0,
 
-        PlaybackNewTrack = 1,
-        PlaybackStopped = 2,
-        PlaybackPaused = 4,
-        PlaybackResumed = 8,
+        PlaybackNewTrack            = 1LL << 0,
+        PlaybackStopped             = 1LL << 1,
+        PlaybackPaused              = 1LL << 2,
+        PlaybackResumed             = 1LL << 3,
 
-        UserInterfaceColorsChanged = 16,
+        ArtworkColorsChanged        = 1LL << 4,
+        UserInterfaceColorsChanged  = 1LL << 5,
     };
 
     /// <summary>
@@ -44,15 +45,15 @@ public:
     /// <summary>
     /// Gets the current flags and resets them.
     /// </summary>
-    event_t::Flags GetFlags() noexcept
+    Flags GetFlags() noexcept
     {
-        return (event_t::Flags) ::InterlockedExchange64(&_Flags, 0);
+        return (Flags) ::InterlockedExchange64(&_Flags, 0);
     }
 
     /// <summary>
     /// Raises the specified flags.
     /// </summary>
-    void Raise(event_t::Flags flags) noexcept
+    void Raise(Flags flags) noexcept
     {
         ::InterlockedOr64(&_Flags, flags);
     }
@@ -60,11 +61,21 @@ public:
     /// <summary>
     /// Returns true if the flags in the specified mask are set.
     /// </summary>
-    static bool IsRaised(event_t::Flags value, event_t::Flags mask) noexcept
+    [[nodiscard]] static constexpr bool IsRaised(Flags value, Flags mask) noexcept
     {
         return (value & mask) != 0;
     }
 
+    /// <summary>
+    /// Returns true if every flag in the mask is set.
+    /// </summary>
+    [[nodiscard]] static constexpr bool IsAllRaised(Flags value, Flags mask) noexcept
+    {
+        const LONG64 maskValue = mask;
+
+        return (value & maskValue) == maskValue;
+    }
+
 private:
-    LONG64 _Flags;
+    alignas(8) LONG64 _Flags = 0; // Interlocked 64-bit operations require appropriate alignment.
 };

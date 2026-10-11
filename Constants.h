@@ -1,5 +1,5 @@
 
-/** $VER: Constants.h (2026.09.09) P. Stuer **/
+/** $VER: Constants.h (2026.10.11) P. Stuer **/
 
 #pragma once
 
@@ -16,11 +16,13 @@ enum class VisualizationType
     RadialCurve = 6,
     Oscilloscope = 7,
     BitMeter = 8,
+    Goniometer = 9,
 
-    Tester = 63,
+    Tester = 10,
+    D3DTester = 11,
 
     Min = Bars,
-    Max = Tester,
+    Max = D3DTester,
 };
 
 // Common
@@ -71,8 +73,11 @@ enum class ColorOrder
     LightnessAscending = 5,
     LightnessDescending = 6,
 
+    DarkToLight = 7,
+    LightToDark = 8,
+
     Min = None,
-    Max = LightnessDescending,
+    Max = LightToDark,
 };
 
 enum class ArtworkType
@@ -91,14 +96,14 @@ enum class FitMode
 {
     Free = 0,
 
-    FitBig,
+    FitLargest,
     FitWidth,
     FitHeight,
-
-    Fill,
+    FitSmallest,
+    Cover,
 
     Min = Free,
-    Max = Fill,
+    Max = Cover,
 };
 
 // Visualization
@@ -193,9 +198,10 @@ enum class CoefficientMapping
     Standard = 0,
     TriangularFilterBank = 1,
     BrownPuckette = 2,
+    GaussianFilter = 3,
 
     Min = Standard,
-    Max = BrownPuckette,
+    Max = GaussianFilter,
 };
 
 enum class AggregationMethod
@@ -248,44 +254,44 @@ inline constexpr double MaxIIRBandwidth = 64.;
 // Analog-style (parallel band-pass IIR filter) transform
 
 // Frequencies
-inline constexpr int MinBands =    2;
-inline constexpr int MaxBands = 8192;
+inline constexpr int MinBands               =    2;
+inline constexpr int MaxBands               = 8192;
 
-inline constexpr int MinMelBands =   24;
-inline constexpr int MaxMelBands =  128;
+inline constexpr int MinMelBands            =   24;
+inline constexpr int MaxMelBands            =  128;
 
-inline constexpr double MinFrequency =     1.; // Hz
-inline constexpr double MaxFrequency = 96000.; // Hz
+inline constexpr double MinFrequency        =      1.; // Hz
+inline constexpr double MaxFrequency        = 96'000.; // Hz
 
-inline constexpr int MinNote =   0;
-inline constexpr int MaxNote = 143;
+inline constexpr int MinNote                =   0;
+inline constexpr int MaxNote                = 143;
 
-inline constexpr int MinBandsPerOctave =  1;
-inline constexpr int MaxBandsPerOctave = 48;
+inline constexpr int MinBandsPerOctave      =  1;
+inline constexpr int MaxBandsPerOctave      = 48;
 
-inline constexpr double MinPitch =    16.35; // Hz, C0
-inline constexpr double MaxPitch = 63217.06; // Hz, B11
+inline constexpr double MinPitch            =    16.35; // Hz, C0
+inline constexpr double MaxPitch            = 63'217.06; // Hz, B11
 
-inline constexpr int MinTranspose = -24;
-inline constexpr int MaxTranspose =  24;
+inline constexpr int MinTranspose           = -24;
+inline constexpr int MaxTranspose           =  24;
 
-inline constexpr double MinSkewFactor = 0.;
-inline constexpr double MaxSkewFactor = 1.;
+inline constexpr double MinSkewFactor       = 0.;
+inline constexpr double MaxSkewFactor       = 1.;
 
-inline constexpr double MinBandwidth =  0.;
-inline constexpr double MaxBandwidth = 64.;
+inline constexpr double MinBandwidth        =  0.;
+inline constexpr double MaxBandwidth        = 64.;
 
-inline constexpr double MinAmplitude = -120.; // dB
-inline constexpr double MaxAmplitude =    6.; // dB
+inline constexpr double MinAmplitude        = -120.; // dB
+inline constexpr double MaxAmplitude        =    6.; // dB
 
-inline constexpr double MinAmplitudeStep = -10.; // dB
-inline constexpr double MaxAmplitudeStep =  -1.; // dB
+inline constexpr double MinAmplitudeStep    = -10.; // dB
+inline constexpr double MaxAmplitudeStep    =  -1.; // dB
 
-inline constexpr double MinGamma =  0.5;
-inline constexpr double MaxGamma = 10.0;
+inline constexpr double MinGamma            =  0.5;
+inline constexpr double MaxGamma            = 10.0;
 
-inline constexpr int MinXAxisDecimals = 0;
-inline constexpr int MaxXAxisDecimals = 3;
+inline constexpr int MinXAxisDecimals       = 0;
+inline constexpr int MaxXAxisDecimals       = 3;
 
 enum class FrequencyDistribution
 {
@@ -358,6 +364,12 @@ enum class WeightingType
     Max = MWeighting,
 };
 
+inline constexpr double MinLowBand  =      0.; // Hz
+inline constexpr double MaxLowBand  = 96'000.; // Hz
+
+inline constexpr double MinHighBand =      0.; // Hz
+inline constexpr double MaxHighBand = 96'000.; // Hz
+
 // Styles
 inline constexpr double MinOpacity = 0.;
 inline constexpr double MaxOpacity = 1.;
@@ -365,7 +377,7 @@ inline constexpr double MaxOpacity = 1.;
 inline constexpr double MinThickness =  0.;
 inline constexpr double MaxThickness = 32.;
 
-inline constexpr double MinFontSize = 1.;
+inline constexpr double MinFontSize =   1.;
 inline constexpr double MaxFontSize = 200.;
 
 enum class VisualElement : uint32_t
@@ -415,7 +427,7 @@ enum class VisualElement : uint32_t
     BarLeftRightIndicator       = 30,
     BarMidSideIndicator         = 31,
 
-    SignalLine                  = 32,
+    Signal                  = 32,
 
     BarSign                     = 35,
     BarMantissa                 = 36,
@@ -424,7 +436,10 @@ enum class VisualElement : uint32_t
     WindowFunction              = 38,
     WeighingFunction            = 39,
 
-    Count                       = 40
+    StaticText                  = 40,
+    StaticLines                 = 41,
+
+    Count                       = 42
 };
 
 enum class ColorSource : uint32_t
@@ -437,6 +452,17 @@ enum class ColorSource : uint32_t
     UserInterface,
 
     Min = None,
+    Max = UserInterface,
+};
+
+enum class GradientStopSource : uint32_t
+{
+    Solid,
+    DominantColor,
+    Windows,
+    UserInterface,
+
+    Min = Solid,
     Max = UserInterface,
 };
 
@@ -500,8 +526,11 @@ enum class ColorScheme : uint32_t
     Magma,
     Cividis,
 
+    Gold,
+    Triband,
+
     Min = Solid,
-    Max = Cividis,
+    Max = Triband,
 };
 
 enum class VisualizationTypes : uint64_t
@@ -517,6 +546,7 @@ enum class VisualizationTypes : uint64_t
     RadialCurve     = 1 << (int) VisualizationType::RadialCurve,
     Oscilloscope    = 1 << (int) VisualizationType::Oscilloscope,
     BitMeter        = 1 << (int) VisualizationType::BitMeter,
+    Goniometer      = 1 << (int) VisualizationType::Goniometer,
 
     All = ~0ull
 };
@@ -534,11 +564,14 @@ inline constexpr FLOAT MaxRotation =  180.f;
 inline constexpr uint32_t MinFrameCount = 256;
 inline constexpr uint32_t MaxFrameCount = std::numeric_limits<uint32_t>::max();
 
-inline constexpr FLOAT MinBlurSigma =  1.f;
-inline constexpr FLOAT MaxBlurSigma = 10.f;
+inline constexpr FLOAT MinBlurSigma   =  1.f;
+inline constexpr FLOAT MaxBlurSigma   = 10.f;
 
-inline constexpr FLOAT MinDecayFactor = 0.f;
-inline constexpr FLOAT MaxDecayFactor = 1.f;
+inline constexpr FLOAT MinAfterGlow =   0.f; // ms
+inline constexpr FLOAT MaxAfterglow = 500.f; // ms
+
+inline constexpr double MinVisualGain = -12.;
+inline constexpr double MaxVisualGain = +12.;
 
 // Bit Meter
 enum class BitMeterMode : uint32_t
@@ -700,6 +733,33 @@ enum class VerticalTextAlignment : uint32_t
     Max = Bottom
 };
 
+namespace goniometer
+{
+    enum class ColorMode
+    {
+        Mono = 0,
+        RGB,
+        Triband,
+
+        Min = Mono,
+        Max = Triband,
+    };
+}
+
+namespace crossover
+{
+    enum class Mode
+    {
+        None = 0,
+
+        FirstOrder,
+        LinkwitzRiley4,
+
+        Min = None,
+        Max = LinkwitzRiley4,
+    };
+}
+
 enum class ConfigurationChanges : uint32_t
 {
     None = 0u,
@@ -709,10 +769,11 @@ enum class ConfigurationChanges : uint32_t
 
     RefreshRate         = 1 << 2,
     Oscilloscope        = 1 << 3, // Configuration change impacts the oscilloscope.
+    Goniometer          = 1 << 4, // Configuration change impacts the goniometer.
 
-    Artwork             = 1 << 4, // Configuration change impacts how the artwork is rendered.
+    Artwork             = 1 << 5, // Configuration change impacts how the artwork is rendered.
 
-    UserInterfaceColors = 1 << 5, // Configuration change impacts the user interface colors.
+    UserInterfaceColors = 1 << 6, // Configuration change impacts the user interface colors.
 
     All = ~0u,
 };

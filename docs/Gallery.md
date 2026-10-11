@@ -50,6 +50,10 @@
 
 <sup>Oscilloscope in X-Y mode with phosphor afterglow effect</sup>
 
+![Screenshot](assets/Goniometer.png?raw=true "Screenshot")
+
+<sup>Goniometer with triband filtering</sup>
+
 ![Screenshot](assets/Bit-Meter-1.png?raw=true "Screenshot")
 
 <sup>Bit Meter (Floating-Point Mode) using varying bar heights</sup>

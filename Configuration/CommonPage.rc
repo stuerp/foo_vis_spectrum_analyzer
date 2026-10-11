@@ -1,5 +1,5 @@
 
-/** $VER: CommonPage.rc (2026.06.09) P. Stuer **/
+/** $VER: CommonPage.rc (2026.10.09) P. Stuer **/
 
 #include "Resources.h"
 
@@ -49,7 +49,8 @@ style DS_SETFONT | DS_CONTROL | WS_CHILD | WS_CLIPCHILDREN
 
         rtext           "Fit mode:",                IDC_STATIC,                     X_G30, Y_G30 + 2, W_G30, H_G30
         combobox                                    IDC_FIT_MODE,                   X_G31, Y_G31,     W_G31, H_G31, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
-        control         "Fit window",               IDC_FIT_WINDOW,                 "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_G32, Y_G32, W_G32, H_G32
+        control         "Allow upscaling",          IDC_ALLOW_UPSCALING,            "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_G32, Y_G32, W_G32, H_G32
+        control         "Fit window",               IDC_FIT_WINDOW,                 "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_G34, Y_G34, W_G34, H_G34
 
         rtext           "Opacity:"                  IDC_STATIC,                     X_G03, Y_G03 + 2, W_G03, H_G03
         edittext                                    IDC_ARTWORK_OPACITY,            X_G04, Y_G04,     W_G04, H_G04, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP

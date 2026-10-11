@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.cpp (2026.06.08) P. Stuer - UIElement methods that run on the UI thread. **/
+/** $VER: UIElement.cpp (2026.10.11) P. Stuer - UIElement methods that run on the UI thread. **/
 
 #include "pch.h"
 
@@ -8,8 +8,9 @@
 #include "Support.h"
 #include "Log.h"
 
-#include "Error.h"
+#include "Color.h"
 #include "PresetManager.h"
+#include "CustomTitleFormatHook.h"
 
 #include <Constants.h>
 
@@ -18,13 +19,6 @@
 #ifdef _DEBUG
 extern void RunTests();
 #endif
-
-/// <summary>
-/// Initializes a new instance.
-/// </summary>
-uielement_t::uielement_t(): _IsFullScreen(false), _IsVisible(true), _IsInitializing(true), _hParent(), _DPI(), _DisplayRefreshRate(), _hStopRendering(), _hThread(), _TrackingGraph(), _TrackingToolInfo(), _LastMousePos(), _LastBandIndex(~(size_t) 0)
-{
-}
 
 #pragma region User Interface
 
@@ -66,13 +60,7 @@ LRESULT uielement_t::OnCreate(LPCREATESTRUCT cs) noexcept
     HRESULT hr = CreateDeviceIndependentResources();
 
     if (FAILED(hr))
-    {
-        error_t LastError((DWORD) hr);
-
-        Log.AtFatal().Write(STR_COMPONENT_BASENAME " is unable to create DirectX device independent resources: %s", LastError.Message().c_str());
-
         return -1;
-    }
 
     (void) GetDPI(m_hWnd, _DPI);
 
@@ -85,7 +73,7 @@ LRESULT uielement_t::OnCreate(LPCREATESTRUCT cs) noexcept
 
         if (_VisualisationStream.is_valid())
         {
-            _VisualisationStream->request_backlog(1.0); // Initialize the backbuffer allowing data requests up to 1s back in time.
+            _VisualisationStream->request_backlog(1.0); // Initialize the back buffer allowing data requests up to 1s back in time.
             _VisualisationStream->set_channel_mode(visualisation_stream_v2::channel_mode_default);
         }
     }
@@ -96,12 +84,15 @@ LRESULT uielement_t::OnCreate(LPCREATESTRUCT cs) noexcept
         return -1;
     }
 
-    // Get the artwork for the currently playing track (in case we get instantiated when playback is already ongoing).
+    // Get the artwork for the currently playing track (in case we get instantiated when playback is already ongoing f.e. when going fullscreen in DUI).
     {
         metadb_handle_ptr CurrentTrack;
 
         if (playback_control::get()->get_now_playing(CurrentTrack))
-            GetArtwork(CurrentTrack);
+        {
+            if (GetArtwork(CurrentTrack))
+                GetArtworkColors();
+        }
     }
 
     // Create the tooltip control.
@@ -109,8 +100,6 @@ LRESULT uielement_t::OnCreate(LPCREATESTRUCT cs) noexcept
 
     // Apply the initial configuration.
     UpdateState(ConfigurationChanges::All);
-
-    _hStopRendering = ::CreateEventW(nullptr, TRUE, FALSE, nullptr);
 
     StartRenderer();
 
@@ -128,12 +117,10 @@ void uielement_t::OnDestroy() noexcept
 {
     StopRenderer();
 
-    ::CloseHandle(_hStopRendering);
-
     {
         msc::lock_t Lock(_CriticalSection);
 
-        _Grid.Clear();
+        _Grid.Reset();
 
         _VisualisationStream.release();
 
@@ -164,27 +151,10 @@ void uielement_t::OnPaint(CDCHandle hDC) noexcept
 /// </summary>
 void uielement_t::OnSize(UINT type, CSize size) noexcept
 {
-    if ((_DeviceContext == nullptr) || (size.cx == 0) || (size.cy == 0))
+    HRESULT hr = ResizeSwapChain((UINT) size.cx, (UINT) size.cy);
+
+    if (FAILED(hr))
         return;
-
-    msc::lock_t Lock(_CriticalSection);
-
-    // Remove the bitmap from the device context.
-    _DeviceContext->SetTarget(nullptr);
-
-    // Release the bitmap so that the swap chain can be resized.
-    _BackBuffer.Release();
-
-    // Resize the swap chain.
-    HRESULT hr = _SwapChain->ResizeBuffers(0, (UINT) size.cx, (UINT) size.cy, DXGI_FORMAT_B8G8R8A8_UNORM, 0);
-
-    // Recreate the back buffer.
-    if (SUCCEEDED(hr))
-        hr = CreateBackBuffer();
-
-    // Initialize the target buffer of the device context.
-    if (SUCCEEDED(hr))
-        _DeviceContext->SetTarget(_BackBuffer);
 
     Resize();
 
@@ -211,17 +181,21 @@ void uielement_t::OnContextMenu(CWindow wnd, CPoint position) noexcept
         Menu.AppendMenu((UINT) MF_STRING | (_UIState._ShowFrameCounter ? MF_CHECKED : 0), IDM_TOGGLE_FRAME_COUNTER, L"Frame Counter");
 
         {
+            WCHAR Text[16] = { };
+
             RefreshRateLimitMenu.CreatePopupMenu();
 
-            const int64_t RefreshRates[] = { 20, 30, 60, 100, 200 };
-
             for (size_t i = 0; i < _countof(RefreshRates); ++i)
+            {
+                ::StringCchPrintfW(Text, _countof(Text), L"%dHz", (int) RefreshRates[i]);
+
                 RefreshRateLimitMenu.AppendMenu
                 (
-                    (UINT) MF_STRING | ((_UIState._RefreshRateLimit ==  RefreshRates[i]) ? MF_CHECKED : 0),
-                    IDM_REFRESH_RATE_LIMIT_20 + i,
-                    pfc::wideFromUTF8(pfc::format(RefreshRates[i], L"Hz"))
+                    (UINT) MF_STRING | ((_UIState._TargetRefreshRate == RefreshRates[i]) ? MF_CHECKED : 0),
+                    IDM_REFRESH_RATE_LIMIT + i,
+                    Text
                 );
+            }
 
             Menu.AppendMenu((UINT) MF_STRING, RefreshRateLimitMenu, L"Refresh Rate Limit");
         }
@@ -248,53 +222,42 @@ void uielement_t::OnContextMenu(CWindow wnd, CPoint position) noexcept
         Menu.SetMenuDefaultItem(IDM_CONFIGURE);
     }
 
-    int CommandId = Menu.TrackPopupMenu(TPM_RETURNCMD | TPM_VERNEGANIMATION | TPM_RIGHTBUTTON | TPM_NONOTIFY, position.x, position.y, *this);
+    const int CommandId = Menu.TrackPopupMenu(TPM_RETURNCMD | TPM_VERNEGANIMATION | TPM_RIGHTBUTTON | TPM_NONOTIFY, position.x, position.y, *this);
 
     switch (CommandId)
     {
         case IDM_TOGGLE_FULLSCREEN:
+        {
             ToggleFullScreen();
             break;
+        }
 
         case IDM_TOGGLE_FRAME_COUNTER:
+        {
             ToggleFrameCounter();
             break;
-
-        case IDM_REFRESH_RATE_LIMIT_20:
-            _UIState._RefreshRateLimit =
-            _RenderState._RefreshRateLimit = 20; // Near-atomic
-            break;
-
-        case IDM_REFRESH_RATE_LIMIT_30:
-            _UIState._RefreshRateLimit =
-            _RenderState._RefreshRateLimit = 30; // Near-atomic
-            break;
-
-        case IDM_REFRESH_RATE_LIMIT_60:
-            _UIState._RefreshRateLimit =
-            _RenderState._RefreshRateLimit = 60; // Near-atomic
-            break;
-
-        case IDM_REFRESH_RATE_LIMIT_100:
-            _UIState._RefreshRateLimit =
-            _RenderState._RefreshRateLimit = 100; // Near-atomic
-            break;
-
-        case IDM_REFRESH_RATE_LIMIT_200:
-            _UIState._RefreshRateLimit =
-            _RenderState._RefreshRateLimit = 200; // Near-atomic
-            break;
+        }
 
         case IDM_CONFIGURE:
+        {
             Configure();
             break;
+        }
 
         case IDM_FREEZE:
+        {
             _IsFrozen = !_IsFrozen;
             break;
+        }
 
         default:
         {
+            if (msc::InRange(CommandId, (int) IDM_REFRESH_RATE_LIMIT, (int) IDM_REFRESH_RATE_LIMIT + 999))
+            {
+                _UIState    ._TargetRefreshRate =
+                _RenderState._TargetRefreshRate = (int32_t) RefreshRates[CommandId - IDM_REFRESH_RATE_LIMIT]; // Near-atomic
+            }
+            else
             if (CommandId >= IDM_PRESET_NAME)
             {
                 state_t NewState;
@@ -312,17 +275,12 @@ void uielement_t::OnContextMenu(CWindow wnd, CPoint position) noexcept
 
                     _UIState = NewState;
 
-                    _UIState._RecreateStyles = true;
+                    _UIState._SizeHasChanged    = true;
+                    _UIState._ColorsHaveChanged = true;
 
                     UpdateState(ConfigurationChanges::All);
 
-                    // Notify the configuration dialog.
-                    if (_ConfigurationDialog.IsWindow())
-                    {
-                        _ConfigurationDialog.PostMessageW(UM_CONFIGURATION_CHANGED, CC_PRESET_LOADED); // Must be sent outside the critical section.
-
-                        Log.AtDebug().Write(STR_COMPONENT_BASENAME " notified configuration dialog of configuration change (Preset loaded).");
-                    }
+                    NotifyDialog(CC_PRESET_LOADED);
                 }
             }
         }
@@ -388,26 +346,26 @@ LRESULT uielement_t::OnDPIChanged(UINT dpiX, UINT dpiY, PRECT newRect) noexcept
 /// </summary>
 void uielement_t::Resize()
 {
-    if (_DeviceContext == nullptr)
+    if (_D2DDeviceContext == nullptr)
         return;
 
     DeleteTrackingToolTip();
 
-    D2D1_SIZE_F SizeF = _DeviceContext->GetSize(); // Gets the size in DPIs.
+    const D2D1_SIZE_F SizeF = _D2DDeviceContext->GetSize(); // Gets the size in DPIs.
 
     // Reposition the frame counter.
     _FrameCounter.Resize(SizeF.width, SizeF.height);
 
     // Resize the grid.
     {
-        DeleteTools();
+        RemoveTools();
 
         {
             msc::lock_t Lock(_CriticalSection);
 
             _Grid.Resize(SizeF.width, SizeF.height);
 
-            _RenderState._RecreateStyles = true;
+            _RenderState._SizeHasChanged = true;
         }
 
         AddTools();
@@ -421,8 +379,6 @@ void uielement_t::OnColorsChanged() noexcept
 {
     GetColors();
 
-    _UIState._RecreateStyles = true;
-
     {
         msc::lock_t Lock(_CriticalSection);
 
@@ -434,13 +390,7 @@ void uielement_t::OnColorsChanged() noexcept
         _Event.Raise(event_t::UserInterfaceColorsChanged);
     }
 
-    // Notify the configuration dialog about the changed UI colors.
-    if (_ConfigurationDialog.IsWindow())
-    {
-        _ConfigurationDialog.PostMessageW(UM_CONFIGURATION_CHANGED, CC_COLORS); // Must be sent outside the critical section.
-
-        Log.AtDebug().Write(STR_COMPONENT_BASENAME " notified configuration dialog of configuration change (User interface colors).");
-    }
+    NotifyDialog(CC_COLORS);
 }
 
 /// <summary>
@@ -460,19 +410,21 @@ void uielement_t::StartRenderer() noexcept
 {
     assert(_hThread == NULL);
 
-    _ThreadId = 0;
+    _hStopRendering = ::CreateEventW(nullptr, TRUE, FALSE, nullptr);
 
-    _hThread = ::CreateThread(nullptr, 0, CallRenderThreadProc, this, 0, &_ThreadId);
-}
+    DWORD ThreadId;
 
-/// <summary>
-/// Render thread procedure.
-/// </summary>
-DWORD WINAPI uielement_t::CallRenderThreadProc(LPVOID context) noexcept
-{
-    ((uielement_t *) context)->RenderThreadProc();
+    _hThread = ::CreateThread(nullptr, 0, [](LPVOID context) noexcept -> DWORD
+    {
+        auto * This = (uielement_t *) context;
 
-    return 0;
+        This->RenderThreadProc();
+
+        return 0;
+    },
+    this,
+    0,
+    &ThreadId);
 }
 
 /// <summary>
@@ -489,6 +441,9 @@ void uielement_t::StopRenderer() noexcept
 
     ::CloseHandle(_hThread);
     _hThread = NULL;
+
+    ::CloseHandle(_hStopRendering);
+    _hStopRendering = NULL;
 }
 
 /// <summary>
@@ -516,15 +471,87 @@ void uielement_t::Configure() noexcept
 }
 
 /// <summary>
+/// Gets the colors from the artwork.
+/// </summary>
+HRESULT uielement_t::GetArtworkColors() noexcept
+{
+    assert(fb2k::is_main_thread());
+
+    // Get the colors from the artwork.
+    HRESULT hr = _Artwork.GetColors(_RenderState._NumArtworkColors, _RenderState._LightnessThreshold, _RenderState._TransparencyThreshold, _RenderState._ArtworkColors);
+
+    if (FAILED(hr))
+        return S_FALSE; // Make sure resource creation continues.
+
+    // Get the dominant color before sorting.
+    _RenderState._ArtworkDominantColor = _RenderState._ArtworkColors[0];
+
+    // Sort the colors.
+    {
+        #pragma warning(disable: 4061) // Enumerator not handled
+        switch (_RenderState._ColorOrder)
+        {
+            case ColorOrder::None:
+                break;
+
+            case ColorOrder::HueAscending:
+                color_t::SortColorsByHue(_RenderState._ArtworkColors, true);
+                break;
+
+            case ColorOrder::HueDescending:
+                color_t::SortColorsByHue(_RenderState._ArtworkColors, false);
+                break;
+
+            case ColorOrder::SaturationAscending:
+                color_t::SortColorsBySaturation(_RenderState._ArtworkColors, true);
+                break;
+
+            case ColorOrder::SaturationDescending:
+                color_t::SortColorsBySaturation(_RenderState._ArtworkColors, false);
+                break;
+
+            case ColorOrder::LightnessAscending:
+                color_t::SortColorsByLightness(_RenderState._ArtworkColors, true);
+                break;
+
+            case ColorOrder::LightnessDescending:
+                color_t::SortColorsByLightness(_RenderState._ArtworkColors, false);
+                break;
+
+            case ColorOrder::DarkToLight:
+                color_t::SortColorsDarkToLight(_RenderState._ArtworkColors, true);
+                break;
+
+            case ColorOrder::LightToDark:
+                color_t::SortColorsDarkToLight(_RenderState._ArtworkColors, false);
+                break;
+        }
+        #pragma warning(default: 4061)
+    }
+
+    // Create the gradient stops.
+    _RenderState._ArtworkGradientStops = gradient_t::CreateGradientStops(_RenderState._ArtworkColors);
+//  _RenderState._ColorsHaveChanged = true;
+
+    // Notify the render thread.
+    _Event.Raise(event_t::ArtworkColorsChanged);
+
+//  _IsConfigurationChanged = true;
+
+    return S_OK;
+}
+/// <summary>
 /// Updates the state.
 /// </summary>
 void uielement_t::UpdateState(ConfigurationChanges configurationChanges) noexcept
 {
+    assert(fb2k::is_main_thread());
+
     if (configurationChanges == ConfigurationChanges::All)
     {
         DeleteTrackingToolTip();
 
-        DeleteTools();
+        RemoveTools();
     }
 
     {
@@ -537,16 +564,16 @@ void uielement_t::UpdateState(ConfigurationChanges configurationChanges) noexcep
             case ConfigurationChanges::All:
             {
                 _RenderState._SampleRate = 0;
-                _RenderState._RecreateStyles = true;
 
-                // Recreate the resources that depend on the artwork.
-                CreateArtworkDependentResources();
+                _RenderState._SizeHasChanged    = true;
+                _RenderState._ColorsHaveChanged = true;
+
+                // Get the artwork colors.
+                GetArtworkColors();
 
                 // Create the graphs.
                 {
                     const bool OverlapGraphs = _RenderState._OverlapGraphs && ((_RenderState._VisualizationType == VisualizationType::Bars) || (_RenderState._VisualizationType == VisualizationType::Curve) || (_RenderState._VisualizationType == VisualizationType::RadialBars) || (_RenderState._VisualizationType == VisualizationType::RadialCurve));
-
-                    _Grid.Clear();
 
                     _Grid.Initialize(_RenderState._GridRowCount, _RenderState._GridColumnCount, _RenderState._VerticalLayout, OverlapGraphs);
 
@@ -554,12 +581,12 @@ void uielement_t::UpdateState(ConfigurationChanges configurationChanges) noexcep
 
                     for (auto & GraphOptions : _RenderState._GraphOptions)
                     {
-                        auto * Graph = new graph_t();
+                        auto * Graph = new graph_t(_RenderState, _RenderContext);
 
                         const bool IsFirst = !OverlapGraphs || (OverlapGraphs && (i == 0));
                         const bool IsLast  = !OverlapGraphs || (OverlapGraphs && (i == _RenderState._GraphOptions.size() - 1));
 
-                        Graph->Initialize(&_RenderState, &GraphOptions, IsFirst, IsLast);
+                        Graph->Configure(&GraphOptions, IsFirst, IsLast);
 
                         _Grid.push_back(Graph);
                         ++i;
@@ -569,16 +596,18 @@ void uielement_t::UpdateState(ConfigurationChanges configurationChanges) noexcep
             }
             
             case ConfigurationChanges::Layout:
+            case ConfigurationChanges::Goniometer:
             {
                 for (auto & Item : _Grid)
-                    Item->OnConfigurationChange(configurationChanges);
+                    Item->OnConfigurationChanged(configurationChanges);
                 break;
             }
 
             case ConfigurationChanges::UserInterfaceColors:
             {
                 _RenderState._UserInterfaceColors = _UIState._UserInterfaceColors;
-                _RenderState._RecreateStyles = true;
+
+                _RenderState._ColorsHaveChanged = true;
                 break;
             }
 
@@ -616,6 +645,19 @@ graph_t * uielement_t::GetGraph(const CPoint & pt) noexcept
     return nullptr;
 }
 
+/// <summary>
+/// Notifies the configuration dialog about certain changes.
+/// </summary>
+void uielement_t::NotifyDialog(WPARAM wParam) noexcept
+{
+    if (!_ConfigurationDialog.IsWindow())
+        return;
+
+    _ConfigurationDialog.PostMessageW(UM_CONFIGURATION_CHANGED, wParam); // Must be sent outside the critical section.
+
+    Log.AtDebug().Write(STR_COMPONENT_BASENAME " notified configuration dialog.");
+}
+
 #pragma endregion
 
 #pragma region play_callback_impl_base
@@ -625,9 +667,11 @@ graph_t * uielement_t::GetGraph(const CPoint & pt) noexcept
 /// </summary>
 void uielement_t::on_playback_new_track(metadb_handle_ptr track)
 {
-    // Always get the album art in case the user enables the _ShowArtworkOnBackground setting while playing a track.
     if (track.is_valid())
-        GetArtwork(track);
+    {
+        if (GetArtwork(track))
+            GetArtworkColors();
+    }
 
     // Notify the render thread.
     _Event.Raise(event_t::PlaybackNewTrack);
@@ -712,7 +756,12 @@ bool uielement_t::GetArtworkFromTrack(const metadb_handle_ptr & track, abort_cal
         }
 
         if (ArtworkData.is_valid())
-            _Artwork.CreateWICResources((uint8_t *) ArtworkData->data(), ArtworkData->size());
+        {
+            HRESULT hr = _Artwork.CreateWICResources((uint8_t *) ArtworkData->data(), ArtworkData->size());
+
+            if (FAILED(hr))
+                Log.AtWarn().Write(STR_COMPONENT_BASENAME " failed to get WIC resources: %08X", (DWORD) hr);
+        }
     }
     catch (const std::exception & e) // exception_aborted, exception_album_art_not_found
     {
@@ -729,17 +778,19 @@ bool uielement_t::GetArtworkFromScript(const metadb_handle_ptr & track, abort_ca
 {
     Log.AtTrace().Write(STR_COMPONENT_BASENAME " is getting artwork from script \"%s\".", pfc::utf8FromWide(_UIState._ArtworkFilePath.c_str()).c_str());
 
-    titleformat_object::ptr Script;
+    titleformat_object::ptr tfo;
 
-    if (!titleformat_compiler::get()->compile(Script, pfc::utf8FromWide(_UIState._ArtworkFilePath.c_str())))
+    if (!titleformat_compiler::get()->compile(tfo, pfc::utf8FromWide(_UIState._ArtworkFilePath.c_str())))
         return false;
 
-    if (!Script.is_valid())
+    if (!tfo.is_valid())
         return false;
 
     pfc::string Result;
 
-    if (!track->format_title(0, Result, Script, 0))
+    custom_titleformat_hook_t Hook;
+
+    if (!track->format_title(&Hook, Result, tfo, nullptr))
         return false;
 
     _Artwork.CreateWICResources(pfc::wideFromUTF8(Result).c_str());

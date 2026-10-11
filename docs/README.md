@@ -243,6 +243,12 @@ This visualization uses the following settings:
 
 <sup>Oscilloscope in X/Y mode displaying a Lissajous figure</sup>
 
+##### Goniometer
+
+The goniometer is a specialized version of the oscilloscope in X/Y mode. It uses points instead of lines. The input signal can be filtered into a woofer, mid and tweeter frequency band.
+
+![Screenshot](assets/Goniometer.png?raw=true "Screenshot")
+
 ##### Bit Meter
 
 The Bit Meter visualization is a specialized tool used to analyze the digital precision (bit depth) of an audio signal in real-time. It displays which bits in the digital data are being actively used.
@@ -298,6 +304,10 @@ Specifies how long a peak value will be held steady before it starts falling (in
 `Fall rate`
 
 Specifies the rate at which the peak value decreases towards 0 (in dB/s).
+
+`Reset on track change`
+
+Resets the FFT peaks when a track starts or stops. This can be useful combined with fall rate of 0 dB/s to view the peaks of a complete track.
 
 #### LEDs group
 
@@ -424,19 +434,19 @@ Set the visualization type to **Balance / Correlation** to enable these settings
 
 Renders the Balance / Correlation horizontally when enabled, vertically when not.
 
-#### Oscilloscope group
+#### Oscilloscope / Goniometer group
 
 `X/Y mode`
 
 Enables X/Y-mode. Select a channel pair, typically Left/Right. The Left signal will be plotted on the X-axis; the Right signal will be plotted on the Y-axis.
 
-`X-gain`
+`X input gain`
 
-Specifies the gain applied to the X signal.
+Specifies the input gain applied to the X signal.
 
-`Y-gain`
+`Y input gain`
 
-Specifies the gain applied to the Y signal.
+Specifies the input gain applied to the Y signal.
 
 `Rotation`
 
@@ -454,9 +464,9 @@ Enables a phosphor afterglow effect simulation of analog oscilloscopes.
 
 Specifies the number of pixels for the Gaussian blur. Higher values increase the blurring.
 
-`Decay factor`
+`Afterglow`
 
-Specifies the color fade speed. Lower values cause a faster decay.
+Specifies the afterglow of the dispay in ms. Use lower values for a shorter afterglow. Use values between 80 and 150 ms to imitate the afterglow of an analog oscilloscope.
 
 `Downmix to mono`
 
@@ -465,6 +475,20 @@ When enabled the input signals to the oscilloscope will be downmix to a mono sig
 `Zero-crossing trigger`
 
 Enables a zero trigger to synchronize the oscilloscope display to the signal's zero crossings, creating a stable and readable waveform display.
+
+`Goniometer meter`
+
+Determines the mode of the goniometer.
+
+- `Mono` uses one color for all signal samples.
+- `RGB` uses the band power of an signal to generate a color for the sample: low band power for the red channel, mid band power for the green channel and high band power for the blue channel.
+- `Triband` uses the band power to determine the color of the signal sample. The `Signal` style should be set to a gradient Color Source. The colors of the gradient will be used to select the color.
+
+`Visual Gain (dB)`
+
+These settings allows you to specify a gain in decibel (dB) to the low, mid and high frequencies of the input signal.
+
+Refer to the [Crossover Filters](#crossover-filter-group) on the [Filters](#filters-page) page to specify the cutoff frequencies for the bands.
 
 ---
 
@@ -539,29 +563,29 @@ Allows you to select the Time to Frequency domain transform. The following trans
 
 Selects the window function that will be applied to the samples (Time domain).
 
-| Name                   | Description |
-| ---------------------- | |
-| Box Car                | Bin-centered tones. Sharpest time edges, highest sidelobes (~13 dB). Use when you need perfect time localization and don’t care about leakage. (Rectangular, Dirichlet) |
-| Hann                   | General FFT and STFT work. Sidelobes ~31 dB, good compromise. Use with speech, audio, general-purpose. (Hanning, cosine squared, raised cosine) |
-| Hamming,               | Lower first sidelobe than Hann, but unlike Hann its endpoints do not reach zero. Suitable when reduced spectral leakage is preferred over exact endpoint continuity. (Raised cosine) |
-| Blackman               | High-dynamic-range measurements. Provides stronger sidelobe suppression (~58 dB) than Hann and Hamming at the cost of a wider main lobe. Use when a high dynamic range is needed. |
-| Nuttall                | Provides strong sidelobe suppression at the cost of a wider main lobe. |
-| Flat Top               | Tone-level measurement. Provides high amplitude accuracy and low scalloping loss at the cost of a significantly wider main lobe. |
-| Bartlett               | Basic leakage reduction. Reaches its maximum at the center and decreases linearly to zero at both endpoints. (Triangular) |
-| Parzen                 | Suppressing distant leakage. Useful for detecting weak frequency components near stronger ones. |
-| Welch                  | Smooth, parabolic taper. Useful for general spectral analysis. |
-| Power-Of-Sine          | The power controls the shape of the window. A power of 1 produces a sine window, while a power of 2 produces a Hann window. |
-| Power-Of-Circle        | The power controls the curvature of the window. A power of 1 produces the standard Welch window. |
-| Gaussian               | No sidelobes at all (theoretically), but infinite support. Use when you can afford a longer window. |
-| Tukey                  | Alpha controls the proportion of the window occupied by the cosine tapers. An alpha of 0 produces a BoxCar window, while an alpha of 1 produces a Hann window. (Tapered cosine) |
-| Kaiser                 | Beta controls the shape of the window. A beta of zero produces a BoxCar window, while larger values increase sidelobe suppression at the cost of a wider main lobe. |
-| Poisson                | Exponential, Decaying transients, impulse responses, reverberation, and modal analysis. |
-| Hyperbolic Secant      | Beta controls the concentration of the window. A beta of zero produces a BoxCar window, while larger values increase attenuation toward the endpoints. |
-| Quadratic Spline       | General spectral analysis, Smooth polynomial taper and faster distant roll-off. (Quadratic B-spline window) |
-| Ogg Vorbis             | Supports transitions between short and long blocks. Helps control leakage and transient coding artifacts. |
-| Cascaded Sine          | Sine taper. |
-| Galss                  | [Discussion](https://hydrogenaud.io/index.php/topic,125031.msg1036200.html#msg1036200) |
-| Lanczos                | Smooth taper. Balanced resolution and leakage. Only moderate sidelobe suppression. |
+| Name | Description |
+| --- | --- |
+| Box Car | Bin-centered tones. Sharpest time edges, highest sidelobes (~13 dB). Use when you need perfect time localization and don’t care about leakage. (Rectangular, Dirichlet) |
+| Hann | General FFT and STFT work. Sidelobes ~31 dB, good compromise. Use with speech, audio, general-purpose. (Hanning, cosine squared, raised cosine) |
+| Hamming | Lower first sidelobe than Hann, but unlike Hann its endpoints do not reach zero. Suitable when reduced spectral leakage is preferred over exact endpoint continuity. (Raised cosine) |
+| Blackman | High-dynamic-range measurements. Provides stronger sidelobe suppression (~58 dB) than Hann and Hamming at the cost of a wider main lobe. Use when a high dynamic range is needed. |
+| Nuttall | Provides strong sidelobe suppression at the cost of a wider main lobe. |
+| Flat Top | Tone-level measurement. Provides high amplitude accuracy and low scalloping loss at the cost of a significantly wider main lobe. |
+| Bartlett | Basic leakage reduction. Reaches its maximum at the center and decreases linearly to zero at both endpoints. (Triangular) |
+| Parzen | Suppressing distant leakage. Useful for detecting weak frequency components near stronger ones. |
+| Welch | Smooth, parabolic taper. Useful for general spectral analysis. |
+| Power-Of-Sine | The power controls the shape of the window. A power of 1 produces a sine window, while a power of 2 produces a Hann window. |
+| Power-Of-Circle | The power controls the curvature of the window. A power of 1 produces the standard Welch window. |
+| Gaussian | No sidelobes at all (theoretically), but infinite support. Use when you can afford a longer window. |
+| Tukey | Alpha controls the proportion of the window occupied by the cosine tapers. An alpha of 0 produces a BoxCar window, while an alpha of 1 produces a Hann window. (Tapered cosine) |
+| Kaiser | Beta controls the shape of the window. A beta of zero produces a BoxCar window, while larger values increase sidelobe suppression at the cost of a wider main lobe. |
+| Poisson | Exponential, Decaying transients, impulse responses, reverberation, and modal analysis. |
+| Hyperbolic Secant | Beta controls the concentration of the window. A beta of zero produces a BoxCar window, while larger values increase attenuation toward the endpoints. |
+| Quadratic Spline | General spectral analysis, Smooth polynomial taper and faster distant roll-off. (Quadratic B-spline window) |
+| Ogg Vorbis | Supports transitions between short and long blocks. Helps control leakage and transient coding artifacts. |
+| Cascaded Sine | Sine taper. |
+| Galss | [Discussion](https://hydrogenaud.io/index.php/topic,125031.msg1036200.html#msg1036200) |
+| Lanczos | Smooth taper. Balanced resolution and leakage. Only moderate sidelobe suppression. |
 | 4-term Blackman-Harris | Produces very clean peaks with minimal leakage from strong tones into neighboring bins. w(x) = a0​ + a1 ​cos(πt) + a2 ​cos(2πt) + a3​ cos(3πt) |
 
 `Window parameter`
@@ -816,6 +840,24 @@ Increasing or decreasing this value changes both the curve’s frequency progres
 
 Controls how strongly the selected A, B, C, D, or M acoustic weighting curve is applied. Zero disables acoustic weighting, 0.5 applies half the normal dB response, and 1.0 applies the full response. Values greater than one exaggerate the curve, while negative values invert it.
 
+#### Crossover Filter group
+
+This group contains settings to modify the triband crossover filter of the goniometer.
+
+The bands are configured as follows:
+
+- Low band: 0Hz - `Low Band Setting`
+- Mid band: `Low band Setting` - `High band setting`
+- High band: `High band setting` - Nyquist frequency
+
+`Low band`
+
+Specifies the end of the low frequency band of the crossover filter in Hz.
+
+`High band`
+
+Specifies the start of the high frequency band of the crossover filter in Hz.
+
 ---
 
 ### Common page
@@ -877,6 +919,7 @@ Determines how to sort the colors selected from the artwork.
 - `Increasing hue` and `Decreasing hue` sort by hue.
 - `Increasing lightness` and `Decreasing lightness` sort by lightness.
 - `Increasing saturation` and `Decreasing saturation` sort by saturation.
+- `Dark to light` and `Light to dark` use the perceived lumaninance of color to sort from dark to light and vice versa.
 
 `Show artwork on background`
 
@@ -884,13 +927,20 @@ Displays artwork on the graph background. By default the front cover of the play
 
 `Fit mode`
 
-Determines how over- and undersized artwork is rendered.
+Determines how over- and undersized artwork is scaled before rendering.
 
-- Free: The artwork will not be scaled.
-- Fit big: Artwork that is bigger than the available area will be proportionally scaled.
-- Fit width: The width of the artwork is scaled to fit in the available area.
-- Fit height: The height of the artwork is scaled to fit in the available area.
-- Fill: The width or height of artwork is scaled to fit the available area.
+| Name | Description |
+| --- | --- |
+| Free | The artwork will not be scaled. |
+| Fit largest | The largest side of the artwork is made to fit the available area. The other side will be scaled proportionally. |
+| Fit width | The width of the artwork is made to fit the available area. The other side will be scaled proportionally. |
+| Fit height | The height side of the artwork is made to fit the available area. The other side will be scaled proportionally. |
+| Fit smallest | The smallest side of the artwork is made to fit the available area. The other side will be scaled proportionally. |
+| Cover | The artwork scales to completely fill the area, maintaining its original aspect ratio. If the artwork's aspect ratio doesn't match the area, it will be cropped. |
+
+`Allow upscaling`
+
+Enable to upscale smaller artwork while respecting the selected `Fit mode` except `Free`.
 
 `Fit window`
 
@@ -1048,9 +1098,15 @@ Selects all channels in the `Channels` list.
 
 Deselects all channels in the `Channels` list.
 
+`Up` / `Down`
+
+Moves the highlighted channel up or down in the list.
+
+The Peak Meter, Bit Meter and Oscilloscope visualization use the configured channel order to generate their output.
+
 `Channel pair`
 
-Allows you to select the pair of channels that will be used to render a visualisation. Used by the [Peak / RMS](#peak-rms) and the [Oscilloscope](#oscilloscope).
+Allows you to select the pair of channels that will be used to render a visualisation. Used by the [Peak / RMS](#peak--rms-group) and the [Oscilloscope](#oscilloscope).
 
 `Swap channels`
 
@@ -1092,19 +1148,29 @@ Displays the current color used by color source Solid or Dominant Color. Click t
 
 `Color scheme`
 
-Specifies the color scheme used to render the element.
+Specifies the color scheme used to render the element. Most color schemes are built-in and static but can be modified.
 
-- Solid color: A single color, effectively the same as color source Solid.
-- Custom: A custom list of colors.
-- Artwork: A list of colors determined by the current artwork
-- Prism 1
-- Prism 2
-- Prism 3
-- foobar2000
-- foobar2000 Dark Mode
-- Fire
-- Rainbow
-- SoX: A list of colors emulating the spectrogram colors used by SoX.
+| Name | Description |
+| --- | --- |
+| Solid color | A single color, effectively the same as color source `Solid` |
+| Custom | A custom list of colors. The colors in the list can have their own Color Source and Color Index. |
+| Artwork | A list of colors determined by the current artwork. Use the `Artwork` settings on the `Common` page to specify the order of the colors. |
+| Prism 1 | |
+| Prism 2 | |
+| Prism 3 | |
+| foobar2000 | The same colors as the built-in foobar2000 spectrum analyzer. |
+| foobar2000 Dark Mode | The same colors as the built-in foobar2000 spectrum analyzer in Dark Mode. |
+| Fire | |
+| Rainbow | |
+| SoX | A list of colors emulating the spectrogram colors used by [SoX](https://sourceforge.net/projects/sox/) |
+| Turbo | Color my by [Anton Mikhailov](https://research.google/blog/turbo-an-improved-rainbow-colormap-for-visualization/) |
+| Viridis | [Matplotlib](https://matplotlib.org/) [Perceptually Uniform Sequential](https://research.google/blog/turbo-an-improved-rainbow-colormap-for-visualization/) color maps |
+| Plasma | [Matplotlib](https://matplotlib.org/) [Perceptually Uniform Sequential](https://research.google/blog/turbo-an-improved-rainbow-colormap-for-visualization/) color maps |
+| Inferno | [Matplotlib](https://matplotlib.org/) [Perceptually Uniform Sequential](https://research.google/blog/turbo-an-improved-rainbow-colormap-for-visualization/) color maps |
+| Magma | [Matplotlib](https://matplotlib.org/) [Perceptually Uniform Sequential](https://research.google/blog/turbo-an-improved-rainbow-colormap-for-visualization/) color maps |
+| Cividis | [Matplotlib](https://matplotlib.org/) [Perceptually Uniform Sequential](https://research.google/blog/turbo-an-improved-rainbow-colormap-for-visualization/) color maps |
+| Gold | |
+| Triband | Designed to be used by the [goniometer](#oscilloscope-group) visualization |
 
 `Color list`
 
@@ -1115,6 +1181,9 @@ Press the ''Add'' button to add a color, ''Remove'' to remove a color, ''Reverse
 The position of the color in the gradient is expressed as a percentage of the length of the gradient. E.g. a position of 50% puts the color in the middle of the gradient.
 
 Press the ''Spread'' button to evenly spread the colors in the list over the gradient. This updates the position of the colors as required.
+
+        { IDC_GRADIENT_COLOR_SOURCE, "Determines the source of the selected gradient stop color." },
+        { IDC_GRADIENT_COLOR_INDEX, "Selects the specific Windows, DUI or CUI color to use for the selected gradient stop color." },
 
 `Horizontal gradient`
 
@@ -1276,6 +1345,8 @@ The history of foo_vis_spectrum_analyzer development is available in a separate 
 - Oleg V. Polikarpotchkin and Peter Lee for their [Bezier Spline](https://www.codeproject.com/Articles/31859/Draw-a-Smooth-Curve-through-a-Set-of-2D-Points-wit) article.
 - [Bedapisl](https://github.com/bedapisl) for [Fast ColorThief](https://github.com/bedapisl/fast-colorthief).
 - [Niels Lohmann](https://github.com/nlohmann) for [JSON for Modern C++](https://github.com/nlohmann/json).
+- Anton Mikhailov for the [Turbo](https://research.google/blog/turbo-an-improved-rainbow-colormap-for-visualization/) color map.
+- [Matplotlib](https://matplotlib.org/) for the [Perceptually Uniform Sequential](https://research.google/blog/turbo-an-improved-rainbow-colormap-for-visualization/) color maps.
 
 ---
 

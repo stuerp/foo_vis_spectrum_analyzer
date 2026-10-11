@@ -24,7 +24,7 @@
 /// </summary>
 BOOL configuration_dialog_t::OnInitDialog(CWindow w, LPARAM lParam) noexcept
 {
-    _IsInitializing = true;
+    auto Scope = msc::toggle_t(_IsInitializing, true);
 
     _Theme.Initialize(_DarkMode);
 
@@ -58,8 +58,6 @@ BOOL configuration_dialog_t::OnInitDialog(CWindow w, LPARAM lParam) noexcept
             _Pages[_State->_PageIndex]->ShowWindow(SW_SHOW);
     }
 
-    _IsInitializing = false;
-
     return TRUE;
 }
 
@@ -68,7 +66,6 @@ BOOL configuration_dialog_t::OnInitDialog(CWindow w, LPARAM lParam) noexcept
 /// </summary>
 LRESULT configuration_dialog_t::OnSize(UINT msg, WPARAM wParam, LPARAM lParam, BOOL & handled) noexcept
 {
-//    CDialogResize<NewConfigurationDialog>::OnSize(msg, wParam, lParam, handled);
     __super::OnSize(msg, wParam, lParam, handled);
 
     if (wParam != SIZE_MINIMIZED)
@@ -92,7 +89,7 @@ HBRUSH configuration_dialog_t::OnCtlColorDlg(HDC, HWND) const noexcept
 /// <summary>
 /// Handles an update of the selected item of a combo box.
 /// </summary>
-void configuration_dialog_t::OnSelectionChanged(UINT notificationCode, int id, CWindow w) noexcept
+void configuration_dialog_t::OnSelectionChanged(UINT, int id, CWindow) noexcept
 {
     if ((_State == nullptr) || (id != IDC_MENULIST))
         return;
@@ -134,7 +131,7 @@ void configuration_dialog_t::OnButtonClick(UINT, int id, CWindow) noexcept
                 _MenuList.SetCurSel((int) _State->_PageIndex);
             }
 
-            ConfigurationChanged(ConfigurationChanges::All);
+            NotifyParent(ConfigurationChanges::All);
             break;
         }
 
@@ -145,7 +142,7 @@ void configuration_dialog_t::OnButtonClick(UINT, int id, CWindow) noexcept
             {
                 *_State = _OldState;
 
-                ConfigurationChanged(ConfigurationChanges::All);
+                NotifyParent(ConfigurationChanges::All);
             }
 
             GetWindowRect(&_State->_Bounds);
@@ -316,12 +313,12 @@ void configuration_dialog_t::ResizePages() noexcept
 /// <summary>
 /// Notifies the UI thread of the changed settings.
 /// </summary>
-void configuration_dialog_t::ConfigurationChanged(ConfigurationChanges settings) const noexcept
+void configuration_dialog_t::NotifyParent(ConfigurationChanges settings) const noexcept
 {
     if (_IsInitializing)
         return;
 
-    ::PostMessageW(_hParent, UM_CONFIGURATION_CHANGED, (WPARAM) settings, 0);
-
     Log.AtDebug().Write(STR_COMPONENT_BASENAME " configuration dialog notified parent of a configuration change (%08X).", (uint32_t) settings);
+
+    ::PostMessageW(_hParent, UM_CONFIGURATION_CHANGED, (WPARAM) settings, 0);
 }

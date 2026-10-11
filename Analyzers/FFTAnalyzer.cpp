@@ -1,5 +1,5 @@
 
-/** $VER: FFTAnalyzer.cpp (2026.09.02) P. Stuer - Based on TF3RDL's FFT analyzer, https://codepen.io/TF3RDL/pen/poQJwRW **/
+/** $VER: FFTAnalyzer.cpp (2026.09.13) P. Stuer - Based on TF3RDL's FFT analyzer, https://codepen.io/TF3RDL/pen/poQJwRW **/
 
 #include "pch.h"
 
@@ -49,8 +49,10 @@ bool fft_analyzer_t::AnalyzeSamples(const audio_sample * frameData, size_t frame
         default:
 
         case CoefficientMapping::Standard:
+        {
             MapCoefficients(frequencyBands);
             break;
+        }
 
         case CoefficientMapping::TriangularFilterBank:
         {
@@ -59,8 +61,16 @@ bool fft_analyzer_t::AnalyzeSamples(const audio_sample * frameData, size_t frame
         }
 
         case CoefficientMapping::BrownPuckette:
+        {
             MapCoefficientsUsingBP(frequencyBands);
             break;
+        }
+
+        case CoefficientMapping::GaussianFilter:
+        {
+            MapCoefficientsUsingGaussianFilter(frequencyBands);
+            break;
+        }
     }
 
 //  const auto Finish = std::chrono::steady_clock::now();
@@ -144,127 +154,21 @@ void fft_analyzer_t::Transform() noexcept
     }
 }
 
-#define v2
-
-#ifdef v1
-void fft_analyzer_t::MapCoefficients(frequency_bands_t & freqBands) const noexcept
-{
-    const bool IsRMS       = (_State->_AggregationMethod == AggregationMethod::RMS || _State->_AggregationMethod == AggregationMethod::RMSSum);
-    const bool IsMedian    = _State->_AggregationMethod == AggregationMethod::Median;
-    const bool UseBandGain = (_State->_SmoothGainTransition && (_State->_AggregationMethod == AggregationMethod::Sum || _State->_AggregationMethod == AggregationMethod::RMSSum));
-    const bool IsAverage   = ((_State->_AggregationMethod == AggregationMethod::Average || _State->_AggregationMethod == AggregationMethod::RMS) || UseBandGain);
-
-    std::vector<double> Values;
-
-    for (frequency_band_t & fb : freqBands)
-    {
-        const double BandGain = UseBandGain ? std::hypot(1, std::pow(((fb.Hi - fb.Lo) * (double)(_FreqData.size() - 1) / (double)_SampleRate), (IsRMS ? 0.5 : 1.))) : 1.;
-
-        double LoIdx = HzToBinIndex(fb.Lo, _FreqData.size());
-        double HiIdx = HzToBinIndex(fb.Hi, _FreqData.size());
-
-        LoIdx = (_State->_SmoothLowerFrequencies ? std::round(LoIdx) + 1. : std::ceil(LoIdx));
-        HiIdx = (_State->_SmoothLowerFrequencies ? std::round(HiIdx) - 1. : std::floor(HiIdx));
-
-        if (LoIdx <= HiIdx)
-        {
-            HiIdx -= std::max(HiIdx - LoIdx - (double)_FreqData.size(), 0.);
-
-            double Value = (_State->_AggregationMethod == AggregationMethod::Minimum) ? DBL_MAX : 0.;
-
-            Values.clear();
-
-            int Count = 0;
-
-            for (auto Idx = LoIdx; Idx <= HiIdx; ++Idx)
-            {
-                const size_t BinIdx = msc::Wrap((size_t)Idx, _FreqData.size());
-
-                const double Magnitude = std::abs(_FreqData[BinIdx]);
-
-                switch (_State->_AggregationMethod)
-                {
-                    case AggregationMethod::Minimum:
-                        Value = std::min(Magnitude, Value);
-                        break;
-
-                    case AggregationMethod::Maximum:
-                        Value = std::max(Magnitude, Value);
-                        break;
-
-                    case AggregationMethod::Sum:
-                    case AggregationMethod::Average:
-                        Value += Magnitude;
-                        break;
-
-                    case AggregationMethod::RMS:
-                    case AggregationMethod::RMSSum:
-                        Value += Magnitude * Magnitude;
-                        break;
-
-                    case AggregationMethod::Median:
-                        Values.push_back(Magnitude);
-                        break;
-
-                    default:
-                        Value = Magnitude;
-                }
-
-                ++Count;
-            }
-
-            if (IsAverage && (Count != 0))
-                Value /= Count;
-            else
-            if (IsMedian)
-                Value = Median(Values);
-
-            fb.RawValue = (IsRMS ? std::sqrt(Value) : Value) * BandGain;
-        }
-        else
-        {
-            const double Index = HzToBinIndex(fb.Mid, _FreqData.size());
-
-            fb.RawValue = std::fabs(Interpolate(_FreqData, Index, _State->_KernelSize)) * BandGain;
-        }
-    }
-}
-
-/// <summary>
-/// Calculates the median.
-/// </summary>
-double fft_analyzer_t::Median(std::vector<double> & data) noexcept
-{
-    if (data.empty())
-        return std::numeric_limits<double>::quiet_NaN();
-
-    if (data.size() == 1)
-        return data[0];
-
-    std::sort(data.begin(), data.end());
-
-    const size_t Mid = data.size() / 2;
-
-    return (data.size() & 1) ? data[Mid] : (data[Mid - 1] + data[Mid]) / 2.;
-}
-#endif
-
-#ifdef v2
 /// <summary>
 /// Maps FFT power-spectrum coefficients onto the frequency bands.
 /// </summary>
 void fft_analyzer_t::MapCoefficients(frequency_bands_t & freqBands) noexcept
 {
+    if (_FreqData.empty() || !(_SampleRate > 0.))
+        return;
+
     const auto AggregationMethod      = _State->_AggregationMethod;
     const bool SmoothLowerFrequencies = _State->_SmoothLowerFrequencies;
     const bool SmoothGainTransition   = _State->_SmoothGainTransition && (AggregationMethod == AggregationMethod::Sum || AggregationMethod == AggregationMethod::RMSSum);
 
     const bool IsRMS = (AggregationMethod == AggregationMethod::RMS) || (AggregationMethod == AggregationMethod::RMSSum);
 
-    const auto BinCount = _FreqData.size();
-
-    if (BinCount == 0)
-        return;
+    const auto BinCount = _FreqData.size(); // FFT size
 
     const auto BandWidthScale = (double) (BinCount - 1) / (double) _SampleRate;
 
@@ -321,11 +225,11 @@ void fft_analyzer_t::MapCoefficients(frequency_bands_t & freqBands) noexcept
             BandGain = std::hypot(1., AdjustedWidth);
         }
 
-        const double LoIdx = HzToBinIndex(fb.Lo, BinCount);
-        const double HiIdx = HzToBinIndex(fb.Hi, BinCount);
+        const double LoBin = HzToBinIndex(fb.Lo, BinCount);
+        const double HiBin = HzToBinIndex(fb.Hi, BinCount);
 
-        const auto First = std::max((ptrdiff_t) (SmoothLowerFrequencies ? std::round(LoIdx) + 1. : std::ceil (LoIdx)), (ptrdiff_t) 0);
-        const auto Last  =          (ptrdiff_t) (SmoothLowerFrequencies ? std::round(HiIdx) - 1. : std::floor(HiIdx));
+        const auto First = std::max((ptrdiff_t) (SmoothLowerFrequencies ? std::round(LoBin) + 1. : std::ceil (LoBin)), (ptrdiff_t) 0);
+        const auto Last  =          (ptrdiff_t) (SmoothLowerFrequencies ? std::round(HiBin) - 1. : std::floor(HiBin));
 
         if (First > Last)
         {
@@ -336,115 +240,13 @@ void fft_analyzer_t::MapCoefficients(frequency_bands_t & freqBands) noexcept
         }
 
         const auto RequestedBins = std::min((size_t) (Last - First + 1), BinCount);
-        const auto BinIndex = msc::Wrap((size_t) First, BinCount);
+        const auto BinIndex      = msc::Wrap((size_t) First, BinCount);
 
         const double Value = (*Aggregate)(_FreqData, RequestedBins, BinIndex, BinCount);
 
         fb.RawValue = Value * BandGain;
     }
 }
-#endif
-
-#ifdef x1
-void fft_analyzer_t::MapCoefficientsUsingTFB(frequency_bands_t & freqBands) const noexcept
-{
-    const double N = (double) _FreqData.size();
-
-    const double HzToBin = N / _SampleRate;
-
-    for (frequency_band_t & fb : freqBands)
-    {
-        double Sum = 0.;
-
-        const auto MinBin = std::min(fb.Lo, fb.Hi) * HzToBin;
-        const auto MidBin =          fb.Mid        * HzToBin;
-        const auto MaxBin = std::max(fb.Lo, fb.Hi) * HzToBin;
-
-        const double OverflowCompensation = std::max(0., MaxBin - MinBin - N);
-
-        {
-            const auto Start = std::floor(MidBin);
-            const auto End   = std::floor(MinBin + OverflowCompensation);
-
-            for (double i = Start; i >= End; --i)
-                Sum += std::pow(std::abs(_FreqData[(size_t) msc::Wrap(i, N)]) * std::max(msc::Map(i, MinBin, MidBin, 0., 1.), 0.), 2.);
-        }
-
-        {
-            const auto Start = std::ceil(MidBin);
-            const auto End   = std::ceil(MaxBin - OverflowCompensation);
-
-            for (double i = Start; i <= End; ++i)
-                Sum += std::pow(std::abs(_FreqData[(size_t) msc::Wrap(i, N)]) * std::max(msc::Map(i, MaxBin, MidBin, 0., 1.), 0.), 2.);
-        }
-
-        fb.RawValue = std::sqrt(Sum);
-    }
-}
-#endif
-
-#ifdef x2
-void fft_analyzer_t::MapCoefficientsUsingTFB(frequency_bands_t & freqBands) const noexcept
-{
-    if (_FreqData.empty() || !std::isfinite(_SampleRate) || _SampleRate <= 0.)
-    {
-        for (frequency_band_t & fb : freqBands)
-            fb.RawValue = 0.;
-
-        return;
-    }
-
-    const size_t BinCount = _FreqData.size();
-    const double N        = (double) (BinCount);
-    const double HzToBin  = N / _SampleRate;
-
-    for (frequency_band_t & fb : freqBands)
-    {
-        if (!std::isfinite(fb.Lo)  || !std::isfinite(fb.Mid) || !std::isfinite(fb.Hi))
-        {
-            fb.RawValue = 0.;
-
-            continue;
-        }
-
-        const double MinBin = std::min(fb.Lo, fb.Hi) * HzToBin;
-        const double MidBin =          fb.Mid        * HzToBin;
-        const double MaxBin = std::max(fb.Lo, fb.Hi) * HzToBin;
-
-        // A proper triangular band requires its peak to lie strictly between its lower and upper edges.
-        if (!(MinBin < MidBin && MidBin < MaxBin))
-            continue;
-
-        const int StartBin = std::max(0, (int) std::ceil(MinBin));
-        const int EndBin   = std::min((int) BinCount - 1, (int) std::floor(MaxBin));
-
-        if (StartBin > EndBin)
-            continue;
-
-        double WeightedPower = 0.;
-
-        for (int Bin = StartBin; Bin <= EndBin; ++Bin)
-        {
-            const auto Position = (double) Bin;
-
-            double Weight;
-
-            if (Position <= MidBin)
-                Weight = (Position - MinBin) / (MidBin - MinBin);
-            else
-                Weight = (MaxBin - Position) / (MaxBin - MidBin);
-
-            Weight = std::clamp(Weight, 0., 1.);
-
-            const std::complex<double> & Coefficient = _FreqData[(size_t) Bin];
-
-            WeightedPower += std::norm(Coefficient) * Weight;
-        }
-
-        fb.RawValue = std::sqrt(std::max(WeightedPower, 0.));
-    }
-}
-#endif
 
 /// <summary>
 /// Maps FFT power-spectrum coefficients using a triangular filter bank. Assumes the frequency bands are spaced on the Mel scale.
@@ -460,17 +262,16 @@ void fft_analyzer_t::MapCoefficientsUsingTFB(frequency_bands_t & freqBands) cons
         return;
     }
 
-    const size_t BinCount = _FreqData.size();
-    const auto   N        = (double) BinCount;
-    const double HzToBin  = N / _SampleRate;
+    const double BinCount = (double) _FreqData.size(); // FFT size
+    const double HzToBin  = BinCount / _SampleRate;
 
     for (frequency_band_t & fb : freqBands)
     {
         fb.RawValue = 0.;
 
-        const double LoBin  = std::max(    0., fb.Lo ) * HzToBin;
-              double MidBin =                  fb.Mid  * HzToBin;
-              double HiBin  = std::min(N - 1., fb.Hi ) * HzToBin;
+        const double LoBin  = std::max(fb.Lo  * HzToBin, 0.);
+              double MidBin =          fb.Mid * HzToBin;
+              double HiBin  = std::min(fb.Hi  * HzToBin, BinCount - 1.);
 
         if (MidBin <= LoBin)
             MidBin = LoBin + 1.;
@@ -478,7 +279,7 @@ void fft_analyzer_t::MapCoefficientsUsingTFB(frequency_bands_t & freqBands) cons
         if (HiBin <= MidBin)
             HiBin  = MidBin + 1.;
 
-        const size_t StartBin = (size_t) std::ceil(LoBin);
+        const size_t StartBin = (size_t) std::ceil (LoBin);
         const size_t EndBin   = (size_t) std::floor(HiBin);
 
         if (StartBin > EndBin)
@@ -515,9 +316,9 @@ void fft_analyzer_t::MapCoefficientsUsingBP(frequency_bands_t & freqBands) const
     if (_FreqData.empty() || !(_SampleRate > 0.))
         return;
 
-    const double N       = (double) _FreqData.size();
-    const double HzToBin = N / _SampleRate;
-    const double BinToHz = _SampleRate / N;
+    const double BinCount = (double) _FreqData.size();
+    const double HzToBin  = BinCount / _SampleRate;
+    const double BinToHz  = _SampleRate / BinCount; // Frequency resolution
 
     for (frequency_band_t & fb : freqBands)
     {
@@ -531,9 +332,9 @@ void fft_analyzer_t::MapCoefficientsUsingBP(frequency_bands_t & freqBands) const
         // In seconds (Time domain)
         const double WindowDuration = std::min(1. / Bandwidth, HzToBin / _State->_BandwidthCap);
         // In samples (Sample domain)
-        const double WindowSize     = std::max(_State->_UseGranularBandwidth ? WindowDuration * _SampleRate : std::min(std::trunc(std::pow(2., std::round(std::log2(WindowDuration * _SampleRate)))), N / _State->_BandwidthCap), 1.);
+        const double WindowSize     = std::max(_State->_UseGranularBandwidth ? WindowDuration * _SampleRate : std::min(std::trunc(std::pow(2., std::round(std::log2(WindowDuration * _SampleRate)))), BinCount / _State->_BandwidthCap), 1.);
         // In bins (Frequency domain)
-        const double KernelSize     = std::min(_State->_BandwidthAmount * N / WindowSize, N);
+        const double KernelSize     = std::min(_State->_BandwidthAmount * BinCount / WindowSize, BinCount);
 
         const double Center = fb.Mid * HzToBin;
 
@@ -569,6 +370,49 @@ void fft_analyzer_t::MapCoefficientsUsingBP(frequency_bands_t & freqBands) const
         }
 
         fb.RawValue = std::hypot(re, im);
+    }
+}
+
+/// <summary>
+/// Maps FFT power-spectrum coefficients into logarithmic frequency bands using Gaussian frequency-domain weighting. (Continuous Wavelet Transform approximation)
+/// </summary>
+void fft_analyzer_t::MapCoefficientsUsingGaussianFilter(frequency_bands_t & freqBands) const noexcept
+{
+    if (_FreqData.empty() || !(_SampleRate > 0.))
+        return;
+
+    const double BinCount = (double) _FreqData.size();  // FFT size
+    const double HzToBin  = BinCount / _SampleRate;
+    const double BinToHz  = _SampleRate / BinCount;     // Frequency resolution
+
+    // Map the linear FFT bins into logarithmically spaced "scales".
+    for (frequency_band_t & fb : freqBands)
+    {
+        assert(fb.Lo < fb.Hi);
+
+        const auto BandWidth = 4. / (fb.Hi - fb.Lo);
+
+        // Determine which FFT bins will contribute.
+        const auto LoBin = (size_t) (std::max(std::floor(fb.Lo * HzToBin),            0.));
+        const auto HiBin = (size_t) (std::min(std::ceil (fb.Hi * HzToBin), BinCount - 1.));
+
+        double Sum       = 0.;
+        double WeightSum = 0.;
+
+        for (std::size_t i = LoBin; i <= HiBin; ++i)
+        {
+            const auto f = (double) i * BinToHz;
+
+            // Apply Gaussian weighting. Bins near the center frequency get a higher weight.
+            const double Distance = (f - fb.Mid) * BandWidth;
+            const double Weight   = std::exp(-0.5 * Distance * Distance);
+
+            // Compute the weighted average.
+            Sum       += std::abs(_FreqData[i]) * Weight;
+            WeightSum += Weight;
+        }
+
+        fb.RawValue = (WeightSum > 0.) ? (Sum / WeightSum) : 0.;
     }
 }
 

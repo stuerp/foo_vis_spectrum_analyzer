@@ -1,5 +1,5 @@
 
-/** $VER: CommonPage.cpp (2026.09.09) P. Stuer - Implements a configuration dialog page. **/
+/** $VER: CommonPage.cpp (2026.10.11) P. Stuer - Implements a configuration dialog page. **/
 
 #include "pch.h"
 
@@ -31,6 +31,7 @@ BOOL common_page_t::OnInitDialog(CWindow w, LPARAM lParam) noexcept
         { IDC_ARTWORK_TYPE, "Specifies which artwork will be shown on the graph background or will be used to extract colors from." },
 
         { IDC_FIT_MODE, "Determines how over- and undersized artwork is rendered." },
+        { IDC_ALLOW_UPSCALING, "Select to allow smaller artwork to be upscaled taking the Fit mode into account." },
         { IDC_FIT_WINDOW, "Use the component window size instead of the client area of the graph to fit the artwork." },
 
         { IDC_ARTWORK_OPACITY, "Determines the opacity of the artwork when displayed." },
@@ -64,6 +65,8 @@ void common_page_t::InitializeControls() noexcept
         for (const auto & x : { L"None", L"Average", L"Peak" })
             w.AddString(x);
 
+        assert(w.GetCount() == (int) SmoothingMethod::Max + 1);
+
         w.SetCurSel((int) _State->_SmoothingMethod);
 
         SetDouble(IDC_SMOOTHING_FACTOR, _State->_SmoothingFactor, 0, 2);
@@ -84,12 +87,15 @@ void common_page_t::InitializeControls() noexcept
 
         w.ResetContent();
 
-        for (const auto & x : { L"Free", L"Fit big", L"Fit width", L"Fit height", L"Fill" })
+        for (const auto & x : { L"Free", L"Fit largest", L"Fit width", L"Fit height", L"Fit smallest", L"Cover" })
             w.AddString(x);
+
+        assert(w.GetCount() == (int) FitMode::Max + 1);
 
         w.SetCurSel((int) _State->_FitMode);
     }
     {
+        SendDlgItemMessageW(IDC_ALLOW_UPSCALING, BM_SETCHECK, _State->_AllowUpscaling);
         SendDlgItemMessageW(IDC_FIT_WINDOW, BM_SETCHECK, _State->_FitWindow);
     }
     {
@@ -100,7 +106,7 @@ void common_page_t::InitializeControls() noexcept
             { 3, 10 },
         };
 
-        auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_ARTWORK_OPACITY)); _NumericEdits.push_back(ne); SetInteger(IDC_ARTWORK_OPACITY, (int64_t) (_State->_ArtworkOpacity * 100.f));
+        auto ne = std::make_shared<numeric_edit_t>(); ne->Initialize(GetDlgItem(IDC_ARTWORK_OPACITY)); _NumericEdits.push_back(ne); SetInteger(IDC_ARTWORK_OPACITY, (int64_t) (_State->_ArtworkOpacity * 100.f));
 
         auto w = CUpDownCtrl(GetDlgItem(IDC_ARTWORK_OPACITY_SPIN));
 
@@ -127,7 +133,7 @@ void common_page_t::InitializeControls() noexcept
             { 4, 16 },
         };
 
-        auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_NUM_ARTWORK_COLORS)); _NumericEdits.push_back(ne); SetInteger(IDC_NUM_ARTWORK_COLORS, _State->_NumArtworkColors);
+        auto ne = std::make_shared<numeric_edit_t>(); ne->Initialize(GetDlgItem(IDC_NUM_ARTWORK_COLORS)); _NumericEdits.push_back(ne); SetInteger(IDC_NUM_ARTWORK_COLORS, _State->_NumArtworkColors);
 
         auto w = CUpDownCtrl(GetDlgItem(IDC_NUM_ARTWORK_COLORS_SPIN));
 
@@ -143,7 +149,7 @@ void common_page_t::InitializeControls() noexcept
             { 3, 10 },
         };
 
-        auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_LIGHTNESS_THRESHOLD)); _NumericEdits.push_back(ne); SetInteger(IDC_LIGHTNESS_THRESHOLD, (int64_t) (_State->_LightnessThreshold * 100.f));
+        auto ne = std::make_shared<numeric_edit_t>(); ne->Initialize(GetDlgItem(IDC_LIGHTNESS_THRESHOLD)); _NumericEdits.push_back(ne); SetInteger(IDC_LIGHTNESS_THRESHOLD, (int64_t) (_State->_LightnessThreshold * 100.f));
 
         auto w = CUpDownCtrl(GetDlgItem(IDC_LIGHTNESS_THRESHOLD_SPIN));
 
@@ -156,8 +162,10 @@ void common_page_t::InitializeControls() noexcept
 
         w.ResetContent();
 
-        for (const auto & x : { L"None", L"Increasing hue", L"Decreasing hue", L"Increasing lightness", L"Decreasing lightness", L"Increasing saturation", L"Decreasing saturation" })
+        for (const auto & x : { L"None", L"Increasing hue", L"Decreasing hue", L"Increasing lightness", L"Decreasing lightness", L"Increasing saturation", L"Decreasing saturation", L"Dark to light", L"Light to dark" })
             w.AddString(x);
+
+        assert(w.GetCount() == (int) ColorOrder::Max + 1);
 
         w.SetCurSel((int) _State->_ColorOrder);
     }
@@ -168,6 +176,8 @@ void common_page_t::InitializeControls() noexcept
 
         for (const auto & x : { L"Front", L"Back", L"Disc", L"Icon", L"Artist" })
             w.AddString(x);
+
+        assert(w.GetCount() == (int) ArtworkType::Max + 1);
 
         w.SetCurSel((int) _State->_ArtworkType);
     }
@@ -190,6 +200,8 @@ void common_page_t::InitializeControls() noexcept
             if (++i == CfgLogLevel)
                 w.SetCurSel((int) i);
         }
+
+        assert(w.GetCount() == (int) LogLevel::Max + 1);
 
         SendDlgItemMessageW(IDC_SHOW_WINDOW_FUNCTION, BM_SETCHECK, _State->_ShowWindowFunction);
         SendDlgItemMessageW(IDC_SHOW_WEIGHING_FUNCTION, BM_SETCHECK, _State->_ShowWeighingFunction);
@@ -232,6 +244,8 @@ void common_page_t::UpdateControls() noexcept
         IDC_ARTWORK_FILE_PATH
     })
         GetDlgItem(Id).EnableWindow(SupportsArtworkOnBackground && _State->_ShowArtworkOnBackground);
+
+    GetDlgItem(IDC_ALLOW_UPSCALING).EnableWindow(SupportsArtworkOnBackground && _State->_ShowArtworkOnBackground && (_State->_FitMode != FitMode::Free));
 
     // Diagnostics
     GetDlgItem(IDC_SHOW_WINDOW_FUNCTION).EnableWindow(IsSpectrum);
@@ -308,7 +322,7 @@ void common_page_t::OnSelectionChanged(UINT notificationCode, int id, CWindow w)
 
     }
 
-    ConfigurationChanged(ChangedSettings);
+    NotifyParent(ChangedSettings);
 }
 
 /// <summary>
@@ -372,7 +386,7 @@ void common_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
         }
     }
 
-    ConfigurationChanged(ChangedSettings);
+    NotifyParent(ChangedSettings);
 }
 
 /// <summary>
@@ -418,7 +432,7 @@ void common_page_t::OnEditLostFocus(UINT code, int id, CWindow) noexcept
         }
     }
 
-    ConfigurationChanged(ChangedSettings);
+    NotifyParent(ChangedSettings);
 }
 
 /// <summary>
@@ -468,6 +482,12 @@ void common_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
             break;
         }
 
+        case IDC_ALLOW_UPSCALING:
+        {
+            _State->_AllowUpscaling = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+            break;
+        }
+
         case IDC_FIT_WINDOW:
         {
             _State->_FitWindow = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
@@ -487,7 +507,7 @@ void common_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
         }
     }
 
-    ConfigurationChanged(ChangedSettings);
+    NotifyParent(ChangedSettings);
 }
 
 /// <summary>
@@ -535,7 +555,7 @@ LRESULT common_page_t::OnDeltaPos(LPNMHDR nmhd) noexcept
         }
     }
 
-    ConfigurationChanged(ChangedSettings);
+    NotifyParent(ChangedSettings);
 
     return 0;
 }
@@ -565,7 +585,7 @@ LRESULT common_page_t::OnHScroll(UINT msg, WPARAM wParam, LPARAM lParam) noexcep
             return 1; // Notification not processed
     }
 
-    ConfigurationChanged(ConfigurationChanges::Artwork);
+    NotifyParent(ConfigurationChanges::Artwork);
 
     return 0;
 }

@@ -16,7 +16,7 @@
 class bezier_spline_t
 {
 public:
-    static void GetControlPoints(const std::vector<D2D1_POINT_2F> knots, std::vector<D2D1_POINT_2F> & firstControlPoints, std::vector<D2D1_POINT_2F> & secondControlPoints) noexcept;
+    static void GetControlPoints(const std::vector<D2D1_POINT_2F> & knots, std::vector<D2D1_POINT_2F> & firstControlPoints, std::vector<D2D1_POINT_2F> & secondControlPoints) noexcept;
 
 private:
     static std::valarray<FLOAT> GetFirstControlPoints(std::valarray<FLOAT> rhs) noexcept;

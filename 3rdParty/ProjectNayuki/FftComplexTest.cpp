@@ -1,7 +1,7 @@
 /* 
  * FFT and convolution test (C++)
  * 
- * Copyright (c) 2021 Project Nayuki. (MIT License)
+ * Copyright (c) 2026 Project Nayuki. (MIT License)
  * https://www.nayuki.io/page/free-small-fft-in-multiple-languages
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
@@ -27,6 +27,7 @@
 #include <cstdlib>
 #include <iomanip>
 #include <iostream>
+#include <numbers>
 #include <random>
 #include <utility>
 #include <vector>
@@ -35,16 +36,17 @@
 using std::complex;
 using std::cout;
 using std::endl;
+using std::size_t;
 using std::vector;
 
 
 // Private function prototypes
-static void testFft(int n);
-static void testConvolution(int n);
+static void testFft(size_t n);
+static void testConvolution(size_t n);
 static vector<complex<double> > naiveDft(const vector<complex<double> > &input, bool inverse);
 static vector<complex<double> > naiveConvolve(const vector<complex<double> > &xvec, const vector<complex<double> > &yvec);
 static double log10RmsErr(const vector<complex<double> > &xvec, const vector<complex<double> > &yvec);
-static vector<complex<double> > randomComplexes(int n);
+static vector<complex<double> > randomComplexes(size_t n);
 
 // Mutable global variable
 static double maxLogError = -INFINITY;
@@ -58,30 +60,30 @@ std::default_random_engine randGen((std::random_device())());
 int main() {
 	// Test power-of-2 size FFTs
 	for (int i = 0; i <= 12; i++)
-		testFft(1 << i);
+		testFft(static_cast<size_t>(1) << i);
 	
 	// Test small size FFTs
-	for (int i = 0; i < 30; i++)
+	for (size_t i = 0; i < 30; i++)
 		testFft(i);
 	
 	// Test diverse size FFTs
 	for (int i = 0, prev = 0; i <= 100; i++) {
 		int n = static_cast<int>(std::lround(std::pow(1500.0, i / 100.0)));
 		if (n > prev) {
-			testFft(n);
+			testFft(static_cast<size_t>(n));
 			prev = n;
 		}
 	}
 	
 	// Test power-of-2 size convolutions
 	for (int i = 0; i <= 12; i++)
-		testConvolution(1 << i);
+		testConvolution(static_cast<size_t>(1) << i);
 	
 	// Test diverse size convolutions
 	for (int i = 0, prev = 0; i <= 100; i++) {
 		int n = static_cast<int>(std::lround(std::pow(1500.0, i / 100.0)));
 		if (n > prev) {
-			testConvolution(n);
+			testConvolution(static_cast<size_t>(n));
 			prev = n;
 		}
 	}
@@ -93,7 +95,7 @@ int main() {
 }
 
 
-static void testFft(int n) {
+static void testFft(size_t n) {
 	const vector<complex<double> > input = randomComplexes(n);
 	const vector<complex<double> > expect = naiveDft(input, false);
 	vector<complex<double> > actual = input;
@@ -101,7 +103,7 @@ static void testFft(int n) {
 	double err = log10RmsErr(expect, actual);
 	
 	for (auto it = actual.begin(); it != actual.end(); ++it)
-		*it /= n;
+		*it /= static_cast<double>(n);
 	Fft::transform(actual, true);
 	err = std::max(log10RmsErr(input, actual), err);
 	cout << "fftsize=" << std::setw(4) << std::setfill(' ') << n << "  "
@@ -110,7 +112,7 @@ static void testFft(int n) {
 }
 
 
-static void testConvolution(int n) {
+static void testConvolution(size_t n) {
 	const vector<complex<double> > input0 = randomComplexes(n);
 	const vector<complex<double> > input1 = randomComplexes(n);
 	const vector<complex<double> > expect = naiveConvolve(input0, input1);
@@ -124,13 +126,13 @@ static void testConvolution(int n) {
 /*---- Naive reference computation functions ----*/
 
 static vector<complex<double> > naiveDft(const vector<complex<double> > &input, bool inverse) {
-	int n = static_cast<int>(input.size());
+	size_t n = input.size();
 	vector<complex<double> > output;
-	double coef = (inverse ? 2 : -2) * M_PI / n;
-	for (int k = 0; k < n; k++) {  // For each output element
+	double coef = (inverse ? 2 : -2) * std::numbers::pi / static_cast<double>(n);
+	for (size_t k = 0; k < n; k++) {  // For each output element
 		complex<double> sum(0);
-		for (int t = 0; t < n; t++) {  // For each input element
-			double angle = coef * (static_cast<long long>(t) * k % n);
+		for (size_t t = 0; t < n; t++) {  // For each input element
+			double angle = coef * static_cast<double>(static_cast<long long>(t) * k % n);
 			sum += input[t] * std::polar(1.0, angle);
 		}
 		output.push_back(sum);
@@ -141,11 +143,11 @@ static vector<complex<double> > naiveDft(const vector<complex<double> > &input, 
 
 static vector<complex<double> > naiveConvolve(
 		const vector<complex<double> > &xvec, const vector<complex<double> > &yvec) {
-	int n = static_cast<int>(xvec.size());
+	size_t n = xvec.size();
 	vector<complex<double> > result(n);  // All zeros
-	for (int i = 0; i < n; i++) {
-		for (int j = 0; j < n; j++) {
-			int k = (i + j) % n;
+	for (size_t i = 0; i < n; i++) {
+		for (size_t j = 0; j < n; j++) {
+			size_t k = (i + j) % n;
 			result[k] += xvec[i] * yvec[j];
 		}
 	}
@@ -156,11 +158,11 @@ static vector<complex<double> > naiveConvolve(
 /*---- Utility functions ----*/
 
 static double log10RmsErr(const vector<complex<double> > &xvec, const vector<complex<double> > &yvec) {
-	int n = static_cast<int>(xvec.size());
+	size_t n = xvec.size();
 	double err = std::pow(10, -99 * 2);
-	for (int i = 0; i < n; i++)
+	for (size_t i = 0; i < n; i++)
 		err += std::norm(xvec.at(i) - yvec.at(i));
-	err /= n > 0 ? n : 1;
+	err /= n > 0 ? static_cast<double>(n) : 1.0;
 	err = std::sqrt(err);  // Now this is a root mean square (RMS) error
 	err = std::log10(err);
 	maxLogError = std::max(err, maxLogError);
@@ -168,10 +170,10 @@ static double log10RmsErr(const vector<complex<double> > &xvec, const vector<com
 }
 
 
-static vector<complex<double> > randomComplexes(int n) {
+static vector<complex<double> > randomComplexes(size_t n) {
 	std::uniform_real_distribution<double> valueDist(-1.0, 1.0);
 	vector<complex<double> > result;
-	for (int i = 0; i < n; i++)
+	for (size_t i = 0; i < n; i++)
 		result.push_back(complex<double>(valueDist(randGen), valueDist(randGen)));
 	return result;
 }

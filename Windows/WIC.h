@@ -1,5 +1,5 @@
 
-/** $VER: WIC.h (2024.03.09) P. Stuer **/
+/** $VER: WIC.h (2026.10.04) P. Stuer **/
 
 #pragma once
 
@@ -9,33 +9,56 @@
 
 #include <SDKDDKVer.h>
 #include <wincodec.h>
-#include <atlbase.h>
 
-#include <cinttypes>
+#include <wrl/client.h>
+
+using Microsoft::WRL::ComPtr;
+
+#include <mutex>
+
+class WICFactory final
+{
+    typedef IWICImagingFactory Interface;
+
+public:
+    WICFactory(const WICFactory &) = delete;
+    WICFactory & operator=(const WICFactory &) = delete;
+
+    [[nodiscard]]
+    static ComPtr<Interface> Get() noexcept;
+
+    static HRESULT Startup() noexcept;
+    static void Shutdown() noexcept;
+
+private:
+    WICFactory() noexcept = default;
+
+    static WICFactory & Instance() noexcept;
+
+    HRESULT Initialize() noexcept;
+    void Terminate() noexcept;
+
+private:
+    static ComPtr<Interface> _Factory;
+    static int64_t _ReferenceCount;
+
+    std::mutex _Mutex;
+};
+
 #include <string>
 
 class WIC
 {
 public:
-    WIC() { }
+    static HRESULT Load(const uint8_t * data, size_t size, IWICBitmapFrameDecode ** frame) noexcept;
+    static HRESULT Load(const std::wstring & filePath, IWICBitmapFrameDecode ** frame) noexcept;
 
-    HRESULT Initialize();
-    void Terminate();
+    static HRESULT GetFormatConverter(IWICBitmapFrameDecode * frame, IWICFormatConverter ** formatConverter) noexcept;
 
-    HRESULT Load(const uint8_t * data, size_t size, IWICBitmapFrameDecode ** frame) const noexcept;
-    HRESULT Load(const std::wstring & filePath, IWICBitmapFrameDecode ** frame) const noexcept;
-
-    HRESULT GetFormatConverter(IWICBitmapFrameDecode * frame, IWICFormatConverter ** formatConverter) const noexcept;
-
-    HRESULT CreateBitmapFromSource(IWICBitmapSource * bitmapSource, WICBitmapCreateCacheOption option, IWICBitmap ** bitmap)
+    static HRESULT CreateBitmapFromSource(IWICBitmapSource * bitmapSource, WICBitmapCreateCacheOption option, IWICBitmap ** bitmap)
     {
-        return Factory->CreateBitmapFromSource(bitmapSource, option, bitmap);
+        return WICFactory::Get()->CreateBitmapFromSource(bitmapSource, option, bitmap);
     }
 
-    HRESULT GetBitsPerPixel(const WICPixelFormatGUID & pixelFormat, UINT & BitsPerPixel) const noexcept;
-
-public:
-    CComPtr<IWICImagingFactory> Factory;
+    static HRESULT GetBitsPerPixel(const WICPixelFormatGUID & pixelFormat, UINT & BitsPerPixel) noexcept;
 };
-
-extern WIC _WIC;

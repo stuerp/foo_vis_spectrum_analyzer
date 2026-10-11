@@ -1,116 +1,136 @@
 
-/** $VER: Color.cpp (2024.01.21) P. Stuer - Color support **/
+/** $VER: Color.cpp (2026.10.11) P. Stuer - Color support **/
 
 #include "pch.h"
+
 #include "Color.h"
 
-struct ColorHSL
+#include <algorithm>
+#include <cmath>
+#include <vector>
+
+struct hsl_t
 {
     FLOAT H;
     FLOAT S;
     FLOAT L;
+    FLOAT A;
 };
 
-ColorHSL RGB2HSL(const D2D1_COLOR_F & rgb);
-D2D1_COLOR_F HSL2RGB(const ColorHSL & hsl);
-FLOAT EvalHSL(FLOAT x, FLOAT y, FLOAT z);
+hsl_t RGB2HSL(const D2D1_COLOR_F & rgb) noexcept;
+D2D1_COLOR_F HSL2RGB(const hsl_t & hsl) noexcept;
+FLOAT EvalHSL(FLOAT x, FLOAT y, FLOAT z) noexcept;
 
 /// <summary>
-/// Sorts a color vector by hue.
+/// Sorts a color vector by hue, then lightness, then saturation.
 /// </summary>
 void color_t::SortColorsByHue(std::vector<D2D1_COLOR_F> & colors, bool ascending) noexcept
 {
-    std::sort(colors.begin(), colors.end(), [ascending](const D2D1_COLOR_F & left, const D2D1_COLOR_F & right)
+    std::sort(colors.begin(), colors.end(), [ascending](const D2D1_COLOR_F & left, const D2D1_COLOR_F & right) noexcept -> bool
     {
-        ColorHSL Left = RGB2HSL(left);
-        ColorHSL Right = RGB2HSL(right);
+        const hsl_t lhs = RGB2HSL(left);
+        const hsl_t rhs = RGB2HSL(right);
 
-        if (Left.H != Right.H)
-            return ascending ? Left.H < Right.H : Left.H > Right.H;
+        if (lhs.H != rhs.H)
+            return ascending ? lhs.H < rhs.H : lhs.H > rhs.H;
 
-        if (Left.S != Right.S)
-            return ascending ? Left.S < Right.S : Left.S > Right.S;
+        if (lhs.L != rhs.L)
+            return ascending ? lhs.L < rhs.L : lhs.L > rhs.L;
 
-        if (Left.L != Right.L)
-            return ascending ? Left.L < Right.L : Left.L > Right.L;
+        if (lhs.S != rhs.S)
+            return ascending ? lhs.S < rhs.S : lhs.S > rhs.S;
 
         return false;
     });
 }
 
 /// <summary>
-/// Sorts a color vector by saturation.
+/// Sorts a color vector by saturation, then hue, then lightness.
 /// </summary>
 void color_t::SortColorsBySaturation(std::vector<D2D1_COLOR_F> & colors, bool ascending) noexcept
 {
-    std::sort(colors.begin(), colors.end(), [ascending](const D2D1_COLOR_F & left, const D2D1_COLOR_F & right)
+    std::sort(colors.begin(), colors.end(), [ascending](const D2D1_COLOR_F & left, const D2D1_COLOR_F & right) noexcept -> bool
     {
-        ColorHSL Left = RGB2HSL(left);
-        ColorHSL Right = RGB2HSL(right);
+        const hsl_t lhs = RGB2HSL(left);
+        const hsl_t rhs = RGB2HSL(right);
 
-        if (Left.S != Right.S)
-            return ascending ? Left.S < Right.S : Left.S > Right.S;
+        if (lhs.S != rhs.S)
+            return ascending ? lhs.S < rhs.S : lhs.S > rhs.S;
 
-        if (Left.H != Right.H)
-            return ascending ? Left.H < Right.H : Left.H > Right.H;
+        if (lhs.H != rhs.H)
+            return ascending ? lhs.H < rhs.H : lhs.H > rhs.H;
 
-        if (Left.L != Right.L)
-            return ascending ? Left.L < Right.L : Left.L > Right.L;
+        if (lhs.L != rhs.L)
+            return ascending ? lhs.L < rhs.L : lhs.L > rhs.L;
 
         return false;
     });
 }
 
 /// <summary>
-/// Sorts a color vector by lightness.
+/// Sorts a color vector by lightness, then hue, then saturation.
 /// </summary>
 void color_t::SortColorsByLightness(std::vector<D2D1_COLOR_F> & colors, bool ascending) noexcept
 {
-    std::sort(colors.begin(), colors.end(), [ascending](const D2D1_COLOR_F & left, const D2D1_COLOR_F & right)
+    std::sort(colors.begin(), colors.end(), [ascending](const D2D1_COLOR_F & left, const D2D1_COLOR_F & right) noexcept -> bool
     {
-        ColorHSL Left = RGB2HSL(left);
-        ColorHSL Right = RGB2HSL(right);
+        const hsl_t lhs = RGB2HSL(left);
+        const hsl_t rhs = RGB2HSL(right);
 
-        if (Left.L != Right.L)
-            return ascending ? Left.L < Right.L : Left.L > Right.L;
+        if (lhs.L != rhs.L)
+            return ascending ? lhs.L < rhs.L : lhs.L > rhs.L;
 
-        if (Left.H != Right.H)
-            return ascending ? Left.H < Right.H : Left.H > Right.H;
+        if (lhs.H != rhs.H)
+            return ascending ? lhs.H < rhs.H : lhs.H > rhs.H;
 
-        if (Left.S != Right.S)
-            return ascending ? Left.S < Right.S : Left.S > Right.S;
+        if (lhs.S != rhs.S)
+            return ascending ? lhs.S < rhs.S : lhs.S > rhs.S;
 
         return false;
     });
 }
 
 /// <summary>
-/// Converts a RGB color to HSL.
+/// Converts an RGB color to HSL.
 /// </summary>
-ColorHSL RGB2HSL(const D2D1_COLOR_F & rgb)
+hsl_t RGB2HSL(const D2D1_COLOR_F & rgb) noexcept
 {
-    FLOAT MaxC = (std::max)((std::max)(rgb.r, rgb.g), rgb.b);
-    FLOAT MinC = (std::min)((std::min)(rgb.r, rgb.g), rgb.b);
-  
-    ColorHSL HSL = {};
+    const FLOAT MaxC = std::max({ rgb.r, rgb.g, rgb.b });
+    const FLOAT MinC = std::min({ rgb.r, rgb.g, rgb.b });
+    const FLOAT Delta = MaxC - MinC;
 
-    if (MaxC != MinC)
+    hsl_t HSL = {};
+
+    // Lightness must be calculated before saturation.
+    HSL.L = (MaxC + MinC) * 0.5f;
+    HSL.A = rgb.a;
+
+    if (Delta == 0.f)
     {
-        FLOAT d = MaxC - MinC;
-   
-        if (MaxC == rgb.r)
-            HSL.H = (rgb.g - rgb.b) / d + (rgb.g < rgb.b ? 6.f : 0.f);
-        else
-        if (MaxC == rgb.g)
-            HSL.H = (rgb.b - rgb.r) / d + 2.f;
-        else
-        if (MaxC == rgb.b)
-            HSL.H = (rgb.r - rgb.g) / d + 4.f;
-    
-        HSL.H /= 6.f;
-        HSL.S = (HSL.L > 0.5f) ? d / (2.f - MaxC - MinC) : d / (MaxC + MinC);
-        HSL.L = (MaxC + MinC) / 2.f;
+        // Achromatic color. Hue and saturation remain zero.
+        return HSL;
     }
+
+    if (MaxC == rgb.r)
+    {
+        HSL.H = (rgb.g - rgb.b) / Delta;
+
+        if (rgb.g < rgb.b)
+            HSL.H += 6.f;
+    }
+    else
+    if (MaxC == rgb.g)
+    {
+        HSL.H = (rgb.b - rgb.r) / Delta + 2.f;
+    }
+    else
+    {
+        HSL.H = (rgb.r - rgb.g) / Delta + 4.f;
+    }
+
+    HSL.H /= 6.f;
+
+    HSL.S = (HSL.L > 0.5f) ? Delta / (2.f - MaxC - MinC) : Delta / (MaxC + MinC);
 
     return HSL;
 }
@@ -118,33 +138,61 @@ ColorHSL RGB2HSL(const D2D1_COLOR_F & rgb)
 /// <summary>
 /// Converts a HSL color to RGB.
 /// </summary>
-D2D1_COLOR_F HSL2RGB(const ColorHSL & hsl)
+D2D1_COLOR_F HSL2RGB(const hsl_t & hsl) noexcept
 {
-    if (hsl.S == 0)
-        return D2D1::ColorF(hsl.L, hsl.L, hsl.L); // Achromatic
+    if (hsl.S == 0.f)
+        return D2D1::ColorF(hsl.L, hsl.L, hsl.L, hsl.A); // Achromatic
 
-    FLOAT q = (hsl.L < 0.5f) ? hsl.L * (1.f + hsl.S) : hsl.L + hsl.S - hsl.L * hsl.S;
-    FLOAT p = 2.f * hsl.L - q;
+    const FLOAT q = (hsl.L < 0.5f) ? hsl.L * (1.f + hsl.S) : hsl.L + hsl.S - hsl.L * hsl.S;
+    const FLOAT p = 2.f * hsl.L - q;
 
-    return D2D1::ColorF(EvalHSL(p, q, hsl.H + 1.f / 3.f), EvalHSL(p, q, hsl.H), EvalHSL(p, q, hsl.H - 1.f / 3.f));
+    return D2D1::ColorF(EvalHSL(p, q, hsl.H + 1.f / 3.f), EvalHSL(p, q, hsl.H), EvalHSL(p, q, hsl.H - 1.f / 3.f), hsl.A);
 }
 
-FLOAT EvalHSL(FLOAT x, FLOAT y, FLOAT z)
+/// <summary>
+/// Evaluates one RGB component from normalized HSL values.
+/// </summary>
+FLOAT EvalHSL(FLOAT p, FLOAT q, FLOAT hue) noexcept
 {
-    if (z < 0) 
-        z += 1.f;
+    hue -= std::floor(hue);
 
-    if (z > 1) 
-        z -= 1.f;
+    if (hue < 1.f / 6.f)
+        return p + (q - p) * 6.f * hue;
 
-    if (z < 1.f / 6.f) 
-        return x + (y - x) * 6.f * z;
+    if (hue < 1.f / 2.f)
+        return q;
 
-    if (z < 1. / 2.f) 
-        return y;
+    if (hue < 2.f / 3.f)
+        return p + (q - p) * (2.f / 3.f - hue) * 6.f;
 
-    if (z < 2.f / 3.f)
-        return x + (y - x) * (2.f / 3.f - z) * 6.f;
-    
-    return x;
+    return p;
+}
+
+/// <summary>
+/// The coefficients account for human vision being much more sensitive to green than blue. The sRGB channels must be linearized before applying those weights.
+/// </summary>
+constexpr float GetPerceivedLuminance(const D2D1_COLOR_F & color) noexcept
+{
+    // Relative luminance, https://www.w3.org/WAI/GL/wiki/Relative_luminance
+    constexpr auto sRGBToLinear = [](float value) noexcept -> float
+    {
+        return (value <= 0.04045f) ? value / 12.92f : std::pow((value + 0.055f) / 1.055f, 2.4f);
+    };
+
+    const float r = sRGBToLinear(color.r);
+    const float g = sRGBToLinear(color.g);
+    const float b = sRGBToLinear(color.b);
+
+    return (0.2126f * r) + (0.7152f * g) + (0.0722f * b);
+}
+
+/// <summary>
+/// Sorts a color vector from dark to light by relative luminence.
+/// </summary>
+void color_t::SortColorsDarkToLight(std::vector<D2D1_COLOR_F> & colors, bool ascending) noexcept
+{
+    std::ranges::sort(colors, std::ranges::less{}, GetPerceivedLuminance);
+
+    if (!ascending)
+        std::reverse(colors.begin(), colors.end());
 }

@@ -1,5 +1,5 @@
 
-/** $VER: Oscilloscope.h (2026.09.09) P. Stuer - Implements an oscilloscope. **/
+/** $VER: Oscilloscope.h (2026.10.08) P. Stuer - Implements an oscilloscope. **/
 
 #pragma once
 
@@ -12,7 +12,7 @@
 class oscilloscope_t : public oscilloscope_base_t
 {
 public:
-    oscilloscope_t();
+    oscilloscope_t() = default;
 
     oscilloscope_t(const oscilloscope_t &) = delete;
     oscilloscope_t & operator=(const oscilloscope_t &) = delete;
@@ -27,8 +27,7 @@ public:
     void Reset() noexcept override final;
 
     // visualization_t
-    void Initialize(state_t * state, graph_options_t * graphOptions, const analysis_t * analysis, bool isFirst, bool isLast) noexcept override final;
-    void Resize() noexcept;
+    void Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice = nullptr, ID3D11DeviceContext * d3dDeviceContext = nullptr) noexcept override final;
 
 private:
     HRESULT CreateDeviceIndependentResources() noexcept;
@@ -37,8 +36,8 @@ private:
     HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept;
     void DeleteDeviceSpecificResources() noexcept;
 
-    HRESULT CreateSignalGeometry(const audio_chunk_impl & chunk, const D2D1_SIZE_F & size, CComPtr<ID2D1PathGeometry> & geometry) noexcept;
-    HRESULT CreateAxesCommandList(uint32_t axesCount) noexcept;
+    HRESULT CreateSignalGeometry(const audio_chunk_impl & chunk, const D2D1_SIZE_F & size, ComPtr<ID2D1PathGeometry> & geometry) noexcept;
+    HRESULT CreateStaticContent(uint32_t axesCount) noexcept;
 
 private:
     downsampler_t _Downsampler;
@@ -46,10 +45,10 @@ private:
     struct label_t
     {
         std::wstring Text;
-        double Amplitude;
+        double Amplitude { 0. };
 
-        bool IsMin;
-        bool IsMax;
+        bool IsMin { false };
+        bool IsMax { false };
     };
 
     std::vector<label_t> _Labels;
@@ -57,8 +56,8 @@ private:
     style_t _XAxisTextStyle;
     style_t _YAxisTextStyle;
 
-    double _ChunkDuration;
+    double _ChunkDuration { 0. };
 
-    CComPtr<ID2D1CommandList> _AxesCommandList;
-    size_t _AxesCount;
+    ComPtr<ID2D1CommandList> _StaticContext;
+    size_t _AxesCount { 0 };
 };

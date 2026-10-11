@@ -1,5 +1,5 @@
 
-/** $VER: Artwork.h (2026.06.10) P. Stuer  **/
+/** $VER: Artwork.h (2026.10.11) P. Stuer  **/
 
 #pragma once
 
@@ -12,18 +12,15 @@
 #include <Windows.h>
 #include <d2d1.h>
 
-#include <RAII.h>
-
 #include "State.h"
+#include "RenderContext.h"
+
 #include <Constants.h>
 
 class artwork_t
 {
 public:
-    artwork_t()
-    {
-//      SetStatus(Idle);
-    }
+    artwork_t() = default;
 
     virtual ~artwork_t()
     {
@@ -32,58 +29,49 @@ public:
         DeleteWICResources();
     }
 
-    D2D1_SIZE_F Size() const noexcept { return (_Bitmap != nullptr) ? _Bitmap->GetSize() : D2D1::SizeF(); }
+    bool Empty() noexcept
+    {
+        msc::lock_t Lock(_CriticalSection);
 
-    void Render(ID2D1DeviceContext * deviceContext, const D2D1_RECT_F & rect, const state_t * state) noexcept;
+        return (_FormatConverter == nullptr);
+    }
 
-    ID2D1Bitmap * Bitmap() const noexcept { return _Bitmap; }
+    D2D1_SIZE_F Size() noexcept
+    {
+        msc::lock_t Lock(_CriticalSection);
 
-    HRESULT GetColors(std::vector<D2D1_COLOR_F> & colors, uint32_t colorCount, FLOAT lightnessThreshold, FLOAT transparencyThreshold) noexcept;
+        if (_Bitmap == nullptr)
+            return { };
+
+        return _Bitmap->GetSize();
+    }
+
+    void Render(render_context_t & renderContext, const D2D1_RECT_F & rect, const state_t * state) noexcept;
+
+    HRESULT GetColors(uint32_t colorCount, FLOAT lightnessThreshold, FLOAT transparencyThreshold, std::vector<D2D1_COLOR_F> & colors) noexcept;
 
     HRESULT CreateWICResources(const uint8_t * data, size_t size) noexcept;
     HRESULT CreateWICResources(const std::wstring & filePath) noexcept;
     HRESULT DeleteWICResources() noexcept;
 
-    HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept;
-
 private:
+    HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept;
     void DeleteDeviceSpecificResources() noexcept;
 
-private:
-    void AdjustRect(_In_ const FitMode fitMode, _Out_ FLOAT & scalar, _Inout_ D2D1_RECT_F & rect) const noexcept;
+    void AdjustRect(const FitMode fitMode, const bool allowUpscaling, FLOAT & scalar, D2D1_RECT_F & rect) const noexcept;
 
-private:
-/*
-    enum Status
-    {
-        Idle = 0,
-
-        Initialized,    // A new artwork source has been set.
-
-        GotBitmap,      // A new bitmap has been generated or the configuration parameters have changed.
-        GotColors,      // Got the colors from the bitmap source.
-    };
-
-    void SetStatus(Status status) noexcept
-    {
-        msc::lock_t Lock(_CriticalSection);
-
-        _Status = status;
-    }
-*/
 private:
     msc::critical_section_t _CriticalSection;
 
     std::vector<uint8_t> _Raster;
     std::wstring _FilePath;
 
-    CComPtr<IWICBitmapFrameDecode> _Frame;
-    CComPtr<IWICFormatConverter> _FormatConverter;
-    CComPtr<ID2D1Bitmap> _Bitmap;
+    ComPtr<IWICBitmapFrameDecode> _Frame;
+    ComPtr<IWICFormatConverter> _FormatConverter;
 
-    CComPtr<ID2D1Effect> _ScaleEffect;
-    CComPtr<ID2D1Effect> _BlurEffect;
-    CComPtr<ID2D1Effect> _OpacityEffect;
+    ComPtr<ID2D1Bitmap> _Bitmap;
 
-//  Status _Status;
+    ComPtr<ID2D1Effect> _ScaleEffect;
+    ComPtr<ID2D1Effect> _BlurEffect;
+    ComPtr<ID2D1Effect> _OpacityEffect;
 };

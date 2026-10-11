@@ -1,5 +1,5 @@
 
-/** $VER: Analysis.cpp (2026.09.09) P. Stuer **/
+/** $VER: Analysis.cpp (2026.10.11) P. Stuer **/
 
 #include "pch.h"
 
@@ -12,9 +12,9 @@
 #pragma hdrstop
 
 /// <summary>
-/// Initializes this instance.
+/// Configures this instance.
 /// </summary>
-void analysis_t::Initialize(const state_t * state, const graph_options_t * graphOptions) noexcept
+void analysis_t::Configure(const state_t * state, const graph_options_t * graphOptions) noexcept
 {
     _State = state;
     _GraphOptions = graphOptions;
@@ -92,8 +92,12 @@ void analysis_t::Reset() noexcept
     }
 
     // FFT-based visualizations
-    for (auto & fb : _FrequencyBands)
-        fb.Value = 0.;
+    {
+        for (auto & fb : _FrequencyBands)
+            fb.Value = 0.;
+
+        ResetFFTPeaks();
+    }
 
     // Peak/RMS Meter
     {
@@ -111,7 +115,7 @@ void analysis_t::Reset() noexcept
 
     // Bit Meter
     {
-        _BitMeasuredChannels = 0;
+        _BitActiveChannelMask = 0;
 
         InitializeBitMeasurements((uint32_t) Channels::ConfigStereo);
     }
@@ -132,7 +136,7 @@ void analysis_t::Process(const audio_chunk & chunk) noexcept
     _ChannelConfig    = chunk.get_channel_config();
 
     _NyquistFrequency = (double) _SampleRate / 2.;
-    _ChannelMask      = _ChannelConfig & _GraphOptions->_SelectedChannels;
+    _ChannelMask      = _ChannelConfig & _GraphOptions->_ActiveChannelMask;
 
     if (_ChannelMask == 0)
         return; // None of the selected channels are present in this chunk.
@@ -159,6 +163,7 @@ void analysis_t::Process(const audio_chunk & chunk) noexcept
         }
 
         case VisualizationType::Oscilloscope:
+        case VisualizationType::Goniometer:
         {
             OscilloscopeProcessing(chunk);
             break;
@@ -176,6 +181,24 @@ void analysis_t::Process(const audio_chunk & chunk) noexcept
             _Chunk.copy(chunk, true);
             break;
         }
+
+        case VisualizationType::D3DTester:
+        {
+            break;
+        }
+    }
+}
+
+/// <summary>
+/// Resets the FFT peaks.
+/// </summary>
+void analysis_t::ResetFFTPeaks() noexcept
+{
+    for (auto & fb : _FrequencyBands)
+    {
+        fb.PeakValue = 0.;
+        fb.FallRate  = 0.;
+        fb.Opacity   = 1.;
     }
 }
 
@@ -217,7 +240,7 @@ void analysis_t::UpdatePeakValues(bool isStopped) noexcept
     const double Elapsed = _Chrono.Elapsed();
     const double AmplitudeRange = _GraphOptions->_AmplitudeHi - _GraphOptions->_AmplitudeLo;
 
-    const double HoldTime = _State->_HoldTime * (double) _State->_RefreshRateLimit;
+    const double HoldTime = _State->_HoldTime * (double) _State->_TargetRefreshRate;
     const double FallRate = (_State->_FallRate != 0) ? msc::Map(Elapsed, 0., AmplitudeRange / _State->_FallRate, 0., 1.) : 0.;
 
     const bool IsAIMP = (_State->_PeakMode == PeakMode::AIMP) || (_State->_PeakMode == PeakMode::FadingAIMP);
@@ -244,8 +267,8 @@ void analysis_t::UpdatePeakValues(bool isStopped) noexcept
                         fb.HoldTime = HoldTime;
 
                     fb.PeakValue = fb.Value;
-                    fb.FallRate = 0.;
-                    fb.Opacity  = 1.;
+                    fb.FallRate  = 0.;
+                    fb.Opacity   = 1.;
                 }
                 else
                 {
@@ -432,6 +455,7 @@ void analysis_t::UpdatePeakValues(bool isStopped) noexcept
 
         case VisualizationType::Oscilloscope:
         case VisualizationType::BitMeter:
+        case VisualizationType::Goniometer:
         {
             if (isStopped)
                 _Chunk.reset();
@@ -439,117 +463,13 @@ void analysis_t::UpdatePeakValues(bool isStopped) noexcept
         }
 
         case VisualizationType::Tester:
+        case VisualizationType::D3DTester:
         {
             break;
         }
     }
 
     _Chrono.Reset();
-}
-
-#pragma region Spectrum
-
-void analysis_t::SpectrumProcessing(const audio_chunk & chunk) noexcept
-{
-    const audio_sample * Frames = chunk.get_data();
-    const size_t FrameCount = chunk.get_sample_count(); // get_sample_count() actually returns the number of frames.
-
-    if ((Frames == nullptr) || (FrameCount == 0))
-        return;
-
-    if (_WindowFunction == nullptr)
-        _WindowFunction = window_function_t::Create(_State->_WindowFunction, _State->_WindowParameter, _State->_WindowSkew, _State->_Truncate);
-
-    switch (_State->_TransformMethod)
-    {
-        case TransformMethod::FFT:
-        {
-            if (_FFTAnalyzer == nullptr)
-            {       
-                if (_BrownPucketteKernel == nullptr)
-                    _BrownPucketteKernel = window_function_t::Create(_State->_KernelShape, _State->_KernelShapeParameter, _State->_KernelAsymmetry, _State->_Truncate);
-
-                _FFTAnalyzer = new fft_analyzer_t(_State, _SampleRate, _ChannelCount, _ChannelConfig, _State->_BinCount, *_WindowFunction, *_BrownPucketteKernel);
-            }
-
-            _FFTAnalyzer->AnalyzeSamples(Frames, FrameCount, _GraphOptions->_SelectedChannels, _FrequencyBands);
-            break;
-        }
-
-        case TransformMethod::CQT:
-        {
-            if (_CQTAnalyzer == nullptr)
-                _CQTAnalyzer = new cqt_analyzer_t(_State, _SampleRate, _ChannelCount, _ChannelConfig, *_WindowFunction);
-
-            _CQTAnalyzer->AnalyzeSamples(Frames, FrameCount, _GraphOptions->_SelectedChannels, _FrequencyBands);
-            break;
-        }
-
-        case TransformMethod::SWIFT:
-        {
-            if (_SWIFTAnalyzer == nullptr)
-            {
-                _SWIFTAnalyzer = new swift_analyzer_t(_State, _SampleRate, _ChannelCount, _ChannelConfig);
-
-                _SWIFTAnalyzer->Initialize(_FrequencyBands);
-            }
-
-            _SWIFTAnalyzer->AnalyzeSamples(Frames, FrameCount, _GraphOptions->_SelectedChannels, _FrequencyBands);
-            break;
-        }
-
-        case TransformMethod::AnalogStyle:
-        {
-            if (_AnalogStyleAnalyzer == nullptr)
-            {
-                _AnalogStyleAnalyzer = new analog_style_analyzer_t(_State, _SampleRate, _ChannelCount, _ChannelConfig, *_WindowFunction);
-
-                _AnalogStyleAnalyzer->Initialize(_FrequencyBands);
-            }
-
-            _AnalogStyleAnalyzer->AnalyzeSamples(Frames, FrameCount, _GraphOptions->_SelectedChannels, _FrequencyBands);
-            break;
-        }
-    }
-
-    // Filter the spectrum.
-    if (_State->_WeightingType != WeightingType::None)
-        ApplyAcousticWeighting();
-
-    // Smooth the spectrum.
-    switch (_State->_SmoothingMethod)
-    {
-        default:
-
-        case SmoothingMethod::None:
-        {
-            Normalize();
-            break;
-        }
-
-        case SmoothingMethod::Average:
-        {
-            NormalizeWithAverageSmoothing(_State->_SmoothingFactor);
-            break;
-        }
-
-        case SmoothingMethod::Peak:
-        {
-            NormalizeWithPeakSmoothing(_State->_SmoothingFactor);
-            break;
-        }
-    }
-
-    // From here on frequency_band_t::Value is guaranteed to be in the range [0, 1].
-/*
-{
-    for (auto & fb : _FrequencyBands)
-        fb.Value = 0.;
-
-    _FrequencyBands.front().Value = .5;
-    _FrequencyBands.back() .Value = .5;
-}
-*/
 }
 
 #pragma region Frequencies
@@ -794,7 +714,147 @@ void analysis_t::GenerateMelFrequencyBands()
     }
 }
 
+/// <summary>
+/// Generates logarithmically-spaced frequency bands.
+/// </summary>
+void analysis_t::GenerateLogFrequencyBands()
+{
+    constexpr std::size_t ScaleCount = 320;
+
+    _FrequencyBands.resize(ScaleCount);
+
+    const auto fMin = _State->_LoFrequency;
+    const auto fMax = _State->_HiFrequency;
+
+    size_t i = 0;
+
+    for (frequency_band_t & fb: _FrequencyBands)
+    {
+        const auto t = (double) i / (double) (ScaleCount - 1);
+
+        // Linear to logarithmic spacing.
+        fb.Mid = fMin * std::pow(fMax / fMin, t); // Hz
+
+        // Increase the bandwidth as the frequency rises.
+        const auto Bandwidth = std::max(fb.Mid * 0.15, 1e-9); // Hz
+
+        fb.Lo = std::max(fb.Mid - Bandwidth, MinFrequency); // Hz
+        fb.Hi = std::min(fb.Mid + Bandwidth, MaxFrequency); // Hz
+
+        ::StringCchPrintfW(fb.Label, _countof(fb.Label), L"%.*f Hz", _GraphOptions->_XAxisDecimals, fb.Mid);
+
+        fb.HasDarkBackground = true;
+
+        ++i;
+    }
+}
+
 #pragma endregion
+
+#pragma region Spectrum
+
+void analysis_t::SpectrumProcessing(const audio_chunk & chunk) noexcept
+{
+    const audio_sample * Frames = chunk.get_data();
+    const size_t FrameCount = chunk.get_sample_count(); // get_sample_count() actually returns the number of frames.
+
+    if ((Frames == nullptr) || (FrameCount == 0))
+        return;
+
+    if (_WindowFunction == nullptr)
+        _WindowFunction = window_function_t::Create(_State->_WindowFunction, _State->_WindowParameter, _State->_WindowSkew, _State->_Truncate);
+
+    switch (_State->_TransformMethod)
+    {
+        case TransformMethod::FFT:
+        {
+            if (_FFTAnalyzer == nullptr)
+            {       
+                if (_BrownPucketteKernel == nullptr)
+                    _BrownPucketteKernel = window_function_t::Create(_State->_KernelShape, _State->_KernelShapeParameter, _State->_KernelAsymmetry, _State->_Truncate);
+
+                _FFTAnalyzer = new fft_analyzer_t(_State, _SampleRate, _ChannelCount, _ChannelConfig, _State->_BinCount, *_WindowFunction, *_BrownPucketteKernel);
+            }
+
+            _FFTAnalyzer->AnalyzeSamples(Frames, FrameCount, _GraphOptions->_ActiveChannelMask, _FrequencyBands);
+            break;
+        }
+
+        case TransformMethod::CQT:
+        {
+            if (_CQTAnalyzer == nullptr)
+                _CQTAnalyzer = new cqt_analyzer_t(_State, _SampleRate, _ChannelCount, _ChannelConfig, *_WindowFunction);
+
+            _CQTAnalyzer->AnalyzeSamples(Frames, FrameCount, _GraphOptions->_ActiveChannelMask, _FrequencyBands);
+            break;
+        }
+
+        case TransformMethod::SWIFT:
+        {
+            if (_SWIFTAnalyzer == nullptr)
+            {
+                _SWIFTAnalyzer = new swift_analyzer_t(_State, _SampleRate, _ChannelCount, _ChannelConfig);
+
+                _SWIFTAnalyzer->Initialize(_FrequencyBands);
+            }
+
+            _SWIFTAnalyzer->AnalyzeSamples(Frames, FrameCount, _GraphOptions->_ActiveChannelMask, _FrequencyBands);
+            break;
+        }
+
+        case TransformMethod::AnalogStyle:
+        {
+            if (_AnalogStyleAnalyzer == nullptr)
+            {
+                _AnalogStyleAnalyzer = new analog_style_analyzer_t(_State, _SampleRate, _ChannelCount, _ChannelConfig, *_WindowFunction);
+
+                _AnalogStyleAnalyzer->Initialize(_FrequencyBands);
+            }
+
+            _AnalogStyleAnalyzer->AnalyzeSamples(Frames, FrameCount, _GraphOptions->_ActiveChannelMask, _FrequencyBands);
+            break;
+        }
+    }
+
+    // Filter the spectrum.
+    if (_State->_WeightingType != WeightingType::None)
+        ApplyAcousticWeighting();
+
+    // Smooth the spectrum.
+    switch (_State->_SmoothingMethod)
+    {
+        default:
+
+        case SmoothingMethod::None:
+        {
+            Normalize();
+            break;
+        }
+
+        case SmoothingMethod::Average:
+        {
+            NormalizeWithAverageSmoothing(_State->_SmoothingFactor);
+            break;
+        }
+
+        case SmoothingMethod::Peak:
+        {
+            NormalizeWithPeakSmoothing(_State->_SmoothingFactor);
+            break;
+        }
+    }
+
+    // From here on frequency_band_t::Value is guaranteed to be in the range [0, 1].
+/*
+{
+    for (auto & fb : _FrequencyBands)
+        fb.Value = 0.;
+
+    _FrequencyBands.front().Value = .5;
+    _FrequencyBands.back() .Value = .5;
+}
+*/
+}
 
 #pragma region Acoustic Weighting
 
@@ -962,7 +1022,8 @@ void analysis_t::NormalizeWithPeakSmoothing(double factor) noexcept
 void analysis_t::MeterProcessing(const audio_chunk & chunk) noexcept
 {
     const audio_sample * Frames = chunk.get_data();
-    const size_t FrameCount = chunk.get_sample_count(); // get_sample_count() actually returns the number of frames.
+    const size_t FrameCount     = chunk.get_sample_count(); // get_sample_count() actually returns the number of frames.
+    const uint32_t ChannelCount = chunk.get_channel_count();
 
     if ((Frames == nullptr) || (FrameCount == 0))
         return;
@@ -971,42 +1032,42 @@ void analysis_t::MeterProcessing(const audio_chunk & chunk) noexcept
 
     audio_sample BalanceSamples[2] = { };
 
-    const audio_sample * EndOfChunk = Frames + (FrameCount * _ChannelCount);
+    const audio_sample * CurrentFrame = Frames;
 
-    for (const audio_sample * Frame = Frames; Frame < EndOfChunk; Frame += _ChannelCount)
+    for (size_t FrameIndex = 0; FrameIndex < FrameCount; ++FrameIndex)
     {
-        const audio_sample * Sample = Frame; // First sample of the current frame.
+        const audio_sample * Sample = CurrentFrame; // First sample of the current frame.
 
         size_t i = 0;
         size_t j = 0;
 
-        uint32_t ChunkChannels    = chunk.get_channel_config();                         // Mask containing the channels in the audio chunk.
-        uint32_t SelectedChannels = _GraphOptions->_SelectedChannels;                   // Mask containing the channels selected by the user for the level measuring.
-        uint32_t BalanceChannels  = ChannelPairs[(size_t) _GraphOptions->_ChannelPair]; // Mask containing the channels selected by the user for the balance measuring.
+        uint32_t AvailableChannelMask = chunk.get_channel_config();                         // Mask containing the channels in the audio chunk.
+        uint32_t ActiveChannelMask    = _GraphOptions->_ActiveChannelMask;                  // Mask containing the channels selected by the user for the level measuring.
+        uint32_t PairedChannelMask    = ChannelPairs[(size_t) _GraphOptions->_ChannelPair]; // Mask containing the channels selected by the user for the balance measuring.
 
-        while ((ChunkChannels & SelectedChannels) != 0)
+        while ((AvailableChannelMask & ActiveChannelMask) != 0)
         {
-            if (ChunkChannels & 1)
+            if (AvailableChannelMask & 1)
             {
-                if ((SelectedChannels & 1) && (i < _PeakMeasurements.size()))
+                if ((ActiveChannelMask & 1) && (i < _PeakMeasurements.size()))
                 {
-                    auto m = &_PeakMeasurements[i++];
+                    auto & m = _PeakMeasurements[i++];
 
-                    const double Value = std::abs((double) *Sample);
+                    const double Magnitude = std::abs((double) *Sample);
 
-                    m->Peak = std::max(Value, m->Peak);
-                    m->RMSTotal += Value * Value;
+                    m.Peak = std::max(Magnitude, m.Peak); // Peak Magnitude
+                    m.RMSTotal += Magnitude * Magnitude;   // Sum the instantaneous power.
 
-                    if ((BalanceChannels & 1) && (j < _countof(BalanceSamples)))
+                    if ((PairedChannelMask & 1) && (j < _countof(BalanceSamples)))
                         BalanceSamples[j++] = *Sample;
                 }
 
                 Sample++;
             }
 
-            ChunkChannels    >>= 1;
-            SelectedChannels >>= 1;
-            BalanceChannels  >>= 1;
+            AvailableChannelMask >>= 1;
+            ActiveChannelMask    >>= 1;
+            PairedChannelMask    >>= 1;
         }
 
         _Left  += BalanceSamples[0] * BalanceSamples[0];
@@ -1017,6 +1078,8 @@ void analysis_t::MeterProcessing(const audio_chunk & chunk) noexcept
 
         _Mid  += Mid  * Mid;
         _Side += Side * Side;
+
+        CurrentFrame += ChannelCount;
     }
 
     _RMSFrameCount  += FrameCount;
@@ -1030,51 +1093,51 @@ void analysis_t::MeterProcessing(const audio_chunk & chunk) noexcept
     }
 
     // Has the RMS window elapsed yet?
-    if (_RMSTimeElapsed > _State->_RMSWindow)
+    if (_RMSTimeElapsed < _State->_RMSWindow)
+        return;
+
+    for (auto & m : _PeakMeasurements)
     {
-        for (auto & m : _PeakMeasurements)
-        {
-            // https://skippystudio.nl/2021/07/sound-intensity-and-decibels/
-            m.RMS           = ToDecibel(std::sqrt(m.RMSTotal / (double) _RMSFrameCount)) + (_State->_HasRMSPlus3 ? dBCorrection : 0.);
-            m.NormalizedRMS = SmoothValue(NormalizeValue(m.RMS), m.NormalizedRMS);
+        // https://skippystudio.nl/2021/07/sound-intensity-and-decibels/
+        m.RMS           = ToDecibel(std::sqrt(m.RMSTotal / (double) _RMSFrameCount)) + (_State->_HasRMSPlus3 ? dBCorrection : 0.);
+        m.NormalizedRMS = SmoothValue(NormalizeValue(m.RMS), m.NormalizedRMS);
 
-            // Reset the RMS window-dependent values.
-            m.RMSTotal = 0.;
-        }
-
-        // Calculate the phase and balance.
-        {
-            {
-                _Left  = std::sqrt(_Left  / (double) _RMSFrameCount);
-                _Right = std::sqrt(_Right / (double) _RMSFrameCount);
-
-                if (!std::isfinite(_Balance))
-                    _Balance = 0.5;
-
-                _Balance = SmoothValue(NormalizeLLevelValue((_Right - _Left) / std::max(_Left, _Right)), _Balance);
-            }
-
-            {
-                _Mid   = std::sqrt(_Mid   / (double) _RMSFrameCount);
-                _Side  = std::sqrt(_Side  / (double) _RMSFrameCount);
-
-                if (!std::isfinite(_Phase))
-                    _Phase = 0.5;
-
-                _Phase = SmoothValue(NormalizeLLevelValue((_Mid - _Side) / std::max(_Mid, _Side)), _Phase);
-            }
-        }
-
-        ResetRMSDependentValues();
+        // Reset the RMS window-dependent values.
+        m.RMSTotal = 0.;
     }
+
+    // Calculate the phase and balance.
+    {
+        {
+            _Left  = std::sqrt(_Left  / (double) _RMSFrameCount);
+            _Right = std::sqrt(_Right / (double) _RMSFrameCount);
+
+            if (!std::isfinite(_Balance))
+                _Balance = 0.5;
+
+            _Balance = SmoothValue(NormalizeLLevelValue((_Right - _Left) / std::max(_Left, _Right)), _Balance);
+        }
+
+        {
+            _Mid   = std::sqrt(_Mid   / (double) _RMSFrameCount);
+            _Side  = std::sqrt(_Side  / (double) _RMSFrameCount);
+
+            if (!std::isfinite(_Phase))
+                _Phase = 0.5;
+
+            _Phase = SmoothValue(NormalizeLLevelValue((_Mid - _Side) / std::max(_Mid, _Side)), _Phase);
+        }
+    }
+
+    ResetRMSDependentValues();
 }
 
 /// <summary>
 /// Initializes the peak measurements before processing an audio chunk.
 /// </summary>
-void analysis_t::InitializePeakMeasurements(uint32_t measuredChannels) noexcept
+void analysis_t::InitializePeakMeasurements(uint32_t activeChannelMask) noexcept
 {
-    if (_PeakMeasuredChannels != measuredChannels)
+    if (_PeakActiveChannelMask != activeChannelMask)
     {
         // The chunk configuration has changed. Recreate the measurements.
         static constexpr const WCHAR * const ChannelNames[] =
@@ -1091,13 +1154,15 @@ void analysis_t::InitializePeakMeasurements(uint32_t measuredChannels) noexcept
 
         _PeakMeasurements.clear();
 
-        for (uint32_t SelectedChannels = measuredChannels; (SelectedChannels != 0) && (i < _countof(ChannelNames)); SelectedChannels >>= 1, ++i)
+        for (uint32_t ActiveChannelMask = activeChannelMask; (ActiveChannelMask != 0) && (i < _countof(ChannelNames)); ActiveChannelMask >>= 1, ++i)
         {
-            if (SelectedChannels & 1)
-                _PeakMeasurements.push_back({ ChannelNames[i] });
+            if (ActiveChannelMask & 1)
+                _PeakMeasurements.push_back({ (Channels)(1 << i), ChannelNames[i] });
         }
 
-        _PeakMeasuredChannels = measuredChannels;
+        _PeakActiveChannelMask = activeChannelMask;
+
+        ResetRMSDependentValues();
     }
     else
     {
@@ -1112,7 +1177,7 @@ void analysis_t::InitializePeakMeasurements(uint32_t measuredChannels) noexcept
 #pragma region Oscilloscope
 
 /// <summary>
-/// Process the chunk data for the oscilloscope.
+/// Process the chunk data for the oscilloscope / goniometer.
 /// </summary>
 void analysis_t::OscilloscopeProcessing(const audio_chunk & chunk) noexcept
 {
@@ -1120,7 +1185,7 @@ void analysis_t::OscilloscopeProcessing(const audio_chunk & chunk) noexcept
     {
         downmixer_t Downmixer;
 
-        Downmixer(chunk, _GraphOptions->_SelectedChannels, _Chunk);
+        Downmixer(chunk, _GraphOptions->_ActiveChannelMask, _Chunk);
     }
     else
         _Chunk.copy(chunk, true);
@@ -1145,50 +1210,57 @@ void analysis_t::BitMeterProcessing(const audio_chunk & chunk) noexcept
 
     const auto MaxInteger = (audio_sample) (1LL << (_State->_BitsPerInteger - 1));
 
-    const audio_sample * EndOfChunk = Frames + (FrameCount * _ChannelCount);
+    const audio_sample * CurrentFrame = Frames;
 
-    for (const audio_sample * Frame = Frames; Frame < EndOfChunk; Frame += _ChannelCount)
+    for (size_t FrameIndex = 0; FrameIndex < FrameCount; ++FrameIndex)
     {
-        const audio_sample * Sample = Frame;    // First sample of the current frame.
+        const audio_sample * CurrentSample = CurrentFrame;
 
         size_t i = 0;
 
-        uint32_t ChunkChannels    = chunk.get_channel_config();         // Mask containing the channels in the audio chunk.
-        uint32_t SelectedChannels = _GraphOptions->_SelectedChannels;   // Mask containing the channels selected by the user for processing.
+        uint32_t AvailableChannelMask = chunk.get_channel_config();         // Mask containing the channels in the audio chunk.
+        uint32_t ActiveChannelMask    = _GraphOptions->_ActiveChannelMask;  // Mask containing the channels selected by the user for processing.
 
-        while ((ChunkChannels & SelectedChannels) != 0)
+        while ((AvailableChannelMask & ActiveChannelMask) != 0)
         {
-            if (ChunkChannels & 1)
+            if (AvailableChannelMask & 1)
             {
-                if ((SelectedChannels & 1) && (i < _BitMeasurements.size()))
+                if ((ActiveChannelMask & 1) && (i < _BitMeasurements.size()))
                 {
-                    uint64_t Value;
+                    uint64_t SampleBits;
 
                     if (_State->_BitMeterMode == BitMeterMode::FloatingPoint)
-                        Value = *(uint64_t *) Sample; // Test pattern: 64-bit: 0b1101010101011001111111111111111111111111111111111111111111111001 / 32-bit: 0b11010101010000000000000000000001
+                    {
+                        using sample_bits_t = std::conditional_t<sizeof(audio_sample) == 8, uint64_t, uint32_t>;
+
+                        // Test pattern: 64-bit: 0b1101010101011001111111111111111111111111111111111111111111111001 / 32-bit: 0b11010101010000000000000000000001
+                        SampleBits = std::bit_cast<sample_bits_t>(*CurrentSample);
+                    }
                     else
-                        Value = (uint64_t) std::abs(*Sample * MaxInteger);
+                        SampleBits = (uint64_t) std::abs(*CurrentSample * MaxInteger);
 
                     for (auto & BitCount : _BitMeasurements[i].BitCounts)
                     {
-                        if (Value == 0)
+                        if (SampleBits == 0)
                             break;
 
-                        if (Value & 1)
+                        if (SampleBits & 1)
                             ++BitCount;
 
-                        Value >>= 1;
+                        SampleBits >>= 1;
                     }
 
                     ++i;
                 }
 
-                ++Sample;
+                ++CurrentSample;
             }
 
-            ChunkChannels    >>= 1;
-            SelectedChannels >>= 1;
+            AvailableChannelMask >>= 1;
+            ActiveChannelMask    >>= 1;
         }
+
+        CurrentFrame += _ChannelCount;
     }
 
     // Scale the bit counters to range [0, 1].
@@ -1205,9 +1277,9 @@ void analysis_t::BitMeterProcessing(const audio_chunk & chunk) noexcept
 /// <summary>
 /// Initializes the bit measurements before processing an audio chunk.
 /// </summary>
-void analysis_t::InitializeBitMeasurements(uint32_t measuredChannels) noexcept
+void analysis_t::InitializeBitMeasurements(uint32_t activeChannelMask) noexcept
 {
-    if (_BitMeasuredChannels != measuredChannels)
+    if (_BitActiveChannelMask != activeChannelMask)
     {
         // The chunk configuration has changed. Recreate the measurements, one per selected channel.
         static const WCHAR * ChannelNames[] =
@@ -1226,13 +1298,13 @@ void analysis_t::InitializeBitMeasurements(uint32_t measuredChannels) noexcept
 
         _BitMeasurements.clear();
 
-        for (uint32_t SelectedChannels = measuredChannels; (SelectedChannels != 0) && (i < _countof(ChannelNames)); SelectedChannels >>= 1, ++i)
+        for (uint32_t SelectedChannels = activeChannelMask; (SelectedChannels != 0) && (i < _countof(ChannelNames)); SelectedChannels >>= 1, ++i)
         {
             if (SelectedChannels & 1)
-                _BitMeasurements.push_back({ ChannelNames[i], n });
+                _BitMeasurements.push_back({ (Channels) (1 << i), ChannelNames[i], n });
         }
 
-        _BitMeasuredChannels = measuredChannels;
+        _BitActiveChannelMask = activeChannelMask;
     }
     else
     {

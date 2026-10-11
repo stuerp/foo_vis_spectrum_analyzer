@@ -1,5 +1,5 @@
 
-/** $VER: Tester.cpp (2026.06.24) P. Stuer - Implements a minimal visualization for testing purposes. **/
+/** $VER: Tester.cpp (2026.10.05) P. Stuer - Implements a minimal visualization for testing purposes. **/
 
 #include <pch.h>
 
@@ -11,32 +11,23 @@
 #pragma hdrstop
 
 /// <summary>
-/// Initializes a new instance.
-/// </summary>
-tester_t::tester_t()
-{
-    _Rect = { };
-    _Size = { };
-
-    Reset();
-}
-
-/// <summary>
 /// Destroys this instance.
 /// </summary>
 tester_t::~tester_t()
 {
-    DeleteDeviceSpecificResources();
+    Reset();
 }
 
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void tester_t::Initialize(state_t * state, graph_options_t * graphOptions, const analysis_t * analysis, bool isFirst, bool isLast) noexcept
+void tester_t::Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept
 {
     _State = state;
     _GraphOptions = graphOptions;
     _Analysis = analysis;
+
+    Reset();
 
     CreateDeviceIndependentResources();
 }
@@ -46,37 +37,7 @@ void tester_t::Initialize(state_t * state, graph_options_t * graphOptions, const
 /// </summary>
 void tester_t::Move(const D2D1_RECT_F & rect) noexcept
 {
-    SetRect(rect);
-}
-
-/// <summary>
-/// Resets this instance.
-/// </summary>
-void tester_t::Reset() noexcept
-{
-    if (!_IsResized || (GetWidth() == 0.f) || (GetHeight() == 0.f))
-        return;
-
-    _IsResized = true;
-}
-
-/// <summary>
-/// Terminates this instance.
-/// </summary>
-void tester_t::Release() noexcept
-{
-    DeleteDeviceSpecificResources();
-}
-
-/// <summary>
-/// Recalculates parameters that are render target and size-sensitive.
-/// </summary>
-void tester_t::Resize() noexcept
-{
-    if (!_IsResized || (GetWidth() == 0.f) || (GetHeight() == 0.f))
-        return;
-
-    _IsResized = false;
+    InitializeMetrics(rect);
 }
 
 /// <summary>
@@ -86,7 +47,7 @@ void tester_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 {
     HRESULT hr = CreateDeviceSpecificResources(deviceContext);
 
-    if (!SUCCEEDED(hr))
+    if (FAILED(hr))
         return;
 
     double Gain = 1.;
@@ -97,12 +58,12 @@ void tester_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 
         _Brush->SetColor(D2D1::ColorF(RGB(87, 123, 197), 1.0f));
 
-        deviceContext->DrawLine({ 0, _Size.height / 2 }, { _Size.width, _Size.height / 2 }, _Brush);
+        deviceContext->DrawLine({ 0, _Size.height / 2 }, { _Size.width, _Size.height / 2 }, _Brush.Get());
 
         _Brush->SetColor(D2D1::ColorF(RGB(87, 123, 197), 0.5f));
 
-        deviceContext->DrawLine({ 0, _Size.height * 0.25f }, { _Size.width, _Size.height * 0.25f }, _Brush);
-        deviceContext->DrawLine({ 0, _Size.height * 0.75f }, { _Size.width, _Size.height * 0.75f }, _Brush);
+        deviceContext->DrawLine({ 0, _Size.height * 0.25f }, { _Size.width, _Size.height * 0.25f }, _Brush.Get());
+        deviceContext->DrawLine({ 0, _Size.height * 0.75f }, { _Size.width, _Size.height * 0.75f }, _Brush.Get());
     }
 
     // Waveform
@@ -134,7 +95,7 @@ void tester_t::Render(ID2D1DeviceContext * deviceContext) noexcept
             {
                 p2 = { x, y };
 
-                deviceContext->DrawLine(p1, p2, _Brush, 3.f);
+                deviceContext->DrawLine(p1, p2, _Brush.Get(), 3.f);
 
                 p1 = p2;
             }
@@ -153,7 +114,7 @@ void tester_t::Render(ID2D1DeviceContext * deviceContext) noexcept
             {
                 p2 = { x, y };
 
-                deviceContext->DrawLine(p1, p2, _Brush, 1.f);
+                deviceContext->DrawLine(p1, p2, _Brush.Get(), 1.f);
 
                 p1 = p2;
             }
@@ -162,13 +123,19 @@ void tester_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 }
 
 /// <summary>
+/// Resets this instance.
+/// </summary>
+void tester_t::Reset() noexcept
+{
+    DeleteDeviceSpecificResources();
+}
+
+/// <summary>
 /// Creates resources which are not bound to any D3D device. Their lifetime effectively extends for the duration of the app.
 /// </summary>
 HRESULT tester_t::CreateDeviceIndependentResources() noexcept
 {
-    HRESULT hr = S_OK;
-
-    return hr;
+    return S_OK;
 }
 
 /// <summary>
@@ -183,17 +150,36 @@ void tester_t::DeleteDeviceIndependentResources() noexcept
 /// </summary>
 HRESULT tester_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept
 {
-    if ((_Size.width == 0.f) || _Size.height == 0.f)
-        return E_FAIL;
-
-    Resize();
-
     HRESULT hr = S_OK;
 
 #ifdef _DEBUG
     if (_Brush == nullptr)
-        (void) deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), &_Brush);
+        (void) deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), _Brush.GetAddressOf());
 #endif
+
+    if (_State->_ColorsHaveChanged || _State->_SizeHasChanged)
+    {
+        DeleteColorDependentResources();
+
+        Initialize();
+
+        hr = CreateColorDependentResources(deviceContext);
+
+        if (FAILED(hr))
+            return hr;
+    }
+
+    if (_State->_SizeHasChanged)
+    {
+        DeleteSizeDependentResources();
+
+        Initialize();
+
+        hr = CreateSizeDependentResources(deviceContext);
+
+        if (FAILED(hr))
+            return hr;
+    }
 
     return hr;
 }
@@ -203,7 +189,58 @@ HRESULT tester_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceConte
 /// </summary>
 void tester_t::DeleteDeviceSpecificResources() noexcept
 {
+    DeleteColorDependentResources();
+    DeleteSizeDependentResources();
+
 #ifdef _DEBUG
-    _Brush.Release();
+    _Brush.Reset();
 #endif
+}
+
+/// <summary>
+/// Creates the resources that depend on the size of the render target.
+/// </summary>
+HRESULT tester_t::CreateSizeDependentResources(ID2D1DeviceContext * deviceContext) noexcept
+{
+    return S_OK;
+}
+
+/// <summary>
+/// Deletes the resources that depend on the size of the render target.
+/// </summary>
+void tester_t::DeleteSizeDependentResources() noexcept
+{
+}
+
+/// <summary>
+/// Creates the resources that depend on the color palette.
+/// </summary>
+HRESULT tester_t::CreateColorDependentResources(ID2D1DeviceContext * deviceContext) noexcept
+{
+    return S_OK;
+}
+
+/// <summary>
+/// Deletes the resources that depend on the color palette.
+/// </summary>
+void tester_t::DeleteColorDependentResources() noexcept
+{
+}
+
+/// <summary>
+/// Recalculates parameters that are render target and size-sensitive.
+/// </summary>
+void tester_t::Initialize() noexcept
+{
+}
+
+/// <summary>
+/// Handles a configuration change.
+/// </summary>
+void tester_t::OnConfigurationChanged(ConfigurationChanges configurationChanges) noexcept
+{
+    if (!IsSet(configurationChanges, ConfigurationChanges::Layout))
+        return;
+
+    _State->_SizeHasChanged = true;
 }

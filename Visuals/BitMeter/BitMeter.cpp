@@ -1,5 +1,5 @@
 
-/** $VER: BitMeter.cpp (2026.06.17) P. Stuer - Implements a bit meter visualization. **/
+/** $VER: BitMeter.cpp (2026.10.10) P. Stuer - Implements a bit meter visualization. **/
 
 #include <pch.h>
 
@@ -8,25 +8,17 @@
 #pragma hdrstop
 
 /// <summary>
-/// Initializes a new instance.
+/// Destroys this instance.
 /// </summary>
-bit_meter_t::bit_meter_t()
+bit_meter_t::~bit_meter_t() noexcept
 {
     Reset();
 }
 
 /// <summary>
-/// Destroys this instance.
-/// </summary>
-bit_meter_t::~bit_meter_t() noexcept
-{
-    DeleteDeviceSpecificResources();
-}
-
-/// <summary>
 /// Initializes this instance.
 /// </summary>
-void bit_meter_t::Initialize(state_t * state, graph_options_t * graphOptions, const analysis_t * analysis, bool isFirst, bool isLast) noexcept
+void bit_meter_t::Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept
 {
     _State = state;
     _GraphOptions = graphOptions;
@@ -34,21 +26,7 @@ void bit_meter_t::Initialize(state_t * state, graph_options_t * graphOptions, co
 
     _MeasurementCount = 0;
 
-    _BitCount = (size_t) ((_State->_BitMeterMode == BitMeterMode::FloatingPoint) ? audio_sample_size : _State->_BitsPerInteger);
-
-    // Create the labels.
-    {
-        _Labels.clear();
-
-        for (uint32_t BitNumber = 1; BitNumber <= _BitCount; ++BitNumber)
-        {
-            WCHAR Text[4] = { };
-
-            ::StringCchPrintfW(Text, _countof(Text), L"%u", BitNumber);
-
-            _Labels.push_back(Text);
-        }
-    }
+    Reset();
 }
 
 /// <summary>
@@ -56,39 +34,7 @@ void bit_meter_t::Initialize(state_t * state, graph_options_t * graphOptions, co
 /// </summary>
 void bit_meter_t::Move(const D2D1_RECT_F & rect) noexcept
 {
-    SetRect(rect);
-}
-
-/// <summary>
-/// Resets this instance.
-/// </summary>
-void bit_meter_t::Reset() noexcept
-{
-    if (!_IsResized || (GetWidth() == 0.f) || (GetHeight() == 0.f))
-        return;
-
-    _IsResized = true;
-}
-
-/// <summary>
-/// Terminates this instance.
-/// </summary>
-void bit_meter_t::Release() noexcept
-{
-    DeleteDeviceSpecificResources();
-}
-
-/// <summary>
-/// Recalculates parameters that are render target and size-sensitive.
-/// </summary>
-void bit_meter_t::Resize() noexcept
-{
-    if (!_IsResized || (GetWidth() == 0.f) || (GetHeight() == 0.f))
-        return;
-
-    _StaticContentCommandList = nullptr;
-
-    _IsResized = false;
+    InitializeMetrics(rect);
 }
 
 /// <summary>
@@ -98,7 +44,7 @@ void bit_meter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 {
     HRESULT hr = CreateDeviceSpecificResources(deviceContext);
 
-    if (!SUCCEEDED(hr))
+    if (FAILED(hr))
         return;
 
     // Draw the static content.
@@ -107,7 +53,7 @@ void bit_meter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 
         deviceContext->SetTransform(Translate);
 
-        deviceContext->DrawImage(_StaticContentCommandList);
+        deviceContext->DrawImage(_StaticContentCommandList.Get());
     }
 
     const FLOAT XAxisHeight = _GraphOptions->_XAxisBottom ? YPadding + _XAxisText._Height + YPadding : 1.f;
@@ -132,46 +78,128 @@ void bit_meter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
     // Draw the measurements for each selected channel.
     deviceContext->SetAntialiasMode( D2D1_ANTIALIAS_MODE_ALIASED); // Required by FillOpacityMask() and results in crispier graphics.
 
+#ifdef v1
     D2D1_RECT_F r = { .bottom = ChannelHeight };
 
-    for (const auto & m : _Analysis->_BitMeasurements)
+    for (const auto & Channel : _State->_ChannelOrder)
     {
-        const D2D1_MATRIX_3X2_F Translate = D2D1::Matrix3x2F::Translation(_Rect.left + YAxisWidth + XOffset, _Rect.top + YOffset);
+        auto it = std::find_if(_Analysis->_BitMeasurements.begin(), _Analysis->_BitMeasurements.end(), [Channel](const auto & m) { return m.Channel == Channel; });
 
-        deviceContext->SetTransform(Translate);
+        if (it == _Analysis->_BitMeasurements.end())
+            continue;
 
-        r.left = 0.f;
+        const auto & m = *it;
 
-        // Draw the bit bar counts for the current channel.
-        size_t BitNumber = 0;
-
-        for (const auto & BitCount : m.BitCounts)
         {
-            r.right = r.left + BarWidth - 1.f;
+            const D2D1_MATRIX_3X2_F Translate = D2D1::Matrix3x2F::Translation(_Rect.left + YAxisWidth + XOffset, _Rect.top + YOffset);
 
-            if (!_State->_IsPaused || (_State->_IsPaused && _State->_VisualizeDuringPause))
+            deviceContext->SetTransform(Translate);
+
+            r.left = 0.f;
+
+            // Draw the bit bar counts for the current channel.
+            size_t BitNumber = 0;
+
+            for (const auto & BitCount : m.BitCounts)
             {
-                style_t * Style = _Styles[BitNumber];
+                r.right = r.left + BarWidth - 1.f;
 
-                if (Style->IsEnabled())
+                if (!_State->_IsPaused || (_State->_IsPaused && _State->_VisualizeDuringPause))
                 {
-                    if (_State->_OpacityMode)
-                        Style->_Brush->SetOpacity((FLOAT) BitCount);
-                    else
-                        r.top = ChannelHeight - ((FLOAT) BitCount * ChannelHeight);
+                    style_t * Style = _Styles[BitNumber];
 
-                    deviceContext->FillRectangle(r, Style->_Brush);
+                    if (Style->IsEnabled())
+                    {
+                        if (_State->_OpacityMode)
+                            Style->_Brush->SetOpacity((FLOAT) BitCount);
+                        else
+                        {
+                            Style->_Brush->SetOpacity(Style->_Opacity); // Always set the opacity in case we're returning from opacity mode.
+                            r.top = ChannelHeight - ((FLOAT) BitCount * ChannelHeight);
+                        }
+
+                        deviceContext->FillRectangle(r, Style->_Brush.Get());
+                    }
                 }
+
+                r.left = r.right + 1.f;
+                ++BitNumber;
             }
 
-            r.left = r.right + 1.f;
-            ++BitNumber;
+            YOffset += ChannelHeight + XAxisHeight;
         }
-
-        YOffset += ChannelHeight + XAxisHeight;
     }
+#else
+    const bool Visualize = !_State->_IsPaused || _State->_VisualizeDuringPause;
+    const FLOAT TranslationX = _Rect.left + YAxisWidth + XOffset;
+    const FLOAT ChannelOffset = ChannelHeight + XAxisHeight;
+
+    D2D1_RECT_F r =
+    {
+        .top = 0.f,
+        .bottom = ChannelHeight
+    };
+
+    for (const auto & Channel : _State->_ChannelOrder)
+    {
+        const auto it = std::find_if(_Analysis->_BitMeasurements.begin(), _Analysis->_BitMeasurements.end(), [Channel](const auto & m){ return m.Channel == Channel; });
+
+        if (it == _Analysis->_BitMeasurements.end())
+            continue;
+
+        {
+            const D2D1_MATRIX_3X2_F Translate = D2D1::Matrix3x2F::Translation(TranslationX, _Rect.top + YOffset);
+
+            deviceContext->SetTransform(Translate);
+
+            r.left = 0.f;
+
+            // Draw the bit bar counts for the current channel.
+            size_t BitNumber = 0;
+
+            for (const auto & BitCount : it->BitCounts)
+            {
+                r.right = r.left + BarWidth - 1.f;
+
+                if (Visualize)
+                {
+                    style_t * Style = _Styles[BitNumber];
+
+                    if (Style->IsEnabled())
+                    {
+                        if (_State->_OpacityMode)
+                        {
+                            r.top = 0.f;
+                            Style->_Brush->SetOpacity((FLOAT) BitCount);
+                        }
+                        else
+                        {
+                            r.top = ChannelHeight - ((FLOAT) BitCount * ChannelHeight);
+                            Style->_Brush->SetOpacity(Style->_Opacity); // Always set the opacity in case we're returning from opacity mode.
+                        }
+
+                        deviceContext->FillRectangle(r, Style->_Brush.Get());
+                    }
+                }
+
+                r.left += BarWidth;
+                ++BitNumber;
+            }
+
+            YOffset += ChannelOffset;
+        }
+    }
+#endif
 
     deviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
+}
+
+/// <summary>
+/// Resets this instance.
+/// </summary>
+void bit_meter_t::Reset() noexcept
+{
+    DeleteDeviceSpecificResources();
 }
 
 /// <summary>
@@ -179,142 +207,43 @@ void bit_meter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 /// </summary>
 HRESULT bit_meter_t::CreateDeviceSpecificResources(_In_ ID2D1DeviceContext * deviceContext) noexcept
 {
-    if ((_Size.width == 0.f) || _Size.height == 0.f)
-        return E_FAIL;
+    HRESULT hr = S_OK;
 
-    Resize();
+#ifdef _DEBUG
+    if (_DebugBrush == nullptr)
+        (void) deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), _DebugBrush.GetAddressOf());
+#endif
 
     if (_MeasurementCount != _Analysis->_BitMeasurements.size())
     {
         _MeasurementCount = _Analysis->_BitMeasurements.size();
 
-        _BarBackground.DeleteDeviceSpecificResources();
-        _BarSign.DeleteDeviceSpecificResources();
-        _BarExponent.DeleteDeviceSpecificResources();
-        _BarMantissa.DeleteDeviceSpecificResources();
-
-        _StaticContentCommandList.Release();
+        _State->_SizeHasChanged = true;
+        _State->_ColorsHaveChanged = true;
     }
 
-    if (_MeasurementCount == 0)
-        return E_FAIL;
-
-    HRESULT hr = S_OK;
-
-    const D2D1_SIZE_F TextSize = { _Size.width, _Size.height / (FLOAT) _MeasurementCount };
-
-    if (_BarBackground._Brush == nullptr)
+    if (_State->_ColorsHaveChanged || _State->_SizeHasChanged)
     {
-        _BarBackground = *_State->_StyleManager.GetStyle(VisualElement::BarBackground);
+        DeleteColorDependentResources();
 
-        _BarBackground.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+        Initialize();
 
-        hr = _BarBackground.CreateDeviceSpecificResources(deviceContext, TextSize, L"", 1.f);
+        hr = CreateColorDependentResources(deviceContext);
 
-        if (!SUCCEEDED(hr))
+        if (FAILED(hr))
             return hr;
     }
 
-    if (_BarSign._Brush == nullptr)
+    if (_State->_SizeHasChanged)
     {
-        _BarSign = *_State->_StyleManager.GetStyle(VisualElement::BarSign);
+        DeleteSizeDependentResources();
 
-        _BarSign.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+        Initialize();
 
-        hr = _BarSign.CreateDeviceSpecificResources(deviceContext, TextSize, L"", 1.f);
+        hr = CreateSizeDependentResources(deviceContext);
 
-        if (!SUCCEEDED(hr))
+        if (FAILED(hr))
             return hr;
-    }
-
-    if (_BarExponent._Brush == nullptr)
-    {
-        _BarExponent = *_State->_StyleManager.GetStyle(VisualElement::BarExponent);
-
-        _BarExponent.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
-
-        hr = _BarExponent.CreateDeviceSpecificResources(deviceContext, TextSize, L"", 1.f);
-
-        if (!SUCCEEDED(hr))
-            return hr;
-    }
-
-    if (_BarMantissa._Brush == nullptr)
-    {
-        _BarMantissa = *_State->_StyleManager.GetStyle(VisualElement::BarMantissa);
-
-        _BarMantissa.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
-
-        hr = _BarMantissa.CreateDeviceSpecificResources(deviceContext, TextSize, L"", 1.f);
-
-        if (!SUCCEEDED(hr))
-            return hr;
-    }
-
-    if (_XAxisText._Brush == nullptr)
-    {
-        _XAxisText = *_State->_StyleManager.GetStyle(VisualElement::XAxisText);
-
-        _XAxisText.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
-
-        hr = _XAxisText.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
-
-        if (!SUCCEEDED(hr))
-            return hr;
-
-        _XAxisText.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
-        _XAxisText.SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
-    }
-
-    if (_YAxisText._Brush == nullptr)
-    {
-        _YAxisText = *_State->_StyleManager.GetStyle(VisualElement::YAxisText);
-
-        _YAxisText.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
-
-        hr = _YAxisText.CreateDeviceSpecificResources(deviceContext, _Size, L"WW", 1.f);
-
-        if (!SUCCEEDED(hr))
-            return hr;
-
-        _YAxisText.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
-    }
-
-#ifdef _DEBUG
-    if (_DebugBrush == nullptr)
-        (void) deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), &_DebugBrush);
-#endif
-
-    if (_DeviceContext == nullptr)
-    {
-        CComPtr<ID2D1Device> D2DDevice;
-
-        deviceContext->GetDevice(&D2DDevice);
-
-        hr = D2DDevice->CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_ENABLE_MULTITHREADED_OPTIMIZATIONS, &_DeviceContext);
-
-        if (!SUCCEEDED(hr))
-            return hr;
-    }
-
-    if (_StaticContentCommandList == nullptr)
-    {
-        hr = CreateStaticContentCommandList();
-
-
-        if (!SUCCEEDED(hr))
-            return hr;
-    }
-
-    // Predetermine the style for each bit.
-    _Styles.resize(_BitCount);
-
-    for (size_t BitNumber = 0; BitNumber < _BitCount; ++BitNumber)
-    {
-        if (_State->_BitMeterMode == BitMeterMode::FloatingPoint)
-            _Styles[BitNumber] = (BitNumber == 0) ? &_BarSign : ((BitNumber <= ExponentBits) ? &_BarExponent : &_BarMantissa);
-        else
-            _Styles[BitNumber] = &_BarMantissa;
     }
 
     return hr;
@@ -325,14 +254,137 @@ HRESULT bit_meter_t::CreateDeviceSpecificResources(_In_ ID2D1DeviceContext * dev
 /// </summary>
 void bit_meter_t::DeleteDeviceSpecificResources() noexcept
 {
-    _StaticContentCommandList.Release();
-
-    _DeviceContext.Release();
+    DeleteColorDependentResources();
+    DeleteSizeDependentResources();
 
 #ifdef _DEBUG
-    _DebugBrush.Release();
+    _DebugBrush.Reset();
 #endif
+}
 
+/// <summary>
+/// Creates the resources that depend on the size of the render target.
+/// </summary>
+HRESULT bit_meter_t::CreateSizeDependentResources(ID2D1DeviceContext * deviceContext) noexcept
+{
+    if (_DeviceContext == nullptr)
+    {
+        ComPtr<ID2D1Device> D2DDevice;
+
+        deviceContext->GetDevice(D2DDevice.GetAddressOf());
+
+        HRESULT hr = D2DDevice->CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_ENABLE_MULTITHREADED_OPTIMIZATIONS, _DeviceContext.GetAddressOf());
+
+        if (FAILED(hr))
+            return hr;
+    }
+
+    if (_StaticContentCommandList == nullptr)
+    {
+        HRESULT hr = CreateStaticContentCommandList();
+
+        if (FAILED(hr))
+            return hr;
+    }
+
+    return S_OK;
+}
+
+/// <summary>
+/// Deletes the resources that depend on the size of the render target.
+/// </summary>
+void bit_meter_t::DeleteSizeDependentResources() noexcept
+{
+    _StaticContentCommandList.Reset();
+
+    _DeviceContext.Reset();
+}
+
+/// <summary>
+/// Creates the resources that depend on the color palette.
+/// </summary>
+HRESULT bit_meter_t::CreateColorDependentResources(ID2D1DeviceContext * deviceContext) noexcept
+{
+    if (_MeasurementCount == 0)
+        return E_FAIL;
+
+    const D2D1_SIZE_F TextSize = { _Size.width, _Size.height / (FLOAT) _MeasurementCount };
+
+    const auto InitializeStyle = [this, deviceContext](auto & Style, VisualElement Element, const D2D1_SIZE_F & Size, const wchar_t * Text) noexcept -> HRESULT
+    {
+        if (Style._Brush != nullptr)
+            return S_OK;
+
+        Style = *_State->_StyleManager.GetStyle(Element);
+
+        Style.SetColor(_State);
+
+        return Style.CreateDeviceSpecificResources(deviceContext, Size, Text, 1.f);
+    };
+
+    HRESULT hr = InitializeStyle(_BarBackground, VisualElement::BarBackground, TextSize, L"");
+
+    if (FAILED(hr))
+        return hr;
+
+    hr = InitializeStyle(_BarSign, VisualElement::BarSign, TextSize, L"");
+
+    if (FAILED(hr))
+        return hr;
+
+    hr = InitializeStyle(_BarExponent, VisualElement::BarExponent, TextSize, L"");
+
+    if (FAILED(hr))
+        return hr;
+
+    hr = InitializeStyle(_BarMantissa, VisualElement::BarMantissa, TextSize, L"");
+
+    if (FAILED(hr))
+        return hr;
+
+    if (_XAxisText._Brush == nullptr)
+    {
+        hr = InitializeStyle(_XAxisText, VisualElement::XAxisText, _Size, L"");
+
+        if (FAILED(hr))
+            return hr;
+
+        _XAxisText.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
+        _XAxisText.SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
+    }
+
+    if (_YAxisText._Brush == nullptr)
+    {
+        hr = InitializeStyle(_YAxisText, VisualElement::YAxisText, _Size, L"WW");
+
+        if (FAILED(hr))
+            return hr;
+
+        _YAxisText.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
+    }
+
+    // Predetermine the style for each bit.
+    if ((_Styles.size() != _BitCount) || (_CachedBitMeterMode != _State->_BitMeterMode))
+    {
+        _Styles.resize(_BitCount);
+
+        for (size_t BitNumber = 0; BitNumber < _BitCount; ++BitNumber)
+        {
+            if (_State->_BitMeterMode == BitMeterMode::FloatingPoint)
+                _Styles[BitNumber] = (BitNumber == 0) ? &_BarSign : ((BitNumber <= ExponentBits) ? &_BarExponent : &_BarMantissa);
+            else
+                _Styles[BitNumber] = &_BarMantissa;
+        }
+    }
+
+    return S_OK;
+}
+
+/// <summary>
+/// Deletes the resources that depend on the color palette.
+/// </summary>
+void bit_meter_t::DeleteColorDependentResources() noexcept
+{
     _YAxisText.DeleteDeviceSpecificResources();
     _XAxisText.DeleteDeviceSpecificResources();
 
@@ -340,6 +392,8 @@ void bit_meter_t::DeleteDeviceSpecificResources() noexcept
     _BarExponent.DeleteDeviceSpecificResources();
     _BarSign.DeleteDeviceSpecificResources();
     _BarBackground.DeleteDeviceSpecificResources();
+
+    _Styles.clear();
 }
 
 /// <summary>
@@ -347,17 +401,25 @@ void bit_meter_t::DeleteDeviceSpecificResources() noexcept
 /// </summary>
 HRESULT bit_meter_t::CreateStaticContentCommandList() noexcept
 {
-    HRESULT hr = _DeviceContext->CreateCommandList(&_StaticContentCommandList);
+    if (_MeasurementCount == 0)
+        return E_FAIL;
 
-    if (!SUCCEEDED(hr))
+    HRESULT hr = _DeviceContext->CreateCommandList(_StaticContentCommandList.GetAddressOf());
+
+    if (FAILED(hr))
         return hr;
 
-    _DeviceContext->SetTarget(_StaticContentCommandList);
+    _DeviceContext->SetTarget(_StaticContentCommandList.Get());
+
     _DeviceContext->BeginDraw();
 
     _DeviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED); // Prevent line blurring
 
     _DeviceContext->Clear(); // Transparent
+
+    const bool DrawXAxis         = _GraphOptions->_XAxisBottom && _XAxisText.IsEnabled();
+    const bool DrawYAxis         = _GraphOptions->_YAxisLeft   && _YAxisText.IsEnabled();
+    const bool DrawBarBackground = _BarBackground.IsEnabled();
 
     const FLOAT XAxisHeight = _GraphOptions->_XAxisBottom ? YPadding + _XAxisText._Height + YPadding : 1.f;
     const FLOAT YAxisWidth  = _GraphOptions->_YAxisLeft   ? XPadding + _YAxisText._Width  + XPadding : 0.f;
@@ -376,13 +438,20 @@ HRESULT bit_meter_t::CreateStaticContentCommandList() noexcept
     const FLOAT ChannelHeight = ClientHeight / (FLOAT) _MeasurementCount;
 
     const FLOAT XOffset = GetHOffset(_GraphOptions->_HorizontalAlignment, ClientWidth - TotalBarWidth);
-    FLOAT YOffset = 0.f;
+          FLOAT YOffset = 0.f;
 
     // Draw the static content for each selected channel.
     D2D1_RECT_F r = { .bottom = ChannelHeight };
 
-    for (const auto & m : _Analysis->_BitMeasurements)
+    for (const auto & Channel : _State->_ChannelOrder)
     {
+        const auto it = std::find_if(_Analysis->_BitMeasurements.begin(), _Analysis->_BitMeasurements.end(), [Channel](const auto & m){ return m.Channel == Channel; });
+
+        if (it == _Analysis->_BitMeasurements.end())
+            continue;
+
+        const auto & m = *it;
+
         const D2D1_MATRIX_3X2_F Translate = D2D1::Matrix3x2F::Translation(0.f, YOffset);
 
         _DeviceContext->SetTransform(Translate);
@@ -391,13 +460,13 @@ HRESULT bit_meter_t::CreateStaticContentCommandList() noexcept
         {
             r.left = XOffset;
 
-            if (_GraphOptions->_YAxisLeft && _YAxisText.IsEnabled())
+            if (DrawYAxis)
             {
                 r.left  += XPadding;
                 r.right = r.left + _YAxisText._Width;
 
 //              _DeviceContext->DrawRectangle(r, _DebugBrush);
-                _DeviceContext->DrawText(m.ChannelName.c_str(), (UINT) m.ChannelName.size(), _YAxisText._TextFormat, r, _YAxisText._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                _DeviceContext->DrawText(m.ChannelName.c_str(), (UINT) m.ChannelName.size(), _YAxisText._TextFormat.Get(), r, _YAxisText._Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
 
                 r.left = r.right + XPadding;
             }
@@ -409,21 +478,21 @@ HRESULT bit_meter_t::CreateStaticContentCommandList() noexcept
             // Draw the background.
             r.right = r.left + BarWidth - 1.f;
 
-            if (_BarBackground.IsEnabled())
-                _DeviceContext->FillRectangle(r, _BarBackground._Brush);
+            if (DrawBarBackground)
+                _DeviceContext->FillRectangle(r, _BarBackground._Brush.Get());
 
             // Draw the bit number.
-            if (_GraphOptions->_XAxisBottom && _XAxisText.IsEnabled())
+            if (DrawXAxis)
             {
                 const std::wstring & Text = _Labels[BitNumber];
 
                 const D2D1_RECT_F cr = { r.left, r.bottom, r.right, r.bottom + XAxisHeight };
 
 //              _DeviceContext->DrawRectangle(cr, _DebugBrush);
-                _DeviceContext->DrawText(Text.c_str(), (UINT) Text.size(), _XAxisText._TextFormat, cr, _XAxisText._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                _DeviceContext->DrawText(Text.c_str(), (UINT) Text.size(), _XAxisText._TextFormat.Get(), cr, _XAxisText._Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
             }
 
-            r.left = r.right + 1.f;
+            r.left += BarWidth;
         }
 
         YOffset += ChannelHeight + XAxisHeight;
@@ -431,7 +500,7 @@ HRESULT bit_meter_t::CreateStaticContentCommandList() noexcept
 
     hr = _DeviceContext->EndDraw();
 
-    if (!SUCCEEDED(hr))
+    if (FAILED(hr))
         return hr;
 
     hr = _StaticContentCommandList->Close();
@@ -440,10 +509,34 @@ HRESULT bit_meter_t::CreateStaticContentCommandList() noexcept
 }
 
 /// <summary>
+/// Recalculates parameters that are render target and size-sensitive.
+/// </summary>
+void bit_meter_t::Initialize() noexcept
+{
+    _BitCount = (size_t) ((_State->_BitMeterMode == BitMeterMode::FloatingPoint) ? audio_sample_size : _State->_BitsPerInteger);
+
+    // Create the labels.
+    {
+        _Labels.clear();
+
+        for (uint32_t BitNumber = 1; BitNumber <= _BitCount; ++BitNumber)
+        {
+            WCHAR Text[4] = { };
+
+            ::StringCchPrintfW(Text, _countof(Text), L"%u", BitNumber);
+
+            _Labels.push_back(Text);
+        }
+    }
+}
+
+/// <summary>
 /// Handles a configuration change event.
 /// </summary>
-void bit_meter_t::OnConfigurationChange(ConfigurationChanges configurationChanges) noexcept
+void bit_meter_t::OnConfigurationChanged(ConfigurationChanges configurationChanges) noexcept
 {
-    if ((configurationChanges & ConfigurationChanges::Layout) == ConfigurationChanges::Layout)
-        _StaticContentCommandList.Release();
+    if (!IsSet(configurationChanges, ConfigurationChanges::Layout))
+        _StaticContentCommandList.Reset();
+
+    _State->_SizeHasChanged = true;
 }

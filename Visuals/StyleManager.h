@@ -1,12 +1,12 @@
 
-/** $VER: StyleManager.h (2026.06.17) P. Stuer - Creates and manages the DirectX resources of the styles. **/
+/** $VER: StyleManager.h (2026.09.30) P. Stuer - Creates and manages the DirectX resources of the styles. **/
 
 #pragma once
 
 #include "pch.h"
 
 #include "Style.h"
-#include "Gradients.h"
+#include "Gradient.h"
 
 #pragma warning(disable: 4868) // compiler may not enforce left-to-right evaluation order in braced initializer list
 
@@ -46,14 +46,13 @@ public:
     }
 
 private:
-    static json ToJSON(const gradient_stops_t & gradientStops) noexcept;
-    static gradient_stops_t FromJSONGradientStops(const json::array_t & array) noexcept;
-
-    static json ToJSON(const D2D1_GRADIENT_STOP & gs) noexcept;
-    static D2D1_GRADIENT_STOP FromJSONGradientStop(const json & object) noexcept;
-
+    static json ToJSON(const std::vector<gradient_stop_t> & gradientStops) noexcept;
+    static json ToJSON(const gradient_stop_t & gradientStop) noexcept;
     static json ToJSON(const D2D1_COLOR_F & color) noexcept;
-    static D2D1_COLOR_F FromJSONColor(const json & object) noexcept;
+
+    static std::vector<gradient_stop_t>FromJSONGradientStops(const json::array_t & array) noexcept;
+    static gradient_stop_t             FromJSONGradientStop(const json & object) noexcept;
+    static D2D1_COLOR_F                FromJSONColor(const json & object) noexcept;
 
 private:
     std::unordered_map<VisualElement, style_t> _Styles;

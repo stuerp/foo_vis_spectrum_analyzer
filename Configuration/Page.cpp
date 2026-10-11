@@ -7,6 +7,8 @@
 
 #include "Theme.h"
 
+#include <Toggle.h>
+
 /// <summary>
 /// Initialize the dialog.
 /// </summary>
@@ -38,14 +40,12 @@ BOOL page_t::OnInitDialog(CWindow w, LPARAM lParam) noexcept
 /// </summary>
 void page_t::OnShowWindow(BOOL isBeingShown, INT status) noexcept
 {
-    if (isBeingShown)
-    {
-        _IsInitializing = true;
+    if (!isBeingShown)
+        return;
 
-        InitializeControls();
+    auto Scope = msc::toggle_t(_IsInitializing, true);
 
-        _IsInitializing = false;
-    }
+    InitializeControls();
 }
 
 /// <summary>
@@ -76,11 +76,9 @@ LRESULT page_t::OnConfigurationChanged(UINT msg, WPARAM wParam, LPARAM lParam) n
     {
         case CC_PRESET_LOADED:
         {
-            _IsInitializing = true;
+            auto Scope = msc::toggle_t(_IsInitializing, true);
 
             InitializeControls();
-
-            _IsInitializing = false;
             break;
         }
 
@@ -141,9 +139,9 @@ double page_t::ClampNewSpinPosition(LPNMUPDOWN nmud, double minValue, double max
 /// </summary>
 void page_t::SetInteger(int id, int64_t value) noexcept
 {
-    auto Edit = ((CEdit) GetDlgItem(id));
+    CEdit Edit(GetDlgItem(id));
 
-    auto CaretIndex = Edit.GetCaretIndex();
+    const auto CaretIndex = Edit.GetCaretIndex();
 
     Edit.SetWindowTextW(pfc::wideFromUTF8(pfc::format_int(value)));
 
@@ -155,9 +153,9 @@ void page_t::SetInteger(int id, int64_t value) noexcept
 /// </summary>
 void page_t::SetDouble(int id, double value, unsigned width, unsigned precision) noexcept
 {
-    auto Edit = ((CEdit) GetDlgItem(id));
+    CEdit Edit(GetDlgItem(id));
 
-    auto CaretIndex = Edit.GetCaretIndex();
+    const auto CaretIndex = Edit.GetCaretIndex();
 
     Edit.SetWindowTextW(pfc::wideFromUTF8(pfc::format_float(value, width, precision)));
 
@@ -184,12 +182,12 @@ void page_t::SetNote(int id, uint32_t noteNumber) noexcept
 /// <summary>
 /// Notifies the UI thread of the changed settings.
 /// </summary>
-void page_t::ConfigurationChanged(ConfigurationChanges settings) const noexcept
+void page_t::NotifyParent(ConfigurationChanges settings) const noexcept
 {
     if (_IsInitializing)
         return;
 
-    ::PostMessageW(_hParent, UM_CONFIGURATION_CHANGED, (WPARAM) settings, 0);
-
     Log.AtDebug().Write(STR_COMPONENT_BASENAME " configuration dialog notified parent of configuration change (%08X).", (uint32_t) settings);
+
+    ::PostMessageW(_hParent, UM_CONFIGURATION_CHANGED, (WPARAM) settings, 0);
 }

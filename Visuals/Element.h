@@ -1,5 +1,5 @@
 
-/** $VER: Element.h (2026.03.17) P. Stuer - Base class for all visual elements (both graph and visualizations). **/
+/** $VER: Element.h (2026.10.11) P. Stuer - Base class for all visual elements (both graph and visualizations). **/
 
 #pragma once
 
@@ -10,92 +10,47 @@
 #include "State.h"
 #include "Graphoptions.h"
 #include "Analysis.h"
+#include "RenderContext.h"
 
 class element_t
 {
 public:
-    element_t() : _State(), _GraphOptions(), _Rect(), _Size(), _ScaleFactor(), _IsResized(true) {}
-
-    virtual ~element_t() noexcept { }
+    element_t() = default;
+    virtual ~element_t() = default;
 
     virtual void Move(const D2D1_RECT_F & rect) noexcept { }
     virtual void Render(ID2D1DeviceContext * deviceContext) noexcept { }
-    virtual void Reset() noexcept { }
-    virtual void Release() noexcept { }
+    virtual void Reset() noexcept { };
+
+    virtual void Render3D(render_context_t & renderContext) noexcept { }
 
     virtual const D2D1_RECT_F & GetRect() const noexcept { return _Rect; }
     virtual const D2D1_RECT_F & GetClientRect() const noexcept { return _Rect; };
 
-    virtual void SetRect(const D2D1_RECT_F & rect) noexcept
-    {
-        _Rect = rect;
-
-        // Derived metrics
-        _Size = { std::abs(rect.right - rect.left), std::abs(rect.bottom - rect.top) };
-        _ScaleFactor = std::min(_Size.width, _Size.height)  / 2.f; // For oscilloscope visualization.
-
-        _IsResized = true;
-    }
-
-    virtual FLOAT GetWidth() const noexcept
-    {
-        return _Size.width;
-    }
-
-    virtual FLOAT GetHeight() const noexcept
-    {
-        return _Size.height;
-    }
-
-    virtual FLOAT GetLeft() const noexcept
-    {
-        return _Rect.left;
-    }
-
-    virtual FLOAT GetRight() const noexcept
-    {
-        return _Rect.right;
-    }
-
     virtual void SetTransform(ID2D1DeviceContext * deviceContext, const D2D1_RECT_F & rect) const noexcept;
     virtual void ResetTransform(ID2D1DeviceContext * deviceContext) const noexcept;
 
-    virtual void OnConfigurationChange(ConfigurationChanges configurationChanges) noexcept { }
+    virtual void OnConfigurationChanged(ConfigurationChanges configurationChanges) noexcept { }
 
     static bool IsOverlappingHorizontally(const D2D1_RECT_F & a, const D2D1_RECT_F & b) noexcept;
     static bool IsOverlappingVertically(const D2D1_RECT_F & a, const D2D1_RECT_F & b) noexcept;
 
-    /// <summary>
-    /// Calculates the horizontal offset to start rendering the visualization.
-    /// </summary>
-    static FLOAT GetHOffset(HorizontalAlignment horizontalAlignment, FLOAT width) noexcept
-    {
-        switch (horizontalAlignment)
-        {
-            case HorizontalAlignment::Center:
-                return width / 2.f;
-
-            default:
-            case HorizontalAlignment::Fit:
-            case HorizontalAlignment::Near:
-                return 0.f;
-
-            case HorizontalAlignment::Far:
-                return width;
-        }
-    }
+    static FLOAT GetHOffset(HorizontalAlignment horizontalAlignment, FLOAT width) noexcept;
 
 protected:
-    state_t * _State;
-    graph_options_t * _GraphOptions;
-    const analysis_t * _Analysis;
+    void InitializeMetrics(const D2D1_RECT_F & rect) noexcept;
 
-    bool _IsFirst;
-    bool _IsLast;
+protected:
+    state_t * _State { nullptr };
+    graph_options_t * _GraphOptions { nullptr };
+    analysis_t * _Analysis { nullptr };
 
-    D2D1_RECT_F _Rect;
-    D2D1_SIZE_F _Size;
-    FLOAT _ScaleFactor;
+    bool _IsFirst { false };
+    bool _IsLast { false };
 
-    bool _IsResized;
+    D2D1_RECT_F _Rect { };
+    D2D1_SIZE_F _Size { };
+
+    FLOAT _HalfSide { 0.f };
+    FLOAT _Side { 0.f };
 };

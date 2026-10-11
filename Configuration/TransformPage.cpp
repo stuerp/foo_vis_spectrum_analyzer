@@ -131,7 +131,7 @@ void transform_page_t::InitializeControls() noexcept
 
         w.ResetContent();
 
-        for (const auto & x : { L"Standard", L"Triangular Filter Bank", L"Brown-Puckette CQT" })
+        for (const auto & x : { L"Standard", L"Triangular Filter Bank", L"Brown-Puckette CQT", L"Gaussian Filter" })
             w.AddString(x);
 
         w.SetCurSel((int) _State->_MappingMethod);
@@ -143,7 +143,7 @@ void transform_page_t::InitializeControls() noexcept
     }
 
     {
-        auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_KERNEL_SIZE)); _NumericEdits.push_back(ne); SetInteger(IDC_KERNEL_SIZE, (int64_t) _State->_KernelSize);
+        auto ne = std::make_shared<numeric_edit_t>(); ne->Initialize(GetDlgItem(IDC_KERNEL_SIZE)); _NumericEdits.push_back(ne); SetInteger(IDC_KERNEL_SIZE, (int64_t) _State->_KernelSize);
 
         auto w = CUpDownCtrl(GetDlgItem(IDC_KERNEL_SIZE_SPIN));
 
@@ -166,25 +166,25 @@ void transform_page_t::InitializeControls() noexcept
         w.SetCurSel((int) _State->_WindowFunction);
     }
     {
-        auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_WINDOW_PARAMETER)); _NumericEdits.push_back(ne); SetDouble(IDC_WINDOW_PARAMETER, _State->_WindowParameter);
+        auto ne = std::make_shared<numeric_edit_t>(); ne->Initialize(GetDlgItem(IDC_WINDOW_PARAMETER)); _NumericEdits.push_back(ne); SetDouble(IDC_WINDOW_PARAMETER, _State->_WindowParameter);
     }
     {
-        auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_WINDOW_SKEW)); _NumericEdits.push_back(ne); SetDouble(IDC_WINDOW_SKEW, _State->_WindowSkew);
+        auto ne = std::make_shared<numeric_edit_t>(); ne->Initialize(GetDlgItem(IDC_WINDOW_SKEW)); _NumericEdits.push_back(ne); SetDouble(IDC_WINDOW_SKEW, _State->_WindowSkew);
     }
     {
-        auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_REACTION_ALIGNMENT)); _NumericEdits.push_back(ne); SetDouble(IDC_REACTION_ALIGNMENT, _State->_ReactionAlignment);
+        auto ne = std::make_shared<numeric_edit_t>(); ne->Initialize(GetDlgItem(IDC_REACTION_ALIGNMENT)); _NumericEdits.push_back(ne); SetDouble(IDC_REACTION_ALIGNMENT, _State->_ReactionAlignment);
     }
 
 
     // Brown-Puckette Kernel
     {
-        auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_BW_OFFSET)); _NumericEdits.push_back(ne); SetDouble(IDC_BW_OFFSET, _State->_BandwidthOffset);
+        auto ne = std::make_shared<numeric_edit_t>(); ne->Initialize(GetDlgItem(IDC_BW_OFFSET)); _NumericEdits.push_back(ne); SetDouble(IDC_BW_OFFSET, _State->_BandwidthOffset);
     }
     {
-        auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_BW_CAP)); _NumericEdits.push_back(ne); SetDouble(IDC_BW_CAP, _State->_BandwidthCap);
+        auto ne = std::make_shared<numeric_edit_t>(); ne->Initialize(GetDlgItem(IDC_BW_CAP)); _NumericEdits.push_back(ne); SetDouble(IDC_BW_CAP, _State->_BandwidthCap);
     }
     {
-        auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_BW_AMOUNT)); _NumericEdits.push_back(ne); SetDouble(IDC_BW_AMOUNT, _State->_BandwidthAmount);
+        auto ne = std::make_shared<numeric_edit_t>(); ne->Initialize(GetDlgItem(IDC_BW_AMOUNT)); _NumericEdits.push_back(ne); SetDouble(IDC_BW_AMOUNT, _State->_BandwidthAmount);
     }
 
     SendDlgItemMessageW(IDC_GRANULAR_BW, BM_SETCHECK, _State->_UseGranularBandwidth);
@@ -202,24 +202,24 @@ void transform_page_t::InitializeControls() noexcept
         w.SetCurSel((int) _State->_KernelShape);
     }
     {
-        auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_KERNEL_SHAPE_PARAMETER)); _NumericEdits.push_back(ne); SetDouble(IDC_KERNEL_SHAPE_PARAMETER, _State->_KernelShapeParameter);
+        auto ne = std::make_shared<numeric_edit_t>(); ne->Initialize(GetDlgItem(IDC_KERNEL_SHAPE_PARAMETER)); _NumericEdits.push_back(ne); SetDouble(IDC_KERNEL_SHAPE_PARAMETER, _State->_KernelShapeParameter);
     }
     {
-        auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_KERNEL_ASYMMETRY)); _NumericEdits.push_back(ne); SetDouble(IDC_KERNEL_ASYMMETRY, _State->_KernelAsymmetry);
+        auto ne = std::make_shared<numeric_edit_t>(); ne->Initialize(GetDlgItem(IDC_KERNEL_ASYMMETRY)); _NumericEdits.push_back(ne); SetDouble(IDC_KERNEL_ASYMMETRY, _State->_KernelAsymmetry);
     }
 
 
     // IIR (SWIFT / Analog-style)
     {
-        auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_FBO)); _NumericEdits.push_back(ne); SetInteger(IDC_FBO, (int64_t) _State->_FilterBankOrder);
+        auto ne = std::make_shared<numeric_edit_t>(); ne->Initialize(GetDlgItem(IDC_FBO)); _NumericEdits.push_back(ne); SetInteger(IDC_FBO, (int64_t) _State->_FilterBankOrder);
     }
 
     {
-        auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_TR)); _NumericEdits.push_back(ne); SetDouble(IDC_TR, _State->_TimeResolution);
+        auto ne = std::make_shared<numeric_edit_t>(); ne->Initialize(GetDlgItem(IDC_TR)); _NumericEdits.push_back(ne); SetDouble(IDC_TR, _State->_TimeResolution);
     }
 
     {
-        auto ne = std::make_shared<CNumericEdit>(); ne->Initialize(GetDlgItem(IDC_IIR_BW)); _NumericEdits.push_back(ne); SetDouble(IDC_IIR_BW, _State->_IIRBandwidth);
+        auto ne = std::make_shared<numeric_edit_t>(); ne->Initialize(GetDlgItem(IDC_IIR_BW)); _NumericEdits.push_back(ne); SetDouble(IDC_IIR_BW, _State->_IIRBandwidth);
     }
 
     SendDlgItemMessageW(IDC_CONSTANT_Q, BM_SETCHECK, _State->_ConstantQ);
@@ -264,7 +264,7 @@ void transform_page_t::UpdateControls() noexcept
 
         // FFT
         {
-            const bool IsStandard = IsFFT && (_State->_MappingMethod == CoefficientMapping::Standard);
+            const bool IsStandard = IsFFT && ((_State->_MappingMethod == CoefficientMapping::Standard) || (_State->_MappingMethod == CoefficientMapping::GaussianFilter));
 
             for (const auto & Iter : { IDC_NUM_BINS, IDC_AGGREGATION_METHOD, IDC_SMOOTH_LOWER_FREQUENCIES, IDC_SMOOTH_GAIN_TRANSITION, IDC_KERNEL_SIZE })
                 GetDlgItem(Iter).EnableWindow(IsStandard);
@@ -404,7 +404,7 @@ void transform_page_t::OnSelectionChanged(UINT notificationCode, int id, CWindow
         }
     }
 
-    ConfigurationChanged(ChangedSettings);
+    NotifyParent(ChangedSettings);
 }
 
 /// <summary>
@@ -526,7 +526,7 @@ void transform_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
         }
     }
 
-    ConfigurationChanged(ChangedSettings);
+    NotifyParent(ChangedSettings);
 }
 
 /// <summary>
@@ -630,7 +630,7 @@ void transform_page_t::OnEditLostFocus(UINT code, int id, CWindow) noexcept
         }
     }
 
-    ConfigurationChanged(ChangedSettings);
+    NotifyParent(ChangedSettings);
 }
 
 /// <summary>
@@ -685,7 +685,7 @@ void transform_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
         }
     }
 
-    ConfigurationChanged(ChangedSettings);
+    NotifyParent(ChangedSettings);
 }
 
 /// <summary>
@@ -713,7 +713,7 @@ LRESULT transform_page_t::OnDeltaPos(LPNMHDR nmhd) noexcept
         }
     }
 
-    ConfigurationChanged(ChangedSettings);
+    NotifyParent(ChangedSettings);
 
     return 0;
 }

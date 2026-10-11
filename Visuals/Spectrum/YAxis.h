@@ -1,5 +1,5 @@
 
-/** $VER: YAxis.h (2026.08.22) P. Stuer - Implements the Y axis of a graph. **/
+/** $VER: YAxis.h (2026.10.10) P. Stuer - Implements the Y axis of a graph. **/
 
 #pragma once
 
@@ -13,7 +13,6 @@
 
 #include "Visualization.h"
 #include "State.h"
-#include "FrequencyBand.h"
 
 #include <vector>
 #include <string>
@@ -25,7 +24,7 @@
 class y_axis_t : public visualization_t
 {
 public:
-    y_axis_t() { }
+    y_axis_t() = default;
 
     y_axis_t(const y_axis_t &) = delete;
     y_axis_t & operator=(const y_axis_t &) = delete;
@@ -38,7 +37,7 @@ public:
     void Reset() noexcept override final { }
 
     // visualization_t
-    void Initialize(state_t * state, graph_options_t * graphOptions, const analysis_t * analysis, bool isFirst, bool isLast) noexcept override final;
+    void Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice = nullptr, ID3D11DeviceContext * d3dDeviceContext = nullptr) noexcept override final;
 
     HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext, style_manager_t & styleManager) noexcept;
     void DeleteDeviceSpecificResources() noexcept;
@@ -49,7 +48,13 @@ public:
     }
 
 private:
-    void Resize() noexcept;
+    HRESULT CreateSizeDependentResources(ID2D1DeviceContext * deviceContext, style_manager_t & styleManager) noexcept;
+    void DeleteSizeDependentResources() noexcept;
+
+    HRESULT CreateColorDependentResources(ID2D1DeviceContext * deviceContext, style_manager_t & styleManager) noexcept;
+    void DeleteColorDependentResources() noexcept;
+
+    void Initialize() noexcept;
 
 private:
     bool _FlipVertically;
@@ -57,14 +62,14 @@ private:
     struct label_t
     {
         std::wstring Text;
-        double Amplitude;
-        bool IsHidden;
+        double Amplitude { 0. };
+        bool IsHidden { false };
 
-        D2D1_POINT_2F PointL;
-        D2D1_POINT_2F PointR;
+        D2D1_POINT_2F PointL { };
+        D2D1_POINT_2F PointR { };
 
-        D2D1_RECT_F RectL;
-        D2D1_RECT_F RectR;
+        D2D1_RECT_F RectL { };
+        D2D1_RECT_F RectR { };
     };
 
     std::vector<label_t> _Labels;

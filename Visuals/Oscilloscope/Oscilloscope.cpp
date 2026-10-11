@@ -1,5 +1,5 @@
 
-/** $VER: Oscilloscope.cpp (2026.09.08) P. Stuer - Implements an oscilloscope. **/
+/** $VER: Oscilloscope.cpp (2026.10.10) P. Stuer - Implements an oscilloscope. **/
 
 #include <pch.h>
 
@@ -14,42 +14,44 @@
 #pragma hdrstop
 
 /// <summary>
-/// Initializes a new instance.
-/// </summary>
-oscilloscope_t::oscilloscope_t()
-{
-    _ChunkDuration = 0.;
-
-    Reset();
-}
-
-/// <summary>
 /// Destroys this instance.
 /// </summary>
 oscilloscope_t::~oscilloscope_t() noexcept
 {
-    DeleteDeviceSpecificResources();
+    Reset();
+}
+
+/// <summary>
+/// Moves this instance on the canvas.
+/// </summary>
+void oscilloscope_t::Move(const D2D1_RECT_F & rect) noexcept
+{
+//  Log.Write("*** " __FUNCTION__ );
+
+    InitializeMetrics(rect);
 }
 
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void oscilloscope_t::Initialize(state_t * state, graph_options_t * graphOptions, const analysis_t * analysis, bool isFirst, bool isLast) noexcept
+void oscilloscope_t::Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept
 {
     _State = state;
     _GraphOptions = graphOptions;
     _Analysis = analysis;
 
-    DeleteDeviceSpecificResources();
+    _SquareBitmaps = false;
+
+    Reset();
 
     // Create the labels.
     {
         _Labels.clear();
 
+        WCHAR Text[16] = { };
+
         for (double Amplitude = _GraphOptions->_AmplitudeLo; Amplitude <= _GraphOptions->_AmplitudeHi; Amplitude -= _GraphOptions->_AmplitudeStep)
         {
-            WCHAR Text[16] = { };
-
             ::StringCchPrintfW(Text, _countof(Text), L"%+d", (int) Amplitude);
 
             const label_t lb =
@@ -72,64 +74,28 @@ void oscilloscope_t::Initialize(state_t * state, graph_options_t * graphOptions,
 }
 
 /// <summary>
-/// Moves this instance on the canvas.
-/// </summary>
-void oscilloscope_t::Move(const D2D1_RECT_F & rect) noexcept
-{
-    SetRect(rect);
-}
-
-/// <summary>
-/// Resets this instance.
-/// </summary>
-void oscilloscope_t::Reset() noexcept
-{
-    if (!_IsResized || (GetWidth() == 0.f) || (GetHeight() == 0.f))
-        return;
-
-    _IsResized = true;
-}
-
-/// <summary>
-/// Recalculates parameters that are render target and size-sensitive.
-/// </summary>
-void oscilloscope_t::Resize() noexcept
-{
-    if (!_IsResized || (GetWidth() == 0.f) || (GetHeight() == 0.f))
-        return;
-
-    oscilloscope_base_t::Resize();
-
-    _XAxisTextStyle.DeleteDeviceSpecificResources();
-    _YAxisTextStyle.DeleteDeviceSpecificResources();
-
-    _AxesCommandList.Release();
-    _AxesCount = 0;
-
-    _IsResized = false;
-}
-
-/// <summary>
 /// Renders this instance.
 /// </summary>
 void oscilloscope_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 {
-    const size_t FrameCount     = _Analysis->_Chunk.get_sample_count();     // get_sample_count() actually returns the number of frames.
-    const uint32_t ChannelCount = _Analysis->_Chunk.get_channel_count();
-
-    // Bail out if no audio is playing. We need the channel count and configuration to draw the axes.
-    if ((FrameCount == 0) || (ChannelCount == 0))
-        return;
-
-    if (_GraphOptions->HasXAxis() && (_ChunkDuration != _Analysis->_Chunk.get_duration()))
     {
-        _AxesCommandList.Release();
-        _AxesCount = 0;
+        const size_t FrameCount     = _Analysis->_Chunk.get_sample_count();     // get_sample_count() actually returns the number of frames.
+        const uint32_t ChannelCount = _Analysis->_Chunk.get_channel_count();
+
+        // Bail out if no audio is playing. We need the channel count and configuration to draw the axes.
+        if ((FrameCount == 0) || (ChannelCount == 0))
+            return;
+
+        if (_GraphOptions->HasXAxis() && (_ChunkDuration != _Analysis->_Chunk.get_duration()))
+        {
+            _StaticContext.Reset();
+            _AxesCount = 0;
+        }
     }
 
     HRESULT hr = CreateDeviceSpecificResources(deviceContext);
 
-    if (!SUCCEEDED(hr))
+    if (FAILED(hr))
         return;
 
     const FLOAT YAxisWidth = _YAxisTextStyle._Width;
@@ -147,11 +113,12 @@ void oscilloscope_t::Render(ID2D1DeviceContext * deviceContext) noexcept
     if (_GraphOptions->HasYAxis() && _GraphOptions->_YAxisRight)
         ++YAxisCount;
 
+    ComPtr<ID2D1PathGeometry> Geometry;
+
+    // Create the signal.
     if (!_State->_IsPaused || (_State->_IsPaused && _State->_VisualizeDuringPause))
     {
         // Create the signal geometry.
-        CComPtr<ID2D1PathGeometry> Geometry;
-
         const D2D1_SIZE_F SignalSize = { _Size.width - (YAxisWidth * YAxisCount), _Size.height };
 
         {
@@ -162,119 +129,95 @@ void oscilloscope_t::Render(ID2D1DeviceContext * deviceContext) noexcept
             _Downsampler.Process(_Analysis->_Chunk, DstChunk, Ratio);
 
             hr = CreateSignalGeometry(DstChunk, SignalSize, Geometry);
+
+            if (FAILED(hr))
+                return;
         }
+    }
+    else
+        Geometry.Reset();
 
-        // Draw the signal in the composite buffer.
-        if (SUCCEEDED(hr))
-        {
-            _DeviceContext->BeginDraw();
-
-            _DeviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
-
-            if (_State->_HasPhosphorDecay)
-            {
-                _DeviceContext->SetTarget(_BackBuffer);
-
-                {
-                    // Clear the buffer.
-                    _DeviceContext->Clear(); // Required for alpha transparency.
-
-                    _DeviceContext->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_SOURCE_OVER);
-
-                    // Set a clip region to prevent the anti-aliasing from spilling into the axis rectangle.
-                    _DeviceContext->PushAxisAlignedClip({ 0.f, 0.f, SignalSize.width, SignalSize.height }, D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
-
-                    // Draw a wide version of the signal.
-                    _DeviceContext->DrawGeometry(Geometry, _SignalLineStyle._Brush, _SignalLineStyle._Thickness * 3.f, _SignalStrokeStyle);
-
-                    // Remove the clip region.
-                    _DeviceContext->PopAxisAlignedClip();
-                }
-
-                _DeviceContext->SetTarget(_CompositeBuffer);
-
-                {
-                    // Clear the buffer.
-                    _DeviceContext->Clear(); // Required for alpha transparency.
-
-                    _DeviceContext->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_ADD);
-
-                    // Draw a color reduced version of the front buffer.
-                    _ColorMatrixEffect->SetInput(0, _FrontBuffer);
-
-                    _DeviceContext->DrawImage(_ColorMatrixEffect);
-
-                    // Draw a color reduced version of the back buffer.
-                    _ColorMatrixEffect->SetInput(0, _BackBuffer);
-
-                    _DeviceContext->DrawImage(_ColorMatrixEffect);
-
-                    // Draw a blurred version of the back buffer.
-                    _BlurEffect->SetInput(0, _BackBuffer);
-
-                    _DeviceContext->DrawImage(_BlurEffect);
-
-                    // Set a clip region to prevent the anti-aliasing from spilling into the axis rectangle.
-                    _DeviceContext->PushAxisAlignedClip({ 0.f, 0.f, SignalSize.width, SignalSize.height }, D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
-
-                    // Draw a normal version of the signal.
-                    _DeviceContext->DrawGeometry(Geometry, _SignalLineStyle._Brush, _SignalLineStyle._Thickness, _SignalStrokeStyle);
-
-                    // Remove the clip region.
-                    _DeviceContext->PopAxisAlignedClip();
-                }
-            }
-            else
-            {
-                _DeviceContext->SetTarget(_CompositeBuffer);
-
-                {
-                    // Clear the buffer.
-                    _DeviceContext->Clear(); // Required for alpha transparency.
-
-                    // Set a clip region to prevent the anti-aliasing from spilling into the axis rectangle.
-                    _DeviceContext->PushAxisAlignedClip({ 0.f, 0.f, SignalSize.width, SignalSize.height }, D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
-
-                    // Draw a normal version of the signal.
-                    _DeviceContext->DrawGeometry(Geometry, _SignalLineStyle._Brush, _SignalLineStyle._Thickness, _SignalStrokeStyle);
-
-                    // Remove the clip region.
-                    _DeviceContext->PopAxisAlignedClip();
-                }
-            }
-
-            hr = _DeviceContext->EndDraw();
-        }
-     }
-
-    if (SUCCEEDED(hr))
     {
-        // Draw the axes to the window.
+        const FLOAT Opacity = (_State->_Afterglow != 0.f) ? std::expf(-(1000.f / (FLOAT) _State->_TargetRefreshRate) / _State->_Afterglow) : 0.f;
+
+        _OpacityEffect->SetValue(D2D1_OPACITY_PROP_OPACITY, Opacity);
+
+        _BlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_STANDARD_DEVIATION, _State->_BlurSigma);
+    }
+
+    const size_t BitmapIndex = 1 - _PrevBitmapIndex;
+
+    // Draw the signal in the composite buffer.
+    {
+        _DeviceContext->SetTarget(_Bitmaps[BitmapIndex].Get());
+
+        _DeviceContext->BeginDraw();
+
+        _DeviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+
+        _DeviceContext->Clear();
+
+        if (_State->_HasPhosphorDecay)
         {
-            const auto Translate = D2D1::Matrix3x2F::Translation(_Rect.left, _Rect.top);
+            // Draw a faded and blurred version of the previous bitmap.
+            {
+                _OpacityEffect->SetInput(0, _Bitmaps[_PrevBitmapIndex].Get());
 
-            deviceContext->SetTransform(Translate);
+                _DeviceContext->DrawImage(_BlurEffect.Get());
+            }
 
-            deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
+            // Draw a faded and wide version of the signal.
+            if (Geometry)
+            {
+                FLOAT OldOpacity = _SignalLineStyle._Brush->GetOpacity();
 
-            deviceContext->DrawImage(_AxesCommandList);
+                _SignalLineStyle._Brush->SetOpacity(OldOpacity * .25f);
+
+                _DeviceContext->DrawGeometry(Geometry.Get(), _SignalLineStyle._Brush.Get(), _SignalLineStyle._Thickness * 3.f, _SignalStrokeStyle.Get());
+
+                _SignalLineStyle._Brush->SetOpacity(OldOpacity);
+            }
+        }
+
+        // Draw a normal version of the signal.
+        if (Geometry)
+        {
+            _DeviceContext->DrawGeometry(Geometry.Get(), _SignalLineStyle._Brush.Get(), _SignalLineStyle._Thickness, _SignalStrokeStyle.Get());
+        }
+
+        hr = _DeviceContext->EndDraw();
+    }
+
+    {
+        // Draw the static content.
+        {
+            deviceContext->DrawImage(_StaticContext.Get());
         }
 
         // Draw the composite buffer to the window.
         {
-            const D2D1_MATRIX_3X2_F Translate = D2D1::Matrix3x2F::Translation(_Rect.left + XOffset, _Rect.top + 0.f);
+            const D2D1_MATRIX_3X2_F Translate = D2D1::Matrix3x2F::Translation(XOffset, 0.f);
 
             deviceContext->SetTransform(Translate);
 
-            deviceContext->DrawBitmap(_CompositeBuffer);
+            deviceContext->DrawBitmap(_Bitmaps[BitmapIndex].Get());
         }
 
         deviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
-
-        std::swap(_FrontBuffer, _BackBuffer);
     }
 
-    deviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
+    _PrevBitmapIndex = BitmapIndex;
+}
+
+/// <summary>
+/// Resets this instance.
+/// </summary>
+void oscilloscope_t::Reset() noexcept
+{
+    DeleteDeviceSpecificResources();
+    DeleteDeviceIndependentResources();
+
+    __super::Reset();
 }
 
 /// <summary>
@@ -300,20 +243,24 @@ void oscilloscope_t::DeleteDeviceIndependentResources() noexcept
 /// </summary>
 HRESULT oscilloscope_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept
 {
-    Resize();
+    if (_State->_SizeHasChanged)
+        DeleteDeviceSpecificResources();
 
     HRESULT hr = oscilloscope_base_t::CreateDeviceSpecificResources(deviceContext);
+
+    if (FAILED(hr))
+        return hr;
 
     // The font style is created prescaled to counter the Scale transform in the command list.
     if (_XAxisTextStyle._Brush == nullptr)
     {
         _XAxisTextStyle = *_State->_StyleManager.GetStyle(VisualElement::XAxisText);
 
-        _XAxisTextStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+        _XAxisTextStyle.SetColor(_State);
 
         hr = _XAxisTextStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"-999", 1.f);
 
-        if (!SUCCEEDED(hr))
+        if (FAILED(hr))
             return hr;
     }
 
@@ -322,18 +269,18 @@ HRESULT oscilloscope_t::CreateDeviceSpecificResources(ID2D1DeviceContext * devic
     {
         _YAxisTextStyle = *_State->_StyleManager.GetStyle(VisualElement::YAxisText);
 
-        _YAxisTextStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
+        _YAxisTextStyle.SetColor(_State);
 
         hr = _YAxisTextStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"-999", 1.f);
 
-        if (!SUCCEEDED(hr))
+        if (FAILED(hr))
             return hr;
     }
 
-    const uint32_t AxesCount = (size_t) _State->_Downmix ? 1u : std::popcount(_Analysis->_Chunk.get_channel_config() & _GraphOptions->_SelectedChannels);
+    const uint32_t AxesCount = (size_t) _State->_Downmix ? 1u : std::popcount(_Analysis->_Chunk.get_channel_config() & _GraphOptions->_ActiveChannelMask);
 
-    if ((_AxesCommandList == nullptr) || (_AxesCount != AxesCount))
-        hr = CreateAxesCommandList(AxesCount);
+    if ((_StaticContext == nullptr) || (_AxesCount != AxesCount))
+        hr = CreateStaticContent(AxesCount);
 
     return hr;
 }
@@ -343,7 +290,7 @@ HRESULT oscilloscope_t::CreateDeviceSpecificResources(ID2D1DeviceContext * devic
 /// </summary>
 void oscilloscope_t::DeleteDeviceSpecificResources() noexcept
 {
-    _AxesCommandList.Release();
+    _StaticContext.Reset();
     _AxesCount = 0;
 
     _YAxisTextStyle.DeleteDeviceSpecificResources();
@@ -355,110 +302,149 @@ void oscilloscope_t::DeleteDeviceSpecificResources() noexcept
 /// <summary>
 /// Creates the path geometry for the signal.
 /// </summary>
-HRESULT oscilloscope_t::CreateSignalGeometry(const audio_chunk_impl & chunk, const D2D1_SIZE_F & clientSize, CComPtr<ID2D1PathGeometry> & Geometry) noexcept
+HRESULT oscilloscope_t::CreateSignalGeometry(const audio_chunk_impl & chunk, const D2D1_SIZE_F & clientSize, ComPtr<ID2D1PathGeometry> & geometry) noexcept
 {
-    amplitude_scaler_t Scaler;
+    size_t FrameCount = chunk.get_sample_count();                       // get_sample_count() actually returns the number of frames.
 
-    switch (_GraphOptions->_YAxisMode)
-    {
-        case YAxisMode::None:
-            Scaler.SetNormalizedMode();
-            break;
+    const uint32_t ChannelCount         = chunk.get_channel_count();
+    const uint32_t AvailableChannelMask = chunk.get_channel_config();         // Mask containing the channels in the audio chunk.
 
-        case YAxisMode::Decibels:
-            Scaler.SetDecibelMode(_GraphOptions->_AmplitudeLo, _GraphOptions->_AmplitudeHi);
-            break;
+          uint32_t ActiveChannelMask    = _GraphOptions->_ActiveChannelMask;  // Mask containing the channels selected by the user.
 
-        case YAxisMode::Linear:
-            Scaler.SetLinearMode(_GraphOptions->_AmplitudeLo, _GraphOptions->_AmplitudeHi, _GraphOptions->_Gamma, _GraphOptions->_UseAbsolute);
-            break;
-    }
+    const size_t ActiveChannelCount = (size_t) std::popcount(AvailableChannelMask & ActiveChannelMask);
 
-    size_t FrameCount = chunk.get_sample_count();                   // get_sample_count() actually returns the number of frames.
-
-    const uint32_t ChannelCount = chunk.get_channel_count();
-
-    uint32_t AvailableChannels  = chunk.get_channel_config();       // Mask containing the channels in the audio chunk.
-    uint32_t SelectedChannels   = _GraphOptions->_SelectedChannels;   // Mask containing the channels selected by the user.
-
-    const size_t SelectedChannelCount = (size_t) std::popcount(AvailableChannels & SelectedChannels);
-
-    const FLOAT ChannelHeight = clientSize.height / (FLOAT) SelectedChannelCount; // Height available to one channel.
+    const FLOAT ChannelHeight = clientSize.height / (FLOAT) ActiveChannelCount; // Height available to one channel.
     const FLOAT ChannelMax    = ChannelHeight * (_GraphOptions->HasYAxis() ? 1.0f : 0.5f);
 
     const audio_sample * Frames = chunk.get_data();
 
     if (_State->_ZeroCrossingTrigger && (FrameCount >= 4))
     {
-        FrameCount /= 2;
+        const size_t SearchFrameCount = FrameCount / 2;
+        const size_t CrossIndex = FindZeroCrossing(Frames, SearchFrameCount, ChannelCount);
 
-        const size_t CrossIndex = FindZeroCrossing(Frames, FrameCount, ChannelCount);
-        
-        Frames += CrossIndex * ChannelCount;
+        if (CrossIndex < SearchFrameCount)
+        {
+            Frames     += CrossIndex * ChannelCount;
+            FrameCount -= CrossIndex;
+        }
     }
 
-    HRESULT hr = _Direct2D.Factory->CreatePathGeometry(&Geometry);
-
-    if (!SUCCEEDED(hr))
-        return hr;
-
-    CComPtr<ID2D1GeometrySink> Sink;
-
-    hr = Geometry->Open(&Sink);
-
-    if (FAILED(hr))
-        return hr;
-
-    FLOAT ChannelBaseline = ChannelMax;
-    size_t ChannelOffset = 0;
-            
-    while ((AvailableChannels != 0) && (SelectedChannels != 0))
+    // Create the signal geometry.
     {
-        // Render the signal if the channel is in the chunk and if it has been selected.
-        if (AvailableChannels & 1)
+        amplitude_scaler_t Scaler;
+
+        switch (_GraphOptions->_YAxisMode)
         {
-            if (SelectedChannels & 1)
+            case YAxisMode::None:
+                Scaler.SetNormalizedMode();
+                break;
+
+            case YAxisMode::Decibels:
+                Scaler.SetDecibelMode(_GraphOptions->_AmplitudeLo, _GraphOptions->_AmplitudeHi);
+                break;
+
+            case YAxisMode::Linear:
+                Scaler.SetLinearMode(_GraphOptions->_AmplitudeLo, _GraphOptions->_AmplitudeHi, _GraphOptions->_Gamma, _GraphOptions->_UseAbsolute);
+                break;
+        }
+
+        HRESULT hr = Direct2DFactory::Get()->CreatePathGeometry(geometry.ReleaseAndGetAddressOf());
+
+        if (FAILED(hr))
+            return hr;
+
+        const auto InputGain = _State->_YInputGain;
+        const auto DeltaX    = clientSize.width / (FLOAT) FrameCount;
+
+        ComPtr<ID2D1GeometrySink> Sink;
+
+        hr = geometry->Open(Sink.GetAddressOf());
+
+        if (FAILED(hr))
+            return hr;
+
+        FLOAT ChannelBaseline = ChannelMax;
+            
+        auto ChannelIndex = (size_t) 0;
+
+        uint32_t RemainingChannels = AvailableChannelMask;
+
+        for (const auto & Channel : _State->_ChannelOrder)
+        {
+            if ((RemainingChannels == 0) || (ActiveChannelMask == 0))
+                break;
+
+            // The channel has been found in the chunk.
             {
-                const size_t SampleCount = FrameCount * ChannelCount;
-                const FLOAT dx = clientSize.width / (FLOAT) FrameCount;
+                if ((RemainingChannels & (uint32_t) Channel) == 0)
+                    continue;
+
+                RemainingChannels &= ~(uint32_t) Channel;
+            }
+
+            // The channel has been selected for display.
+            {
+                if ((ActiveChannelMask & (uint32_t) Channel) == 0)
+                    continue;
+
+                ActiveChannelMask &= ~(uint32_t) Channel;
+            }
+
+            // Determine the index of the channel in the chunk.
+            {
+                const uint32_t PrecedingChannels = AvailableChannelMask & ((uint32_t) Channel - 1u);
+
+                ChannelIndex = (size_t) std::popcount(PrecedingChannels);
+
+                assert(ChannelIndex < ChannelCount);
+            }
+
+            // Create the geometry.
+            {
+                const audio_sample * Samples = Frames + ChannelIndex;
+
+                // Calculate the y-coordinate of the sample.
+                const auto ScaleSample = [InputGain, ChannelMax, ChannelBaseline, &Scaler](const audio_sample sample) noexcept -> FLOAT
+                {
+                    const FLOAT NormalizedSample = std::clamp((FLOAT) (Scaler(sample) * InputGain), -1.f, 1.f);
+
+                    return ChannelBaseline - (NormalizedSample * ChannelMax);
+                };
 
                 FLOAT x = 0.f;
-                FLOAT y = ChannelBaseline - (std::clamp((FLOAT) (Scaler(Frames[ChannelOffset]) * _State->_YGain), -1.f, 1.f) * ChannelMax);
+                FLOAT y = ScaleSample(*Samples);
 
                 Sink->BeginFigure(D2D1::Point2F(x, y), D2D1_FIGURE_BEGIN_HOLLOW);
 
-                for (size_t i = ChannelCount + ChannelOffset; i < SampleCount; i += ChannelCount)
+                for (size_t FrameNumber = 1; FrameNumber < FrameCount; ++FrameNumber)
                 {
-                    x += dx;
-                    y = ChannelBaseline - (std::clamp((FLOAT) (Scaler(Frames[i]) * _State->_YGain), -1.f, 1.f) * ChannelMax);
+                    Samples += ChannelCount;
+
+                    x += DeltaX;
+                    y = ScaleSample(*Samples);
 
                     Sink->AddLine(D2D1::Point2F(x, y));
                 }
 
                 Sink->EndFigure(D2D1_FIGURE_END_OPEN);
 
-
                 ChannelBaseline += ChannelHeight;
             }
-
-            ChannelOffset++;
         }
 
-        AvailableChannels >>= 1;
-        SelectedChannels >>= 1;
+        hr = Sink->Close();
+
+        return hr;
     }
-
-    hr = Sink->Close();
-
-    return hr;
 }
 
 /// <summary>
 /// Creates a command list to render the grid and the X and Y axis labels.
 /// </summary>
-HRESULT oscilloscope_t::CreateAxesCommandList(uint32_t axesCount) noexcept
+HRESULT oscilloscope_t::CreateStaticContent(uint32_t axesCount) noexcept
 {
-    _AxesCommandList.Release();
+    _StaticContext.Reset();
 
     const FLOAT ChannelHeight = _Size.height / (FLOAT) axesCount; // Height available to one channel.
     const FLOAT YAxisWidth = _YAxisTextStyle._Width;
@@ -467,12 +453,13 @@ HRESULT oscilloscope_t::CreateAxesCommandList(uint32_t axesCount) noexcept
     const FLOAT x2 = _Size.width - ((_GraphOptions->HasYAxis() && _GraphOptions->_YAxisRight) ? YAxisWidth : 0.f);
 
     // Create a command list that will store the grid pattern and the axes.
-    HRESULT hr = _DeviceContext->CreateCommandList(&_AxesCommandList);
+    HRESULT hr = _DeviceContext->CreateCommandList(_StaticContext.GetAddressOf());
 
-    if (!SUCCEEDED(hr))
+    if (FAILED(hr))
         return hr;
 
-    _DeviceContext->SetTarget(_AxesCommandList);
+    _DeviceContext->SetTarget(_StaticContext.Get());
+
     _DeviceContext->BeginDraw();
 
     _DeviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED); // Prevent line blurring
@@ -491,10 +478,10 @@ HRESULT oscilloscope_t::CreateAxesCommandList(uint32_t axesCount) noexcept
         for (uint32_t i = 0; i < axesCount; ++i)
         {
             if (_GraphOptions->_YAxisLeft)
-                _DeviceContext->DrawLine(D2D1::Point2F(YAxisWidth, y1), D2D1::Point2F(YAxisWidth, y2), _YAxisLineStyle._Brush, _YAxisLineStyle._Thickness, nullptr);
+                _DeviceContext->DrawLine(D2D1::Point2F(YAxisWidth, y1), D2D1::Point2F(YAxisWidth, y2), _YAxisLineStyle._Brush.Get(), _YAxisLineStyle._Thickness, nullptr);
 
             if (_GraphOptions->_YAxisRight)
-                _DeviceContext->DrawLine(D2D1::Point2F(_Size.width - (YAxisWidth - 1.f), y1), D2D1::Point2F(_Size.width - (YAxisWidth - 1.f), y2), _YAxisLineStyle._Brush, _YAxisLineStyle._Thickness, nullptr);
+                _DeviceContext->DrawLine(D2D1::Point2F(_Size.width - (YAxisWidth - 1.f), y1), D2D1::Point2F(_Size.width - (YAxisWidth - 1.f), y2), _YAxisLineStyle._Brush.Get(), _YAxisLineStyle._Thickness, nullptr);
 
             if (_YAxisTextStyle.IsEnabled())
             {
@@ -503,7 +490,7 @@ HRESULT oscilloscope_t::CreateAxesCommandList(uint32_t axesCount) noexcept
                     const FLOAT y = msc::Map(_GraphOptions->ScaleAmplitude(ToMagnitude(Label.Amplitude)), 0., 1., y2, y1);
 
                     if (_HorizontalGridLineStyle.IsEnabled())
-                        _DeviceContext->DrawLine(D2D1::Point2F(x1, y), D2D1::Point2F(x2, y), _HorizontalGridLineStyle._Brush, _HorizontalGridLineStyle._Thickness, _AxisStrokeStyle);
+                        _DeviceContext->DrawLine(D2D1::Point2F(x1, y), D2D1::Point2F(x2, y), _HorizontalGridLineStyle._Brush.Get(), _HorizontalGridLineStyle._Thickness, _StaticStrokeStyle.Get());
 
                     TextRect.top    = Label.IsMin ? y - _YAxisTextStyle._Height : (Label.IsMax ? y : y - (_YAxisTextStyle._Height / 2.f));
                     TextRect.bottom = TextRect.top + _YAxisTextStyle._Height;
@@ -513,7 +500,7 @@ HRESULT oscilloscope_t::CreateAxesCommandList(uint32_t axesCount) noexcept
                         TextRect.left  = 0.f;
                         TextRect.right = YAxisWidth - 2.f;
 
-                        _DeviceContext->DrawText(Label.Text.c_str(), (UINT) Label.Text.size(), _YAxisTextStyle._TextFormat, TextRect, _YAxisTextStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                        _DeviceContext->DrawText(Label.Text.c_str(), (UINT) Label.Text.size(), _YAxisTextStyle._TextFormat.Get(), TextRect, _YAxisTextStyle._Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
                     }
 
                     if (_GraphOptions->_YAxisRight)
@@ -521,7 +508,7 @@ HRESULT oscilloscope_t::CreateAxesCommandList(uint32_t axesCount) noexcept
                         TextRect.left  = x2 + 2.f;
                         TextRect.right = _Size.width - 1.f;
 
-                        _DeviceContext->DrawText(Label.Text.c_str(), (UINT) Label.Text.size(), _YAxisTextStyle._TextFormat, TextRect, _YAxisTextStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                        _DeviceContext->DrawText(Label.Text.c_str(), (UINT) Label.Text.size(), _YAxisTextStyle._TextFormat.Get(), TextRect, _YAxisTextStyle._Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
                     }
                 }
             }
@@ -553,7 +540,7 @@ HRESULT oscilloscope_t::CreateAxesCommandList(uint32_t axesCount) noexcept
             int Time = dt;
 
             if (_XAxisLineStyle.IsEnabled())
-                _DeviceContext->DrawLine(D2D1::Point2F(x1, y), D2D1::Point2F(x2, y), _XAxisLineStyle._Brush, _XAxisLineStyle._Thickness, _AxisStrokeStyle);
+                _DeviceContext->DrawLine(D2D1::Point2F(x1, y), D2D1::Point2F(x2, y), _XAxisLineStyle._Brush.Get(), _XAxisLineStyle._Thickness, _StaticStrokeStyle.Get());
 
             if (_XAxisTextStyle.IsEnabled())
             {
@@ -564,13 +551,13 @@ HRESULT oscilloscope_t::CreateAxesCommandList(uint32_t axesCount) noexcept
                 for (TextRect.left = x1 + dx; TextRect.left < x2; TextRect.left += dx)
                 {
                     if (_VerticalGridLineStyle.IsEnabled())
-                        _DeviceContext->DrawLine(D2D1::Point2F(TextRect.left, y1), D2D1::Point2F(TextRect.left, y2), _VerticalGridLineStyle._Brush, _VerticalGridLineStyle._Thickness, _AxisStrokeStyle);
+                        _DeviceContext->DrawLine(D2D1::Point2F(TextRect.left, y1), D2D1::Point2F(TextRect.left, y2), _VerticalGridLineStyle._Brush.Get(), _VerticalGridLineStyle._Thickness, _StaticStrokeStyle.Get());
 
                     WCHAR Text[8] = { };
 
                     ::StringCchPrintfW(Text, _countof(Text), L"%3d ms", Time);
 
-                    _DeviceContext->DrawText(Text, (UINT32) ::wcslen(Text), _XAxisTextStyle._TextFormat, TextRect, _XAxisTextStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                    _DeviceContext->DrawText(Text, (UINT32) ::wcslen(Text), _XAxisTextStyle._TextFormat.Get(), TextRect, _XAxisTextStyle._Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
 
                     Time += dt;
                 }
@@ -585,7 +572,7 @@ HRESULT oscilloscope_t::CreateAxesCommandList(uint32_t axesCount) noexcept
 
     (void) _DeviceContext->EndDraw();
 
-    hr = _AxesCommandList->Close();
+    hr = _StaticContext->Close();
 
     _AxesCount = axesCount;
 

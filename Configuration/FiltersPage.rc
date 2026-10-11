@@ -1,5 +1,5 @@
 
-/** $VER: FiltersPage.rc (2026.09.09) P. Stuer **/
+/** $VER: FiltersPage.rc (2026.09.20) P. Stuer **/
 
 #include "Resources.h"
 
@@ -14,7 +14,7 @@ IDD_FILTERS_PAGE dialogex 0, 0, 0, 0
 font 8, "MS Shell Dlg", 400, 0, 0x1
 style DS_SETFONT | DS_CONTROL | WS_CHILD | WS_CLIPCHILDREN
 {
-    groupbox "Acoustic Filters", IDC_FILTERS_GROUP, X_B09, Y_B09, W_B09, H_B09, BS_GROUPBOX, WS_EX_TRANSPARENT
+    groupbox "Acoustic Filters", IDC_STATIC, X_H00, Y_H00, W_H00, H_H00, BS_GROUPBOX, WS_EX_TRANSPARENT
 
         rtext           "Weighting type:",              IDC_STATIC,                     X_H01, Y_H01 + 2, W_H01, H_H01
         combobox                                        IDC_ACOUSTIC_FILTER,            X_H02, Y_H02,     W_H02, H_H02, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
@@ -51,4 +51,15 @@ style DS_SETFONT | DS_CONTROL | WS_CHILD | WS_CLIPCHILDREN
         rtext           "Weighting amount:"             IDC_STATIC,                     X_H19, Y_H19 + 2, W_H19, H_H19
         edittext                                        IDC_WT_AMT,                     X_H20, Y_H20, W_H20, H_H20, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
         control         "",                             IDC_WT_AMT_SPIN,                "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_NOTHOUSANDS, 0, 0, 0, 0
+
+    groupbox "Crossover Filters", IDC_STATIC, X_I00, Y_I00, W_I00, H_I00, BS_GROUPBOX, WS_EX_TRANSPARENT
+
+        rtext           "Mode:",                        IDC_STATIC,                     X_I01, Y_I01 + 2, W_I01, H_I01
+        combobox                                        IDC_CROSSOVER_MODE,             X_I02, Y_I02,     W_I02, H_I02, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+
+        rtext           "Low band:"                     IDC_STATIC,                     X_I03, Y_I03 + 2, W_I03, H_I03
+        edittext                                        IDC_LOW_BAND,                   X_I04, Y_I04,     W_I04, H_I04, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+
+        rtext           "High band:"                    IDC_STATIC,                     X_I05, Y_I05 + 2, W_I05, H_I05
+        edittext                                        IDC_HIGH_BAND,                  X_I06, Y_I06,     W_I06, H_I06, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
 }

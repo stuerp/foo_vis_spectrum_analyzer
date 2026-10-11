@@ -174,7 +174,7 @@ void presets_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
 
             _IsInitializing = false;
 
-            ConfigurationChanged(ConfigurationChanges::All);
+            NotifyParent(ConfigurationChanges::All);
             break;
         }
 
@@ -230,7 +230,7 @@ void presets_page_t::OnDoubleClick(UINT code, int id, CWindow) noexcept
 
         UpdateControls();
 
-        ConfigurationChanged(ConfigurationChanges::All);
+        NotifyParent(ConfigurationChanges::All);
     }
     else
         SetMsgHandled(FALSE);
@@ -282,7 +282,8 @@ void presets_page_t::GetPreset(const std::wstring & presetName) noexcept
 
     *_State = NewState;
 
-    _State->_RecreateStyles = true;
+    _State->_SizeHasChanged = true;
+    _State->_ColorsHaveChanged = true;
 
     InitializeControls();
 }

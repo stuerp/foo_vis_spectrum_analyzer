@@ -1,153 +1,92 @@
 
-/** $VER: Direct2D.cpp (2025.10.20) P. Stuer **/
+/** $VER: Direct2D.cpp (2026.10.04) P. Stuer **/
 
 #include "pch.h"
+
 #include "Direct2D.h"
 
-#include <Win32Exception.h>
+#include <d2d1helper.h>
+#include "WIC.h"
 
 #pragma comment(lib, "d2d1")
-#pragma comment(lib, "dwrite")
 
 #pragma hdrstop
 
-/// <summary>
-/// Initializes this instance.
-/// </summary>
-HRESULT Direct2D::Initialize()
+ComPtr<Direct2DFactory::Interface> Direct2DFactory::_Factory;
+int64_t Direct2DFactory::_ReferenceCount = 0;
+
+// Should be called and complete before worker threads start using the factory.
+HRESULT Direct2DFactory::Initialize() noexcept
 {
-#ifdef _DEBUG
-    D2D1_FACTORY_OPTIONS const Options = { D2D1_DEBUG_LEVEL_INFORMATION };
-#else
-    D2D1_FACTORY_OPTIONS const Options = { D2D1_DEBUG_LEVEL_NONE };
-#endif
+    std::lock_guard Lock(_Mutex);
 
-    HRESULT hr = ::D2D1CreateFactory(D2D1_FACTORY_TYPE_MULTI_THREADED, Options, &Factory);
+    ++_ReferenceCount;
 
-    if (!SUCCEEDED(hr))
-        throw msc::win32_exception("Unable to create Direct2D factory.", (DWORD) hr);
+    if (_Factory)
+        return S_OK;
 
-    return hr;
+    {
+        D2D1_FACTORY_OPTIONS Options{};
+
+    #ifdef _DEBUG
+        Options.debugLevel = D2D1_DEBUG_LEVEL_INFORMATION;
+    #endif
+
+        return ::D2D1CreateFactory(D2D1_FACTORY_TYPE_MULTI_THREADED, Options, _Factory.GetAddressOf());
+    }
 }
 
-/// <summary>
-/// Terminates this instance.
-/// </summary>
-void Direct2D::Terminate() noexcept
+// All worker threads should be stopped before calling.
+void Direct2DFactory::Terminate() noexcept
 {
-    Factory.Release();
-}
+    std::lock_guard Lock(_Mutex);
 
-/// <summary>
-/// Gets the refresh rate of the current display.
-/// </summary>
-HRESULT Direct2D::GetRefreshRate(_In_ IDXGIDevice1 * dxgiDevice, _Out_ double & refreshRate) const noexcept
-{
-    refreshRate = 0.;
+    --_ReferenceCount;
 
-    if (dxgiDevice == nullptr)
-        return E_POINTER;
-
-    CComPtr<IDXGIAdapter> DXGIAdapter;
-
-    HRESULT hr = dxgiDevice->GetAdapter(&DXGIAdapter);
-
-    if (FAILED(hr))
-        return hr;
-
-    CComPtr<IDXGIOutput> DXGIOutput;
-
-    hr = DXGIAdapter->EnumOutputs(0, &DXGIOutput);  // Primary output (index 0)
-
-    if (FAILED(hr))
-        return hr;
-
-    // Get the current desktop resolution for mode matching.
-    DEVMODE DisplaySettings = { .dmSize = sizeof(DEVMODE) };
-
-    if (!::EnumDisplaySettingsW(nullptr, ENUM_CURRENT_SETTINGS, &DisplaySettings))
-        return HRESULT_FROM_WIN32(::GetLastError());
-
-    const DXGI_MODE_DESC TargetMode =
-    {
-        .Width            = DisplaySettings.dmPelsWidth,
-        .Height           = DisplaySettings.dmPelsHeight,
-        .Format           = DXGI_FORMAT_R8G8B8A8_UNORM,  // Common format
-        .ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED,
-        .Scaling          = DXGI_MODE_SCALING_UNSPECIFIED
-    };
-
-    // Find the closest matching mode (includes current refresh rate).
-    DXGI_MODE_DESC MatchedMode = { };
-
-    hr = DXGIOutput->FindClosestMatchingMode(&TargetMode, &MatchedMode, nullptr);
-
-    if (SUCCEEDED(hr))
-    {
-        refreshRate = static_cast<double>(MatchedMode.RefreshRate.Numerator) / MatchedMode.RefreshRate.Denominator;
-
-        return hr;
-    }
-
-    // Fallback: Enumerate all modes and return the refresh rate of the first exact resolution match.
-
-    UINT Flags = 0;  // Use 0 for current mode matching
-    UINT ModeCount = 0;
-
-    hr = DXGIOutput->GetDisplayModeList(DXGI_FORMAT_R8G8B8A8_UNORM, Flags, &ModeCount, nullptr);
-
-    if (FAILED(hr) || (ModeCount == 0))
-        return hr;
-
-    std::vector<DXGI_MODE_DESC> Modes(ModeCount);
-
-    hr = DXGIOutput->GetDisplayModeList(DXGI_FORMAT_R8G8B8A8_UNORM, Flags, &ModeCount, Modes.data());
-
-    if (FAILED(hr))
-        return hr;
-
-    for (const auto & Mode : Modes)
-    {
-        if (Mode.Width == TargetMode.Width && Mode.Height == TargetMode.Height)
-        {
-            refreshRate = static_cast<double>(Mode.RefreshRate.Numerator) / Mode.RefreshRate.Denominator;
-            break;
-        }
-    }
-
-    return hr;
+    if (_ReferenceCount == 0)
+        _Factory.Reset();
 }
 
 /// <summary>
 /// Loads a bitmap source from the application resources.
 /// </summary>
-HRESULT Direct2D::Load(const WCHAR * resourceName, const WCHAR * resourceType, _Out_ IWICBitmapSource ** source) const noexcept
+HRESULT Direct2D::Load(const WCHAR * resourceName, const WCHAR * resourceType, IWICBitmapSource ** source) noexcept
 {
     void * Data = nullptr;
     DWORD Size;
 
     HRESULT hr = GetResource(resourceName, resourceType, &Data, &Size);
 
-    CComPtr<IWICStream> Stream;
+    if (FAILED(hr))
+        return hr;
 
-    if (SUCCEEDED(hr))
-        hr = _WIC.Factory->CreateStream(&Stream);
+    ComPtr<IWICStream> Stream;
 
-    if (SUCCEEDED(hr))
-        hr = Stream->InitializeFromMemory((BYTE *) Data, Size);
+    hr = WICFactory::Get()->CreateStream(Stream.GetAddressOf());
 
-    CComPtr<IWICBitmapDecoder> Decoder;
+    if (FAILED(hr))
+        return hr;
 
-    if (SUCCEEDED(hr))
-        hr = _WIC.Factory->CreateDecoderFromStream(Stream, nullptr, WICDecodeMetadataCacheOnLoad, &Decoder);
+    hr = Stream->InitializeFromMemory((BYTE *) Data, Size);
 
-    IWICBitmapFrameDecode * Frame = nullptr;
+    if (FAILED(hr))
+        return hr;
 
-    if (SUCCEEDED(hr))
-        hr = Decoder->GetFrame(0, &Frame);
+    ComPtr<IWICBitmapDecoder> Decoder;
 
-    if (SUCCEEDED(hr))
-        *source = Frame;
+    hr = WICFactory::Get()->CreateDecoderFromStream(Stream.Get(), nullptr, WICDecodeMetadataCacheOnLoad, Decoder.GetAddressOf());
+
+    if (FAILED(hr))
+        return hr;
+
+    ComPtr<IWICBitmapFrameDecode> Frame;
+
+    hr = Decoder->GetFrame(0, Frame.GetAddressOf());
+
+    if (FAILED(hr))
+        return hr;
+
+    *source = Frame.Detach();
 
     return hr;
 }
@@ -155,19 +94,23 @@ HRESULT Direct2D::Load(const WCHAR * resourceName, const WCHAR * resourceType, _
 /// <summary>
 /// Loads a bitmap source from the specified file path.
 /// </summary>
-HRESULT Direct2D::Load(const WCHAR * uri, _Out_ IWICBitmapSource ** source) const noexcept
+HRESULT Direct2D::Load(const WCHAR * uri, IWICBitmapSource ** source) noexcept
 {
-    CComPtr <IWICBitmapDecoder> Decoder;
+    ComPtr<IWICBitmapDecoder> Decoder;
 
-    HRESULT hr = _WIC.Factory->CreateDecoderFromFilename(uri, nullptr, GENERIC_READ, WICDecodeMetadataCacheOnLoad, &Decoder);
+    HRESULT hr = WICFactory::Get()->CreateDecoderFromFilename(uri, nullptr, GENERIC_READ, WICDecodeMetadataCacheOnLoad, Decoder.GetAddressOf());
 
-    IWICBitmapFrameDecode * Frame = nullptr;
+    if (FAILED(hr))
+        return hr;
 
-    if (SUCCEEDED(hr))
-        hr = Decoder->GetFrame(0, &Frame);
+    ComPtr<IWICBitmapFrameDecode> Frame;
 
-    if (SUCCEEDED(hr))
-        *source = Frame;
+    hr = Decoder->GetFrame(0, Frame.GetAddressOf());
+
+    if (FAILED(hr))
+        return hr;
+
+    *source = Frame.Detach();
 
     return hr;
 }
@@ -175,23 +118,23 @@ HRESULT Direct2D::Load(const WCHAR * uri, _Out_ IWICBitmapSource ** source) cons
 /// <summary>
 /// Gets a scaler that changes the width and the height of the bitmap source.
 /// </summary>
-HRESULT Direct2D::CreateScaler(IWICBitmapSource * source, UINT width, UINT height, UINT maxWidth, UINT maxHeight, _Out_ IWICBitmapScaler ** scaler) const noexcept
+HRESULT Direct2D::CreateScaler(IWICBitmapSource * source, UINT width, UINT height, UINT maxWidth, UINT maxHeight, IWICBitmapScaler ** scaler) noexcept
 {
-    HRESULT hr = _WIC.Factory->CreateBitmapScaler(scaler);
+    HRESULT hr = WICFactory::Get()->CreateBitmapScaler(scaler);
 
-    if (SUCCEEDED(hr))
-    {
-        // Fit big images.
-        FLOAT HScalar = (width  > maxWidth)  ? (FLOAT) maxWidth  / (FLOAT) width  : 1.f;
-        FLOAT VScalar = (height > maxHeight) ? (FLOAT) maxHeight / (FLOAT) height : 1.f;
+    if (FAILED(hr))
+        return hr;
 
-        FLOAT Scalar = (std::min)(HScalar, VScalar);
+    // Fit big images.
+    FLOAT HScalar = (width  > maxWidth)  ? (FLOAT) maxWidth  / (FLOAT) width  : 1.f;
+    FLOAT VScalar = (height > maxHeight) ? (FLOAT) maxHeight / (FLOAT) height : 1.f;
 
-        width  = (UINT) ((FLOAT) width  * Scalar);
-        height = (UINT) ((FLOAT) height * Scalar);
+    FLOAT Scalar = (std::min)(HScalar, VScalar);
 
-        hr = (*scaler)->Initialize(source, width, height, WICBitmapInterpolationModeCubic);
-    }
+    width  = (UINT) ((FLOAT) width  * Scalar);
+    height = (UINT) ((FLOAT) height * Scalar);
+
+    hr = (*scaler)->Initialize(source, width, height, WICBitmapInterpolationModeCubic);
 
     return hr;
 }
@@ -199,17 +142,21 @@ HRESULT Direct2D::CreateScaler(IWICBitmapSource * source, UINT width, UINT heigh
 /// <summary>
 /// Gets a Direct2D bitmap from a WIC bitmap source.
 /// </summary>
-HRESULT Direct2D::CreateBitmap(IWICBitmapSource * source, ID2D1DeviceContext * deviceContext, _Out_ ID2D1Bitmap ** bitmap) const noexcept
+HRESULT Direct2D::CreateBitmap(IWICBitmapSource * source, ID2D1DeviceContext * deviceContext, ID2D1Bitmap ** bitmap) noexcept
 {
-    CComPtr<IWICFormatConverter> Converter;
+    ComPtr<IWICFormatConverter> Converter;
 
-    HRESULT hr = _WIC.Factory->CreateFormatConverter(&Converter);
+    HRESULT hr = WICFactory::Get()->CreateFormatConverter(Converter.GetAddressOf());
 
-    if (SUCCEEDED(hr))
-        hr = Converter->Initialize(source, GUID_WICPixelFormat32bppPBGRA, WICBitmapDitherTypeNone, nullptr, 0.f, WICBitmapPaletteTypeMedianCut);
+    if (FAILED(hr))
+        return hr;
 
-    if (SUCCEEDED(hr))
-        hr = deviceContext->CreateBitmapFromWicBitmap(Converter, nullptr, bitmap);
+    hr = Converter->Initialize(source, GUID_WICPixelFormat32bppPBGRA, WICBitmapDitherTypeNone, nullptr, 0.f, WICBitmapPaletteTypeMedianCut);
+
+    if (FAILED(hr))
+        return hr;
+
+    hr = deviceContext->CreateBitmapFromWicBitmap(Converter.Get(), nullptr, bitmap);
 
     return hr;
 }
@@ -217,7 +164,7 @@ HRESULT Direct2D::CreateBitmap(IWICBitmapSource * source, ID2D1DeviceContext * d
 /// <summary>
 /// Gets the data and size of a Win32 resource.
 /// </summary>
-HRESULT Direct2D::GetResource(const WCHAR * resourceName, const WCHAR * resourceType, _Out_ void ** resourceData, _Out_ DWORD * resourceSize)
+HRESULT Direct2D::GetResource(const WCHAR * resourceName, const WCHAR * resourceType, void ** resourceData, DWORD * resourceSize) noexcept
 {
     HRSRC imageResHandle = ::FindResourceW(THIS_HINSTANCE, resourceName, resourceType);
 
@@ -238,32 +185,14 @@ HRESULT Direct2D::GetResource(const WCHAR * resourceName, const WCHAR * resource
 }
 
 /// <summary>
-/// Creates a gradient stops vector from a color vector.
-/// </summary>
-HRESULT Direct2D::CreateGradientStops(_In_ const std::vector<D2D1_COLOR_F> & colors, _Out_ std::vector<D2D1_GRADIENT_STOP> & gradientStops) const noexcept
-{
-    gradientStops.clear();
-
-    if (colors.empty())
-        return S_OK;
-
-    gradientStops.push_back({ 0.f, colors[0] });
-
-    for (size_t i = 1; i < colors.size(); ++i)
-        gradientStops.push_back({ (FLOAT) i / (FLOAT) (colors.size() - 1), colors[i] });
-
-    return S_OK;
-}
-
-/// <summary>
 /// Creates a gradient brush.
 /// </summary>
-HRESULT Direct2D::CreateGradientBrush(_In_ ID2D1DeviceContext * deviceContext, _In_ const gradient_stops_t & gradientStops, _In_ const D2D1_SIZE_F & size, _In_ bool isHorizontal, _Out_ ID2D1LinearGradientBrush ** gradientBrush) const noexcept
+HRESULT Direct2D::CreateGradientBrush(ID2D1DeviceContext * deviceContext, const std::vector<D2D1_GRADIENT_STOP> & gradientStops, const D2D1_SIZE_F & size, bool isHorizontal, ID2D1LinearGradientBrush ** gradientBrush) noexcept
 {
     if (gradientStops.empty())
         return E_FAIL;
 
-    gradient_stops_t gs = gradientStops;
+    std::vector<D2D1_GRADIENT_STOP> gs = gradientStops;
 
     // Because the graph is always rendered in a (0,0) top-left coordinate system, the gradient brush has to be created upside-down to compensate for a vertical flip during rendering.
     std::reverse(gs.begin(), gs.end());
@@ -271,17 +200,17 @@ HRESULT Direct2D::CreateGradientBrush(_In_ ID2D1DeviceContext * deviceContext, _
     for (auto & x : gs)
         x.position = 1.f - x.position;
 
-    CComPtr<ID2D1GradientStopCollection> Collection;
+    ComPtr<ID2D1GradientStopCollection> Collection;
 
-    HRESULT hr = deviceContext->CreateGradientStopCollection(gs.data(), (UINT32) gs.size(), D2D1_GAMMA_2_2, D2D1_EXTEND_MODE_CLAMP, &Collection);
+    HRESULT hr = deviceContext->CreateGradientStopCollection(gs.data(), (UINT32) gs.size(), D2D1_GAMMA_2_2, D2D1_EXTEND_MODE_CLAMP, Collection.GetAddressOf());
 
-    if (SUCCEEDED(hr))
-    {
-        D2D1_POINT_2F Start = isHorizontal ? D2D1::Point2F(       0.f, 0.f) : D2D1::Point2F(0.f, 0.f);
-        D2D1_POINT_2F End   = isHorizontal ? D2D1::Point2F(size.width, 0.f) : D2D1::Point2F(0.f, size.height);
+    if (FAILED(hr))
+        return hr;
 
-        hr = deviceContext->CreateLinearGradientBrush(D2D1::LinearGradientBrushProperties(Start, End), D2D1::BrushProperties(), Collection, gradientBrush);
-    }
+    const D2D1_POINT_2F Start = isHorizontal ? D2D1::Point2F(       0.f, 0.f) : D2D1::Point2F(0.f, 0.f);
+    const D2D1_POINT_2F End   = isHorizontal ? D2D1::Point2F(size.width, 0.f) : D2D1::Point2F(0.f, size.height);
+
+    hr = deviceContext->CreateLinearGradientBrush(D2D1::LinearGradientBrushProperties(Start, End), D2D1::BrushProperties(), Collection.Get(), gradientBrush);
 
     return hr;
 }
@@ -289,12 +218,12 @@ HRESULT Direct2D::CreateGradientBrush(_In_ ID2D1DeviceContext * deviceContext, _
 /// <summary>
 /// Creates a radial gradient brush.
 /// </summary>
-HRESULT Direct2D::CreateRadialGradientBrush(_In_ ID2D1DeviceContext * deviceContext, _In_ const gradient_stops_t & gradientStops, _In_ const D2D1_POINT_2F & center, _In_ const D2D1_POINT_2F & offset, _In_ FLOAT rx, _In_ FLOAT ry, _In_ FLOAT rOffset, _Out_ ID2D1RadialGradientBrush ** gradientBrush) const noexcept
+HRESULT Direct2D::CreateRadialGradientBrush(ID2D1DeviceContext * deviceContext, const std::vector<D2D1_GRADIENT_STOP> & gradientStops, const D2D1_POINT_2F & center, const D2D1_POINT_2F & offset, FLOAT rx, FLOAT ry, FLOAT rOffset, ID2D1RadialGradientBrush ** gradientBrush) noexcept
 {
     if (gradientStops.empty())
         return E_FAIL;
 
-    gradient_stops_t gs = gradientStops;
+    std::vector<D2D1_GRADIENT_STOP> gs = gradientStops;
 
     // Recalculate the stop offsets to take into account the inner radius.
     if (rOffset != 0.f)
@@ -303,14 +232,14 @@ HRESULT Direct2D::CreateRadialGradientBrush(_In_ ID2D1DeviceContext * deviceCont
             x.position = rOffset + ((1.f - rOffset) * x.position);
     }
 
-    CComPtr<ID2D1GradientStopCollection> Collection;
+    ComPtr<ID2D1GradientStopCollection> Collection;
 
-    HRESULT hr = deviceContext->CreateGradientStopCollection(gs.data(), (UINT32) gs.size(), D2D1_GAMMA_2_2, D2D1_EXTEND_MODE_CLAMP, &Collection);
+    HRESULT hr = deviceContext->CreateGradientStopCollection(gs.data(), (UINT32) gs.size(), D2D1_GAMMA_2_2, D2D1_EXTEND_MODE_CLAMP, Collection.GetAddressOf());
 
-    if (SUCCEEDED(hr))
-        hr = deviceContext->CreateRadialGradientBrush(D2D1::RadialGradientBrushProperties(center, offset, rx, ry), Collection, gradientBrush);
+    if (FAILED(hr))
+        return hr;
+
+    hr = deviceContext->CreateRadialGradientBrush(D2D1::RadialGradientBrushProperties(center, offset, rx, ry), Collection.Get(), gradientBrush);
 
     return hr;
-}_Out_ 
-
-Direct2D _Direct2D;
+}

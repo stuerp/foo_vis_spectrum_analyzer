@@ -1,5 +1,5 @@
 
-/** $VER: Tester.h (2026.09.10) P. Stuer - Implements a minimal visualization for testing purposes. **/
+/** $VER: Tester.h (2026.10.10) P. Stuer - Implements a minimal visualization for testing purposes. **/
 
 #pragma once
 
@@ -7,10 +7,10 @@
 
 #include "Visualization.h"
 
-class tester_t : public visualization_t
+class tester_t final : public visualization_t
 {
 public:
-    tester_t();
+    tester_t() = default;
 
     tester_t(const tester_t &) = delete;
     tester_t & operator=(const tester_t &) = delete;
@@ -23,13 +23,11 @@ public:
     void Move(const D2D1_RECT_F & rect) noexcept override final;
     void Render(ID2D1DeviceContext * deviceContext) noexcept override final;
     void Reset() noexcept override final;
-    void Release() noexcept override final;
+
+    void OnConfigurationChanged(ConfigurationChanges configurationChanges) noexcept override final;
 
     // visualization_t
-    void Initialize(state_t * state, graph_options_t * graphOptions, const analysis_t * analysis, bool isFirst, bool isLast) noexcept;
-    void Resize() noexcept;
-
-    static D2D1_COLOR_F ColorFromHSLA(FLOAT h, FLOAT s, FLOAT l, FLOAT a) noexcept;
+    void Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice = nullptr, ID3D11DeviceContext * d3dDeviceContext = nullptr) noexcept override final;
 
 private:
     HRESULT CreateDeviceIndependentResources() noexcept;
@@ -38,6 +36,14 @@ private:
     HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept;
     void DeleteDeviceSpecificResources() noexcept;
 
+    HRESULT CreateSizeDependentResources(ID2D1DeviceContext * deviceContext) noexcept;
+    void DeleteSizeDependentResources() noexcept;
+
+    HRESULT CreateColorDependentResources(ID2D1DeviceContext * deviceContext) noexcept;
+    void DeleteColorDependentResources() noexcept;
+
+    void Initialize() noexcept;
+
 private:
-    CComPtr<ID2D1SolidColorBrush> _Brush;
+    ComPtr<ID2D1SolidColorBrush> _Brush;
 };

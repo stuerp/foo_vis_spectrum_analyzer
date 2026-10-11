@@ -1,5 +1,5 @@
 
-/** $VER: XAXis.cpp (2026.09.06) P. Stuer - Implements the X axis of a graph. **/
+/** $VER: XAXis.cpp (2026.10.10) P. Stuer - Implements the X axis of a graph. **/
 
 #include "pch.h"
 
@@ -14,7 +14,7 @@
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void x_axis_t::Initialize(state_t * state, graph_options_t * graphOptions, const analysis_t * analysis, bool isFirst, bool isLast) noexcept
+void x_axis_t::Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept
 {
     _State        = state;
     _GraphOptions = graphOptions;
@@ -147,16 +147,156 @@ void x_axis_t::Initialize(state_t * state, graph_options_t * graphOptions, const
 /// </summary>
 void x_axis_t::Move(const D2D1_RECT_F & rect) noexcept
 {
-    SetRect(rect);
+    InitializeMetrics(rect);
+}
+
+/// <summary>
+/// Renders this instance to the specified render target.
+/// </summary>
+void x_axis_t::Render(ID2D1DeviceContext * deviceContext) noexcept
+{
+    auto & StyleManager = _GraphOptions->_UseLocalStyles ? _GraphOptions->_StyleManager : _State->_StyleManager;
+
+    HRESULT hr = CreateDeviceSpecificResources(deviceContext, StyleManager);
+
+    if (FAILED(hr))
+        return;
+
+    deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
+
+    FLOAT Opacity = _TextStyle._Brush->GetOpacity();
+
+    _TextStyle.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
+
+    for (const label_t & Iter : _Labels)
+    {
+        // Draw the vertical grid line.
+        if (_LineStyle.IsEnabled())
+            deviceContext->DrawLine(Iter.PointT, Iter.PointB, _LineStyle._Brush.Get(), _LineStyle._Thickness, nullptr);
+
+        // Draw the text.
+        if (!Iter.IsHidden && _TextStyle.IsEnabled() && (_GraphOptions->_XAxisMode != XAxisMode::None))
+        {
+            _TextStyle._Brush->SetOpacity(Iter.IsDimmed && (_GraphOptions->_XAxisMode == XAxisMode::Notes) ? Opacity * .5f : Opacity);
+
+            if (_GraphOptions->_XAxisTop)
+                deviceContext->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle._TextFormat.Get(), Iter.RectT, _TextStyle._Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
+
+            if (_GraphOptions->_XAxisBottom)
+                deviceContext->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle._TextFormat.Get(), Iter.RectB, _TextStyle._Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
+        }
+    }
+
+    _TextStyle._Brush->SetOpacity(Opacity);
+}
+
+#pragma region DirectX
+
+/// <summary>
+/// Creates resources which are bound to a particular D3D device.
+/// </summary>
+HRESULT x_axis_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext, style_manager_t & styleManager) noexcept
+{
+    HRESULT hr = S_OK;
+
+    if (_State->_ColorsHaveChanged || _State->_SizeHasChanged)
+    {
+        DeleteColorDependentResources();
+
+        Initialize();
+
+        hr = CreateColorDependentResources(deviceContext, styleManager);
+
+        if (FAILED(hr))
+            return hr;
+    }
+
+    if (_State->_SizeHasChanged)
+    {
+        DeleteSizeDependentResources();
+
+        Initialize();
+
+        hr = CreateSizeDependentResources(deviceContext, styleManager);
+
+        if (FAILED(hr))
+            return hr;
+    }
+
+    return hr;
+}
+
+/// <summary>
+/// Releases the device specific resources.
+/// </summary>
+void x_axis_t::DeleteDeviceSpecificResources() noexcept
+{
+    DeleteColorDependentResources();
+    DeleteSizeDependentResources();
+}
+
+/// <summary>
+/// Creates the resources that depend on the size of the render target.
+/// </summary>
+HRESULT x_axis_t::CreateSizeDependentResources(ID2D1DeviceContext * deviceContext, style_manager_t & styleManager) noexcept
+{
+    return S_OK;
+}
+
+/// <summary>
+/// Deletes the resources that depend on the size of the render target.
+/// </summary>
+void x_axis_t::DeleteSizeDependentResources() noexcept
+{
+}
+
+/// <summary>
+/// Creates the resources that depend on the color palette.
+/// </summary>
+HRESULT x_axis_t::CreateColorDependentResources(ID2D1DeviceContext * deviceContext, style_manager_t & styleManager) noexcept
+{
+    if (_LineStyle._Brush == nullptr)
+    {
+        _LineStyle = *styleManager.GetStyle(VisualElement::VerticalGridLine);
+
+        _LineStyle.SetColor(_State);
+
+        HRESULT hr = _LineStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
+
+        if (FAILED(hr))
+            return hr;
+    }
+
+    if (_TextStyle._Brush == nullptr)
+    {
+        _TextStyle = *styleManager.GetStyle(VisualElement::XAxisText);
+
+        _TextStyle.SetColor(_State);
+
+        HRESULT hr = _TextStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"999.9k", 1.f);
+
+        if (FAILED(hr))
+            return hr;
+    }
+
+    return S_OK;
+}
+
+/// <summary>
+/// Deletes the resources that depend on the color palette.
+/// </summary>
+void x_axis_t::DeleteColorDependentResources() noexcept
+{
+    _TextStyle.DeleteDeviceSpecificResources();
+    _LineStyle.DeleteDeviceSpecificResources();
 }
 
 /// <summary>
 /// Recalculates parameters that are render target and size-sensitive.
 /// </summary>
-void x_axis_t::Resize(bool force) noexcept
+void x_axis_t::Initialize() noexcept
 {
-    if (!force && (!_IsResized || (_Size.width == 0.f) || (_Size.height == 0.f)))
-        return;
+    assert((_Size.width > 0.f) && (_Size.height > 0.f));
 
     FLOAT t = _Size.width / (FLOAT) _BandCount;
 
@@ -189,9 +329,9 @@ void x_axis_t::Resize(bool force) noexcept
         Iter.PointB = D2D1_POINT_2F(x, yb);
 
         {
-            CComPtr<IDWriteTextLayout> TextLayout;
+            ComPtr<IDWriteTextLayout> TextLayout;
 
-            HRESULT hr = _DirectWrite.Factory->CreateTextLayout(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle._TextFormat, _Size.width, _Size.height, &TextLayout);
+            HRESULT hr = DirectWriteFactory::Get()->CreateTextLayout(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle._TextFormat.Get(), _Size.width, _Size.height, TextLayout.GetAddressOf());
 
             if (SUCCEEDED(hr))
             {
@@ -257,96 +397,6 @@ void x_axis_t::Resize(bool force) noexcept
                 LastLabel = &_Labels[i];
         }
     }
-
-    _IsResized = false;
-}
-
-/// <summary>
-/// Renders this instance to the specified render target.
-/// </summary>
-void x_axis_t::Render(ID2D1DeviceContext * deviceContext) noexcept
-{
-    auto & StyleManager = _GraphOptions->_UseLocalStyles ? _GraphOptions->_StyleManager : _State->_StyleManager;
-
-    HRESULT hr = CreateDeviceSpecificResources(deviceContext, StyleManager);
-
-    if (!SUCCEEDED(hr))
-        return;
-
-    deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
-
-    FLOAT Opacity = _TextStyle._Brush->GetOpacity();
-
-    _TextStyle.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
-
-    for (const label_t & Iter : _Labels)
-    {
-        // Draw the vertical grid line.
-        if (_LineStyle.IsEnabled())
-            deviceContext->DrawLine(Iter.PointT, Iter.PointB, _LineStyle._Brush, _LineStyle._Thickness, nullptr);
-
-        // Draw the text.
-        if (!Iter.IsHidden && _TextStyle.IsEnabled() && (_GraphOptions->_XAxisMode != XAxisMode::None))
-        {
-            _TextStyle._Brush->SetOpacity(Iter.IsDimmed && (_GraphOptions->_XAxisMode == XAxisMode::Notes) ? Opacity * .5f : Opacity);
-
-            if (_GraphOptions->_XAxisTop)
-                deviceContext->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle._TextFormat, Iter.RectT, _TextStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
-
-            if (_GraphOptions->_XAxisBottom)
-                deviceContext->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle._TextFormat, Iter.RectB, _TextStyle._Brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
-        }
-    }
-
-    _TextStyle._Brush->SetOpacity(Opacity);
-}
-
-#pragma region DirectX
-
-/// <summary>
-/// Creates resources which are bound to a particular D3D device.
-/// It's all centralized here, in case the resources need to be recreated in case of D3D device loss (eg. display change, remoting, removal of video card, etc).
-/// </summary>
-HRESULT x_axis_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext, style_manager_t & styleManager) noexcept
-{
-    HRESULT hr = S_OK;
-
-    if (_LineStyle._Brush == nullptr)
-    {
-        _LineStyle = *styleManager.GetStyle(VisualElement::VerticalGridLine);
-
-        _LineStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
-
-        hr = _LineStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
-
-        if (!SUCCEEDED(hr))
-            return hr;
-    }
-
-    if (_TextStyle._Brush == nullptr)
-    {
-        _TextStyle = *styleManager.GetStyle(VisualElement::XAxisText);
-
-        _TextStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
-
-        hr = _TextStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"999.9k", 1.f);
-
-        if (!SUCCEEDED(hr))
-            return hr;
-    }
-
-    Resize();
-
-    return hr;
-}
-
-/// <summary>
-/// Releases the device specific resources.
-/// </summary>
-void x_axis_t::DeleteDeviceSpecificResources() noexcept
-{
-    _TextStyle.DeleteDeviceSpecificResources();
-    _LineStyle.DeleteDeviceSpecificResources();
 }
 
 #pragma endregion

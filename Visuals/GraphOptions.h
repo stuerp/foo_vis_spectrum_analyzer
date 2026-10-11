@@ -1,5 +1,5 @@
 
-/** $VER: GraphOptions.h (2026.08.22) P. Stuer - Describes the layout and settings of a graph. **/
+/** $VER: GraphOptions.h (2026.09.20) P. Stuer - Describes the layout and settings of a graph. **/
 
 #pragma once
 
@@ -48,7 +48,7 @@ public:
     {
         _Description             = other._Description;
 
-        _SelectedChannels        = other._SelectedChannels;
+        _ActiveChannelMask       = other._ActiveChannelMask;
 
         _ChannelPair             = other._ChannelPair;
         _SwapChannels            = other._SwapChannels;
@@ -110,7 +110,7 @@ private:
 public:
     std::wstring _Description;
 
-    uint32_t _SelectedChannels;                 // The channels that should be visualized.
+    uint32_t _ActiveChannelMask;                // The channels that should be visualized.
 
     ChannelPair _ChannelPair;
     bool _SwapChannels;                         // True if the channels of a channel pair should be swapped.

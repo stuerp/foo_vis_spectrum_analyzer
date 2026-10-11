@@ -3,9 +3,6 @@
 
 #pragma once
 
-#include <Windows.h>
-#include <strsafe.h>
-
 #include <stdexcept>
 #include <string>
 

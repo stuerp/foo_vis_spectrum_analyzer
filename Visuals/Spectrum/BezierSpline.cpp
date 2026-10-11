@@ -1,17 +1,118 @@
 
-/** $VER: BezierSpline.cpp (2025.09.28) P. Stuer - Based on https://www.codeproject.com/Articles/31859/Draw-a-Smooth-Curve-through-a-Set-of-2D-Points-wit by Oleg V. Polikarpotchkin **/
+/** $VER: BezierSpline.cpp (2026.09.30) P. Stuer - Based on https://www.codeproject.com/Articles/31859/Draw-a-Smooth-Curve-through-a-Set-of-2D-Points-wit by Oleg V. Polikarpotchkin **/
 
 #include "pch.h"
-#include "BezierSpline.h"
 
-#include <valarray>
+#include "BezierSpline.h"
+#include "Log.h"
 
 #pragma hdrstop
+
+#define CoPilot
+
+#ifdef CoPilot
+
+/// <summary>
+/// Gets open-ended Bezier spline control points. (CoPilot optimized version)
+/// </summary>
+void bezier_spline_t::GetControlPoints(const std::vector<D2D1_POINT_2F> & knots, std::vector<D2D1_POINT_2F> & firstControlPoints, std::vector<D2D1_POINT_2F> & secondControlPoints) noexcept
+{
+    assert(&firstControlPoints != &secondControlPoints);
+    assert(&knots != &firstControlPoints);
+    assert(&knots != &secondControlPoints);
+
+    const size_t KnotCount = knots.size();
+
+    if (KnotCount < 2)
+    {
+        firstControlPoints.clear();
+        secondControlPoints.clear();
+
+        return;
+    }
+
+    const size_t SegmentCount = KnotCount - 1;
+
+    firstControlPoints .resize(SegmentCount);
+    secondControlPoints.resize(SegmentCount);
+
+    if (SegmentCount == 1)
+    {
+        const auto & firstKnot  = knots[0];
+        const auto & secondKnot = knots[1];
+
+        auto & first = firstControlPoints[0];
+        auto & second = secondControlPoints[0];
+
+        first.x = ((2.f * firstKnot.x) + secondKnot.x) / 3.0f;
+        first.y = ((2.f * firstKnot.y) + secondKnot.y) / 3.0f;
+
+        second.x = (2.f * first.x) - firstKnot.x;
+        second.y = (2.f * first.y) - firstKnot.y;
+
+        return;
+    }
+
+    // Store the right-hand side directly in the first-control-point output vector. The X and Y systems have identical coefficients, so both coordinates can be solved in the same pass.
+    firstControlPoints[0].x = knots[0].x + (2.f * knots[1].x);
+    firstControlPoints[0].y = knots[0].y + (2.f * knots[1].y);
+
+    for (size_t i = 1; i < SegmentCount - 1; ++i)
+    {
+        firstControlPoints[i].x = (4.0f * knots[i].x) + (2.f * knots[i + 1].x);
+        firstControlPoints[i].y = (4.0f * knots[i].y) + (2.f * knots[i + 1].y);
+    }
+
+    firstControlPoints[SegmentCount - 1].x = ((8.f * knots[SegmentCount - 1].x) + knots[SegmentCount].x) * 0.5f;
+    firstControlPoints[SegmentCount - 1].y = ((8.f * knots[SegmentCount - 1].y) + knots[SegmentCount].y) * 0.5f;
+
+    // Solve the tridiagonal system in place. secondControlPoints[i].x is temporary workspace for the modified upper-diagonal coefficient. It is overwritten later.
+    float Diagonal        = 2.f;
+    float InverseDiagonal = 1.f / Diagonal;
+
+    firstControlPoints[0].x *= InverseDiagonal;
+    firstControlPoints[0].y *= InverseDiagonal;
+
+    for (size_t i = 1; i < SegmentCount; ++i)
+    {
+        secondControlPoints[i].x = InverseDiagonal;
+
+        Diagonal        = (i + 1 < SegmentCount ? 4.0f : 3.5f) - InverseDiagonal;
+        InverseDiagonal = 1.f / Diagonal;
+
+        firstControlPoints[i].x = (firstControlPoints[i].x - firstControlPoints[i - 1].x) * InverseDiagonal;
+        firstControlPoints[i].y = (firstControlPoints[i].y - firstControlPoints[i - 1].y) * InverseDiagonal;
+    }
+
+    for (size_t i = SegmentCount - 1; i > 0; --i)
+    {
+        const float Factor = secondControlPoints[i].x;
+
+        firstControlPoints[i - 1].x -= Factor * firstControlPoints[i].x;
+        firstControlPoints[i - 1].y -= Factor * firstControlPoints[i].y;
+    }
+
+    // Calculate the second control points.
+    for (size_t i = 0; i + 1 < SegmentCount; ++i)
+    {
+        secondControlPoints[i].x = (2.0f * knots[i + 1].x) - firstControlPoints[i + 1].x;
+        secondControlPoints[i].y = (2.0f * knots[i + 1].y) - firstControlPoints[i + 1].y;
+    }
+
+    const size_t Last = SegmentCount - 1;
+
+    secondControlPoints[Last].x = (knots[SegmentCount].x + firstControlPoints[Last].x) * 0.5f;
+    secondControlPoints[Last].y = (knots[SegmentCount].y + firstControlPoints[Last].y) * 0.5f;
+}
+
+#else
+
+#include <valarray>
 
 /// <summary>
 /// Gets open-ended Bezier spline control points.
 /// </summary>
-void bezier_spline_t::GetControlPoints(const std::vector<D2D1_POINT_2F> knots, std::vector<D2D1_POINT_2F> & firstControlPoints, std::vector<D2D1_POINT_2F> & secondControlPoints) noexcept
+void bezier_spline_t::GetControlPoints(const std::vector<D2D1_POINT_2F> & knots, std::vector<D2D1_POINT_2F> & firstControlPoints, std::vector<D2D1_POINT_2F> & secondControlPoints) noexcept
 {
     if (knots.size() < 2)
         return;
@@ -70,7 +171,11 @@ void bezier_spline_t::GetControlPoints(const std::vector<D2D1_POINT_2F> knots, s
     // Fill the output arrays.
     for (size_t i = 0; i < n - 1; ++i)
     {
-        firstControlPoints.push_back(D2D1::Point2F(x[i], y[i]));
+        firstControlPoints .push_back(D2D1::Point2F
+        (
+            x[i],
+            y[i]
+        ));
         secondControlPoints.push_back(D2D1::Point2F
         (
             (2.f * knots[i + 1].x) - x[i + 1],
@@ -78,7 +183,11 @@ void bezier_spline_t::GetControlPoints(const std::vector<D2D1_POINT_2F> knots, s
         ));
     }
 
-    firstControlPoints.push_back(D2D1::Point2F(x[n - 1], y[n - 1]));
+    firstControlPoints .push_back(D2D1::Point2F
+    (
+        x[n - 1],
+        y[n - 1]
+    ));
     secondControlPoints.push_back(D2D1::Point2F
     (
         (knots[n].x + x[n - 1]) / 2.f,
@@ -113,6 +222,8 @@ std::valarray<FLOAT> bezier_spline_t::GetFirstControlPoints(std::valarray<FLOAT>
 
     return x;
 }
+
+#endif
 
 /// <summary>
 /// Bezier Spline methods

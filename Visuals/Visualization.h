@@ -1,5 +1,5 @@
 
-/** $VER: Visualization.h (2026.06.17) P. Stuer - Base class for all visualization elements. **/
+/** $VER: Visualization.h (2026.10.11) P. Stuer - Base class for all visualization elements. **/
 
 #pragma once
 
@@ -9,14 +9,16 @@
 
 #include "Element.h"
 
+#include <memory>
+
 class visualization_t : public element_t
 {
 public:
-    visualization_t() {}
+    visualization_t() = default;
 
-    virtual ~visualization_t() noexcept {}
+    virtual ~visualization_t() noexcept = default;
 
-    virtual void Initialize(state_t * state, graph_options_t * graphOptions, const analysis_t * analysis, bool isFirst, bool isLast) noexcept = 0;
+    virtual void Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice = nullptr, ID3D11DeviceContext * d3dDeviceContext = nullptr) noexcept = 0;
 
-protected:
+    static std::unique_ptr<visualization_t> Create(const state_t & state) noexcept;
 };

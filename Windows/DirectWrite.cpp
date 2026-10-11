@@ -1,48 +1,51 @@
 
-/** $VER: DirectWrite.cpp (2024.04.21) P. Stuer **/
+/** $VER: DirectWrite.cpp (2026.10.04) P. Stuer **/
 
 #include "pch.h"
-#include "DirectWrite.h"
 
-#include <Win32Exception.h>
+#include "DirectWrite.h"
 
 #pragma comment(lib, "dwrite")
 
 #pragma hdrstop
 
-/// <summary>
-/// Initializes this instance.
-/// </summary>
-HRESULT DirectWrite::Initialize()
+ComPtr<DirectWriteFactory::Interface> DirectWriteFactory::_Factory;
+int64_t DirectWriteFactory::_ReferenceCount = 0;
+
+HRESULT DirectWriteFactory::Initialize() noexcept
 {
-    HRESULT hr = ::DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(Factory), (IUnknown **) &Factory);
+    std::lock_guard Lock(_Mutex);
 
-    if (!SUCCEEDED(hr))
-        throw msc::win32_exception("Unable to create DirectWrite factory.", (DWORD) hr);
+    ++_ReferenceCount;
 
-    return hr;
+    if (_Factory)
+        return S_OK;
+
+    return ::DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(_Factory), (IUnknown **) _Factory.GetAddressOf());
+}
+
+void DirectWriteFactory::Terminate() noexcept
+{
+    std::lock_guard Lock(_Mutex);
+
+    --_ReferenceCount;
+
+    if (_ReferenceCount == 0)
+        _Factory.Reset();
 }
 
 /// <summary>
-/// Terminates this instance.
+/// Creates and initializes a TextFormat object.
 /// </summary>
-void DirectWrite::Terminate()
+HRESULT DirectWrite::CreateTextFormat(const std::wstring & fontFamilyName, FLOAT fontSize, DWRITE_TEXT_ALIGNMENT horizonalAlignment, DWRITE_PARAGRAPH_ALIGNMENT verticalAlignment, IDWriteTextFormat ** textFormat)
 {
-    Factory.Release();
-}
-
-/// <summary>
-/// Creates a TextFormat object.
-/// </summary>
-HRESULT DirectWrite::CreateTextFormat(const std::wstring & fontFamilyName, FLOAT fontSize, DWRITE_TEXT_ALIGNMENT horizonalAlignment, DWRITE_PARAGRAPH_ALIGNMENT verticalAlignment, CComPtr<IDWriteTextFormat> & textFormat) const noexcept
-{
-    HRESULT hr = Factory->CreateTextFormat(fontFamilyName.c_str(), NULL, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, fontSize, L"", &textFormat);
+    HRESULT hr = DirectWriteFactory::Get()->CreateTextFormat(fontFamilyName.c_str(), NULL, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, fontSize, L"", textFormat);
 
     if (SUCCEEDED(hr))
     {
-        textFormat->SetTextAlignment(horizonalAlignment);
-        textFormat->SetParagraphAlignment(verticalAlignment);
-        textFormat->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
+        (*textFormat)->SetTextAlignment(horizonalAlignment);
+        (*textFormat)->SetParagraphAlignment(verticalAlignment);
+        (*textFormat)->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
     }
 
     return hr;
@@ -51,11 +54,11 @@ HRESULT DirectWrite::CreateTextFormat(const std::wstring & fontFamilyName, FLOAT
 /// <summary>
 /// Gets metrics about the specified text.
 /// </summary>
-HRESULT DirectWrite::GetTextMetrics(CComPtr<IDWriteTextFormat> & textFormat, const std::wstring & text, FLOAT & width, FLOAT & height) const noexcept
+HRESULT DirectWrite::GetTextMetrics(IDWriteTextFormat * textFormat, const std::wstring & text, FLOAT & width, FLOAT & height)
 {
-    CComPtr<IDWriteTextLayout> TextLayout;
+    ComPtr<IDWriteTextLayout> TextLayout;
 
-    HRESULT hr = _DirectWrite.Factory->CreateTextLayout(text.c_str(), (UINT32) text.length(), textFormat, 100.f, 100.f, &TextLayout);
+    HRESULT hr = DirectWriteFactory::Get()->CreateTextLayout(text.c_str(), (UINT32) text.length(), textFormat, 100.f, 100.f, TextLayout.GetAddressOf());
 
     if (SUCCEEDED(hr))
     {
@@ -70,5 +73,3 @@ HRESULT DirectWrite::GetTextMetrics(CComPtr<IDWriteTextFormat> & textFormat, con
 
     return hr;
 }
-
-DirectWrite _DirectWrite;

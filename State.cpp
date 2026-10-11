@@ -1,10 +1,10 @@
 
-/** $VER: State.cpp (2026.09.09) P. Stuer **/
+/** $VER: State.cpp (2026.10.08) P. Stuer **/
 
 #include "pch.h"
 #include "State.h"
 
-#include "Gradients.h"
+#include "Gradient.h"
 #include "Resources.h"
 #include "Log.h"
 
@@ -43,7 +43,7 @@ void state_t::Reset() noexcept
     _Bounds = { };
     _PageIndex = 0;
 
-    _RefreshRateLimit = 20; // Hz
+    _TargetRefreshRate = 60; // Hz
     _SleepTime = 200; // μs
 
     _UseHardwareRendering = true;
@@ -121,22 +121,29 @@ void state_t::Reset() noexcept
 
     _FrequencyShift = 1.;
 
-    _FrequencyTilt = 0.;
+    _FrequencyTilt      =    0.;
     _FrequencyTiltPivot = 1000.;
 
-    _EqualizationAmount = 0.;
-    _EqualizationFreqScale = 44100.;
-    _EqualizationDepth = 1024.;
+    _EqualizationAmount    =     0.;
+    _EqualizationFreqScale = 44100.; // Hz
+    _EqualizationDepth     =  1024.;
 
     _WeightingAmount = 0.;
+
+    static constexpr double Woofer  =  220.; // Hz
+    static constexpr double Tweeter = 2500.; // Hz
+
+    _CrossoverMode = crossover::Mode::LinkwitzRiley4;
+    _LowBand       = Woofer;
+    _HighBand      = Tweeter;
 
     _SmoothingMethod = SmoothingMethod::Average;
     _SmoothingFactor = 0.5;
 
-    _KernelSize = 32;
-    _AggregationMethod = AggregationMethod::Maximum;
+    _KernelSize             = 32;
+    _AggregationMethod      = AggregationMethod::Maximum;
     _SmoothLowerFrequencies = true;
-    _SmoothGainTransition = true;
+    _SmoothGainTransition   = true;
 
     // Rendering parameters
     _BackColor_Deprecated = D2D1::ColorF(D2D1::ColorF::Black);                  // Deprecated
@@ -174,8 +181,7 @@ void state_t::Reset() noexcept
     // Common
     _ColorScheme_Deprecated = ColorScheme::Prism1;
 
-//  _GradientStops = GetBuiltInGradientStops(_ColorScheme_Deprecated);
-    _CustomGradientStops_Deprecated = GetBuiltInGradientStops(ColorScheme::Custom);
+    _CustomGradientStops_Deprecated = gradient_t::GetBuiltIn(ColorScheme::Custom);
 
     _ShowToolTipsAlways = true;
     _SuppressMirrorImage = true;
@@ -194,8 +200,9 @@ void state_t::Reset() noexcept
     _ArtworkOpacity = 1.f;
     _ArtworkBlurSigma = 0.f;
     _ArtworkFilePath.clear();
-    _FitMode = FitMode::FitBig;
+    _FitMode = FitMode::FitLargest;
     _FitWindow = false;
+    _AllowUpscaling = false;
 
     _ShowWindowFunction   = false;
     _ShowWeighingFunction = false;
@@ -211,6 +218,36 @@ void state_t::Reset() noexcept
     _VerticalLayout = false;
     _OverlapGraphs = false;
 
+    _ChannelOrder =
+    {
+        Channels::FrontLeft,
+        Channels::FrontRight,
+        Channels::FrontCenter,
+
+        Channels::LFE,
+
+        Channels::BackLeft,
+        Channels::BackRight,
+
+        Channels::FrontCenterLeft,
+        Channels::FrontCenterRight,
+
+        Channels::BackCenter,
+
+        Channels::SideLeft,
+        Channels::SideRight,
+
+        Channels::TopCenter,
+
+        Channels::TopFrontLeft,
+        Channels::TopFrontCenter,
+        Channels::TopFrontRight,
+
+        Channels::TopBackLeft,
+        Channels::TopBackCenter,
+        Channels::TopBackRight,
+    };
+
     /** Visualization **/
 
     _VisualizationType = VisualizationType::Bars;
@@ -218,7 +255,7 @@ void state_t::Reset() noexcept
     // Bars
     _DrawBandBackground_Deprecated = true;
     _LightBandColor_Deprecated = D2D1::ColorF(.2f, .2f, .2f, .7f);
-    _DarkBandColor_Deprecated = D2D1::ColorF(.2f, .2f, .2f, .7f);
+    _DarkBandColor_Deprecated  = D2D1::ColorF(.2f, .2f, .2f, .7f);
 
     _LEDMode = false;
     _LEDLight = 2.f;
@@ -230,6 +267,7 @@ void state_t::Reset() noexcept
     _PeakMode = PeakMode::Classic;
     _HoldTime = .5; // s
     _FallRate = 20; // dB/s
+    _ResetPeaksOnTrackChange = false;
 
     // Radial Bars
     _InnerRadius = 0.2f;
@@ -247,37 +285,42 @@ void state_t::Reset() noexcept
     // Spectrogram
     _IsScrollingSpectrogram = true;
     _IsHorizontalSpectrogram = true;
-    _UseSpectrumBarMetrics = false;
-    _SpectrogramLegend = false;
+    _UseSpectrumBarMetrics  = false;
+    _SpectrogramLegend      = false;
 
     // Peak Meter
-    _IsHorizontalPeakMeter = false;
-    _HasRMSPlus3 = false;
-    _RMSWindow = .300; // seconds
-    _BarGap = 1.f; // pixels
-    _HasCenterScale = false;
-    _HasScaleLines = true;
-    _MaxBarSize = 0.f; // pixels
+    _IsHorizontalPeakMeter  = false;
+    _HasRMSPlus3            = false;
+    _RMSWindow              = .300; // seconds
+    _BarGap                 = 1.f; // pixels
+    _HasCenterScale         = false;
+    _HasScaleLines          = true;
+    _MaxBarSize             = 0.f; // pixels
 
     // Level Meter
     _IsHorizontalLevelMeter = false;
 
     // Oscilloscope
-    _XYMode = false;
-    _XGain = 1.f;
-    _YGain = 1.f;
-    _Rotation = 0.f;
-    _HasPhosphorDecay = true;
-    _BlurSigma = 3.f;
-    _DecayFactor = 0.95f;
-    _FrameCount = 1024;
-    _Downmix = false;
-    _ZeroCrossingTrigger = false;
+    _XYMode                 = false;
+    _XInputGain             = 1.;
+    _YInputGain             = 1.;
+    _Rotation               = 0.f;
+    _HasPhosphorDecay       = true;
+    _BlurSigma              = 3.f;
+    _Afterglow              = 100.f; // ms
+    _FrameCount             = 1024;
+    _Downmix                = false;
+    _ZeroCrossingTrigger    = false;
+
+    _GoniometerColorMode    = goniometer::ColorMode::Triband;
+    _LowVisualGain          = -6.; // dB
+    _MidVisualGain          =  0.; // dB
+    _HighVisualGain         = -3.; // dB
 
     // Bit Meter
-    _BitMeterMode = BitMeterMode::FloatingPoint;
-    _BitsPerInteger = 63;
-    _OpacityMode = false;
+    _BitMeterMode           = BitMeterMode::FloatingPoint;
+    _BitsPerInteger         = 63;
+    _OpacityMode            = false;
 
     _StyleManager.Reset();
 
@@ -302,7 +345,7 @@ state_t & state_t::operator=(const state_t & other) noexcept
     _Bounds = other._Bounds;
     _PageIndex = other._PageIndex;
 
-    _RefreshRateLimit = other._RefreshRateLimit;
+    _TargetRefreshRate = other._TargetRefreshRate;
 
     _UseHardwareRendering = other._UseHardwareRendering;
     _UseAntialiasing = other._UseAntialiasing;
@@ -397,18 +440,22 @@ state_t & state_t::operator=(const state_t & other) noexcept
 
     #pragma region Filters
 
-        _WeightingType = other._WeightingType;
+        _WeightingType         = other._WeightingType;
 
-        _FrequencyShift = other._FrequencyShift;
+        _FrequencyShift        = other._FrequencyShift;
 
-        _FrequencyTilt = other._FrequencyTilt;
-        _FrequencyTiltPivot = other._FrequencyTiltPivot;
+        _FrequencyTilt         = other._FrequencyTilt;
+        _FrequencyTiltPivot    = other._FrequencyTiltPivot;
 
-        _EqualizationAmount = other._EqualizationAmount;
+        _EqualizationAmount    = other._EqualizationAmount;
         _EqualizationFreqScale = other._EqualizationFreqScale;
-        _EqualizationDepth = other._EqualizationDepth;
+        _EqualizationDepth     = other._EqualizationDepth;
 
-        _WeightingAmount = other._WeightingAmount;
+        _WeightingAmount       = other._WeightingAmount;
+
+        _CrossoverMode         = other._CrossoverMode;
+        _LowBand               = other._LowBand;
+        _HighBand              = other._HighBand;
 
     #pragma endregion
 
@@ -481,6 +528,7 @@ state_t & state_t::operator=(const state_t & other) noexcept
         _ArtworkFilePath = other._ArtworkFilePath;
         _FitMode = other._FitMode;
         _FitWindow = other._FitWindow;
+        _AllowUpscaling = other._AllowUpscaling;
 
         _ShowWindowFunction   = other._ShowWindowFunction;
         _ShowWeighingFunction = other._ShowWeighingFunction;
@@ -495,6 +543,8 @@ state_t & state_t::operator=(const state_t & other) noexcept
     _GridColumnCount = other._GridColumnCount;
     _VerticalLayout = other._VerticalLayout;
     _OverlapGraphs = other._OverlapGraphs;
+
+    _ChannelOrder = other._ChannelOrder;
 
     #pragma endregion
 
@@ -517,6 +567,7 @@ state_t & state_t::operator=(const state_t & other) noexcept
     _PeakMode = other._PeakMode;
     _HoldTime = other._HoldTime;
     _FallRate = other._FallRate;
+    _ResetPeaksOnTrackChange = other._ResetPeaksOnTrackChange;
 
     // Radial Bars
     _InnerRadius = other._InnerRadius;
@@ -551,15 +602,20 @@ state_t & state_t::operator=(const state_t & other) noexcept
 
     // Oscilloscope
     _XYMode               = other._XYMode;
-    _XGain                = other._XGain;
-    _YGain                = other._YGain;
+    _XInputGain           = other._XInputGain;
+    _YInputGain           = other._YInputGain;
     _Rotation             = other._Rotation;
     _HasPhosphorDecay     = other._HasPhosphorDecay;
     _BlurSigma            = other._BlurSigma;
-    _DecayFactor          = other._DecayFactor;
+    _Afterglow          = other._Afterglow;
     _FrameCount           = other._FrameCount;
     _Downmix              = other._Downmix;
     _ZeroCrossingTrigger  = other._ZeroCrossingTrigger;
+
+    _GoniometerColorMode  = other._GoniometerColorMode;
+    _LowVisualGain        = other._LowVisualGain;
+    _MidVisualGain        = other._MidVisualGain;
+    _HighVisualGain       = other._HighVisualGain;
 
     // Bit Meter
     _BitMeterMode         = other._BitMeterMode;
@@ -602,7 +658,7 @@ void state_t::Read(stream_reader * stream, size_t size, abort_callback & abortHa
 
         stream->read(&_Bounds, sizeof(_Bounds), abortHandler);
 
-        stream->read(&_RefreshRateLimit, sizeof(_RefreshRateLimit), abortHandler);
+        stream->read(&_TargetRefreshRate, sizeof(_TargetRefreshRate), abortHandler);
 
         stream->read(&_UseHardwareRendering, sizeof(_UseHardwareRendering), abortHandler);
         stream->read(&_UseAntialiasing, sizeof(_UseAntialiasing), abortHandler);
@@ -849,7 +905,7 @@ void state_t::Read(stream_reader * stream, size_t size, abort_callback & abortHa
 
                 pfc::string Description; stream->read_string(Description, abortHandler); Options._Description = pfc::wideFromUTF8(Description);
 
-                stream->read_object_t(Options._SelectedChannels, abortHandler);
+                stream->read_object_t(Options._ActiveChannelMask, abortHandler);
                 stream->read_object_t(Options._FlipHorizontally, abortHandler);
                 stream->read_object_t(Options._FlipVertically, abortHandler);
 
@@ -980,12 +1036,12 @@ void state_t::Read(stream_reader * stream, size_t size, abort_callback & abortHa
         if (Version >= 31)
         {
             stream->read_object_t(_XYMode, abortHandler);
-            stream->read_object_t(_XGain, abortHandler);
-            stream->read_object_t(_YGain, abortHandler);
+            stream->read_object_t(_XInputGain, abortHandler);
+            stream->read_object_t(_YInputGain, abortHandler);
 
             stream->read_object_t(_HasPhosphorDecay, abortHandler);
             stream->read_object_t(_BlurSigma, abortHandler);
-            stream->read_object_t(_DecayFactor, abortHandler);
+            stream->read_object_t(_Afterglow, abortHandler);
         }
 
         if (Version >= 32)
@@ -1031,7 +1087,7 @@ void state_t::Write(stream_writer * stream, abort_callback & abortHandler, bool 
 
         stream->write(&_Bounds, sizeof(_Bounds), abortHandler);
 
-        stream->write(&_RefreshRateLimit, sizeof(_RefreshRateLimit), abortHandler);
+        stream->write(&_TargetRefreshRate, sizeof(_TargetRefreshRate), abortHandler);
 
         stream->write(&_UseHardwareRendering, sizeof(_UseHardwareRendering), abortHandler);
         stream->write(&_UseAntialiasing, sizeof(_UseAntialiasing), abortHandler);
@@ -1227,7 +1283,7 @@ void state_t::Write(stream_writer * stream, abort_callback & abortHandler, bool 
             pfc::string Description = pfc::utf8FromWide(gd._Description.c_str());
             stream->write_string(Description, abortHandler);
 
-            stream->write_object_t(gd._SelectedChannels, abortHandler);
+            stream->write_object_t(gd._ActiveChannelMask, abortHandler);
             stream->write_object_t(gd._FlipHorizontally, abortHandler);
             stream->write_object_t(gd._FlipVertically, abortHandler);
 
@@ -1336,11 +1392,11 @@ void state_t::Write(stream_writer * stream, abort_callback & abortHandler, bool 
 
         // Version 31, v0.9.0.0-alpha3
         stream->write_object_t(_XYMode, abortHandler);
-        stream->write_object_t(_XGain, abortHandler);
-        stream->write_object_t(_YGain, abortHandler);
+        stream->write_object_t(_XInputGain, abortHandler);
+        stream->write_object_t(_YInputGain, abortHandler);
         stream->write_object_t(_HasPhosphorDecay, abortHandler);
         stream->write_object_t(_BlurSigma, abortHandler);
-        stream->write_object_t(_DecayFactor, abortHandler);
+        stream->write_object_t(_Afterglow, abortHandler);
 
         // Version 32, v0.9.2
         stream->write_object_t(_HasCenterScale, abortHandler);
@@ -1372,7 +1428,7 @@ void state_t::FromJSON(const char * data, size_t size, bool isPreset)
     const uint32_t SchemaVersion = Object.value("schemaVersion", _SchemaVersion);
 
     // User Interface
-    _RefreshRateLimit = std::clamp(Object.value("refreshRateLimit", _RefreshRateLimit), MinRefreshRate, MaxRefreshRate);
+    _TargetRefreshRate = std::clamp(Object.value("refreshRateLimit", _TargetRefreshRate), MinRefreshRate, MaxRefreshRate);
 
     // Configuration Dialog
     const auto & Dialog = Object.value("configurationDialog", json::object());
@@ -1405,6 +1461,8 @@ void state_t::FromJSON(const char * data, size_t size, bool isPreset)
         }
         else
             _FallRate = std::clamp(PeakIndicators.value("fallRate", _FallRate), MinFallRate, MaxFallRate);
+
+        _ResetPeaksOnTrackChange = PeakIndicators.value("resetOnTrackChange", _ResetPeaksOnTrackChange);
     }
 
     const auto & LEDs = Object.value("leds", json::object());
@@ -1449,20 +1507,37 @@ void state_t::FromJSON(const char * data, size_t size, bool isPreset)
     const auto & Oscilloscope = Object.value("oscilloscope", json::object());
     {
         _XYMode     = Oscilloscope.value("xyMode", _XYMode);
-        _XGain      = std::clamp(Oscilloscope.value("xGain",      _XGain),      MinXGain,      MaxXGain);
-        _YGain      = std::clamp(Oscilloscope.value("yGain",      _YGain),      MinYGain,      MaxYGain);
+        _XInputGain = std::clamp(Oscilloscope.value("xGain",      _XInputGain), MinXGain,      MaxXGain);
+        _YInputGain = std::clamp(Oscilloscope.value("yGain",      _YInputGain), MinYGain,      MaxYGain);
         _Rotation   = std::clamp(Oscilloscope.value("rotation",   _Rotation),   MinRotation,   MaxRotation);
         _FrameCount = std::clamp(Oscilloscope.value("frameCount", _FrameCount), MinFrameCount, MaxFrameCount);
 
         const auto & PhosporDecay = Oscilloscope.value("phosphorDecay", json::object());
         {
             _HasPhosphorDecay = PhosporDecay.value("enabled",   _HasPhosphorDecay);
-            _BlurSigma        = std::clamp(PhosporDecay.value("blurSigma",    _BlurSigma),  MinBlurSigma,   MaxBlurSigma);
-            _DecayFactor      = std::clamp(PhosporDecay.value("decayFactor", _DecayFactor), MinDecayFactor, MaxDecayFactor);
+            _BlurSigma        = std::clamp(PhosporDecay.value("blurSigma",   _BlurSigma),   MinBlurSigma,   MaxBlurSigma);
+
+            if (SchemaVersion < 3)
+            {
+                FLOAT DecayFactor = PeakIndicators.value("decayFactor", 0.95f);
+
+                _Afterglow = msc::Map(DecayFactor, 0.f, 1.f, MinAfterGlow, 120.f);
+            }
+            else
+                _Afterglow = std::clamp(PhosporDecay.value("afterglow", _Afterglow), MinAfterGlow, MaxAfterglow);
         }
 
         _Downmix             = Oscilloscope.value("downmix", _Downmix);
         _ZeroCrossingTrigger = Oscilloscope.value("zeroCrossingTrigger", _ZeroCrossingTrigger);
+    }
+
+    const auto & Goniometer = Object.value("goniometer", json::object());
+    {
+        _GoniometerColorMode = std::clamp(Goniometer.value("colorMode", _GoniometerColorMode), goniometer::ColorMode::Min, goniometer::ColorMode::Max);
+
+        _LowVisualGain       = std::clamp(Goniometer.value("lowVisualGain",  _LowVisualGain),  MinVisualGain, MaxVisualGain);
+        _MidVisualGain       = std::clamp(Goniometer.value("midVisualGain",  _MidVisualGain),  MinVisualGain, MaxVisualGain);
+        _HighVisualGain      = std::clamp(Goniometer.value("highVisualGain", _HighVisualGain), MinVisualGain, MaxVisualGain);
     }
 
     const auto & BitMeter = Object.value("bitMeter", json::object());
@@ -1531,8 +1606,14 @@ void state_t::FromJSON(const char * data, size_t size, bool isPreset)
         _LoFrequency            = std::clamp(Frequencies.value("loFrequency",       _LoFrequency),              MinFrequency,               MaxFrequency);
         _HiFrequency            = std::clamp(Frequencies.value("hiFrequency",       _HiFrequency),              MinFrequency,               MaxFrequency);
 
+        if (_LoFrequency > _HiFrequency)
+            std::swap(_LoFrequency, _HiFrequency);
+
         _LoNote                 = std::clamp(Frequencies.value("loNote",            _LoNote),                   (uint32_t) MinNote,         (uint32_t) MaxNote);
         _HiNote                 = std::clamp(Frequencies.value("hiNote",            _HiNote),                   (uint32_t) MinNote,         (uint32_t) MaxNote);
+
+        if (_LoNote > _HiNote)
+            std::swap(_LoNote, _HiNote);
 
         _BandsPerOctave         = std::clamp(Frequencies.value("bandsPerOctave",    _BandsPerOctave),           (uint32_t) MinBandsPerOctave, (uint32_t) MaxBandsPerOctave);
         _TuningPitch            = std::clamp(Frequencies.value("tuningPitch",       _TuningPitch),              MinPitch,                   MaxPitch);
@@ -1559,6 +1640,17 @@ void state_t::FromJSON(const char * data, size_t size, bool isPreset)
         _WeightingAmount        = std::clamp(Filters.value("weightingAmount",       _WeightingAmount),          MinWeightingAmount,         MaxWeightingAmount);
     }
 
+
+    // Crossover Filters
+    const auto & CrossoverFilters = Object.value("crossoverFilters", json::object());
+    {
+        _LowBand                = std::clamp(CrossoverFilters.value("lowBand",      _LowBand),                  MinLowBand,                 MaxLowBand);
+        _HighBand               = std::clamp(CrossoverFilters.value("highBand",     _HighBand),                 MinHighBand,                MaxHighBand);
+
+        if (_LowBand > _HighBand)
+            std::swap(_LowBand, _HighBand);
+    }
+
     // Common
     _SmoothingMethod        = std::clamp(Object.value("smoothingMethod",            _SmoothingMethod),          SmoothingMethod::Min,       SmoothingMethod::Max);
     _SmoothingFactor        = std::clamp(Object.value("smoothingFactor",            _SmoothingFactor),          MinSmoothingFactor,         MaxSmoothingFactor);
@@ -1581,6 +1673,7 @@ void state_t::FromJSON(const char * data, size_t size, bool isPreset)
         _ShowArtworkOnBackground = Artwork.value("showArtworkOnBackground",         _ShowArtworkOnBackground);
 
         _FitMode                 = std::clamp(Artwork.value("fitMode",              _FitMode),                  FitMode::Min,               FitMode::Max);
+        _AllowUpscaling          = Artwork.value("allowUpscaling",                  _AllowUpscaling);
         _FitWindow               = Artwork.value("fitWindow",                       _FitWindow);
         _ArtworkOpacity          = std::clamp(Artwork.value("opacity",              _ArtworkOpacity),           (FLOAT) MinArtworkOpacity,  (FLOAT) MaxArtworkOpacity);
         _ArtworkBlurSigma        = std::clamp(Artwork.value("blurSigma",            _ArtworkBlurSigma),         (FLOAT) MinArtworkBlurSigma,(FLOAT) MaxArtworkBlurSigma);
@@ -1615,6 +1708,9 @@ void state_t::FromJSON(const char * data, size_t size, bool isPreset)
         }
     }
 
+    // Graphs
+    _ChannelOrder = Object.value("channelOrder", _ChannelOrder);
+
     {
         const auto & Styles = Object.value("styles", json::array());
 
@@ -1635,7 +1731,7 @@ json state_t::ToJSON(bool isPreset) const
         { "schemaVersion", _SchemaVersion },
 
         // User Interface
-        { "refreshRateLimit", _RefreshRateLimit },
+        { "refreshRateLimit", _TargetRefreshRate },
 
         // Configuration Dialog
         json::object_t::value_type
@@ -1664,6 +1760,7 @@ json state_t::ToJSON(bool isPreset) const
                 { "mode", _PeakMode },
                 { "holdTime", _HoldTime },
                 { "fallRate", _FallRate },
+                { "resetOnTrackChange", _ResetPeaksOnTrackChange },
             })
         ),
 
@@ -1726,8 +1823,8 @@ json state_t::ToJSON(bool isPreset) const
             "oscilloscope", json::object
             ({
                 { "xyMode", _XYMode },
-                { "xGain", _XGain },
-                { "yGain", _YGain },
+                { "xGain", _XInputGain },
+                { "yGain", _YInputGain },
 
                 { "rotation", _Rotation },
                 { "frameCount", _FrameCount },
@@ -1736,12 +1833,23 @@ json state_t::ToJSON(bool isPreset) const
                     ({
                         { "enabled", _HasPhosphorDecay },
                         { "blurSigma", _BlurSigma },
-                        { "decayFactor", _DecayFactor },
+                        { "afterglow", _Afterglow },
                     })
                 },
 
                 { "downmix", _Downmix },
                 { "zeroCrossingTrigger", _ZeroCrossingTrigger },
+            })
+        ),
+
+        json::object_t::value_type
+        (
+            "goniometer", json::object
+            ({
+                { "colorMode", _GoniometerColorMode },
+                { "lowVisualGain", _LowVisualGain },
+                { "midVisualGain", _MidVisualGain },
+                { "highVisualGain", _HighVisualGain },
             })
         ),
 
@@ -1814,28 +1922,27 @@ json state_t::ToJSON(bool isPreset) const
         // Frequencies
         json::object_t::value_type
         (
-            "frequencies",
-                json::object
-                ({
-                    { "distribution", _FrequencyDistribution },
+            "frequencies", json::object
+            ({
+                { "distribution", _FrequencyDistribution },
 
-                    { "bandCount", _BandCount },
-                    { "melBandCount", _MelBandCount },
+                { "bandCount", _BandCount },
+                { "melBandCount", _MelBandCount },
 
-                    { "loFrequency", _LoFrequency },
-                    { "hiFrequency", _HiFrequency },
+                { "loFrequency", _LoFrequency },
+                { "hiFrequency", _HiFrequency },
 
-                    { "loNote", _LoNote },
-                    { "hiNote", _HiNote },
+                { "loNote", _LoNote },
+                { "hiNote", _HiNote },
 
-                    { "bandsPerOctave", _BandsPerOctave },
-                    { "tuningPitch", _TuningPitch },
-                    { "transpose", _Transpose },
+                { "bandsPerOctave", _BandsPerOctave },
+                { "tuningPitch", _TuningPitch },
+                { "transpose", _Transpose },
 
-                    { "scalingFunction", _ScalingFunction },
-                    { "skewFactor", _SkewFactor },
-                    { "bandwidth", _Bandwidth },
-                })
+                { "scalingFunction", _ScalingFunction },
+                { "skewFactor", _SkewFactor },
+                { "bandwidth", _Bandwidth },
+            })
         ),
 
         // Acoustic Filters
@@ -1843,26 +1950,37 @@ json state_t::ToJSON(bool isPreset) const
         (
             "acousticFilters", json::object
             ({
-                { "weightingType", _WeightingType },
+                { "weightingType",       _WeightingType },
 
                 { "slopeFunctionOffset", _FrequencyShift },
-                { "slope", _FrequencyTilt },
-                { "slopeOffset", _FrequencyTiltPivot },
+                { "slope",               _FrequencyTilt },
+                { "slopeOffset",         _FrequencyTiltPivot },
 
-                { "equalizeAmount", _EqualizationAmount},
-                { "equalizeOffset", _EqualizationFreqScale },
-                { "equalizeDepth", _EqualizationDepth },
+                { "equalizeAmount",      _EqualizationAmount},
+                { "equalizeOffset",      _EqualizationFreqScale },
+                { "equalizeDepth",       _EqualizationDepth },
 
-                { "weightingAmount", _WeightingAmount },
+                { "weightingAmount",     _WeightingAmount },
+            })
+        ), 
+
+        // Crossover Filters
+        json::object_t::value_type
+        (
+            "crossoverFilters", json::object
+            ({
+                { "mode",     _CrossoverMode },
+                { "lowBand",  _LowBand },
+                { "highBand", _HighBand },
             })
         ), 
 
         // Common
-        { "smoothingMethod", _SmoothingMethod },
-        { "smoothingFactor", _SmoothingFactor },
+        { "smoothingMethod",      _SmoothingMethod },
+        { "smoothingFactor",      _SmoothingFactor },
 
-        { "showToolTipsAlways", _ShowToolTipsAlways },
-        { "suppressMirrorImage", _SuppressMirrorImage },
+        { "showToolTipsAlways",   _ShowToolTipsAlways },
+        { "suppressMirrorImage",  _SuppressMirrorImage },
         { "visualizeDuringPause", _VisualizeDuringPause },
 
         json::object_t::value_type
@@ -1880,6 +1998,7 @@ json state_t::ToJSON(bool isPreset) const
                 { "showArtworkOnBackground", _ShowArtworkOnBackground },
 
                 { "fitMode", _FitMode },
+                { "allowUpscaling", _AllowUpscaling },
                 { "fitWindow", _FitWindow },
                 { "opacity", _ArtworkOpacity },
                 { "blurSigma", _ArtworkBlurSigma },
@@ -1909,7 +2028,10 @@ json state_t::ToJSON(bool isPreset) const
             })
         ), 
 
+        { "channelOrder", _ChannelOrder },
+
 //      { "channelPair", _ChannelPair }, // FIXME: Shouldn't this be tied to a graph?
+
 
         // Styles
         { "styles", _StyleManager.ToJSON() },
@@ -1934,7 +2056,7 @@ void state_t::ConvertColorSettings() noexcept
     {
         style_t style = *_StyleManager.GetStyle(VisualElement::GraphBackground);
 
-        style._CustomGradientStops = _CustomGradientStops_Deprecated;
+        style._CustomGradient = gradient_t::ConvertFormat(_CustomGradientStops_Deprecated);
 
         style._ColorScheme = _ColorScheme_Deprecated;
 
@@ -1966,8 +2088,8 @@ void state_t::ConvertColorSettings() noexcept
     {
         style_t style = *_StyleManager.GetStyle(VisualElement::VerticalGridLine);
 
-        style._CustomColor = _XLineColor_Deprecated;
-        style._CustomGradientStops = _CustomGradientStops_Deprecated;
+        style._CustomColor    = _XLineColor_Deprecated;
+        style._CustomGradient = gradient_t::ConvertFormat(_CustomGradientStops_Deprecated);
 
         style._ColorScheme = _ColorScheme_Deprecated;
 
@@ -1982,14 +2104,14 @@ void state_t::ConvertColorSettings() noexcept
                 style._CurrentColor = style._CustomColor;
             }
 
-        style._CurrentGradientStops = style._CustomGradientStops;
+        style._CurrentGradientStops = gradient_t::ConvertFormat(style._CustomGradient);
     }
 
     {
         style_t style = *_StyleManager.GetStyle(VisualElement::XAxisText);
 
-        style._CustomColor = _XTextColor_Deprecated;
-        style._CustomGradientStops = _CustomGradientStops_Deprecated;
+        style._CustomColor    = _XTextColor_Deprecated;
+        style._CustomGradient = gradient_t::ConvertFormat(_CustomGradientStops_Deprecated);
 
         style._ColorScheme = _ColorScheme_Deprecated;
 
@@ -2004,14 +2126,14 @@ void state_t::ConvertColorSettings() noexcept
                 style._CurrentColor = style._CustomColor;
             }
 
-        style._CurrentGradientStops = style._CustomGradientStops;
+        style._CurrentGradientStops = gradient_t::ConvertFormat(style._CustomGradient);
     }
 
     {
         style_t style = *_StyleManager.GetStyle(VisualElement::HorizontalGridLine);
 
-        style._CustomColor = _YLineColor_Deprecated;
-        style._CustomGradientStops = _CustomGradientStops_Deprecated;
+        style._CustomColor    = _YLineColor_Deprecated;
+        style._CustomGradient = gradient_t::ConvertFormat(_CustomGradientStops_Deprecated);
 
         style._ColorScheme = _ColorScheme_Deprecated;
 
@@ -2026,14 +2148,14 @@ void state_t::ConvertColorSettings() noexcept
                 style._CurrentColor = style._CustomColor;
             }
 
-        style._CurrentGradientStops = style._CustomGradientStops;
+        style._CurrentGradientStops = gradient_t::ConvertFormat(style._CustomGradient);
     }
 
     {
         style_t style = *_StyleManager.GetStyle(VisualElement::YAxisText);
 
-        style._CustomColor = _YTextColor_Deprecated;
-        style._CustomGradientStops = _CustomGradientStops_Deprecated;
+        style._CustomColor    = _YTextColor_Deprecated;
+        style._CustomGradient = gradient_t::ConvertFormat(_CustomGradientStops_Deprecated);
 
         style._ColorScheme = _ColorScheme_Deprecated;
 
@@ -2048,26 +2170,26 @@ void state_t::ConvertColorSettings() noexcept
                 style._CurrentColor = style._CustomColor;
             }
 
-        style._CurrentGradientStops = style._CustomGradientStops;
+        style._CurrentGradientStops = gradient_t::ConvertFormat(style._CustomGradient);
     }
 
     {
         style_t style = *_StyleManager.GetStyle(VisualElement::BarArea);
 
-        style._CustomGradientStops = _CustomGradientStops_Deprecated;
+        style._CustomGradient = gradient_t::ConvertFormat(_CustomGradientStops_Deprecated);
 
         style._ColorScheme = _ColorScheme_Deprecated;
 
-            style._ColorSource = ColorSource::Gradient;
-            style._CurrentColor = D2D1::ColorF(0, 0.f);
+            style._ColorSource           = ColorSource::Gradient;
+            style._CurrentColor          = D2D1::ColorF(0, 0.f); // Transparent
             style._CurrentGradientStops = SelectGradientStops_Deprecated(_ColorScheme_Deprecated);
     }
 
     {
         style_t style= *_StyleManager.GetStyle(VisualElement::BarDarkBackground);
 
-        style._CustomColor = _DarkBandColor_Deprecated;
-        style._CustomGradientStops = _CustomGradientStops_Deprecated;
+        style._CustomColor    = _DarkBandColor_Deprecated;
+        style._CustomGradient = gradient_t::ConvertFormat(_CustomGradientStops_Deprecated);
 
             style._ColorSource = ColorSource::Solid;
             style._CurrentColor = style._CustomColor;
@@ -2076,8 +2198,8 @@ void state_t::ConvertColorSettings() noexcept
     {
         style_t style = *_StyleManager.GetStyle(VisualElement::BarLightBackground);
 
-        style._CustomColor = _LightBandColor_Deprecated;
-        style._CustomGradientStops = _CustomGradientStops_Deprecated;
+        style._CustomColor    = _LightBandColor_Deprecated;
+        style._CustomGradient = gradient_t::ConvertFormat(_CustomGradientStops_Deprecated);
 
             style._ColorSource = ColorSource::Solid;
             style._CurrentColor = style._CustomColor;
@@ -2086,15 +2208,15 @@ void state_t::ConvertColorSettings() noexcept
     {
         style_t style = *_StyleManager.GetStyle(VisualElement::CurveLine);
 
-        style._CustomColor = _LineColor_Deprecated;
-        style._CustomGradientStops = _CustomGradientStops_Deprecated;
+        style._CustomColor    = _LineColor_Deprecated;
+        style._CustomGradient = gradient_t::ConvertFormat(_CustomGradientStops_Deprecated);
 
         style._ColorScheme = _ColorScheme_Deprecated;
 
             if (!_UseCustomLineColor_Deprecated)
             {
-                style._ColorSource = ColorSource::Gradient;
-                style._CurrentColor = D2D1::ColorF(0, 0.f);
+                style._ColorSource          = ColorSource::Gradient;
+                style._CurrentColor         = D2D1::ColorF(0, 0.f); // Transparent
                 style._CurrentGradientStops = SelectGradientStops_Deprecated(_ColorScheme_Deprecated);
             }
             else
@@ -2109,12 +2231,12 @@ void state_t::ConvertColorSettings() noexcept
     {
         style_t style = *_StyleManager.GetStyle(VisualElement::CurveArea);
 
-        style._CustomGradientStops = _CustomGradientStops_Deprecated;
+        style._CustomGradient = gradient_t::ConvertFormat(_CustomGradientStops_Deprecated);
 
         style._ColorScheme = _ColorScheme_Deprecated;
 
-            style._ColorSource = ColorSource::Gradient;
-            style._CurrentColor = D2D1::ColorF(0, 0.f);
+            style._ColorSource          = ColorSource::Gradient;
+            style._CurrentColor         = D2D1::ColorF(0, 0.f); // Transparent
             style._CurrentGradientStops = SelectGradientStops_Deprecated(_ColorScheme_Deprecated);
             style._Opacity = _AreaOpacity_Deprecated;
     }
@@ -2147,7 +2269,7 @@ void state_t::ConvertGraphDescription() noexcept
 /// <summary>
 /// Helper method to initialize the gradient stops vector during conversion.
 /// </summary>
-const gradient_stops_t state_t::SelectGradientStops_Deprecated(ColorScheme colorScheme) const noexcept
+const std::vector<D2D1_GRADIENT_STOP> state_t::SelectGradientStops_Deprecated(ColorScheme colorScheme) const noexcept
 {
     if (colorScheme == ColorScheme::Custom)
         return _CustomGradientStops_Deprecated;
@@ -2155,7 +2277,7 @@ const gradient_stops_t state_t::SelectGradientStops_Deprecated(ColorScheme color
     if (colorScheme == ColorScheme::Artwork)
         return _ArtworkGradientStops;
 
-    return GetBuiltInGradientStops(colorScheme);
+    return gradient_t::GetBuiltIn(colorScheme);
 }
 
 cfg_int CfgLogLevel({ 0xf06c6211, 0x1617, 0x41ac, { 0xaf, 0xbe, 0x7f, 0xb3, 0xda, 0xef, 0x6, 0x69 } }, DefaultCfgLogLevel);

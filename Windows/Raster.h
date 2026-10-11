@@ -9,9 +9,6 @@
 
 #include <SDKDDKVer.h>
 #include <Windows.h>
-#include <atlbase.h>
-
-#include "WIC.h"
 
 /// <summary>
 /// Represents a bitmap image.
@@ -35,6 +32,6 @@ public:
     UINT BitsPerPixel;
 
 private:
-    CComPtr<IWICBitmap> _Bitmap;
-    CComPtr<IWICBitmapLock> _Lock;
+    ComPtr<IWICBitmap> _Bitmap;
+    ComPtr<IWICBitmapLock> _Lock;
 };

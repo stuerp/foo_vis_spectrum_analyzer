@@ -1,5 +1,5 @@
 
-/** $VER: FrameCounter.cpp (2024.03.31) P. Stuer **/
+/** $VER: FrameCounter.cpp (2026.09.25) P. Stuer **/
 
 #include "pch.h"
 #include "FrameCounter.h"
@@ -44,7 +44,7 @@ HRESULT frame_counter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 {
     HRESULT hr = CreateDeviceSpecificResources(deviceContext);
 
-    if (!SUCCEEDED(hr))
+    if (FAILED(hr))
         return hr;
 
     const FLOAT Inset = 4.f;
@@ -53,7 +53,7 @@ HRESULT frame_counter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 
     hr = ::StringCchPrintfW(Text, _countof(Text), L"%.2f fps", GetFPS());
 
-    if (!SUCCEEDED(hr))
+    if (FAILED(hr))
         return hr;
 
     const D2D1_RECT_F Rect = { _ClientWidth - 2.f - (Inset + _TextWidth + Inset), 2.f, _ClientWidth - 2.f, 2.f + _TextHeight };
@@ -62,14 +62,14 @@ HRESULT frame_counter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
     {
         _Brush->SetColor(D2D1::ColorF(1.0f, 1.0f, 1.0f, 0.2f));
 
-        deviceContext->FillRoundedRectangle(D2D1::RoundedRect(Rect, Inset, Inset), _Brush);
+        deviceContext->FillRoundedRectangle(D2D1::RoundedRect(Rect, Inset, Inset), _Brush.Get());
     }
 
     // Draw the text.
     {
         _Brush->SetColor(D2D1::ColorF(D2D1::ColorF::White));
 
-        deviceContext->DrawText(Text, (UINT) ::wcsnlen(Text, _countof(Text)), _TextFormat, Rect, _Brush, D2D1_DRAW_TEXT_OPTIONS_NONE);
+        deviceContext->DrawText(Text, (UINT) ::wcsnlen(Text, _countof(Text)), _TextFormat.Get(), Rect, _Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_NONE);
     }
 
     return hr;
@@ -83,35 +83,35 @@ HRESULT frame_counter_t::CreateDeviceIndependentResources() noexcept
     if (_TextFormat != nullptr)
         return S_OK;
 
-    const FLOAT FontSize = ToDIPs(_FontSize); // In DIPs
+    const FLOAT FontSize = PointsToDIPs(_FontSize); // In DIPs
 
-    HRESULT hr = _DirectWrite.Factory->CreateTextFormat(_FontFamilyName.c_str(), NULL, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, FontSize, L"", &_TextFormat);
+    HRESULT hr = DirectWriteFactory::Get()->CreateTextFormat(_FontFamilyName.c_str(), NULL, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, FontSize, L"", _TextFormat.GetAddressOf());
 
-    if (SUCCEEDED(hr))
-    {
-        _TextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
-        _TextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
-        _TextFormat->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
+    if (FAILED(hr))
+        return hr;
 
-        const WCHAR Text[] = L"999.99 fps";
+    _TextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
+    _TextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
+    _TextFormat->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
 
-        CComPtr<IDWriteTextLayout> TextLayout;
+    const WCHAR Text[] = L"999.99 fps";
 
-        hr = _DirectWrite.Factory->CreateTextLayout(Text, (UINT32) ::wcslen(Text), _TextFormat, 1920.f, 1080.f, &TextLayout);
+    ComPtr<IDWriteTextLayout> TextLayout;
 
-        if (SUCCEEDED(hr))
-        {
-            DWRITE_TEXT_METRICS TextMetrics = { };
+    hr = DirectWriteFactory::Get()->CreateTextLayout(Text, (UINT32) ::wcslen(Text), _TextFormat.Get(), 1920.f, 1080.f, TextLayout.GetAddressOf());
 
-            hr = TextLayout->GetMetrics(&TextMetrics);
+    if (FAILED(hr))
+        return hr;
 
-            if (SUCCEEDED(hr))
-            {
-                _TextWidth  = TextMetrics.width;
-                _TextHeight = TextMetrics.height;
-            }
-        }
-    }
+    DWRITE_TEXT_METRICS TextMetrics = { };
+
+    hr = TextLayout->GetMetrics(&TextMetrics);
+
+    if (FAILED(hr))
+        return hr;
+
+    _TextWidth  = TextMetrics.width;
+    _TextHeight = TextMetrics.height;
 
     return hr;
 }
@@ -121,19 +121,18 @@ HRESULT frame_counter_t::CreateDeviceIndependentResources() noexcept
 /// </summary>
 void frame_counter_t::DeleteDeviceIndependentResources() noexcept
 {
-    _TextFormat.Release();
+    _TextFormat.Reset();
 }
 
 /// <summary>
 /// Creates resources which are bound to a particular D3D device.
-/// It's all centralized here, in case the resources need to be recreated in case of D3D device loss (eg. display change, remoting, removal of video card, etc).
 /// </summary>
 HRESULT frame_counter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept
 {
     if (_Brush != nullptr)
         return S_OK;
 
-    HRESULT hr = deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::White), &_Brush);
+    HRESULT hr = deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::White), _Brush.GetAddressOf());
 
     return hr;
 }
@@ -143,5 +142,5 @@ HRESULT frame_counter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * devi
 /// </summary>
 void frame_counter_t::DeleteDeviceSpecificResources() noexcept
 {
-    _Brush.Release();
+    _Brush.Reset();
 }

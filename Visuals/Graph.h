@@ -1,5 +1,5 @@
 
-/** $VER: Graph.h (2026.06.10) P. Stuer - Implements a graph on which the visualizations are rendered. **/
+/** $VER: Graph.h (2026.10.11) P. Stuer - Implements a graph on which the visualizations are rendered. **/
 
 #pragma once
 
@@ -12,8 +12,8 @@
 #include <Windows.h>
 
 #include "Artwork.h"
-
 #include "Element.h"
+#include "RenderContext.h"
 #include "Visualization.h"
 
 /// <summary>
@@ -22,19 +22,23 @@
 class graph_t : public element_t
 {
 public:
-    graph_t();
+    graph_t(state_t & state, render_context_t & renderContext) : _State(state), _RenderContext(renderContext)
+    {
+        __super::_State = &state;
+    }
 
-    virtual ~graph_t() noexcept;
+    virtual ~graph_t() = default;
 
     // element_t
     void Move(const D2D1_RECT_F & rect) noexcept override final;
     void Render(ID2D1DeviceContext * deviceContext) noexcept override final { };
     void Reset() noexcept override final;
-    void Release() noexcept override final;
 
-    void Initialize(state_t * state, graph_options_t * graphOptions, bool isFirst, bool isLast) noexcept;
+    void Configure(graph_options_t * graphOptions, bool isFirst, bool isLast) noexcept;
     void Process(const audio_chunk & chunk) noexcept;
-    void Render(ID2D1DeviceContext * deviceContext, artwork_t & artwork) noexcept;
+    void Render(artwork_t & artwork) noexcept;
+
+    void Initialize() noexcept;
 
     void InitToolInfo(HWND hParent, TTTOOLINFOW & ti) const noexcept;
 
@@ -60,20 +64,22 @@ public:
 
     bool GetToolTipText(FLOAT x, FLOAT y, std::wstring & toolTip, size_t & index) const noexcept;
 
-    void OnConfigurationChange(ConfigurationChanges configurationChanges) noexcept override final;
+    void OnConfigurationChanged(ConfigurationChanges configurationChanges) noexcept override final;
 
 private:
     HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept;
     void DeleteDeviceSpecificResources() noexcept;
 
-    void RenderBackground(ID2D1DeviceContext * deviceContext, artwork_t & artwork) noexcept;
-    void RenderForeground(ID2D1DeviceContext * deviceContext) noexcept;
-    void RenderDescription(ID2D1DeviceContext * deviceContext) noexcept;
+    void RenderBackground(artwork_t & artwork) noexcept;
+    void RenderDescription() noexcept;
 
 public:
     analysis_t _Analysis;
 
 private:
+    state_t & _State;
+    render_context_t & _RenderContext;
+
     std::wstring _Description;
     std::unique_ptr<visualization_t> _Visualization;
 
@@ -84,6 +90,6 @@ private:
     style_t _DescriptionBackgroundStyle;
 
 #ifdef _DEBUG
-    CComPtr<ID2D1SolidColorBrush> _DebugBrush;
+    ComPtr<ID2D1SolidColorBrush> _DebugBrush;
 #endif
 };

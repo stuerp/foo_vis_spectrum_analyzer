@@ -1,5 +1,5 @@
 
-/** $VER: Analysis.h (2026.09.09) P. Stuer **/
+/** $VER: Analysis.h (2026.10.100) P. Stuer **/
 
 #pragma once
 
@@ -12,7 +12,6 @@
 #include <Windows.h>
 
 #include "State.h"
-#include "Chrono.h"
 
 #include "WindowFunctions.h"
 
@@ -28,8 +27,9 @@
 /// </summary>
 struct measurement_t
 {
-    measurement_t(const WCHAR * _channelName) noexcept : ChannelName(_channelName) { }
+    measurement_t(Channels channel, const WCHAR * _channelName) noexcept : Channel(channel), ChannelName(_channelName) { }
 
+    Channels Channel;
     std::wstring ChannelName;
 };
 
@@ -38,7 +38,7 @@ struct measurement_t
 /// </summary>
 struct peak_measurement_t : measurement_t
 {
-    peak_measurement_t(const WCHAR * channelName) noexcept : measurement_t(channelName)
+    peak_measurement_t(Channels channel, const WCHAR * channelName) noexcept : measurement_t(channel, channelName)
     {
         HoldTime = 0.;
         FallRate = 0.;
@@ -75,7 +75,7 @@ struct peak_measurement_t : measurement_t
 /// </summary>
 struct bit_measurement_t : measurement_t
 {
-    bit_measurement_t(const WCHAR * channelName, size_t bitCount) noexcept : measurement_t(channelName)
+    bit_measurement_t(Channels channel, const WCHAR * channelName, size_t bitCount) noexcept : measurement_t(channel, channelName)
     {
         BitCounts.resize(bitCount, 0.);
     }
@@ -98,10 +98,12 @@ public:
 
     virtual ~analysis_t() noexcept { Reset(); };
 
-    void Initialize(const state_t * state, const graph_options_t * settings) noexcept;
+    void Configure(const state_t * state, const graph_options_t * settings) noexcept;
     void Process(const audio_chunk & chunk) noexcept;
 
     void Reset() noexcept;
+
+    void ResetFFTPeaks() noexcept;
     void ResetPeakMeasurements() noexcept;
     void ResetRMSDependentValues() noexcept;
 
@@ -117,6 +119,7 @@ private:
     void GenerateOctaveFrequencyBands();
     void GenerateAveePlayerFrequencyBands();
     void GenerateMelFrequencyBands();
+    void GenerateLogFrequencyBands();
 
     void ApplyAcousticWeighting() noexcept;
 
@@ -134,7 +137,7 @@ private:
 
     void InitializePeakMeasurements(uint32_t channelMask) noexcept;
 
-    // Oscilloscope
+    // Oscilloscope / Goniometer
     void OscilloscopeProcessing(const audio_chunk & chunk) noexcept;
 
     // Bit Meter
@@ -194,7 +197,7 @@ public:
     frequency_bands_t _FrequencyBands;
 
     // Peak meter
-    uint32_t _PeakMeasuredChannels;
+    uint32_t _PeakActiveChannelMask;
     std::vector<peak_measurement_t> _PeakMeasurements;
 
     double _RMSTimeElapsed; // Elapsed time in the current RMS window (in seconds).
@@ -211,7 +214,7 @@ public:
     double _Phase;          // [0, 1], 0.5 = Center
 
     // Bit Meter
-    uint32_t _BitMeasuredChannels;
+    uint32_t _BitActiveChannelMask;
     std::vector<bit_measurement_t> _BitMeasurements;
 
     static const uint32_t ChannelPairs[6];
@@ -222,5 +225,5 @@ private:
     static constexpr double Amax = M_SQRT1_2;
     const double dBCorrection = -20. * std::log10(Amax); // 3.01 dB;
 
-    chrono_t _Chrono;
+    msc::chrono_t _Chrono;
 };

@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2026.09.09) P. Stuer **/
+/** $VER: Resources.h (2026.10.11) P. Stuer **/
 
 #pragma once
 
@@ -7,12 +7,12 @@
 #define TOSTRING(x) TOSTRING_IMPL(x)
 
 #define NUM_FILE_MAJOR          0
-#define NUM_FILE_MINOR          12
+#define NUM_FILE_MINOR          13
 #define NUM_FILE_PATCH          0
 #define NUM_FILE_PRERELEASE     0
 
 #define NUM_PRODUCT_MAJOR       0
-#define NUM_PRODUCT_MINOR       12
+#define NUM_PRODUCT_MINOR       13
 #define NUM_PRODUCT_PATCH       0
 #define NUM_PRODUCT_PRERELEASE  0
 
@@ -201,7 +201,7 @@
 
 #pragma endregion
 
-#pragma region Filters
+// Weighing Filter
 
 #define IDC_FILTERS_GROUP               2500
 
@@ -228,7 +228,11 @@
 #define IDC_WT_AMT                      2582
 #define IDC_WT_AMT_SPIN                 2584
 
-#pragma endregion
+// Crossover Filter
+
+#define IDC_CROSSOVER_MODE              2600
+#define IDC_LOW_BAND                    2602
+#define IDC_HIGH_BAND                   2604
 
 /** Common **/
 
@@ -259,6 +263,7 @@
 
 #define IDC_FIT_MODE_LBL                6084
 #define IDC_FIT_MODE                    6086
+#define IDC_ALLOW_UPSCALING             6124
 #define IDC_FIT_WINDOW                  6088
 
 #define IDC_ARTWORK_OPACITY             6090
@@ -323,11 +328,13 @@
 #define IDC_CHANNELS                    5132
 
 #define IDC_ALL_CHANNELS                5134
-#define IDC_NO_CHANNELS                 5136
+#define IDC_CHANNEL_UP                  5136
+#define IDC_CHANNEL_DOWN                5138
+#define IDC_NO_CHANNELS                 5140
 
-#define IDC_CHANNEL_PAIRS               5138
+#define IDC_CHANNEL_PAIRS               5142
 
-#define IDC_SWAP_CHANNELS               5140
+#define IDC_SWAP_CHANNELS               5144
 
 #pragma endregion
 
@@ -371,8 +378,6 @@
 #define IDC_VISUALIZATION               7102
 
 // Peak Indicators
-#define IDC_PEAK_INDICATORS             7104
-
 #define IDC_PEAK_MODE_LBL               7108
 #define IDC_PEAK_MODE                   7110
 
@@ -382,9 +387,9 @@
 #define IDC_ACCELERATION_LBL            7116
 #define IDC_FALL_RATE                   7118
 
-// LEDs
-#define IDC_LEDS                        7120
+#define IDC_RESET_PEAKS                 7119
 
+// LEDs
 #define IDC_LED_MODE                    7122
 #define IDC_LED_SIZE_LBL                7124
 #define IDC_LED_SIZE                    7126
@@ -392,12 +397,7 @@
 #define IDC_LED_GAP                     7130
 #define IDC_LED_INTEGRAL_SIZE           7132
 
-// Bars
-#define IDC_BARS                        7200
-
 // Radial Bars
-
-#define IDC_RADIAL_BARS                 7190
 
 #define IDC_INNER_RADIUS_LBL            7192
 #define IDC_INNER_RADIUS                7193
@@ -410,16 +410,12 @@
 
 // Spectrogram
 
-#define IDC_SPECTROGRAM                 7150
-
 #define IDC_SCROLLING_SPECTROGRAM       7152
 #define IDC_HORIZONTAL_SPECTROGRAM      7154
 #define IDC_SPECTRUM_BAR_METRICS        7156
 #define IDC_SPECTROGRAM_LEGEND          7158
 
 // Peak Meter
-
-#define IDC_PEAK_METER                  7160
 
 #define IDC_HORIZONTAL_PEAK_METER       7162
 #define IDC_RMS_PLUS_3                  7164
@@ -439,9 +435,7 @@
 
 // Level Meter
 
-#define IDC_LEVEL_METER                 7230
-
-#define IDC_HORIZONTAL_LEVEL_METER      7232
+#define IDC_HORIZONTAL_LEVEL_METER      7186
 
 // Oscilloscope
 
@@ -449,25 +443,26 @@
 
 #define IDC_XY_MODE                     7202
 
-#define IDC_X_GAIN_LBL                  7204
 #define IDC_X_GAIN                      7206
-#define IDC_Y_GAIN_LBL                  7208
 #define IDC_Y_GAIN                      7210
 
-#define IDC_ROTATION_LBL                7212
 #define IDC_ROTATION                    7214
 
 #define IDC_FRAME_COUNT                 7216
 
 #define IDC_PHOSPHOR_DECAY              7218
 
-#define IDC_BLUR_SIGMA_LBL              7220
 #define IDC_BLUR_SIGMA                  7222
-#define IDC_DECAY_FACTOR_LBL            7224
-#define IDC_DECAY_FACTOR                7226
+#define IDC_AFTERGLOW                   7226
 
 #define IDC_DOWNMIX                     7228
 #define IDC_ZERO_CROSSING               7229
+
+#define IDC_GONIOMETER_MODE             7230
+
+#define IDC_LOW_VISUAL_GAIN             7232
+#define IDC_MID_VISUAL_GAIN             7233
+#define IDC_HIGH_VISUAL_GAIN            7234
 
 // Bit Meter
 
@@ -487,24 +482,28 @@
 #define IDC_COLOR_BUTTON                7508
 #define IDC_COLOR_SCHEME                7510
 
-#define IDC_GRADIENT                    7534
-#define IDC_COLOR_LIST                  7536
-#define IDC_ADD                         7538
-#define IDC_REMOVE                      7540
-#define IDC_REVERSE                     7542
+#define IDC_GRADIENT_SLIDER             7512
+#define IDC_GRADIENT                    7514
+#define IDC_GRADIENT_COLORS             7516
+#define IDC_ADD                         7518
+#define IDC_REMOVE                      7520
+#define IDC_REVERSE                     7522
 
-#define IDC_OPACITY_LBL                 7514
-#define IDC_OPACITY                     7516
-#define IDC_OPACITY_SPIN                7518
-#define IDC_OPACITY_UNIT                7520
+#define IDC_GRADIENT_COLOR_SOURCE       7524
+#define IDC_GRADIENT_COLOR_INDEX        7526
 
-#define IDC_THICKNESS_LBL               7522
-#define IDC_THICKNESS                   7524
-#define IDC_THICKNESS_SPIN              7526
+#define IDC_OPACITY_LBL                 7528
+#define IDC_OPACITY                     7530
+#define IDC_OPACITY_SPIN                7532
+#define IDC_OPACITY_UNIT                7534
 
-#define IDC_POSITION                    7544
-#define IDC_POSITION_LBL                7546
-#define IDC_SPREAD                      7548
+#define IDC_THICKNESS_LBL               7536
+#define IDC_THICKNESS                   7538
+#define IDC_THICKNESS_SPIN              7540
+
+#define IDC_POSITION                    7542
+#define IDC_POSITION_LBL                7544
+#define IDC_SPREAD                      7546
 
 #define IDC_HORIZONTAL_GRADIENT         7550
 #define IDC_AMPLITUDE_BASED             7552

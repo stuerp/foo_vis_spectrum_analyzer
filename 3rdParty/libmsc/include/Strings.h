@@ -1,5 +1,5 @@
 
-/** $VER: String.h (2025.09.01) P. Stuer - String support routines **/
+/** $VER: Strings.h (2025.09.01) P. Stuer - String support routines **/
 
 #pragma once
 

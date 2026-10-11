@@ -1,5 +1,5 @@
 
-/** $VER: StylesPage.h (2026.06.15) P. Stuer - Declares a configuration dialog page. **/
+/** $VER: StylesPage.h (2026.10.01) P. Stuer - Declares a configuration dialog page. **/
 
 #pragma once
 
@@ -12,14 +12,14 @@
 class styles_page_t : public CDialogResize<styles_page_t>, public page_t
 {
 public:
-    styles_page_t(int id) : page_t(id), _SelectedStyle() { }
+    styles_page_t(int id) : page_t(id) { }
 
     styles_page_t(const styles_page_t &) = delete;
     styles_page_t & operator=(const styles_page_t &) = delete;
     styles_page_t(styles_page_t &&) = delete;
     styles_page_t & operator=(styles_page_t &&) = delete;
 
-    virtual ~styles_page_t() noexcept { }
+    virtual ~styles_page_t() = default;
 
     BOOL OnInitDialog(CWindow w, LPARAM lParam) noexcept override final;
 
@@ -29,12 +29,16 @@ public:
     void OnButtonClick(UINT, int, CWindow) noexcept override final;
     void OnDoubleClick(UINT code, int id, CWindow) noexcept override final;
 
-    LRESULT OnDeltaPos(LPNMHDR nmhd) noexcept final;
+    LRESULT OnDeltaPos(LPNMHDR nmhd) noexcept override final;
     LRESULT OnChanged(LPNMHDR nmhd) noexcept override final;
+
+    LRESULT OnPositionChanging(LPNMHDR nmh) noexcept;
 
     LRESULT OnConfigurationChanged(UINT msg, WPARAM wParam, LPARAM lParam) noexcept override final;
 
     BEGIN_MSG_MAP(styles_page_t)
+        NOTIFY_CODE_HANDLER_EX(CBN_POSITION_CHANGING, OnPositionChanging)
+
         CHAIN_MSG_MAP(page_t)
         CHAIN_MSG_MAP(CDialogResize<styles_page_t>)
     END_MSG_MAP()
@@ -43,7 +47,7 @@ public:
         DLGRESIZE_CONTROL(IDC_STYLES, DLSZ_SIZE_Y)
 
         DLGRESIZE_CONTROL(IDC_GRADIENT, DLSZ_SIZE_Y)
-        DLGRESIZE_CONTROL(IDC_COLOR_LIST, DLSZ_SIZE_Y | DLSZ_REPAINT)
+        DLGRESIZE_CONTROL(IDC_GRADIENT_COLORS, DLSZ_SIZE_Y | DLSZ_REPAINT)
 
         DLGRESIZE_CONTROL(IDC_OPACITY_LBL, DLSZ_MOVE_Y)
         DLGRESIZE_CONTROL(IDC_OPACITY, DLSZ_MOVE_Y)
@@ -63,27 +67,27 @@ public:
     END_DLGRESIZE_MAP()
 
 private:
-    void InitializeControls() noexcept;
-    void UpdateControls() noexcept override;
-    void TerminateControls() noexcept;
+    void InitializeControls() noexcept final;
+    void UpdateControls() noexcept override final;
+    void TerminateControls() noexcept final;
 
     void InitializeStyles() noexcept;
     void UpdateColorControls() noexcept;
-    void UpdateGradientStopPositons(style_t * style, size_t index) const noexcept;
+    void UpdateGradientStopPositons(std::vector<gradient_stop_t> & gs, size_t index) const noexcept;
+    void UpdateColorIndexControl(const style_t * style, int colorIndex) noexcept;
 
 private:
-    std::vector<std::shared_ptr<CNumericEdit>> _NumericEdits;
     std::vector<VisualElement> _ActiveStyles;   // The styles that are relevant for the current visualization.
-    size_t _SelectedStyle;                      // Index of the selected style in the listbox.
+    size_t _SelectedStyle { };                  // Index of the selected style in the listbox.
 
-    CColorButton _Color;
-    CColorButton _Gradient;
-    CColorListBox _Colors;
+    color_button_t _ColorButton;
+    color_button_t _GradientButton;
+    color_list_box_t _ColorListBox;
 
     style_manager_t * _StyleManager;
 
     // An index of the styles to determine the display order in the configuration dialog.
-    const VisualElement _StyleDisplayOrder[(size_t) VisualElement::Count] =
+    static constexpr VisualElement _StyleDisplayOrder[(size_t) VisualElement::Count] =
     {
         VisualElement::GraphBackground,
         VisualElement::GraphDescriptionText,
@@ -139,7 +143,11 @@ private:
         VisualElement::LevelMeterAxis,
 
         // Oscilloscope
-        VisualElement::SignalLine,
+        VisualElement::Signal,
+
+        // Goniometer
+        VisualElement::StaticText,
+        VisualElement::StaticLines,
 
         // Bit Meter
         VisualElement::BarSign,

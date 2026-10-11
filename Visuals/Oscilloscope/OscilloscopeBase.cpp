@@ -1,5 +1,5 @@
 
-/** $VER: OscilloscopeBase.cpp (2026.06.21) P. Stuer - Implements a base class for an oscilloscope. **/
+/** $VER: OscilloscopeBase.cpp (2026.10.10) P. Stuer - Implements a base class for an oscilloscope. **/
 
 #include <pch.h>
 
@@ -10,34 +10,20 @@
 #pragma hdrstop
 
 /// <summary>
-/// Initializes a new instance.
-/// </summary>
-oscilloscope_base_t::oscilloscope_base_t()
-{
-}
-
-/// <summary>
 /// Destroys this instance.
 /// </summary>
 oscilloscope_base_t::~oscilloscope_base_t() noexcept
 {
-    DeleteDeviceSpecificResources();
+    Reset();
 }
 
 /// <summary>
-/// Recalculates parameters that are render target and size-sensitive.
+/// Resets this instance.
 /// </summary>
-void oscilloscope_base_t::Resize() noexcept
+void oscilloscope_base_t::Reset() noexcept
 {
-    if (!_IsResized || (GetWidth() == 0.f) || (GetHeight() == 0.f))
-        return;
-
-    // Release resources that are size dependent.
-    _CompositeBuffer.Release();
-    _BackBuffer.Release();
-    _FrontBuffer.Release();
-
-    _IsResized = false;
+    DeleteDeviceSpecificResources();
+    DeleteDeviceIndependentResources();
 }
 
 /// <summary>
@@ -48,21 +34,24 @@ HRESULT oscilloscope_base_t::CreateDeviceIndependentResources() noexcept
     HRESULT hr = S_OK;
 
     // Create a brush stroke style for the signal.
-    if (SUCCEEDED(hr) && (_SignalStrokeStyle == nullptr))
+    if (_SignalStrokeStyle == nullptr)
     {
         const D2D1_STROKE_STYLE_PROPERTIES StrokeStyleProperties = D2D1::StrokeStyleProperties(D2D1_CAP_STYLE_FLAT, D2D1_CAP_STYLE_FLAT, D2D1_CAP_STYLE_FLAT, D2D1_LINE_JOIN_BEVEL);
 
-        hr = _Direct2D.Factory->CreateStrokeStyle(StrokeStyleProperties, nullptr, 0, &_SignalStrokeStyle);
+        hr = Direct2DFactory::Get()->CreateStrokeStyle(StrokeStyleProperties, nullptr, 0, _SignalStrokeStyle.GetAddressOf());
+
+        if (FAILED(hr))
+            return hr;
     }
 
-    // Create a brush stroke style for the axes and grid that remains fixed during the scaling transformation.
-    if (SUCCEEDED(hr))
+    // Create a brush stroke style for the static content that remains fixed during the scaling transformation.
+    if (_StaticStrokeStyle == nullptr)
     {
         D2D1_STROKE_STYLE_PROPERTIES1 StrokeStyleProperties = D2D1::StrokeStyleProperties1();
 
         StrokeStyleProperties.transformType = D2D1_STROKE_TRANSFORM_TYPE_FIXED; // Prevent stroke scaling
 
-        hr = _Direct2D.Factory->CreateStrokeStyle(StrokeStyleProperties, nullptr, 0, &_AxisStrokeStyle);
+        hr = Direct2DFactory::Get()->CreateStrokeStyle(StrokeStyleProperties, nullptr, 0, _StaticStrokeStyle.GetAddressOf());
     }
 
     return hr;
@@ -73,9 +62,8 @@ HRESULT oscilloscope_base_t::CreateDeviceIndependentResources() noexcept
 /// </summary>
 void oscilloscope_base_t::DeleteDeviceIndependentResources() noexcept
 {
-    _AxisStrokeStyle.Release();
-
-    _SignalStrokeStyle.Release();
+    _StaticStrokeStyle.Reset();
+    _SignalStrokeStyle.Reset();
 }
 
 /// <summary>
@@ -83,191 +71,50 @@ void oscilloscope_base_t::DeleteDeviceIndependentResources() noexcept
 /// </summary>
 HRESULT oscilloscope_base_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept
 {
-    Resize();
+    if (_State->_SizeHasChanged)
+        DeleteDeviceSpecificResources();
 
     HRESULT hr = S_OK;
 
-    if (_SignalLineStyle._Brush == nullptr)
-    {
-        _SignalLineStyle = *_State->_StyleManager.GetStyle(VisualElement::SignalLine);
-
-        _SignalLineStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
-
-        hr = _SignalLineStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
-
-        if (!SUCCEEDED(hr))
-            return hr;
-    }
-
-    if (_XAxisLineStyle._Brush == nullptr)
-    {
-        _XAxisLineStyle = *_State->_StyleManager.GetStyle(VisualElement::XAxisLine);
-
-        _XAxisLineStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
-
-        hr = _XAxisLineStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
-
-        if (!SUCCEEDED(hr))
-            return hr;
-    }
-
-    if (_YAxisLineStyle._Brush == nullptr)
-    {
-        _YAxisLineStyle = *_State->_StyleManager.GetStyle(VisualElement::YAxisLine);
-
-        _YAxisLineStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
-
-        hr = _YAxisLineStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
-
-        if (!SUCCEEDED(hr))
-            return hr;
-    }
-
-    if (_HorizontalGridLineStyle._Brush == nullptr)
-    {
-        _HorizontalGridLineStyle = *_State->_StyleManager.GetStyle(VisualElement::HorizontalGridLine);
-
-        _HorizontalGridLineStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
-
-        hr = _HorizontalGridLineStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
-
-        if (!SUCCEEDED(hr))
-            return hr;
-    }
-
-    if (_VerticalGridLineStyle._Brush == nullptr)
-    {
-        _VerticalGridLineStyle = *_State->_StyleManager.GetStyle(VisualElement::VerticalGridLine);
-
-        _VerticalGridLineStyle.SetColor(_State->_ArtworkDominantColor, _State->_ArtworkGradientStops, _State->_UserInterfaceColors);
-
-        hr = _VerticalGridLineStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
-
-        if (!SUCCEEDED(hr))
-            return hr;
-    }
+#ifdef _DEBUG
+    if (_DebugBrush == nullptr)
+        (void) deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), _DebugBrush.GetAddressOf());
+#endif
 
     if (_DeviceContext == nullptr)
     {
-        CComPtr<ID2D1Device> D2DDevice;
+        ComPtr<ID2D1Device> D2DDevice;
 
-        deviceContext->GetDevice(&D2DDevice);
+        deviceContext->GetDevice(D2DDevice.GetAddressOf());
 
-        hr = D2DDevice->CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_ENABLE_MULTITHREADED_OPTIMIZATIONS, &_DeviceContext);
+        hr = D2DDevice->CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_ENABLE_MULTITHREADED_OPTIMIZATIONS, _DeviceContext.GetAddressOf());
 
-        if (!SUCCEEDED(hr))
+        if (FAILED(hr))
             return hr;
     }
 
-    const D2D1_BITMAP_PROPERTIES1 BitmapProperties = D2D1::BitmapProperties1
-    (
-        D2D1_BITMAP_OPTIONS_TARGET,
-        D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED) // Required for alpha transparency. Otherwise use D2D1_ALPHA_MODE_IGNORE.
-    );
-
-    if (_FrontBuffer == nullptr)
+    if (_OpacityEffect == nullptr)
     {
-        hr = deviceContext->CreateBitmap(D2D1::SizeU((UINT32) _Size.width, (UINT32) _Size.height), nullptr, 0, &BitmapProperties, &_FrontBuffer);
+        hr = _DeviceContext->CreateEffect(CLSID_D2D1Opacity, _OpacityEffect.GetAddressOf());
 
-        if (!SUCCEEDED(hr))
+        if (FAILED(hr))
             return hr;
-
-        _DeviceContext->SetTarget(_FrontBuffer);
-
-        _DeviceContext->BeginDraw();
-
-//      _DeviceContext->Clear(_State->_HasPhosphorDecay ? D2D1::ColorF(D2D1::ColorF::Black) : D2D1::ColorF(D2D1::ColorF::Black, 0.f)); // FIXME: Phosphor decay does not work with alpha transparency.
-        _DeviceContext->Clear(); // Transparent
-
-        hr = _DeviceContext->EndDraw();
-
-        if (!SUCCEEDED(hr))
-            return hr;
-
-        _DeviceContext->SetTarget(nullptr);
-    }
-
-    if (_BackBuffer == nullptr)
-    {
-        hr = _DeviceContext->CreateBitmap(D2D1::SizeU((UINT32) _Size.width, (UINT32) _Size.height), nullptr, 0, &BitmapProperties, &_BackBuffer);
-
-        if (!SUCCEEDED(hr))
-            return hr;
-
-        _DeviceContext->SetTarget(_BackBuffer);
-
-        _DeviceContext->BeginDraw();
-
-//      _DeviceContext->Clear(_State->_HasPhosphorDecay ? D2D1::ColorF(D2D1::ColorF::Black) : D2D1::ColorF(D2D1::ColorF::Black, 0.f)); // FIXME: Phosphor decay does not work with alpha transparency.
-        _DeviceContext->Clear(); // Transparent
-
-        hr = _DeviceContext->EndDraw();
-
-        if (!SUCCEEDED(hr))
-            return hr;
-
-        _DeviceContext->SetTarget(nullptr);
-    }
-
-    if (_CompositeBuffer == nullptr)
-    {
-        hr = _DeviceContext->CreateBitmap(D2D1::SizeU((UINT32) _Size.width, (UINT32) _Size.height), nullptr, 0, &BitmapProperties, &_CompositeBuffer);
-
-        if (!SUCCEEDED(hr))
-            return hr;
-
-        _DeviceContext->SetTarget(_CompositeBuffer);
-
-        _DeviceContext->BeginDraw();
-
-//      _DeviceContext->Clear(_State->_HasPhosphorDecay ? D2D1::ColorF(D2D1::ColorF::Black) : D2D1::ColorF(D2D1::ColorF::Black, 0.f)); // FIXME: Phosphor decay does not work with alpha transparency.
-        _DeviceContext->Clear(); // Transparent
-
-        hr = _DeviceContext->EndDraw();
-
-        if (!SUCCEEDED(hr))
-            return hr;
-
-        _DeviceContext->SetTarget(nullptr);
     }
 
     if (_BlurEffect == nullptr)
     {
-        hr = _DeviceContext->CreateEffect(CLSID_D2D1GaussianBlur, &_BlurEffect);
+        hr = _DeviceContext->CreateEffect(CLSID_D2D1GaussianBlur, _BlurEffect.GetAddressOf());
 
-        if (!SUCCEEDED(hr))
+        if (FAILED(hr))
             return hr;
 
-        _BlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_STANDARD_DEVIATION, _State->_BlurSigma);
-        _BlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_OPTIMIZATION, D2D1_DIRECTIONALBLUR_OPTIMIZATION_QUALITY);
+        _BlurEffect->SetInputEffect(0, _OpacityEffect.Get());
+
+        _BlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_OPTIMIZATION, D2D1_DIRECTIONALBLUR_OPTIMIZATION_BALANCED);
         _BlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_BORDER_MODE, D2D1_BORDER_MODE_HARD);
     }
 
-    if (_ColorMatrixEffect == nullptr)
-    {
-        hr = _DeviceContext->CreateEffect(CLSID_D2D1ColorMatrix, &_ColorMatrixEffect);
-
-        if (!SUCCEEDED(hr))
-            return hr;
-
-        // Color matrix for uniform decay
-        #pragma warning(disable: 5246) // 'anonymous struct or union': the initialization of a subobject should be wrapped in braces
-        const D2D1_MATRIX_5X4_F DecayMatrix =
-        {
-            _State->_DecayFactor, 0, 0, 0,  // Decay red
-            0, _State->_DecayFactor, 0, 0,  // Decay green
-            0, 0, _State->_DecayFactor, 0,  // Decay blue
-            0, 0, 0, 1,                     // Keep alpha
-            0, 0, 0, 0                      // Unused. Translation
-        };
-
-        _ColorMatrixEffect->SetValue(D2D1_COLORMATRIX_PROP_COLOR_MATRIX, DecayMatrix);
-    }
-
-#ifdef _DEBUG
-    if (_DebugBrush == nullptr)
-        (void) deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), &_DebugBrush);
-#endif
+    hr = CreateSizeDependentResources(deviceContext);
 
     return hr;
 }
@@ -277,24 +124,150 @@ HRESULT oscilloscope_base_t::CreateDeviceSpecificResources(ID2D1DeviceContext * 
 /// </summary>
 void oscilloscope_base_t::DeleteDeviceSpecificResources() noexcept
 {
+    DeleteSizeDependentResources();
+
+    _BlurEffect.Reset();
+    _OpacityEffect.Reset();
+
+    _DeviceContext.Reset();
+
 #ifdef _DEBUG
-    _DebugBrush.Release();
+    _DebugBrush.Reset();
 #endif
+}
 
-    _ColorMatrixEffect.Release();
+/// <summary>
+/// Creates the resources that depend on the size of the front buffer of the device context.
+/// </summary>
+HRESULT oscilloscope_base_t::CreateSizeDependentResources(ID2D1DeviceContext * deviceContext) noexcept
+{
+    if ((_Size.width <= 0.f) || _Size.height <= 0.f)
+        return E_INVALIDARG;
 
-    _BlurEffect.Release();
+    HRESULT hr = S_OK;
 
-    _CompositeBuffer.Release();
-    _BackBuffer.Release();
-    _FrontBuffer.Release();
+    const auto CreateStyle = [this, deviceContext](style_t & style, VisualElement element) noexcept -> HRESULT
+    {
+        if (style._Brush != nullptr)
+            return S_OK;
 
-    _DeviceContext.Release();
+        style = *_State->_StyleManager.GetStyle(element);
+
+        style.SetColor(_State);
+
+        return style.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
+    };
+
+    hr = CreateStyle(_SignalLineStyle, VisualElement::Signal);
+
+    if (FAILED(hr))
+        return hr;
+
+    hr = CreateStyle(_XAxisLineStyle, VisualElement::XAxisLine);
+
+    if (FAILED(hr))
+        return hr;
+
+    hr = CreateStyle(_YAxisLineStyle, VisualElement::YAxisLine);
+
+    if (FAILED(hr))
+        return hr;
+
+    hr = CreateStyle(_HorizontalGridLineStyle, VisualElement::HorizontalGridLine);
+
+    if (FAILED(hr))
+        return hr;
+
+    hr = CreateStyle(_VerticalGridLineStyle, VisualElement::VerticalGridLine);
+
+    if (FAILED(hr))
+        return hr;
+
+    if ((_Bitmaps[0] == nullptr) || (_Bitmaps[1] == nullptr))
+    {
+        const D2D1_BITMAP_PROPERTIES1 BitmapProperties = D2D1::BitmapProperties1
+        (
+            D2D1_BITMAP_OPTIONS_TARGET,
+            D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED) // Required for alpha transparency. Otherwise use D2D1_ALPHA_MODE_IGNORE.
+        );
+
+        UINT32 w = (UINT32) _Size.width;
+        UINT32 h = (UINT32) _Size.height;
+
+        if (_SquareBitmaps)
+        {
+//          _Side = std::min(_Size.width, _Size.height);
+
+            const FLOAT x = (_Size.width  - _Side) / 2.f;
+            const FLOAT y = (_Size.height - _Side) / 2.f;
+
+            _DestinationRectangle = { x, y, x + _Side, y + _Side };
+
+            w = h = (UINT) _Side;
+        }
+
+        if (_Bitmaps[0] == nullptr)
+        {
+            hr = deviceContext->CreateBitmap(D2D1::SizeU(w, h), nullptr, 0, &BitmapProperties, _Bitmaps[0].GetAddressOf());
+
+            if (FAILED(hr))
+                return hr;
+        }
+
+        if (_Bitmaps[1] == nullptr)
+        {
+            hr = deviceContext->CreateBitmap(D2D1::SizeU(w, h), nullptr, 0, &BitmapProperties, _Bitmaps[1].GetAddressOf());
+
+            if (FAILED(hr))
+                return hr;
+        }
+
+        hr = ClearBitmaps();
+
+        if (FAILED(hr))
+            return hr;
+    }
+
+    return S_OK;
+}
+
+/// <summary>
+/// Deletes the resources that depend on the size of the front buffer of the device context.
+/// </summary>
+void oscilloscope_base_t::DeleteSizeDependentResources() noexcept
+{
+    _Bitmaps[1].Reset();
+    _Bitmaps[0].Reset();
 
     _SignalLineStyle.DeleteDeviceSpecificResources();
     _XAxisLineStyle.DeleteDeviceSpecificResources();
     _YAxisLineStyle.DeleteDeviceSpecificResources();
     _HorizontalGridLineStyle.DeleteDeviceSpecificResources();
+    _VerticalGridLineStyle.DeleteDeviceSpecificResources();
+}
+
+/// <summary>
+/// Clears the back buffers.
+/// </summary>
+HRESULT oscilloscope_base_t::ClearBitmaps() noexcept
+{
+    _DeviceContext->BeginDraw();
+
+    for (const auto & Bitmap : _Bitmaps)
+    {
+        if (Bitmap == nullptr)
+            continue;
+
+        _DeviceContext->SetTarget(Bitmap.Get());
+
+        _DeviceContext->Clear(); // Transparent
+    }
+
+    _DeviceContext->SetTarget(nullptr);
+
+    HRESULT hr = _DeviceContext->EndDraw();
+
+    return hr;
 }
 
 /// <summary>
@@ -302,22 +275,33 @@ void oscilloscope_base_t::DeleteDeviceSpecificResources() noexcept
 /// </summary>
 size_t oscilloscope_base_t::FindZeroCrossing(const audio_sample * frames, size_t frameCount, uint32_t channelCount) noexcept
 {
+    if ((frames == nullptr) || (frameCount < 3) || (channelCount == 0))
+        return frameCount;
+
     size_t CrossIndex = frameCount;
 
     // Return the earliest zero-crossing across all channels.
     for (size_t i = 0; i < channelCount; ++i)
     {
-        audio_sample Sample0 = frames[i];
-        audio_sample Sample1 = frames[i + channelCount];
+        const audio_sample * Frame = frames + i;
 
-        for (size_t j = 2; j < frameCount; ++j)
+        audio_sample Sample0 = frames[0];
+        audio_sample Sample1 = frames[channelCount];
+
+        for (size_t j = 2; (j < frameCount) && (j <= CrossIndex); ++j)
         {
-            const audio_sample Sample2 = frames[i + (j * channelCount)];
+            Frame += channelCount;
+
+            const audio_sample Sample2 = frames[channelCount];
 
             // Is this a rising zero crossing? Confirm with the next sample.
             if ((Sample0 < 0.) && (Sample1 >= 0.) && (Sample2 >= 0.))
             {
-                CrossIndex = std::min(CrossIndex, j - 1);
+                CrossIndex = j - 1;
+
+                if (CrossIndex == 1)
+                    return CrossIndex;
+
                 break;
             }
 

@@ -1,25 +1,23 @@
 
-/** $VER: UIElementRendering.cpp (2026.08.17) P. Stuer - UIElement methods that run on the render thread. **/
+/** $VER: UIElementRendering.cpp (2026.10.11) P. Stuer - UIElement methods that run on the render thread. **/
 
 #include "pch.h"
 
 #include "UIElement.h"
 
-#include "DirectX.h"
+#include "DXGI.h"
 #include "Direct2D.h"
+#include "DirectWrite.h"
+#include "WIC.h"
 
 #include "Constants.h"
 #include "Resources.h"
-#include "Color.h"
-#include "Gradients.h"
-#include "Chrono.h"
+#include "Gradient.h"
 #include "Event.h"
 #include "Support.h"
 
 #include "Log.h"
 
-#pragma comment(lib, "d2d1")
-#pragma comment(lib, "d3d11")
 #pragma comment(lib, "dxgi")
 #pragma comment(lib, "dxguid")
 #pragma comment(lib, "dcomp")
@@ -33,16 +31,16 @@ static bool GetAudioChunk(audio_chunk & chunk, uint32_t sampleRate = 44100, uint
 /// </summary>
 void uielement_t::RenderThreadProc() noexcept
 {
-    chrono_t Chrono;
+    msc::chrono_t Chrono;
 
     const int64_t SleepTime = Chrono.MicrosecondsToTicks(_RenderState._SleepTime);
 
     int64_t Now = Chrono.Now();
 
-    int64_t MaxFrameTime = Chrono.SecondsToTicks(1.0 / (double) _RenderState._RefreshRateLimit);
+    int64_t MaxFrameTime = Chrono.SecondsToTicks(1.0 / (double) _RenderState._TargetRefreshRate);
     int64_t NextFrameTime = Now + MaxFrameTime;
 
-    Log.AtDebug().Write("Render thread started: Target %d fps / Max. frame time %d ticks",  _RenderState._RefreshRateLimit, MaxFrameTime);
+    Log.AtDebug().Write("Render thread started: Target %d fps / Max. frame time %d ticks",  _RenderState._TargetRefreshRate, MaxFrameTime);
 
     for (;;)
     {
@@ -90,8 +88,8 @@ void uielement_t::RenderThreadProc() noexcept
 
             if (_IsConfigurationChanged)
             {
-                _UIState._ArtworkGradientStops = _RenderState._ArtworkGradientStops;
                 _UIState._ArtworkDominantColor = _RenderState._ArtworkDominantColor;
+                _UIState._ArtworkGradientStops = _RenderState._ArtworkGradientStops;
 
                 _IsConfigurationChanged = false;
 
@@ -106,18 +104,16 @@ void uielement_t::RenderThreadProc() noexcept
         }
 
         // Notify the configuration dialog about the changed artwork colors.
-        if (HaveArtworkColorsChanged && _ConfigurationDialog.IsWindow())
+        if (HaveArtworkColorsChanged)
         {
-            _ConfigurationDialog.PostMessageW(UM_CONFIGURATION_CHANGED, CC_COLORS); // Must be sent outside the critical section.
-
-        //  Log.AtDebug().Write(STR_COMPONENT_BASENAME " notified configuration dialog of configuration change (Artwork colors).");
+            NotifyDialog(CC_COLORS);
 
             HaveArtworkColorsChanged = false;
         }
 
         // Determine the presentation time of the next frame.
         {
-            MaxFrameTime = Chrono.SecondsToTicks(1.0 / (double) _RenderState._RefreshRateLimit);
+            MaxFrameTime = Chrono.SecondsToTicks(1. / (double) _RenderState._TargetRefreshRate);
             NextFrameTime += MaxFrameTime;
 
             const int64_t Latency = Chrono.Now() - NextFrameTime;
@@ -133,6 +129,8 @@ void uielement_t::RenderThreadProc() noexcept
 /// </summary>
 void uielement_t::ProcessEvents() noexcept
 {
+    assert(!fb2k::is_main_thread());
+
     const auto Flags = _Event.GetFlags();
 
     if (Flags == 0)
@@ -142,17 +140,23 @@ void uielement_t::ProcessEvents() noexcept
     {
         _RenderState._PlaybackTime = 0.;
         _RenderState._TrackTime = 0.;
-/*
-        for (auto & Item : _Grid)
-            Item->Reset();
-*/
+
+        if (_RenderState._ResetPeaksOnTrackChange)
+        {
+            for (auto & Graph : _Grid)
+                Graph->_Analysis.ResetFFTPeaks();
+        }
+
         _RenderState._IsPaused = false;
 
-        // Set the default dominant color and gradient for the artwork color scheme.
-        _RenderState._ArtworkGradientStops = GetBuiltInGradientStops(_Artwork.Bitmap() ? ColorScheme::Artwork : ColorScheme::Solid);
-        _RenderState._ArtworkDominantColor = _RenderState._ArtworkGradientStops[0].color;
+        // Set the artwork dominant color and gradient to default if there is no artwork.
+        if (_Artwork.Empty())
+        {
+            _RenderState._ArtworkDominantColor = D2D1::ColorF(D2D1::ColorF::Black);
+            _RenderState._ArtworkGradientStops = gradient_t::GetBuiltIn(ColorScheme::Artwork);
 
-        _RenderState._RecreateStyles = true;
+            _RenderState._ColorsHaveChanged = true;
+        }
 
         _IsConfigurationChanged = true;
     }
@@ -162,18 +166,14 @@ void uielement_t::ProcessEvents() noexcept
         _RenderState._PlaybackTime = 0.;
         _RenderState._TrackTime = 0.;
 
-        for (auto & Item : _Grid)
-            Item->Reset();
+        for (auto & Graph : _Grid)
+            Graph->Initialize();
 
         _RenderState._IsPaused = false;
     }
     else
     if (event_t::IsRaised(Flags, event_t::PlaybackPaused))
     {
-/*
-        for (auto & Item : _Grid)
-            Item->Reset();
-*/
         _RenderState._IsPaused = true;
     }
     else
@@ -182,8 +182,11 @@ void uielement_t::ProcessEvents() noexcept
         _RenderState._IsPaused = false;
     }
 
+    if (event_t::IsRaised(Flags, event_t::ArtworkColorsChanged))
+        _RenderState._ColorsHaveChanged = true;
+
     if (event_t::IsRaised(Flags, event_t::UserInterfaceColorsChanged))
-        _RenderState._RecreateStyles = true;
+        _RenderState._ColorsHaveChanged = true;
 }
 
 /// <summary>
@@ -191,6 +194,8 @@ void uielement_t::ProcessEvents() noexcept
 /// </summary>
 void uielement_t::ProcessAudio() noexcept
 {
+    assert(!fb2k::is_main_thread());
+
     if (!_VisualisationStream.is_valid())
         return;
 
@@ -245,26 +250,28 @@ void uielement_t::ProcessAudio() noexcept
 /// </summary>
 void uielement_t::Render() noexcept
 {
+    assert(!fb2k::is_main_thread());
+
     HRESULT hr = CreateDeviceSpecificResources();
 
-    if (!SUCCEEDED(hr))
+    if (FAILED(hr))
         return;
 
-    _DeviceContext->BeginDraw();
+    _D2DDeviceContext->BeginDraw();
 
-    _DeviceContext->Clear(); // Required for alpha transparency. Do this once for all graphs. A graph can overlay a background color with a semi-transparent style.
+    _D2DDeviceContext->Clear(); // Required for alpha transparency. Do this once for all graphs. A graph can overlay a background color with a semi-transparent style.
 
     for (auto & Item : _Grid)
-        Item->Render(_DeviceContext, _Artwork);
+        Item->Render(_Artwork);
 
     if (_UIState._ShowFrameCounter)
-        _FrameCounter.Render(_DeviceContext);
+        _FrameCounter.Render(_D2DDeviceContext.Get());
 
 #ifdef _DEBUG
     RenderDebug();
 #endif
 
-    hr = _DeviceContext->EndDraw();
+    hr = _D2DDeviceContext->EndDraw();
 
     // Present the swap chain immediately.
     if (SUCCEEDED(hr))
@@ -273,7 +280,9 @@ void uielement_t::Render() noexcept
     if (hr == D2DERR_RECREATE_TARGET || hr == DXGI_ERROR_DEVICE_REMOVED)
         DeleteDeviceSpecificResources();
 
-    _RenderState._RecreateStyles = false;
+    // Reset the flags for the next loop.
+    _RenderState._SizeHasChanged    = false;
+    _RenderState._ColorsHaveChanged = false;
 }
 
 /// <summary>
@@ -281,6 +290,8 @@ void uielement_t::Render() noexcept
 /// </summary>
 void uielement_t::Animate(int64_t now) noexcept
 {
+    assert(!fb2k::is_main_thread());
+
     if (_RenderState._PeakMode == PeakMode::None)
         return;
 
@@ -296,6 +307,8 @@ void uielement_t::Animate(int64_t now) noexcept
 /// </summary>
 void uielement_t::InitializeSampleRateDependentParameters(const audio_chunk_impl & chunk) noexcept
 {
+    assert(!fb2k::is_main_thread());
+
     if (_RenderState._SampleRate == chunk.get_sample_rate())
         return;
 
@@ -323,33 +336,110 @@ void uielement_t::InitializeSampleRateDependentParameters(const audio_chunk_impl
     #pragma warning(default: 4061)
 }
 
-#pragma region DirectX
-
 /// <summary>
 /// Creates resources which are not bound to any D3D device. Their lifetime effectively extends for the duration of the app.
 /// </summary>
 HRESULT uielement_t::CreateDeviceIndependentResources() noexcept
 {
-    DirectX::Initialize();
+    HRESULT hr = DXGIFactory::Startup();
 
-    HRESULT hr = S_OK;
+    if (FAILED(hr))
+    {
+        msc::error_t LastError((DWORD) hr);
 
-    if (SUCCEEDED(hr))
-        hr = ::CreateDXGIFactory(__uuidof(IDXGIFactory2), reinterpret_cast<void **>(&_DXGIFactory));
+        Log.AtFatal().Write(STR_COMPONENT_BASENAME " is unable to create DXGI factory: %s (0x%08X)", msc::WideToUTF8(LastError.Message()).c_str(), (int) hr);
 
-        UINT Flags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
+        return hr;
+    }
 
-#ifdef _DEBUG
-        Flags |= D3D11_CREATE_DEVICE_DEBUG;
-#endif
+    hr = Direct2DFactory::Startup();
 
-    if (SUCCEEDED(hr))
-        hr = ::D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, Flags, nullptr, 0, D3D11_SDK_VERSION, &_D3DDevice, nullptr, &_D3DDeviceContext);
+    if (FAILED(hr))
+    {
+        msc::error_t LastError((DWORD) hr);
 
-    if (SUCCEEDED(hr))
-        hr = ::DCompositionCreateDevice(nullptr, __uuidof(IDCompositionDevice), reinterpret_cast<void **>(&_DCompositionDevice));
+        Log.AtFatal().Write(STR_COMPONENT_BASENAME " is unable to create Direct2D factory: %s (0x%08X)", msc::WideToUTF8(LastError.Message()).c_str(), (int) hr);
+
+        return hr;
+    }
+
+    hr = DirectWriteFactory::Startup();
+
+    if (FAILED(hr))
+    {
+        msc::error_t LastError((DWORD) hr);
+
+        Log.AtFatal().Write(STR_COMPONENT_BASENAME " is unable to create DirectWrite factory: %s (0x%08X)", msc::WideToUTF8(LastError.Message()).c_str(), (int) hr);
+
+        return hr;
+    }
+
+    hr = WICFactory::Startup();
+
+    if (FAILED(hr))
+    {
+        msc::error_t LastError((DWORD) hr);
+
+        Log.AtFatal().Write(STR_COMPONENT_BASENAME " is unable to create WIC factory: %s (0x%08X)", msc::WideToUTF8(LastError.Message()).c_str(), (int) hr);
+
+        return hr;
+    }
+
+    // Create the device chain: ID3D11Device -> IDXGIDevice -> ID2D1Device -> ID2D1DeviceContext
+    {
+        UINT Flags = D3D11_CREATE_DEVICE_BGRA_SUPPORT; // Required for Direct3D and Direct2D interoperation
+
+        #ifdef _DEBUG
+            Flags |= D3D11_CREATE_DEVICE_DEBUG;
+        #endif
+
+        hr = ::D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, Flags, nullptr, 0, D3D11_SDK_VERSION, _D3DDevice.GetAddressOf(), nullptr, _D3DDeviceContext.GetAddressOf());
+
+        if (FAILED(hr))
+        {
+            msc::error_t LastError((DWORD) hr);
+
+            Log.AtFatal().Write(STR_COMPONENT_BASENAME " is unable to create Direct3D device: %s (0x%08X)", msc::WideToUTF8(LastError.Message()).c_str(), (int) hr);
+
+            return hr;
+        }
+
+        // Create the DirectComposition device and associate it with the Direct3D device. It assures that the device's surface factory is associated with a DXGI device.
+        {
+            ComPtr<IDXGIDevice> DXGIDevice;
+
+            hr = _D3DDevice.As(&DXGIDevice);
+
+            if (FAILED(hr))
+                return hr;
+
+            hr = ::DCompositionCreateDevice(DXGIDevice.Get(), IID_PPV_ARGS(&_CompositionDevice));
+        //  hr = ::DCompositionCreateDevice(nullptr, IID_PPV_ARGS(_CompositionDevice.GetAddressOf()));
+        }
+
+        if (FAILED(hr))
+        {
+            msc::error_t LastError((DWORD) hr);
+
+            Log.AtFatal().Write(STR_COMPONENT_BASENAME " is unable to create DirectComposition device: %s (0x%08X)", msc::WideToUTF8(LastError.Message()).c_str(), (int) hr);
+
+            return hr;
+        }
+    }
+
+    _RenderContext.D3DDevice        = _D3DDevice.Get();
+    _RenderContext.D3DDeviceContext = _D3DDeviceContext.Get();
 
     hr = _FrameCounter.CreateDeviceIndependentResources();
+
+    if (FAILED(hr))
+    {
+        msc::error_t LastError((DWORD) hr);
+
+        Log.AtFatal().Write(STR_COMPONENT_BASENAME " is unable to create frame counter resources: %s (0x%08X)", msc::WideToUTF8(LastError.Message()).c_str(), (int) hr);
+
+        return hr;
+    }
 
     return hr;
 }
@@ -359,26 +449,30 @@ HRESULT uielement_t::CreateDeviceIndependentResources() noexcept
 /// </summary>
 void uielement_t::DeleteDeviceIndependentResources() noexcept
 {
+    _RenderContext.D3DDevice = nullptr;
+    _RenderContext.D3DDeviceContext = nullptr;
+
     _FrameCounter.DeleteDeviceIndependentResources();
 
-    _DCompositionDevice.Release();
-    _D3DDeviceContext.Release();
-    _D3DDevice.Release();
-    _DXGIFactory.Release();
+    _CompositionDevice.Reset();
+    _D3DDeviceContext.Reset();
+    _D3DDevice.Reset();
 
-    DirectX::Terminate();
+    WICFactory::Shutdown();
+    DirectWriteFactory::Shutdown();
+    Direct2DFactory::Shutdown();
+    DXGIFactory::Shutdown();
 }
 
 /// <summary>
 /// Creates resources which are bound to a particular D3D device.
-/// It's all centralized here, in case the resources need to be recreated in case of D3D device loss (eg. display change, remoting, removal of video card, etc).
 /// </summary>
 HRESULT uielement_t::CreateDeviceSpecificResources() noexcept
 {
     HRESULT hr = S_OK;
 
     // Create the device context.
-    if (_DeviceContext == nullptr)
+    if (_D2DDeviceContext == nullptr)
     {
         CRect cr;
 
@@ -392,31 +486,35 @@ HRESULT uielement_t::CreateDeviceSpecificResources() noexcept
 
         // Create the Direct2D device and the device context and get the monitor refresh from the DXGI device.
         {
-            CComPtr<IDXGIDevice1> DXGIDevice;
+            ComPtr<IDXGIDevice1> DXGIDevice;
 
-            hr = _D3DDevice->QueryInterface(&DXGIDevice); // Get a DXGI device interface from the D3D device.
+            // Get a DXGI device interface from the D3D device.
+            hr = _D3DDevice.As(&DXGIDevice);
 
-            if (!SUCCEEDED(hr))
+            if (FAILED(hr))
                 return hr;
 
-            hr = _Direct2D.Factory->CreateDevice(DXGIDevice, &_D2DDevice); // Create a D2D device from the DXGI device.
+            (void) DXGI::GetRefreshRate(DXGIDevice.Get(), _DisplayRefreshRate); // Currently not used yet.
 
-            if (!SUCCEEDED(hr))
+            // Create a D2D device from the DXGI device.
+            hr = Direct2DFactory::Get()->CreateDevice(DXGIDevice.Get(), _D2DDevice.GetAddressOf());
+
+            if (FAILED(hr))
                 return hr;
 
-            hr = _D2DDevice->CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_ENABLE_MULTITHREADED_OPTIMIZATIONS, &_DeviceContext);
+            hr = _D2DDevice->CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_ENABLE_MULTITHREADED_OPTIMIZATIONS, _D2DDeviceContext.GetAddressOf());
 
-            if (!SUCCEEDED(hr))
+            if (FAILED(hr))
                 return hr;
 
             GetDPI(m_hWnd, _DPI);
 
-            _DeviceContext->SetDpi((FLOAT) _DPI, (FLOAT) _DPI);
-
-            if (!SUCCEEDED(hr))
+            if (FAILED(hr))
                 return hr;
 
-            hr = _Direct2D.GetRefreshRate(DXGIDevice, _DisplayRefreshRate); // Currently not used yet.
+            _D2DDeviceContext->SetDpi((FLOAT) _DPI, (FLOAT) _DPI);
+
+            _RenderContext.D2DDeviceContext = _D2DDeviceContext.Get();
         }
 
         if (_SwapChain == nullptr)
@@ -434,81 +532,71 @@ HRESULT uielement_t::CreateDeviceSpecificResources() noexcept
                 .AlphaMode   = DXGI_ALPHA_MODE_PREMULTIPLIED, // Required for alpha transparency.
             };
 
-            hr = _DXGIFactory->CreateSwapChainForComposition(_D3DDevice, &scd, nullptr, &_SwapChain);
+            hr = DXGIFactory::Get()->CreateSwapChainForComposition(_D3DDevice.Get(), &scd, nullptr, _SwapChain.GetAddressOf());
 
-            if (!SUCCEEDED(hr))
+            if (FAILED(hr))
                 return hr;
+
+            _RenderContext.SwapChain = _SwapChain.Get();
         }
 
         // Set up DirectComposition.
         {
-            hr = _DCompositionDevice->CreateTargetForHwnd(m_hWnd, TRUE, &_Target);
+            hr = _CompositionDevice->CreateTargetForHwnd(m_hWnd, TRUE, _CompositionTarget.GetAddressOf());
 
-            if (!SUCCEEDED(hr))
+            if (FAILED(hr))
                 return hr;
 
-            hr = _DCompositionDevice->CreateVisual(&_Visual);
+            hr = _CompositionDevice->CreateVisual(_CompositionVisual.GetAddressOf());
 
-            if (!SUCCEEDED(hr))
+            if (FAILED(hr))
                 return hr;
 
-            hr = _Visual->SetContent(_SwapChain);
+            hr = _CompositionVisual->SetContent(_SwapChain.Get());
 
-            if (!SUCCEEDED(hr))
+            if (FAILED(hr))
                 return hr;
 
-            hr = _Target->SetRoot(_Visual);
+            hr = _CompositionTarget->SetRoot(_CompositionVisual.Get());
 
-            if (!SUCCEEDED(hr))
+            if (FAILED(hr))
                 return hr;
 
-            hr = _DCompositionDevice->Commit();
+            hr = _CompositionDevice->Commit();
 
-            if (!SUCCEEDED(hr))
+            if (FAILED(hr))
                 return hr;
         }
+    }
 
-        if (_BackBuffer == nullptr)
+    if (_BackBuffer == nullptr)
+    {
+        hr = CreateBackBuffer();
+
+        if (FAILED(hr))
+            return hr;
+
+        _D2DDeviceContext->SetTarget(_BackBuffer.Get());
+
+        _D2DDeviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
+        _D2DDeviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+        _D2DDeviceContext->SetTextAntialiasMode(D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE); // https://learn.microsoft.com/en-us/windows/win32/direct2d/improving-direct2d-performance
+
+        // Initialize the size-dependent resources.
         {
-            hr = CreateBackBuffer();
-
-            if (!SUCCEEDED(hr))
-                return hr;
-
-            _DeviceContext->SetTarget(_BackBuffer);
-
-            _DeviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
-            _DeviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
-            _DeviceContext->SetTextAntialiasMode(D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE); // https://learn.microsoft.com/en-us/windows/win32/direct2d/improving-direct2d-performance
-
-            const D2D1_SIZE_F SizeF = _DeviceContext->GetSize(); // Gets the size in DPIs.
+            const D2D1_SIZE_F SizeF = _D2DDeviceContext->GetSize(); // Gets the size in DPIs.
 
             _Grid.Resize(SizeF.width, SizeF.height);
             _FrameCounter.Resize(SizeF.width, SizeF.height);
 
-            _RenderState._RecreateStyles = true;
-        }
-
-    #ifdef _DEBUG
-        if (_DebugBrush == nullptr)
-            (void) _DeviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), &_DebugBrush);
-    #endif
-    }
-
-    // Create the background bitmap from the artwork.
-    if (!_Artwork.Bitmap())
-    {
-        hr = _Artwork.CreateDeviceSpecificResources(_DeviceContext);
-
-        if (SUCCEEDED(hr))
-        {
-            // Create the resources that depend on the artwork. Done at least once per artwork because the configuration dialog needs it for the dominant color and ColorScheme::Artwork.
-            CreateArtworkDependentResources();
-
-            for (auto & Item : _Grid)
-                Item->Release();
+            _RenderState._SizeHasChanged = true;
         }
     }
+
+#ifdef _DEBUG
+    if (_DebugBrush == nullptr)
+        (void) _D2DDeviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), _DebugBrush.GetAddressOf());
+#endif
 
     return S_OK;
 }
@@ -519,23 +607,58 @@ HRESULT uielement_t::CreateDeviceSpecificResources() noexcept
 void uielement_t::DeleteDeviceSpecificResources() noexcept
 {
 #ifdef _DEBUG
-    _DebugBrush.Release();
+    _DebugBrush.Reset();
 #endif
 
     for (auto & Item : _Grid)
-        Item->Release();
+        Item->Reset();
 
     _Artwork.DeleteWICResources();
 
     _FrameCounter.DeleteDeviceSpecificResources();
 
-    _BackBuffer.Release();
-    _Visual.Release();
-    _Target.Release();
+    _RenderContext.SwapChain = nullptr;
+    _RenderContext.D2DDeviceContext = nullptr;
 
-    _SwapChain.Release();
-    _DeviceContext.Release();
-    _D2DDevice.Release();
+    _BackBuffer.Reset();
+    _CompositionVisual.Reset();
+    _CompositionTarget.Reset();
+
+    _SwapChain.Reset();
+
+    _D2DDeviceContext.Reset();
+    _D2DDevice.Reset();
+}
+
+/// <summary>
+/// Resizes the swap chain.
+/// </summary>
+HRESULT uielement_t::ResizeSwapChain(UINT width, UINT height) noexcept
+{
+    if ((_D2DDeviceContext == nullptr) || (width == 0) || (height == 0))
+        return E_INVALIDARG;
+
+    msc::lock_t Lock(_CriticalSection);
+
+    // Remove the bitmap from the device context.
+    _D2DDeviceContext->SetTarget(nullptr);
+
+    // Release the bitmap so that the swap chain can be resized.
+    _BackBuffer.Reset();
+
+    // Resize the swap chain.
+    HRESULT hr = _SwapChain->ResizeBuffers(0, width, height, DXGI_FORMAT_B8G8R8A8_UNORM, 0);
+
+    // Recreate the Direct2D back buffer.
+    hr = CreateBackBuffer();
+
+    if (FAILED(hr))
+        return hr;
+
+    // Set the target buffer of the device context.
+    _D2DDeviceContext->SetTarget(_BackBuffer.Get());
+
+    return S_OK;
 }
 
 /// <summary>
@@ -543,111 +666,49 @@ void uielement_t::DeleteDeviceSpecificResources() noexcept
 /// </summary>
 HRESULT uielement_t::CreateBackBuffer() noexcept
 {
-    CComPtr<IDXGISurface> Surface;
+    HRESULT hr = E_FAIL;
 
-    // Get a surface from the swap chain.
-    HRESULT hr = _SwapChain->GetBuffer(0, IID_PPV_ARGS(&Surface));
-
-    if (FAILED(hr))
-        return hr;
-
-    // Create a bitmap pointing to the surface.
-    const D2D1_BITMAP_PROPERTIES1 Properties = D2D1::BitmapProperties1
-    (
-        D2D1_BITMAP_OPTIONS_TARGET | D2D1_BITMAP_OPTIONS_CANNOT_DRAW,
-        D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED), // Required for alpha transparency. Otherwise use D2D1_ALPHA_MODE_IGNORE.
-        (FLOAT) _DPI, (FLOAT) _DPI
-    );
-
-    hr = _DeviceContext->CreateBitmapFromDxgiSurface(Surface, &Properties, &_BackBuffer);
-
-    if (FAILED(hr))
-        return hr;
-
-    Surface.Release();
-
-    // Update the DirectComposition visual.
-    if (_Visual && _Target)
     {
-        hr = _Visual->SetContent(_SwapChain);
+        // Get the DXGI back buffer from the swap chain.
+        ComPtr<IDXGISurface> Surface;
+
+        hr = _SwapChain->GetBuffer(0, IID_PPV_ARGS(Surface.GetAddressOf()));
 
         if (FAILED(hr))
             return hr;
 
-        hr = _Target->SetRoot(_Visual);
+        // Create a Direct2D bitmap from the existing swap chain back buffer so that Direct2D can render to it.
+        const D2D1_BITMAP_PROPERTIES1 Properties = D2D1::BitmapProperties1
+        (
+            D2D1_BITMAP_OPTIONS_TARGET | D2D1_BITMAP_OPTIONS_CANNOT_DRAW,
+            D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED), // Required for alpha transparency. Otherwise use D2D1_ALPHA_MODE_IGNORE.
+            (FLOAT) _DPI, (FLOAT) _DPI
+        );
+
+        hr = _D2DDeviceContext->CreateBitmapFromDxgiSurface(Surface.Get(), &Properties, _BackBuffer.GetAddressOf());
+
+        if (FAILED(hr))
+            return hr;
+    }
+/*
+    // Update the DirectComposition visual. Only needs to be called when the composition tree properties change.
+    if (_CompositionVisual && _CompositionTarget)
+    {
+        hr = _CompositionVisual->SetContent(_SwapChain.Get());
+
+        if (FAILED(hr))
+            return hr;
+
+        hr = _CompositionTarget->SetRoot(_CompositionVisual.Get());
 
         if (FAILED(hr))
             return hr;
 
         hr = _DCompositionDevice->Commit();
     }
-
+*/
     return hr;
 }
-
-/// <summary>
-/// Creates the DirectX resources that are dependent on the artwork.
-/// </summary>
-HRESULT uielement_t::CreateArtworkDependentResources() noexcept
-{
-    // Get the colors from the artwork.
-    HRESULT hr = _Artwork.GetColors(_RenderState._ArtworkColors, _RenderState._NumArtworkColors, _RenderState._LightnessThreshold, _RenderState._TransparencyThreshold);
-
-    // Sort the colors.
-    if (SUCCEEDED(hr))
-    {
-        _RenderState._ArtworkDominantColor = _RenderState._ArtworkColors[0];
-
-        #pragma warning(disable: 4061) // Enumerator not handled
-        switch (_RenderState._ColorOrder)
-        {
-            case ColorOrder::None:
-                break;
-
-            case ColorOrder::HueAscending:
-                color_t::SortColorsByHue(_RenderState._ArtworkColors, true);
-                break;
-
-            case ColorOrder::HueDescending:
-                color_t::SortColorsByHue(_RenderState._ArtworkColors, false);
-                break;
-
-            case ColorOrder::SaturationAscending:
-                color_t::SortColorsBySaturation(_RenderState._ArtworkColors, true);
-                break;
-
-            case ColorOrder::SaturationDescending:
-                color_t::SortColorsBySaturation(_RenderState._ArtworkColors, false);
-                break;
-
-            case ColorOrder::LightnessAscending:
-                color_t::SortColorsByLightness(_RenderState._ArtworkColors, true);
-                break;
-
-            case ColorOrder::LightnessDescending:
-                color_t::SortColorsByLightness(_RenderState._ArtworkColors, false);
-                break;
-        }
-        #pragma warning(default: 4061)
-    }
-
-    // Create the gradient stops.
-    if (SUCCEEDED(hr))
-        hr = _Direct2D.CreateGradientStops(_RenderState._ArtworkColors, _RenderState._ArtworkGradientStops);
-
-    if (SUCCEEDED(hr))
-    {
-//      _RenderState._StyleManager.SetArtworkDependentParameters(_RenderState._ArtworkGradientStops, _RenderState._ArtworkDominantColor);
-//      _RenderState._StyleManager.DeleteGradientBrushes(); // Force recreating the gradient brushes for the resized back buffer.
-
-        _RenderState._RecreateStyles = true;
-        _IsConfigurationChanged = true;
-    }
-
-    return S_OK; // Make sure resource creation continues even if something goes wrong while creating the gradient.
-}
-
-#pragma endregion
 
 #ifdef _DEBUG
 
@@ -656,6 +717,8 @@ HRESULT uielement_t::CreateArtworkDependentResources() noexcept
 /// </summary>
 bool GetAudioChunk(audio_chunk & chunk, uint32_t sampleRate, uint32_t frameCount) noexcept
 {
+    assert(!fb2k::is_main_thread());
+
     const uint32_t ChannelCount = 1;
 
     audio_sample * Samples = new audio_sample[frameCount * ChannelCount];
@@ -704,22 +767,18 @@ void uielement_t::RenderDebug() noexcept
 
     const D2D1_RECT_F Rect = { (FLOAT) rc.right / 2.f, (FLOAT) rc.top, (FLOAT) rc.right, (FLOAT) rc.bottom };
 
-    CComPtr<IDWriteTextFormat> TextFormat;
+    ComPtr<IDWriteTextFormat> TextFormat;
 
-    const FLOAT FontSize = ToDIPs(12.f); // In DIPs
+    const FLOAT FontSize = PointsToDIPs(12.f); // In DIPs
 
-    HRESULT hr = _DirectWrite.Factory->CreateTextFormat(L"Segoe UI", NULL, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STRETCH_NORMAL, FontSize, L"", &TextFormat);
+    HRESULT hr = DirectWrite::CreateTextFormat(L"Segoe UI", FontSize, DWRITE_TEXT_ALIGNMENT_TRAILING, DWRITE_PARAGRAPH_ALIGNMENT_NEAR, TextFormat.GetAddressOf());
 
-    if (!SUCCEEDED(hr))
+    if (FAILED(hr))
         return;
-
-    TextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
-    TextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
-    TextFormat->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
 
     std::wstring Text = msc::FormatText(L"%.2fs", _RenderState._PlaybackTime);
 
-    _DeviceContext->DrawText(Text.c_str(), (UINT) Text.size(), TextFormat, Rect, _DebugBrush, D2D1_DRAW_TEXT_OPTIONS_NONE);
+    _D2DDeviceContext->DrawText(Text.c_str(), (UINT) Text.size(), TextFormat.Get(), Rect, _DebugBrush.Get(), D2D1_DRAW_TEXT_OPTIONS_NONE);
 }
 
 #endif
