@@ -33,7 +33,7 @@ public:
     analog_style_analyzer_t(const state_t * configuration, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup, const window_function_t & windowFunction);
 
     bool Initialize(const vector<frequency_band_t> & frequencyBands);
-    bool AnalyzeSamples(const audio_sample * sampleData, size_t sampleCount, uint32_t channels, frequency_bands_t & frequencyBands) noexcept;
+    bool AnalyzeAudio(const audio_sample * frames, size_t frameCount, uint32_t channels, frequency_bands_t & frequencyBands) noexcept;
 
 private:
     struct coef_t

@@ -1,13 +1,9 @@
 
-/** $VER: EyeCandy.cpp (2026.10.10) P. Stuer - Implements a visualizer focusing on eye candy. **/
+/** $VER: EyeCandy.cpp (2026.10.23) P. Stuer - Implements a visualizer focusing on eye candy. **/
 
 #include <pch.h>
 
 #include "EyeCandy.h"
-
-#include "DynamicSystems/LorenzAttractor.h"
-
-#pragma hdrstop
 
 /// <summary>
 /// Initializes this instance.
@@ -19,10 +15,6 @@ void eye_candy_t::Configure(state_t * state, graph_options_t * graphOptions, ana
     _Analysis = analysis;
 
     Reset();
-
-    _Effect = make_unique<lorenz_attractor_t>();
-
-    _Effect->Configure(state, graphOptions, analysis, isFirst, isLast, d3dDevice, d3dDeviceContext);
 }
 
 /// <summary>
@@ -30,7 +22,7 @@ void eye_candy_t::Configure(state_t * state, graph_options_t * graphOptions, ana
 /// </summary>
 void eye_candy_t::Move(const D2D1_RECT_F & rect) noexcept
 {
-    _Effect->Move(rect);
+    _Effect->Resize((rect.right - rect.left), (rect.bottom - rect.top));
 }
 
 /// <summary>
@@ -38,14 +30,23 @@ void eye_candy_t::Move(const D2D1_RECT_F & rect) noexcept
 /// </summary>
 void eye_candy_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 {
-    _Effect->Render(deviceContext);
-}
+    if ((_EffectId != _State->_EffectId) || (_Effect == nullptr))
+    {
+        _Effect = EyeCandy::effect_t::Create(_State->_EffectId);
 
-/// <summary>
-/// Recalculates parameters that are render target and size-sensitive.
-/// </summary>
-void eye_candy_t::Initialize() noexcept
-{
+        _EffectId = _State->_EffectId;
+    }
+
+    double DeltaTime = _State->_PlaybackTime - _PlaybackTime;
+
+    _Effect->SetQuality(_State->_EffectQuality);
+    _Effect->SetSpeed(_State->_EffectSpeed);
+    _Effect->SetBrightness(_State->_EffectBrightness);
+    _Effect->SetDensity(_State->_EffectDensity);
+
+    _Effect->Render(deviceContext, DeltaTime, _Analysis->_Chunk);
+
+    _PlaybackTime = _State->_PlaybackTime;
 }
 
 /// <summary>
@@ -53,6 +54,14 @@ void eye_candy_t::Initialize() noexcept
 /// </summary>
 void eye_candy_t::Reset() noexcept
 {
+    if ((_EffectId != _State->_EffectId) || (_Effect == nullptr))
+    {
+        _Effect = EyeCandy::effect_t::Create(_State->_EffectId);
+
+        _EffectId = _State->_EffectId;
+    }
+
+    _PlaybackTime = _State->_PlaybackTime;
 }
 
 /// <summary>

@@ -1,5 +1,5 @@
 
-/** $VER: State.h (2026.10.10) P. Stuer **/
+/** $VER: State.h (2026.10.23) P. Stuer **/
 
 #pragma once
 
@@ -10,6 +10,7 @@
 #include "Constants.h"
 #include "WindowFunctions.h"
 
+#include "Effect.h"
 #include "StyleManager.h"
 #include "GraphOptions.h"
 
@@ -52,10 +53,10 @@ public:
     int64_t _SleepTime;                                                 // Number of μs that the render thread is put to sleep to yield to the UI thread.
 
     bool _ShowFrameCounter;
-    bool _UseHardwareRendering;                                         // Deprecated
-    bool _UseAntialiasing;                                              // Deprecated
+    bool _UseHardwareRendering;                                         // Obsolete
+    bool _UseAntialiasing;                                              // Obsolete
 
-    size_t _WindowDuration;                                             // Deprecated, in μs
+    size_t _WindowDuration;                                             // Obsolete, in μs
 
     #pragma region Visualization
 
@@ -300,6 +301,18 @@ public:
     std::vector<graph_options_t> _GraphOptions;
 
     std::vector<Channels> _ChannelOrder;
+    #pragma endregion
+
+    #pragma region Eye Candy
+
+    EyeCandy::Category _EffectCategoryId;
+    EyeCandy::Effect _EffectId;
+
+    EyeCandy::Quality _EffectQuality;
+    EyeCandy::Speed _EffectSpeed;
+    EyeCandy::Brightness _EffectBrightness;
+    EyeCandy::Density _EffectDensity;
+
     #pragma endregion
 
     std::wstring _PresetsDirectoryPath;

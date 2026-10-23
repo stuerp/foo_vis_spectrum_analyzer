@@ -82,6 +82,7 @@ void visualization_page_t::InitializeControls() noexcept
         const WCHAR * Names[] =
         {
             L"Bars", L"Curve", L"Spectrogram", L"Peak/RMS Meter", L"Balance/Correlation Meter", L"Radial Bars", L"Radial Curve", L"Oscilloscope", L"Bit Meter", L"Goniometer",
+            L"Eye Candy",
         #ifdef _DEBUG
             L"Tester",
             L"D3D Tester",
@@ -358,8 +359,7 @@ void visualization_page_t::TerminateControls() noexcept
 /// </summary>
 void visualization_page_t::OnSelectionChanged(UINT notificationCode, int id, CWindow w) noexcept
 {
-    if (_State == nullptr)
-        return;
+    assert(_State);
 
     auto ChangedSettings = ConfigurationChanges::All;
 

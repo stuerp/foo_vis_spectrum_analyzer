@@ -47,7 +47,7 @@ bool swift_analyzer_t::Initialize(const frequency_bands_t & frequencyBands) noex
 /// <summary>
 /// Calculates the transform and returns the updated frequency bands.
 /// </summary>
-bool swift_analyzer_t::AnalyzeSamples(const audio_sample * frames, size_t frameCount, uint32_t selectedChannels, frequency_bands_t & frequencyBands) noexcept
+bool swift_analyzer_t::AnalyzeAudio(const audio_sample * frames, size_t frameCount, uint32_t selectedChannels, frequency_bands_t & frequencyBands) noexcept
 {
     for (auto & fb : frequencyBands)
         fb.RawValue = 0.;

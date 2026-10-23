@@ -1,5 +1,5 @@
 
-/** $VER: Analyzer.h (2025.11.02) P. Stuer **/
+/** $VER: Analyzer.h (2026.10.19) P. Stuer **/
 
 #pragma once
 
@@ -29,7 +29,7 @@ public:
     analyzer_t(analyzer_t &&) = delete;
     analyzer_t & operator=(analyzer_t &&) = delete;
 
-    virtual ~analyzer_t() { }
+    virtual ~analyzer_t() = default;
 
     /// <summary>
     /// Initializes a new instance.
@@ -40,31 +40,38 @@ public:
     }
 
     /// <summary>
-    /// Downmixes an audio frame to a mono sample.
+    /// Downmixes the selected channels of an audio frame to a mono sample.
     /// </summary>
-    audio_sample Downmix(const audio_sample * frame, uint32_t selectedChannels) const noexcept
+    audio_sample Downmix(const audio_sample * frame, const uint32_t selectedChannels) const noexcept
     {
-        if ((frame == nullptr) || (selectedChannels == 0))
-            return (audio_sample) 0.;
+        if (frame == nullptr)
+            return audio_sample {};
 
-        double Sample = 0.;
-        uint32_t n = 0;
+        uint32_t AvailableChannels = _ChannelConfig;
 
-        for (uint32_t AvailableChannels = _ChannelConfig; (AvailableChannels != 0) && (selectedChannels != 0); AvailableChannels >>= 1, selectedChannels >>= 1)
+        const uint32_t ChannelsToMix = AvailableChannels & selectedChannels;
+
+        if (ChannelsToMix == 0)
+            return audio_sample {};
+
+        double Sum = 0.;
+
+        while (AvailableChannels != 0)
         {
-            if (AvailableChannels & 1)
-            {
-                if (selectedChannels & 1)
-                {
-                    Sample += (double) *frame;
-                    n++;
-                }
+            // Isolate the least-significant configured channel.
+            const uint32_t Channel = AvailableChannels & (0u - AvailableChannels);
 
-                ++frame;
-            }
+            if ((ChannelsToMix & Channel) != 0)
+                Sum += static_cast<double>(*frame);
+
+            ++frame;
+
+            AvailableChannels &= AvailableChannels - 1; // Remove lowest set bit.
         }
 
-        return (n > 0) ? (audio_sample) (Sample / n) : (audio_sample) 0.;
+        const auto ChannelCount = std::popcount(ChannelsToMix);
+
+        return (audio_sample) (Sum / (double) ChannelCount);
     }
 
 protected:

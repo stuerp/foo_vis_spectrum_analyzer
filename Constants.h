@@ -1,9 +1,9 @@
 
-/** $VER: Constants.h (2026.10.11) P. Stuer **/
+/** $VER: Constants.h (2026.10.22) P. Stuer **/
 
 #pragma once
 
-#include <stdint.h>
+#include "Effects.h"
 
 enum class VisualizationType
 {
@@ -17,9 +17,10 @@ enum class VisualizationType
     Oscilloscope = 7,
     BitMeter = 8,
     Goniometer = 9,
+    EyeCandy = 10,
 
-    Tester = 10,
-    D3DTester = 11,
+    Tester = 11,
+    D3DTester = 12,
 
     Min = Bars,
     Max = D3DTester,
@@ -759,6 +760,75 @@ namespace crossover
         Max = LinkwitzRiley4,
     };
 }
+
+struct effect_descriptor_t
+{
+    EyeCandy::Effect Id;
+    std::wstring Name;
+};
+
+struct effect_category_t
+{
+    EyeCandy::Category Id;
+    std::wstring Name;
+
+    std::vector<effect_descriptor_t> Effects;
+};
+
+const std::vector<effect_category_t> EffectCategories
+{
+    {
+        EyeCandy::Category::DynamicSystems,
+        L"Dynamic Systems",
+        {
+            { EyeCandy::Effect::AizawaAttractor,    L"Aizawa Attractor" },
+            { EyeCandy::Effect::HalvorsenAttractor, L"Halvorsen Attractor" },
+            { EyeCandy::Effect::LorenzAttractor,    L"Lorenz Attractor" },
+            { EyeCandy::Effect::RosslerAttractor,   L"Rössler Attractor" },
+            { EyeCandy::Effect::ThomasAttractor,    L"Thomas Attractor" },
+            { EyeCandy::Effect::DoublePendulum,     L"Double Pendulum" },
+        }
+    },
+    {
+        EyeCandy::Category::Fields,
+        L"Fields",
+        {
+            { EyeCandy::Effect::Aurora,             L"Aurora" },
+            { EyeCandy::Effect::FluidInk,           L"Fluid Ink" },
+            { EyeCandy::Effect::Metaballs,          L"Metaballs" },
+            { EyeCandy::Effect::Plasma,             L"Plasma" },
+        }
+    },
+    {
+        EyeCandy::Category::ParticleSystems,
+        L"Particle Systems",
+        {
+            { EyeCandy::Effect::AudioGalaxy,        L"Audio Galaxy" },
+            { EyeCandy::Effect::Fireflies,          L"Fireflies" },
+            { EyeCandy::Effect::Fireworks,          L"Fireworks" },
+            { EyeCandy::Effect::ParticleVortex,     L"Particle Vortex" },
+            { EyeCandy::Effect::Starfield,          L"Starfield" },
+            { EyeCandy::Effect::Swarm,              L"Swarm" },
+        }
+    },
+    {
+        EyeCandy::Category::Retro,
+        L"Retro",
+        {
+            { EyeCandy::Effect::NeonTunnel,         L"Neon Tunnel" },
+            { EyeCandy::Effect::VectorGrid,         L"Vector Grid" },
+        }
+    },
+    {
+        EyeCandy::Category::Trails,
+        L"Trails",
+        {
+            { EyeCandy::Effect::LissajousTrails,    L"Lissajous Trails" },
+            { EyeCandy::Effect::RibbonFlow,         L"Ribbon Flow" },
+            { EyeCandy::Effect::Spirograph,         L"Spirograph" },
+        }
+    },
+};
 
 enum class ConfigurationChanges : uint32_t
 {

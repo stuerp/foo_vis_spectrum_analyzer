@@ -1,5 +1,5 @@
 
-/** $VER: FFTAnalyzer.cpp (2026.09.13) P. Stuer - Based on TF3RDL's FFT analyzer, https://codepen.io/TF3RDL/pen/poQJwRW **/
+/** $VER: FFTAnalyzer.cpp (2026.10.19) P. Stuer - Based on TF3RDL's FFT analyzer, https://codepen.io/TF3RDL/pen/poQJwRW **/
 
 #include "pch.h"
 
@@ -36,7 +36,7 @@ fft_analyzer_t::fft_analyzer_t(const state_t * state, uint32_t sampleRate, uint3
 /// <summary>
 /// Calculates the transform and returns the frequency bands.
 /// </summary>
-bool fft_analyzer_t::AnalyzeSamples(const audio_sample * frameData, size_t frameCount, uint32_t selectedChannels, frequency_bands_t & frequencyBands) noexcept
+bool fft_analyzer_t::AnalyzeAudio(const audio_sample * frameData, size_t frameCount, uint32_t selectedChannels, frequency_bands_t & frequencyBands) noexcept
 {
 //  const auto Start = std::chrono::steady_clock::now();
 
@@ -419,34 +419,47 @@ void fft_analyzer_t::MapCoefficientsUsingGaussianFilter(frequency_bands_t & freq
 /// <summary>
 /// Determines the interpolated magnitude at a fractional index.
 /// </summary>
-double fft_analyzer_t::Interpolate(const std::vector<std::complex<double>> & fftCoeffs, double index, int kernelSize) const noexcept
+double fft_analyzer_t::Interpolate(const std::vector<std::complex<double>> & fftCoeffs, const double index, const int kernelSize) const noexcept
 {
-    std::complex<double> Sum = { 0., 0. };
+    const auto CoefficientCount = fftCoeffs.size();
+    const auto Base = (int64_t) std::floor(index);
 
-    const auto Base = (int) std::floor(index);
+    // index = base + fraction, where fraction is in [0, 1).
+    const double Fraction          = index - (double) Base;
+    const double InverseKernelSize = 1. / (double) kernelSize;
 
-    auto sinc = [](double x) noexcept
+    const auto sinc = [](const double x) noexcept
     {
-        return (std::abs(x) > std::numeric_limits<double>::epsilon()) ? std::sin(x) / x : 1.;
+        // sin(x) / x is numerically well behaved for small non-zero x.
+        return x == 0.0 ? 1.0 : std::sin(x) / x;
     };
 
-    for (int i = -kernelSize; i <= kernelSize; ++i)
-    {
-        const int Index = Base + i;
+    std::complex<double> Sum{};
 
+    // Wrap only once before entering the loop.
+    int64_t WrappedIndex = (Base - kernelSize) % (int64_t) CoefficientCount;
+
+    if (WrappedIndex < 0)
+        WrappedIndex += (int64_t) CoefficientCount;
+
+    auto CoefficientIndex = (size_t) WrappedIndex;
+
+    for (int Tap = -kernelSize; Tap <= kernelSize; ++Tap)
+    {
         // Distance from the interpolation point.
-        const double d = (index - Index) * std::numbers::pi;
+        const double Distance = (Fraction - (double) Tap) * std::numbers::pi;
 
         // Lanczos-a kernel.
-        double Weight = sinc(d) * sinc(d / kernelSize);
+        double Weight = sinc(Distance) * sinc(Distance * InverseKernelSize);
 
-        // Improves low-frequency spectral reconstruction by alternating the phase of neighboring interpolation taps. Non-standard, visualization-specific adjustment.
-        if ((i & 1) == 0)
+        // Preserve the existing visualization-specific phase adjustment.
+        if ((Tap & 1) == 0)
             Weight = -Weight;
 
-        const auto CoefIdx = (size_t) msc::Wrap(Index, (int) fftCoeffs.size());
+        Sum += fftCoeffs[CoefficientIndex] * Weight;
 
-        Sum += fftCoeffs[CoefIdx] * Weight;
+        if (++CoefficientIndex == CoefficientCount)
+            CoefficientIndex = 0;
     }
 
     return std::abs(Sum);

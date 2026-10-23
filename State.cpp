@@ -1,9 +1,11 @@
 
-/** $VER: State.cpp (2026.10.08) P. Stuer **/
+/** $VER: State.cpp (2026.10.23) P. Stuer **/
 
 #include "pch.h"
 #include "State.h"
 
+#include "Effect.h"
+#include "Effects.h"
 #include "Gradient.h"
 #include "Resources.h"
 #include "Log.h"
@@ -322,6 +324,15 @@ void state_t::Reset() noexcept
     _BitsPerInteger         = 63;
     _OpacityMode            = false;
 
+    // Eye Candy
+    _EffectCategoryId         = EyeCandy::Category::Fields;
+    _EffectId                 = EyeCandy::Effect::Plasma;
+
+    _EffectQuality            = EyeCandy::Quality::Medium;
+    _EffectSpeed              = EyeCandy::Speed::Normal;
+    _EffectBrightness         = EyeCandy::Brightness::Medium;
+    _EffectDensity            = EyeCandy::Density::Medium;
+
     _StyleManager.Reset();
 
     pfc::string Path = core_api::get_profile_path();
@@ -621,6 +632,15 @@ state_t & state_t::operator=(const state_t & other) noexcept
     _BitMeterMode         = other._BitMeterMode;
     _BitsPerInteger       = other._BitsPerInteger;
     _OpacityMode          = other._OpacityMode;
+
+    // Eye Candy
+    _EffectCategoryId       = other._EffectCategoryId;
+    _EffectId               = other._EffectId;
+
+    _EffectQuality          = other._EffectQuality;
+    _EffectSpeed            = other._EffectSpeed;
+    _EffectBrightness       = other._EffectBrightness;
+    _EffectDensity          = other._EffectDensity;
 
     #pragma endregion
 
@@ -1547,6 +1567,17 @@ void state_t::FromJSON(const char * data, size_t size, bool isPreset)
         _OpacityMode    = BitMeter.value("opacityMode", _OpacityMode);
     }
 
+    const auto & EyeCandy = Object.value("eyeCandy", json::object());
+    {
+        _EffectCategoryId = std::clamp(EyeCandy.value("category", _EffectCategoryId), EyeCandy::Category::Min, EyeCandy::Category::Max);
+        _EffectId         = std::clamp(EyeCandy.value("effect", _EffectId), EyeCandy::Effect::Min, EyeCandy::Effect::Max);
+
+        _EffectQuality    = std::clamp(EyeCandy.value("quality",    _EffectQuality),    EyeCandy::Quality::Min,    EyeCandy::Quality::Max);
+        _EffectSpeed      = std::clamp(EyeCandy.value("speed",      _EffectSpeed),      EyeCandy::Speed::Min,      EyeCandy::Speed::Max);
+        _EffectBrightness = std::clamp(EyeCandy.value("brightness", _EffectBrightness), EyeCandy::Brightness::Min, EyeCandy::Brightness::Max);
+        _EffectDensity    = std::clamp(EyeCandy.value("density",    _EffectDensity),    EyeCandy::Density::Min,    EyeCandy::Density::Max);
+    }
+
     // Transform
     const auto & Transform = Object.value("transform", json::object());
     {
@@ -1860,6 +1891,20 @@ json state_t::ToJSON(bool isPreset) const
                 { "mode", _BitMeterMode },
                 { "bitsPerInteger", _BitsPerInteger },
                 { "opacityMode", _OpacityMode },
+            })
+        ),
+
+        json::object_t::value_type
+        (
+            "eyeCandy", json::object
+            ({
+                { "category", _EffectCategoryId },
+                { "effect", _EffectId },
+
+                { "quality", _EffectQuality },
+                { "speed", _EffectSpeed },
+                { "brightness", _EffectBrightness },
+                { "density", _EffectDensity },
             })
         ),
 

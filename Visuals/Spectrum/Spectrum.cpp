@@ -121,6 +121,7 @@ void spectrum_t::Render(ID2D1DeviceContext * deviceContext) noexcept
         case VisualizationType::BitMeter:
         case VisualizationType::Goniometer:
 
+        case VisualizationType::EyeCandy:
         case VisualizationType::Tester:
         case VisualizationType::D3DTester:
 

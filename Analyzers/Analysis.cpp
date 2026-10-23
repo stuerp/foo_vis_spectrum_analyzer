@@ -175,6 +175,12 @@ void analysis_t::Process(const audio_chunk & chunk) noexcept
             break;
         }
 
+        case VisualizationType::EyeCandy:
+        {
+            _Chunk.copy(chunk, true);
+            break;
+        }
+
         case VisualizationType::Tester:
         {
             SpectrumProcessing(chunk);
@@ -462,6 +468,7 @@ void analysis_t::UpdatePeakValues(bool isStopped) noexcept
             break;
         }
 
+        case VisualizationType::EyeCandy:
         case VisualizationType::Tester:
         case VisualizationType::D3DTester:
         {
@@ -755,11 +762,11 @@ void analysis_t::GenerateLogFrequencyBands()
 
 void analysis_t::SpectrumProcessing(const audio_chunk & chunk) noexcept
 {
+    if (chunk.is_empty())
+        return;
+
     const audio_sample * Frames = chunk.get_data();
     const size_t FrameCount = chunk.get_sample_count(); // get_sample_count() actually returns the number of frames.
-
-    if ((Frames == nullptr) || (FrameCount == 0))
-        return;
 
     if (_WindowFunction == nullptr)
         _WindowFunction = window_function_t::Create(_State->_WindowFunction, _State->_WindowParameter, _State->_WindowSkew, _State->_Truncate);
@@ -776,7 +783,7 @@ void analysis_t::SpectrumProcessing(const audio_chunk & chunk) noexcept
                 _FFTAnalyzer = new fft_analyzer_t(_State, _SampleRate, _ChannelCount, _ChannelConfig, _State->_BinCount, *_WindowFunction, *_BrownPucketteKernel);
             }
 
-            _FFTAnalyzer->AnalyzeSamples(Frames, FrameCount, _GraphOptions->_ActiveChannelMask, _FrequencyBands);
+            _FFTAnalyzer->AnalyzeAudio(Frames, FrameCount, _GraphOptions->_ActiveChannelMask, _FrequencyBands);
             break;
         }
 
@@ -785,7 +792,7 @@ void analysis_t::SpectrumProcessing(const audio_chunk & chunk) noexcept
             if (_CQTAnalyzer == nullptr)
                 _CQTAnalyzer = new cqt_analyzer_t(_State, _SampleRate, _ChannelCount, _ChannelConfig, *_WindowFunction);
 
-            _CQTAnalyzer->AnalyzeSamples(Frames, FrameCount, _GraphOptions->_ActiveChannelMask, _FrequencyBands);
+            _CQTAnalyzer->AnalyzeAudio(Frames, FrameCount, _GraphOptions->_ActiveChannelMask, _FrequencyBands);
             break;
         }
 
@@ -798,7 +805,7 @@ void analysis_t::SpectrumProcessing(const audio_chunk & chunk) noexcept
                 _SWIFTAnalyzer->Initialize(_FrequencyBands);
             }
 
-            _SWIFTAnalyzer->AnalyzeSamples(Frames, FrameCount, _GraphOptions->_ActiveChannelMask, _FrequencyBands);
+            _SWIFTAnalyzer->AnalyzeAudio(Frames, FrameCount, _GraphOptions->_ActiveChannelMask, _FrequencyBands);
             break;
         }
 
@@ -811,7 +818,7 @@ void analysis_t::SpectrumProcessing(const audio_chunk & chunk) noexcept
                 _AnalogStyleAnalyzer->Initialize(_FrequencyBands);
             }
 
-            _AnalogStyleAnalyzer->AnalyzeSamples(Frames, FrameCount, _GraphOptions->_ActiveChannelMask, _FrequencyBands);
+            _AnalogStyleAnalyzer->AnalyzeAudio(Frames, FrameCount, _GraphOptions->_ActiveChannelMask, _FrequencyBands);
             break;
         }
     }
@@ -1021,12 +1028,12 @@ void analysis_t::NormalizeWithPeakSmoothing(double factor) noexcept
 /// </summary>
 void analysis_t::MeterProcessing(const audio_chunk & chunk) noexcept
 {
+    if (chunk.is_empty())
+        return;
+
     const audio_sample * Frames = chunk.get_data();
     const size_t FrameCount     = chunk.get_sample_count(); // get_sample_count() actually returns the number of frames.
     const uint32_t ChannelCount = chunk.get_channel_count();
-
-    if ((Frames == nullptr) || (FrameCount == 0))
-        return;
 
     InitializePeakMeasurements(_ChannelMask);
 
@@ -1200,11 +1207,11 @@ void analysis_t::OscilloscopeProcessing(const audio_chunk & chunk) noexcept
 /// </summary>
 void analysis_t::BitMeterProcessing(const audio_chunk & chunk) noexcept
 {
+    if (chunk.is_empty())
+        return;
+
     const audio_sample * Frames = chunk.get_data();
     const size_t FrameCount = chunk.get_sample_count(); // get_sample_count() actually returns the number of frames.
-
-    if ((Frames == nullptr) || (FrameCount == 0))
-        return;
 
     InitializeBitMeasurements(_ChannelMask);
 

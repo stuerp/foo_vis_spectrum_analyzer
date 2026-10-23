@@ -54,9 +54,11 @@ std::unique_ptr<visualization_t> visualization_t::Create(const state_t & state) 
         case VisualizationType::Goniometer:
             return std::make_unique<goniometer_t>();
 
-        case VisualizationType::Tester:
-        //  return std::make_unique<tester_t>();
+        case VisualizationType::EyeCandy:
             return std::make_unique<eye_candy_t>();
+
+        case VisualizationType::Tester:
+            return std::make_unique<tester_t>();
 
         case VisualizationType::D3DTester:
             return std::make_unique<d3d_tester_t>();

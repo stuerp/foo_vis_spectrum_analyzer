@@ -59,7 +59,7 @@ bool analog_style_analyzer_t::Initialize(const vector<frequency_band_t> & freque
 /// <summary>
 /// Calculates the Constant-Q Transform on the sample data and returns the frequency bands.
 /// </summary>
-bool analog_style_analyzer_t::AnalyzeSamples(const audio_sample * frames, size_t frameCount, uint32_t selectedChannels, frequency_bands_t & frequencyBands) noexcept
+bool analog_style_analyzer_t::AnalyzeAudio(const audio_sample * frames, size_t frameCount, uint32_t selectedChannels, frequency_bands_t & frequencyBands) noexcept
 {
     for (auto & fb : frequencyBands)
         fb.RawValue = 0.;

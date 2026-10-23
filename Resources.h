@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2026.10.11) P. Stuer **/
+/** $VER: Resources.h (2026.10.23) P. Stuer **/
 
 #pragma once
 
@@ -7,16 +7,16 @@
 #define TOSTRING(x) TOSTRING_IMPL(x)
 
 #define NUM_FILE_MAJOR          0
-#define NUM_FILE_MINOR          13
+#define NUM_FILE_MINOR          14
 #define NUM_FILE_PATCH          0
 #define NUM_FILE_PRERELEASE     0
 
 #define NUM_PRODUCT_MAJOR       0
-#define NUM_PRODUCT_MINOR       13
+#define NUM_PRODUCT_MINOR       14
 #define NUM_PRODUCT_PATCH       0
 #define NUM_PRODUCT_PRERELEASE  0
 
-#define STR_RELEASE_TAG         ""
+#define STR_RELEASE_TAG         "-alpha1"
 
 /** Component specific **/
 
@@ -74,7 +74,8 @@
 #define IDD_COMMON_PAGE                 1005
 #define IDD_GRAPHS_PAGE                 1006
 #define IDD_STYLES_PAGE                 1007
-#define IDD_PRESETS_PAGE                1008
+#define IDD_EYE_CANDY_PAGE              1008
+#define IDD_PRESETS_PAGE                1009
 
 #define IDD_CONFIGURATION               1099
 
@@ -515,19 +516,29 @@
 #define IDC_FONT_SIZE_LBL               7560
 #define IDC_FONT_SIZE                   7562
 
+/** Eye Candy **/
+
+#define IDC_EFFECT_CATEGORY             7600
+#define IDC_EFFECT                      7602
+
+#define IDC_EFFECT_QUALITY              7604
+#define IDC_EFFECT_SPEED                7606
+#define IDC_EFFECT_BRIGHTNESS           7608
+#define IDC_EFFECT_DENSITY              7610
+
 /** Presets **/
 
-#define IDC_PRESETS_LBL                 7600
-#define IDC_PRESETS_ROOT                7602
-#define IDC_PRESETS_ROOT_SELECT         7604
-#define IDC_PRESET_NAMES                7606
+#define IDC_PRESETS_LBL                 7700
+#define IDC_PRESETS_ROOT                7702
+#define IDC_PRESETS_ROOT_SELECT         7704
+#define IDC_PRESET_NAMES                7706
 
-#define IDC_PRESET_NAME_LBL             7608
-#define IDC_PRESET_NAME                 7610
+#define IDC_PRESET_NAME_LBL             7708
+#define IDC_PRESET_NAME                 7710
 
-#define IDC_PRESET_LOAD                 7612
-#define IDC_PRESET_SAVE                 7614
-#define IDC_PRESET_DELETE               7616
+#define IDC_PRESET_LOAD                 7712
+#define IDC_PRESET_SAVE                 7714
+#define IDC_PRESET_DELETE               7716
 
 #define IDC_RESET                       9999
 

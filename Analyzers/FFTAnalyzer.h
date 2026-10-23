@@ -35,7 +35,7 @@ public:
 
     fft_analyzer_t(const state_t * state, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup, size_t fftSize, const window_function_t & windowFunction, const window_function_t & brownPucketteKernel) noexcept;
 
-    bool AnalyzeSamples(const audio_sample * samples, size_t sampleCount, uint32_t channels, frequency_bands_t & frequencyBands) noexcept;
+    bool AnalyzeAudio(const audio_sample * frames, size_t frameCount, uint32_t channels, frequency_bands_t & frequencyBands) noexcept;
 
 private:
     void Add(const audio_sample * samples, size_t count, uint32_t channels) noexcept;

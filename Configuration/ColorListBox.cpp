@@ -165,7 +165,7 @@ LRESULT color_list_box_t::OnDblClick(WORD, WORD, HWND, BOOL & handled) noexcept
     {
         _Colors[(size_t) Index] = Color;
 
-        SendChangedNotification();
+        NotifyParent();
     }
 
     return 0;
@@ -174,7 +174,7 @@ LRESULT color_list_box_t::OnDblClick(WORD, WORD, HWND, BOOL & handled) noexcept
 /// <summary>
 /// Sends a notification to the parent that the content has changed.
 /// </summary>
-void color_list_box_t::SendChangedNotification() const noexcept
+void color_list_box_t::NotifyParent() const noexcept
 {
     const NMHDR nmhdr = { m_hWnd, (UINT_PTR) GetDlgCtrlID(), (UINT) NM_RETURN };
 

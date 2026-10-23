@@ -1,5 +1,5 @@
 
-/** $VER: EyeCandy.h (2026.10.10) P. Stuer - Implements a visualizer focusing on eye candy. **/
+/** $VER: EyeCandy.h (2026.10.21) P. Stuer - Implements a visualizer focusing on eye candy. **/
 
 #pragma once
 
@@ -30,11 +30,13 @@ public:
 
     // visualization_t
     void Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice = nullptr, ID3D11DeviceContext * d3dDeviceContext = nullptr) noexcept override final;
-    void Initialize() noexcept;
 
 private:
     ComPtr<ID2D1SolidColorBrush> _Brush;
 
 private:
-    std::unique_ptr<effect_t> _Effect;
+    std::unique_ptr<EyeCandy::effect_t> _Effect;
+
+    EyeCandy::Effect _EffectId = EyeCandy::Effect::Plasma;
+    double _PlaybackTime = 0.;
 };

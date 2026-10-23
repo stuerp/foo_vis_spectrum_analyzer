@@ -10,8 +10,8 @@
 /// </summary>
 void downmixer_t::operator()(const audio_chunk & srcChunk, uint32_t selectedChannels, audio_chunk & dstChunk) const noexcept
 {
-    const uint32_t ChannelCount  = srcChunk.get_channels();
-    const size_t FrameCount = srcChunk.get_sample_count();
+    const size_t FrameCount     = srcChunk.get_sample_count();
+    const uint32_t ChannelCount = srcChunk.get_channels();
 
     dstChunk.set_channels(1, audio_chunk::channel_config_mono);
     dstChunk.set_sample_rate(srcChunk.get_sample_rate());

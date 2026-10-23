@@ -1,5 +1,5 @@
 
-/** $VER: ConfigurationDialog.cpp (2026.06.29) P. Stuer - Implements the configuration dialog. **/
+/** $VER: ConfigurationDialog.cpp (2026.10.21) P. Stuer - Implements the configuration dialog. **/
 
 #include "pch.h"
 
@@ -13,6 +13,7 @@
 #include "CommonPage.h"
 #include "GraphsPage.h"
 #include "StylesPage.h"
+#include "EyeCandyPage.h"
 #include "PresetsPage.h"
 
 #include "Theme.h"
@@ -180,7 +181,7 @@ void configuration_dialog_t::InitializeControls() noexcept
 
         _MenuList.ResetContent();
 
-        for (const auto & x : { L"Visualization", L"Transform", L"Frequencies", L"Filters", L"Common", L"Graphs", L"Styles", L"Presets" })
+        for (const auto & x : { L"Visualization", L"Transform", L"Frequencies", L"Filters", L"Common", L"Graphs", L"Styles", L"Eye Candy", L"Presets" })
             _MenuList.AddString(x);
 
         _MenuList.SetCurSel((int) _State->_PageIndex);
@@ -219,6 +220,11 @@ void configuration_dialog_t::InitializeControls() noexcept
         _Pages.push_back(Page);
 
         Page = std::make_shared<styles_page_t>(IDD_STYLES_PAGE);
+
+        Page->Create(m_hWnd, (LPARAM) _DialogParameters);
+        _Pages.push_back(Page);
+
+        Page = std::make_shared<eye_candy_page_t>(IDD_EYE_CANDY_PAGE);
 
         Page->Create(m_hWnd, (LPARAM) _DialogParameters);
         _Pages.push_back(Page);

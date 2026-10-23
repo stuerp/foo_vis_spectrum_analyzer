@@ -6,7 +6,7 @@
 /// <summary>
 /// Implements a downmix-to-mono scaler as a functor.
 /// </summary>
-class downmixer_t
+class downmixer_t final
 {
 public:
     explicit downmixer_t() noexcept { }

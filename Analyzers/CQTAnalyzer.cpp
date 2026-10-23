@@ -18,7 +18,7 @@ cqt_analyzer_t::cqt_analyzer_t(const state_t * state, uint32_t sampleRate, uint3
 /// Calculates the Constant-Q Transform on the sample data and returns the frequency bands using a variable-window Goertzel bank with adaptive decimation.
 /// Each frequency band chooses its own observation length and sampling period.
 /// </summary>
-bool cqt_analyzer_t::AnalyzeSamples(const audio_sample * frames, size_t frameCount, uint32_t selectedChannels, frequency_bands_t & frequencyBands) noexcept
+bool cqt_analyzer_t::AnalyzeAudio(const audio_sample * frames, size_t frameCount, uint32_t selectedChannels, frequency_bands_t & frequencyBands) noexcept
 {
     if ((frames == nullptr) || (frameCount == 0) || (_ChannelCount == 0) || (_SampleRate == 0))
         return false;

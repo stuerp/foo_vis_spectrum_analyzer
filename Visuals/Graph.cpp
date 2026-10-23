@@ -191,10 +191,7 @@ void graph_t::RenderBackground(artwork_t & artwork) noexcept
 
     if ((_State._VisualizationType == VisualizationType::PeakMeter) || (_State._VisualizationType == VisualizationType::LevelMeter) || (_State._VisualizationType == VisualizationType::Oscilloscope))
         return;
-/*
-    if (artwork.Bitmap() == nullptr)
-        return;
-*/
+
     artwork.Render(_RenderContext, _State._FitWindow ? _Visualization->GetRect() : _Visualization->GetClientRect(), &_State);
 }
 

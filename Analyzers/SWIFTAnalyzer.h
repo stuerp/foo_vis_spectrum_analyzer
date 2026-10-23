@@ -35,7 +35,7 @@ public:
     swift_analyzer_t(const state_t * state, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup);
 
     bool Initialize(const frequency_bands_t & frequencyBands) noexcept;
-    bool AnalyzeSamples(const audio_sample * sampleData, size_t sampleCount, uint32_t channels, frequency_bands_t & frequencyBands) noexcept;
+    bool AnalyzeAudio(const audio_sample * frames , size_t frameCount, uint32_t channels, frequency_bands_t & frequencyBands) noexcept;
 
 private:
     struct swift_value_t

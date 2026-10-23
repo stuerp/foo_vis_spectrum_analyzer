@@ -1,0 +1,35 @@
+
+/** $VER: EyeCandyPage.rc (2026.10.23) P. Stuer **/
+
+#include "Resources.h"
+
+#include <winres.h>
+#include <commctrl.h>
+
+#include "EyeCandyPageLayout.h"
+
+language LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+
+IDD_EYE_CANDY_PAGE dialogex 0, 0, W_B00, H_B00
+font 8, "MS Shell Dlg", 400, 0, 0x1
+style DS_SETFONT | DS_CONTROL | WS_CHILD | WS_CLIPCHILDREN
+{
+    rtext           "Category:",    IDC_STATIC,            X_B01, Y_B01 + 2, W_B01, H_B01
+    combobox                        IDC_EFFECT_CATEGORY,   X_B02, Y_B02,     W_B02, H_B02, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+
+    rtext           "Effect:",      IDC_STATIC,            X_B03, Y_B03 + 2, W_B03, H_B03
+    combobox                        IDC_EFFECT,            X_B04, Y_B04,     W_B04, H_B04, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+
+    rtext           "Quality:",     IDC_STATIC,            X_B05, Y_B05 + 2, W_B05, H_B05
+    combobox                        IDC_EFFECT_QUALITY,    X_B06, Y_B06,     W_B06, H_B06, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+
+    rtext           "Speed:",       IDC_STATIC,            X_B07, Y_B07 + 2, W_B07, H_B07
+    combobox                        IDC_EFFECT_SPEED       X_B08, Y_B08,     W_B08, H_B08, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+
+    rtext           "Brightness:",  IDC_STATIC,            X_B09, Y_B09 + 2, W_B09, H_B09
+    combobox                        IDC_EFFECT_BRIGHTNESS, X_B10, Y_B10,     W_B10, H_B10, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+
+    rtext           "Density:",     IDC_STATIC,            X_B11, Y_B11 + 2, W_B11, H_B11
+    combobox                        IDC_EFFECT_DENSITY     X_B12, Y_B12,     W_B12, H_B12, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+}

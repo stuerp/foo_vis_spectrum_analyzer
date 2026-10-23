@@ -1,5 +1,5 @@
 
-/** $VER: Analysis.h (2026.10.100) P. Stuer **/
+/** $VER: Analysis.h (2026.10.21)P. Stuer **/
 
 #pragma once
 
@@ -177,7 +177,7 @@ public:
     const state_t * _State;
     const graph_options_t * _GraphOptions;
 
-    audio_chunk_impl _Chunk;    // Only used by oscilloscope
+    audio_chunk_impl _Chunk;
 
     uint32_t _SampleRate;
     uint32_t _ChannelCount;

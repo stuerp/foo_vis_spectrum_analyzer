@@ -49,7 +49,7 @@ public:
 private:
     LRESULT OnDblClick(WORD, WORD, HWND, BOOL & handled) noexcept;
 
-    void SendChangedNotification() const noexcept;
+    void NotifyParent() const noexcept;
 
     BEGIN_MSG_MAP(color_list_box_t)
         MSG_WM_SIZE(OnSize)
