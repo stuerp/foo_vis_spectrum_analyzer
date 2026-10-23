@@ -26,12 +26,12 @@ using Microsoft::WRL::ComPtr;
 
 #include "Effects.h"
 
-constexpr double Pi = std::numbers::pi_v<double>;
-constexpr double TwoPi = 2. * Pi;
-constexpr double Epsilon = std::numeric_limits<double>::epsilon();
-
 namespace EyeCandy
 {
+    constexpr double Pi = std::numbers::pi_v<double>;
+    constexpr double TwoPi = 2. * Pi;
+    constexpr double Epsilon = std::numeric_limits<double>::epsilon();
+
     struct interaction_t
     {
         double X       = 0.;
@@ -525,7 +525,14 @@ namespace EyeCandy
         static constexpr std::array<const wchar_t *, 3> Brightnesses =
         {{
             L"Low",
-            L"Normal",
+            L"Medium",
+            L"High"
+        }};
+
+        static constexpr std::array<const wchar_t *, 3> DensityNames =
+        {{
+            L"Low",
+            L"Medium",
             L"High"
         }};
 

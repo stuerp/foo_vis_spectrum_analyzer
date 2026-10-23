@@ -1,5 +1,5 @@
 
-/** $VER: Fireworks.h (2026.10.19) **/
+/** $VER: Fireworks.h (2026.10.23) **/
 
 #pragma once
 
@@ -112,6 +112,12 @@ namespace Fireworks
         void DrawLine(ID2D1RenderTarget * renderTarget, D2D1_POINT_2F from, D2D1_POINT_2F to, uint32_t color, float intensity, int radius) noexcept;
         void DrawGlowPoint(ID2D1RenderTarget * renderTarget, D2D1_POINT_2F position, uint32_t color, float intensity, float radius) noexcept;
 
+        void UpdateFlareTrail(flare_t & flare, double deltaTime) noexcept;
+        void RenderFlareTrail(ID2D1RenderTarget * renderTarget, const flare_t & flare) noexcept;
+
+        void DrawForegroundLine(ID2D1RenderTarget * renderTarget, D2D1_POINT_2F from, D2D1_POINT_2F to, uint32_t color, float opacity, float width) noexcept;
+        void DrawForegroundGlowLine(ID2D1RenderTarget * renderTarget, D2D1_POINT_2F from, D2D1_POINT_2F to, uint32_t color, float intensity, float width) noexcept;
+
         void SetBrush(ID2D1SolidColorBrush * brush, uint32_t color, float opacity) noexcept;
 
         void StartWorkers();
@@ -141,6 +147,7 @@ namespace Fireworks
         double _BassCooldown      = 0.;
 
         uint32_t _RandomState = 0xC001D00Du;
+        uint32_t _LaunchSequence = 0;
 
     private:
         ComPtr<ID2D1SolidColorBrush> _Brush;
@@ -150,31 +157,5 @@ namespace Fireworks
         ComPtr<ID2D1Bitmap> _BackBuffer;
 
         ComPtr<ID2D1SolidColorBrush> _ForegroundBrush;
-
-private:
-    void UpdateFlareTrail(flare_t & flare, double deltaTime) noexcept;
-    void RenderFlareTrail(ID2D1RenderTarget * renderTarget, const flare_t & flare) noexcept;
-//    void RenderFlareHeads(ID2D1RenderTarget * renderTarget) noexcept;
-
-    void DrawForegroundLine(
-        ID2D1RenderTarget * renderTarget,
-        D2D1_POINT_2F from,
-        D2D1_POINT_2F to,
-        uint32_t color,
-        float opacity,
-        float width) noexcept;
-
-    void DrawForegroundGlowLine(
-        ID2D1RenderTarget * renderTarget,
-        D2D1_POINT_2F from,
-        D2D1_POINT_2F to,
-        uint32_t color,
-        float intensity,
-        float width) noexcept;
-
-//    void SetForegroundBrush(uint32_t color, float opacity) noexcept;
-
-    uint32_t _LaunchSequence = 0;
-
     };
 }

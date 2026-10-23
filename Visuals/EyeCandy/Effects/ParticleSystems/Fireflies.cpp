@@ -92,10 +92,9 @@ namespace Fireflies
     std::wstring effect_t::GetStatus() noexcept
     {
         constexpr std::array<const wchar_t *, 2> PaletteNames = {{ L"Warm", L"Cool" }};
-        constexpr std::array<const wchar_t *, 3> DensityNames = {{ L"Low", L"Normal", L"High" }};
 
-        return std::format(L"Fireflies, {} palette, {} density, {} quality, {} speed",
-            PaletteNames[(size_t) _Palette], DensityNames[(size_t) _Density], Qualities[(size_t) _Quality], Speeds[(size_t) _Speed]);
+        return std::format(L"Fireflies, {} palette, {} quality, {} speed, {} brightness, {} density",
+            PaletteNames[(size_t) _Palette], Qualities[(size_t) _Quality], Speeds[(size_t) _Speed], Brightnesses[(size_t) _Brightness], DensityNames[(size_t) _Density]);
     }
 
     /// <summary>
@@ -295,9 +294,8 @@ namespace Fireflies
                 double Previous  = 0.;
                 double Previous2 = 0.;
 
-                const audio_sample * Sample = WindowedSamples.data();
-
-                const audio_sample * const SampleEnd = Sample + AnalysisCount;
+                const double *       Sample    = WindowedSamples.data();
+                const double * const SampleEnd = Sample + AnalysisCount;
 
                 while (Sample < SampleEnd)
                 {

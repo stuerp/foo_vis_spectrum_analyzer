@@ -13,8 +13,7 @@ namespace Spirograph
 {
     std::wstring effect_t::GetStatus() noexcept
     {
-        return std::format(L"Spirograph, {} quality, {} speed, {} brightness",
-            Qualities[(size_t) _Quality], Speeds[(size_t) _Speed], Brightnesses[(size_t) _Brightness]);
+        return std::format(L"Spirograph, {} quality, {} speed", Qualities[(size_t) _Quality], Speeds[(size_t) _Speed]);
     }
 
     /// <summary>
@@ -159,7 +158,21 @@ namespace Spirograph
     /// </summary>
     void effect_t::Update(double deltaTime)
     {
-        const double SpeedFactor = _Speed == EyeCandy::Speed::Slow ? 0.55 : (_Speed == EyeCandy::Speed::Fast ? 1.75 : 1.0);
+        const double SpeedFactor = [&]() noexcept
+        {
+            switch (_Speed)
+            {
+                case Speed::Slow:
+                    return 0.55;
+
+                default:
+                case Speed::Normal:
+                    return 1.0;
+
+                case Speed::Fast:
+                    return 1.75;
+            }
+        }();
 
         _AnimationTime += deltaTime * SpeedFactor;
 

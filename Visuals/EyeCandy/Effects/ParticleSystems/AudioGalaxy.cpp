@@ -186,7 +186,21 @@ namespace AudioGalaxy
         if (_Stars.empty())
             Reset();
 
-        const double SpeedFactor = (_Speed == EyeCandy::Speed::Slow) ? .72 : (_Speed == EyeCandy::Speed::Fast) ? 1.75 : 1.;
+        const double SpeedFactor = [&]() noexcept
+        {
+            switch (_Speed)
+            {
+                case EyeCandy::Speed::Slow:
+                    return 0.75;
+
+                default:
+                case EyeCandy::Speed::Normal:
+                    return 1.00;
+
+                case EyeCandy::Speed::Fast:
+                    return 1.75;
+            }
+        }();
 
         _AnimationTime += SpeedFactor * deltaTime;
         _TransitionTime += deltaTime;

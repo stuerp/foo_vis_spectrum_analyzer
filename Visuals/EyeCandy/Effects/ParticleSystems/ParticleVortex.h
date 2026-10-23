@@ -1,5 +1,5 @@
 
-/** $VER: ParticleVortex.h (2026.10.18) **/
+/** $VER: ParticleVortex.h (2026.10.23) **/
 
 #pragma once
 
@@ -7,22 +7,18 @@
 
 #include <array>
 #include <atomic>
-#include <condition_variable>
 #include <cstdint>
-#include <mutex>
-#include <thread>
 #include <string>
 #include <vector>
 
 #include <d2d1.h>
-
 #include <wrl/client.h>
-
-using Microsoft::WRL::ComPtr;
 
 namespace ParticleVortex
 {
     using namespace EyeCandy;
+
+    using Microsoft::WRL::ComPtr;
 
     class effect_t final : public EyeCandy::effect_t
     {

@@ -1,5 +1,5 @@
 
-/** $VER: NeonTunnel.cpp (2026.10.16) **/
+/** $VER: NeonTunnel.cpp (2026.10.23) **/
 
 #include <pch.h>
 
@@ -7,7 +7,10 @@
 
 #include <algorithm>
 #include <cmath>
+#include <format>
+#include <mutex>
 #include <numeric>
+#include <thread>
 #include <vector>
 
 namespace NeonTunnel
@@ -20,32 +23,6 @@ namespace NeonTunnel
     effect_t::~effect_t()
     {
         StopWorkers();
-    }
-
-    namespace
-    {
-        // A slightly longer tunnel provides a more readable distant section while the larger near plane reduces excessive clipping as rings pass the viewer.
-        constexpr double NearPlane   = 0.070;
-        constexpr double FarPlane    = 2.350;
-        constexpr double TunnelDepth = FarPlane - NearPlane;
-
-        constexpr size_t LowQualityRingCount    =  56;
-        constexpr size_t MediumQualityRingCount =  80;
-        constexpr size_t HighQualityRingCount   = 120;
-
-        constexpr double MaximumDepthTwist = 0.48;
-        constexpr double MaximumBassTwist  = 0.22;
-
-        /*
-            Convert normalized physical depth to camera-space Z.
-            Equal phase intervals mean equal physical Z intervals. The perspective divide in ProjectPoint() alone makes the apparent spacing increase as rings approach the viewer.
-        */
-        double PhaseToZ(double phase) noexcept
-        {
-            phase = phase - std::floor(phase);
-
-            return FarPlane - phase * TunnelDepth;
-        }
     }
 
     /// <summary>

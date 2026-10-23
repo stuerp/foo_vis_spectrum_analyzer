@@ -29,10 +29,8 @@ namespace Fireworks
     /// </summary>
     std::wstring effect_t::GetStatus() noexcept
     {
-        constexpr std::array<const wchar_t *, 3> DensityNames = { { L"Low", L"Normal", L"High" } };
-
-        return std::format(L"Fireworks, {} density, {} quality, {} brightness, {} speed",
-            DensityNames[(size_t) _Density], Qualities[(size_t) _Quality], Brightnesses[(size_t) _Brightness], Speeds[(size_t) _Speed]);
+        return std::format(L"Fireworks, {} quality, {} speed, {} brightness, {} density",
+            Qualities[(size_t) _Quality], Speeds[(size_t) _Speed], Brightnesses[(size_t) _Brightness], DensityNames[(size_t) _Density]);
     }
 
     /// <summary>

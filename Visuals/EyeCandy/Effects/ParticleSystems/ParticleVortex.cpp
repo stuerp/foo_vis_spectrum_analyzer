@@ -34,7 +34,7 @@ namespace ParticleVortex
     /// </summary>
     std::wstring effect_t::GetStatus() noexcept
     {
-        return std::format(L"Particle Vortex, {} quality, {} speed", Qualities[(size_t) _Quality], Speeds[(size_t) _Speed]);
+        return std::format(L"Particle Vortex, {} quality, {} speed, {} brightness", Qualities[(size_t) _Quality], Speeds[(size_t) _Speed], Brightnesses[(size_t) _Brightness]);
     }
 
     /// <summary>
@@ -228,7 +228,7 @@ namespace ParticleVortex
             const audio_sample * Frame = Frames + FirstFrame * ChannelCount;
             const audio_sample * const FrameEnd = Frame + FrameCount * ChannelCount;
 
-            audio_sample * WindowedSample = WindowedSamples.data();
+            double * WindowedSample = WindowedSamples.data();
 
             size_t FrameIndex = 0;
 
@@ -301,8 +301,8 @@ namespace ParticleVortex
                 double Previous  = 0.;
                 double Previous2 = 0.;
 
-                const audio_sample * Sample = WindowedSamples.data();
-                const audio_sample * const SampleEnd = Sample + FrameCount;
+                const double * Sample = WindowedSamples.data();
+                const double * const SampleEnd = Sample + FrameCount;
 
                 while (Sample < SampleEnd)
                 {

@@ -1,5 +1,5 @@
 
-/** $VER: NeonTunnel.h (2026.10.18) **/
+/** $VER: NeonTunnel.h (2026.10.23) **/
 
 #pragma once
 
@@ -8,11 +8,7 @@
 #include <algorithm>
 #include <array>
 #include <atomic>
-#include <condition_variable>
 #include <cstdint>
-#include <format>
-#include <mutex>
-#include <thread>
 #include <string>
 #include <vector>
 
@@ -134,6 +130,15 @@ namespace NeonTunnel
         HRESULT CreateDeviceDependentResources(ID2D1RenderTarget * renderTarget) noexcept;
         void DeleteDeviceDependentResources() noexcept;
 
+        // Convert normalized physical depth to camera-space Z.
+        // Equal phase intervals mean equal physical Z intervals. The perspective divide in ProjectPoint() alone makes the apparent spacing increase as rings approach the viewer.
+        double PhaseToZ(double phase) const noexcept
+        {
+            phase = phase - std::floor(phase);
+
+            return FarPlane - phase * TunnelDepth;
+        }
+
     private:
         std::vector<ring_t> _Rings;
         std::vector<projected_ring_t> _ProjectedRings;
@@ -165,6 +170,18 @@ namespace NeonTunnel
 
         double _BassResponse = 1.65; // Bass sensitivity control: < 1.0 = less reactive bass, 1.0 = normal response, > 1.0 = more reactive bass.
         double _BeatResponse = 1.45; // Bass detection sensitivity
+
+        // A slightly longer tunnel provides a more readable distant section while the larger near plane reduces excessive clipping as rings pass the viewer.
+        static constexpr double NearPlane   = 0.070;
+        static constexpr double FarPlane    = 2.350;
+        static constexpr double TunnelDepth = FarPlane - NearPlane;
+
+        static constexpr size_t LowQualityRingCount    =  56;
+        static constexpr size_t MediumQualityRingCount =  80;
+        static constexpr size_t HighQualityRingCount   = 120;
+
+        static constexpr double MaximumDepthTwist = 0.48;
+        static constexpr double MaximumBassTwist  = 0.22;
 
     private:
         ComPtr<ID2D1SolidColorBrush> _RingBrush;

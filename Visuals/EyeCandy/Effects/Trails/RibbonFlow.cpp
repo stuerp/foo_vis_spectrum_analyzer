@@ -13,8 +13,7 @@ namespace RibbonFlow
 {
     std::wstring effect_t::GetStatus() noexcept
     {
-        return std::format(L"Ribbon Flow, {} quality, {} speed, {} brightness",
-            Qualities[(size_t) _Quality], Speeds[(size_t) _Speed], Brightnesses[(size_t) _Brightness]);
+        return std::format(L"Ribbon Flow, {} quality, {} speed", Qualities[(size_t) _Quality], Speeds[(size_t) _Speed]);
     }
 
     /// <summary>
@@ -137,7 +136,21 @@ namespace RibbonFlow
     /// </summary>
     void effect_t::Update(double deltaTime)
     {
-        const double SpeedFactor = _Speed == EyeCandy::Speed::Slow ? 0.55 : (_Speed == EyeCandy::Speed::Fast ? 1.75 : 1.0);
+        const double SpeedFactor = [&]() noexcept
+        {
+            switch (_Speed)
+            {
+                case EyeCandy::Speed::Slow:
+                    return 0.55;
+
+                default:
+                case EyeCandy::Speed::Normal:
+                    return 1.0;
+
+                case EyeCandy::Speed::Fast:
+                    return 1.75;
+            }
+        }();
 
         _AnimationTime += deltaTime * SpeedFactor;
 

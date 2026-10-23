@@ -16,7 +16,7 @@ namespace Swarm
     /// </summary>
     std::wstring effect_t::GetStatus() noexcept
     {
-        return std::format(L"Swarm, {} quality, {} speed", Qualities[(size_t)_Quality], Speeds[(size_t)_Speed]);
+        return std::format(L"Swarm, {} quality, {} speed, {} brightness", Qualities[(size_t) _Quality], Speeds[(size_t) _Speed], Brightnesses[(size_t) _Brightness]);
     }
 
     /// <summary>
@@ -628,9 +628,23 @@ namespace Swarm
     /// </summary>
     void effect_t::SetBrush(uint32_t color, float opacity, float gain) noexcept
     {
-        const float Mode = (_Brightness == Brightness::Low)  ? 1.05f : (_Brightness == Brightness::High) ? 1.80f : 1.45f;
+        const float BrightnessFactor = [&]() noexcept
+        {
+            switch (_Brightness)
+            {
+                case Brightness::Low:
+                    return 1.05f;
 
-        const float Boost = Mode * gain;
+                default:
+                case Brightness::Medium:
+                    return 1.45f;
+
+                case Brightness::High:
+                    return 1.80f;
+            }
+        }();
+
+        const float Boost = BrightnessFactor * gain;
 
         // HSVToBGRA returns a Windows-style packed BGRA value whose numeric representation is 0xAARRGGBB.
         const float B = (float) ((color >>  0) & 0xFFu) / 255.f;

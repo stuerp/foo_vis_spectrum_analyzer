@@ -7,7 +7,6 @@
 
 #include <algorithm>
 #include <cmath>
-#include <condition_variable>
 #include <format>
 #include <mutex>
 #include <thread>
@@ -27,8 +26,7 @@ namespace LissajousTrails
 
     std::wstring effect_t::GetStatus() noexcept
     {
-        return std::format(L"Lissajous Trails, {} quality, {} speed, {} brightness",
-            Qualities[(size_t) _Quality], Speeds[(size_t) _Speed], Brightnesses[(size_t) _Brightness]);
+        return std::format(L"Lissajous Trails, {} quality, {} speed", Qualities[(size_t) _Quality], Speeds[(size_t) _Speed]);
     }
 
     /// <summary>
@@ -241,12 +239,12 @@ namespace LissajousTrails
                 case EyeCandy::Speed::Slow:
                     return 0.55;
 
+                default:
+                case EyeCandy::Speed::Normal:
+                    return 1.0;
+
                 case EyeCandy::Speed::Fast:
                     return 1.75;
-
-                case EyeCandy::Speed::Normal:
-                default:
-                    return 1.0;
             }
         }();
 
@@ -403,7 +401,36 @@ namespace LissajousTrails
 
         const float Opacity = (float) std::clamp(1. - Decay, 0., 1.);
 
-        _Brush->SetColor(D2D1::ColorF(0.f, 0.f, 0.f, Opacity));
+        size_t FromTheme = 0;
+        size_t ToTheme   = 0;
+        double ThemeAmount = 0.;
+
+        GetThemeTransition(FromTheme, ToTheme, ThemeAmount);
+
+        static const std::array Themes
+        {
+            theme_t { 0.48, 0.34,  0.15, 0.68, 0.24, D2D1::ColorF(0x00040A) }, // Aurora: cyan, magenta and electric blue.
+            theme_t { 0.00, 0.13, -0.05, 0.76, 0.18, D2D1::ColorF(0x0B0200) }, // Ember: red, orange and gold.
+            theme_t { 0.24, 0.20,  0.08, 0.72, 0.20, D2D1::ColorF(0x000904) }, // Verdant: emerald, lime and aqua.
+            theme_t { 0.72, 0.19,  0.10, 0.70, 0.22, D2D1::ColorF(0x07000B) }, // Ultraviolet: violet, pink and blue.
+            theme_t { 0.52, 0.10, -0.04, 0.50, 0.16, D2D1::ColorF(0x02070A) }  // Arctic: ice blue, silver and cyan.
+        };
+
+        const D2D1_COLOR_F & From = Themes[FromTheme].Background;
+        const D2D1_COLOR_F & To   = Themes[ToTheme].Background;
+        const auto Blend = [ThemeAmount](float from, float to) noexcept
+        {
+            return (float) (from + ((to - from) * ThemeAmount));
+        };
+
+        _Brush->SetColor(D2D1::ColorF
+        (
+            Blend(From.r, To.r),
+            Blend(From.g, To.g),
+            Blend(From.b, To.b),
+            Opacity
+        ));
+//      _Brush->SetColor(D2D1::ColorF(0.f, 0.f, 0.f, Opacity));
         _Brush->SetOpacity(1.f);
 
         renderTarget->FillRectangle(_Rectangle, _Brush.Get());
@@ -520,15 +547,67 @@ namespace LissajousTrails
     /// </summary>
     uint32_t effect_t::Colorize(double value) const noexcept
     {
+        static const std::array Themes
+        {
+            theme_t { 0.48, 0.34,  0.15, 0.68, 0.24, D2D1::ColorF(0x00040A) }, // Aurora: cyan, magenta and electric blue.
+            theme_t { 0.00, 0.13, -0.05, 0.76, 0.18, D2D1::ColorF(0x0B0200) }, // Ember: red, orange and gold.
+            theme_t { 0.24, 0.20,  0.08, 0.72, 0.20, D2D1::ColorF(0x000904) }, // Verdant: emerald, lime and aqua.
+            theme_t { 0.72, 0.19,  0.10, 0.70, 0.22, D2D1::ColorF(0x07000B) }, // Ultraviolet: violet, pink and blue.
+            theme_t { 0.52, 0.10, -0.04, 0.50, 0.16, D2D1::ColorF(0x02070A) }  // Arctic: ice blue, silver and cyan.
+        };
+
+        size_t FromTheme   = 0;
+        size_t ToTheme     = 0;
+        double ThemeAmount = 0.;
+
+        GetThemeTransition(FromTheme, ToTheme, ThemeAmount);
+
+        const theme_t & From = Themes[FromTheme];
+        const theme_t & To   = Themes[ToTheme];
+
+        const auto Blend = [ThemeAmount](double from, double to) noexcept
+        {
+            return from + ((to - from) * ThemeAmount);
+        };
+
         const double Phase     = Fraction(value);
         const double AntiPhase = 0.5 * (1. - _SmoothedCorrelation);
-
+/*
         // Cyan, magenta and electric-blue palette with a small phase-dependent hue shift. Anti-phase content gravitates toward magenta while correlated content remains cyan/green.
         const auto H = (float) Fraction(0.48 + (Phase * 0.34) + (AntiPhase * 0.15) + (_AnimationTime * 0.006));
         const auto S = (float) std::clamp(0.68 + (AntiPhase * 0.24), 0., 1.);
+*/
+        // The inherited animation clock is the single source of theme-transition state, keeping every worker on the same palette without additional synchronization.
+        const auto H = (float) Fraction
+        (
+            Blend(From.HueStart, To.HueStart) + (Phase * Blend(From.HueRange, To.HueRange)) + (AntiPhase * Blend(From.AntiPhaseShift, To.AntiPhaseShift)) + (_AnimationTime * 0.006)
+        );
+
+        const auto S = (float) Clamp(Blend(From.Saturation, To.Saturation) + (AntiPhase * Blend(From.AntiPhaseBoost, To.AntiPhaseBoost)));
         const auto V = (float) std::clamp(0.62 + (_SmoothedRMS * 1.35) + (_SmoothedPeak * 0.2), 0.62, 1.);
 
         return HSVToBGRA(H, S, V);
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    void effect_t::GetThemeTransition(size_t & from, size_t & to, double & amount) const noexcept
+    {
+        constexpr size_t ThemeCount       = 5;
+        constexpr double ThemeDuration    = 3.;
+        constexpr double TransitionLength = 0.75;
+
+        // Reuse the animation time maintained by the base class instead of duplicating transition state in this effect.
+        const double ThemePosition = std::max(0., _AnimationTime) / ThemeDuration;
+        const size_t ThemeNumber   = (size_t) ThemePosition;
+        const double ThemeTime     = Fraction(ThemePosition) * ThemeDuration;
+
+        from = ThemeNumber % ThemeCount;
+        to   = (from + 1) % ThemeCount;
+
+        const double LinearAmount = std::clamp((ThemeTime - (ThemeDuration - TransitionLength)) / TransitionLength, 0., 1.);
+        amount = LinearAmount * LinearAmount * (3. - (2. * LinearAmount));
     }
 
     /// <summary>

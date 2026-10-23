@@ -1,5 +1,5 @@
 
-/** $VER: LissajousTrails.h (2026.10.20) **/
+/** $VER: LissajousTrails.h (2026.10.23) **/
 
 #pragma once
 
@@ -63,6 +63,16 @@ namespace LissajousTrails
             double Time        = 0.;
         };
 
+        struct theme_t
+        {
+            double HueStart       = 0.;
+            double HueRange       = 0.;
+            double AntiPhaseShift = 0.;
+            double Saturation     = 0.;
+            double AntiPhaseBoost = 0.;
+            D2D1_COLOR_F Background {};
+        };
+
     private:
         void AnalyzeAudio(const audio_chunk_impl & chunk, const channel_pair_t & channels);
         void Update(double deltaTime);
@@ -81,7 +91,8 @@ namespace LissajousTrails
         D2D1_POINT_2F TransformSample(stereo_sample_t sample, double stereoRotation) const noexcept;
         
         uint32_t Colorize(double value) const noexcept;
-        
+        void GetThemeTransition(size_t & from, size_t & to, double & amount) const noexcept;
+
         void StartWorkers();
         void StopWorkers() noexcept;
         void Worker() noexcept;
