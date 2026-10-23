@@ -37,12 +37,22 @@ namespace Aurora
     /// </summary>
     void effect_t::Reset() noexcept
     {
-        constexpr uint32_t Dividers[] = { 6, 4, 3 };
+        constexpr uint32_t Dividers[] = { 9, 6, 3 };
 
-        _RasterWidth  = std::max(64u, (uint32_t) (_Width  / (float) Dividers[(size_t) _Quality]));
-        _RasterHeight = std::max(36u, (uint32_t) (_Height / (float) Dividers[(size_t) _Quality]));
+        const float Width  = std::max(_Width,  1.f);
+        const float Height = std::max(_Height, 1.f);
 
-        _Pixels.resize((size_t) (_RasterWidth * _RasterHeight));
+        const float Scale = std::max(Width, Height) / std::min(Width, Height);
+
+        const float Divider = (float) Dividers[std::min<size_t>((size_t) _Quality, _countof(Dividers) - 1)];
+
+        _RasterWidth  = std::max((uint32_t) std::lround(Width  * Scale / Divider), 1u);
+        _RasterHeight = std::max((uint32_t) std::lround(Height * Scale / Divider), 1u);
+
+        _Pixels.resize((size_t) _RasterWidth * _RasterHeight);
+
+        // Make sure the Direct2D bitmap gets recreated.
+        _BackBuffer.Reset();
     }
 
     /// <summary>
@@ -50,16 +60,48 @@ namespace Aurora
     /// </summary>
     void effect_t::Render(ID2D1RenderTarget * renderTarget, double deltaTime, audio_chunk_impl & chunk) noexcept
     {
+        const HRESULT hr = CreateDeviceDependentResources(renderTarget);
+
+        if (FAILED(hr))
+            return;
+
+        // A track change can make the playback-derived time delta jump backwards or become very large. Negative deltas reverse exponential decay and make the
+        // smoothed balance grow without bounds, moving every blob off-screen.
+        constexpr double DefaultFrameTime = 1. / 60.;
+        constexpr double MaximumFrameTime = 0.1;
+
+        if (!std::isfinite(deltaTime) || deltaTime <= 0. || deltaTime > MaximumFrameTime)
+            deltaTime = DefaultFrameTime;
+
         // Update the pixel matrix.
         {
             _Audio = _Analyzer.Analyze(chunk, deltaTime);
 
             {
-                constexpr double SpeedFactors[] = { .45, .75, 1.15 };
+                const double SpeedFactor = [&]() noexcept
+                {
+                    switch (_Speed)
+                    {
+                        case EyeCandy::Speed::Slow:
+                            return 0.30;
 
-                const double AudioActivity = Clamp((_Audio.Loudness * .65) + (_Audio.Bass * .20) + (_Audio.Treble * .15));
+                        default:
+                        case EyeCandy::Speed::Normal:
+                            return 0.45;
 
-                _AnimationTime += deltaTime * SpeedFactors[std::min((size_t) _Speed, _countof(SpeedFactors) - 1)] * AudioActivity;
+                        case EyeCandy::Speed::Fast:
+                            return 0.85;
+                    }
+                }();
+
+                _AnimationTime += SpeedFactor * deltaTime;
+                _ThemeTime     += deltaTime;
+
+                // Keep the trigonometric argument bounded during long-running sessions.
+                constexpr double WrapTime = 2. * Pi * 1024.;
+
+                if (_AnimationTime >= WrapTime)
+                    _AnimationTime = std::fmod(_AnimationTime, 2. * Pi);
             }
 
             _Interaction.Impulse *= std::exp(-2.6 * deltaTime);
@@ -68,7 +110,7 @@ namespace Aurora
             {
                 ++_NextThemeIndex;
 
-                if (_NextThemeIndex == theme_t::BuiltInCount)
+                if (_NextThemeIndex == Field::theme_t::BuiltInCount)
                     _NextThemeIndex = 0;
 
                 _NextTransitionTime = _AnimationTime + TransitionInterval;
@@ -77,7 +119,7 @@ namespace Aurora
             if (_ThemeIndex != _NextThemeIndex)
             {
                 _FromTheme = _Theme;
-                _ToTheme   = theme_t::BuiltIn(_NextThemeIndex);
+                _ToTheme   = Field::theme_t::BuiltIn(_NextThemeIndex);
 
                 _ThemeIndex = _NextThemeIndex;
                 _TransitionTime = 0.;
@@ -86,7 +128,7 @@ namespace Aurora
             _TransitionTime = std::min(_TransitionTime + (deltaTime / .40), 1.);
 
             if (_TransitionTime < 1.)
-                _Theme = theme_t::Blend(_FromTheme, _ToTheme, _TransitionTime);
+                _Theme = Field::theme_t::Blend(_FromTheme, _ToTheme, _TransitionTime);
 
             Update(_AnimationTime);
         }
@@ -106,218 +148,16 @@ namespace Aurora
                 _BackBuffer->CopyFromMemory(nullptr, _Pixels.data(), _RasterWidth * BytesPerPixel);
         }
 
-        // Render the bitmap across the complete render target. Using the target dimensions here keeps the effect fullscreen
-        // when the host switches display modes or resizes the visualization window without depending on the layout rectangle.
+        // Render the bitmap.
         {
+            _BackBuffer->CopyFromMemory(nullptr, _Pixels.data(), _RasterWidth * BytesPerPixel);
+
             renderTarget->Clear(D2D1::ColorF(D2D1::ColorF::Black));
 
             const auto Size = renderTarget->GetSize();
-            const auto FullscreenRectangle = D2D1::RectF(0.f, 0.f, Size.width, Size.height);
 
-            if (_BackBuffer)
-                renderTarget->DrawBitmap(_BackBuffer.Get(), FullscreenRectangle, 1.f, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR);
+            renderTarget->DrawBitmap(_BackBuffer.Get(), _Rectangle);
         }
-    }
-
-    /// <summary>
-    /// Extracts six animation-friendly values from stereo audio: overall loudness, bass, midrange, treble, stereo balance, and peak amplitude
-    /// </summary>
-    audio_t analyzer_t::Analyze(const audio_chunk_impl & chunk, double deltaTime) noexcept
-    {
-        if (chunk.is_empty())
-        {
-            // Keep the visualizer moving naturally when no new audio is available.
-            Decay(deltaTime);
-
-            return _Audio;
-        }
-
-        const size_t FrameCount   = chunk.get_sample_count();
-        const size_t ChannelCount = chunk.get_channel_count();
-
-        const unsigned SampleRate    = chunk.get_sample_rate();
-        const unsigned ChannelConfig = chunk.get_channel_config();
-
-        const audio_sample * Sample = chunk.get_data();
-
-        // One-pole low-pass filter coefficients. _LowState tracks frequencies below roughly 180 Hz, while _HighState tracks frequencies below 2400 Hz.
-        const double BassFilterCoefficient   = std::exp(-2. * Pi *  180. / (double) SampleRate);
-        const double TrebleFilterCoefficient = std::exp(-2. * Pi * 2400. / (double) SampleRate);
-
-        const double BassFilterInputCoefficient   = 1. - BassFilterCoefficient;
-        const double TrebleFilterInputCoefficient = 1. - TrebleFilterCoefficient;
-
-        const double InverseChannelCount = 1. / (double) ChannelCount;
-
-        double TotalSignalEnergy = 0.;
-
-        double BassEnergy        = 0.;
-        double MidrangeEnergy    = 0.;
-        double TrebleEnergy      = 0.;
-
-        double LeftChannelEnergy  = 0.;
-        double RightChannelEnergy = 0.;
-
-        double PeakAmplitude = 0.;
-
-        constexpr unsigned LeftChannelConfig =
-            audio_chunk::channel_front_left        |
-            audio_chunk::channel_back_left         |
-            audio_chunk::channel_front_center_left |
-            audio_chunk::channel_side_left         |
-            audio_chunk::channel_top_front_left    |
-            audio_chunk::channel_top_back_left;
-
-        constexpr unsigned RightChannelConfig =
-            audio_chunk::channel_front_right        |
-            audio_chunk::channel_back_right         |
-            audio_chunk::channel_front_center_right |
-            audio_chunk::channel_side_right         |
-            audio_chunk::channel_top_front_right    |
-            audio_chunk::channel_top_back_right;
-
-        // Cache the channel classification by channel index. A size_t mask avoids allocating memory in this noexcept function.
-        constexpr size_t ChannelMaskBitCount = sizeof(size_t) * 8;
-
-        size_t LeftChannelMask  = 0;
-        size_t RightChannelMask = 0;
-
-        const size_t CachedChannelCount = std::min(ChannelCount, ChannelMaskBitCount);
-
-        for (size_t ChannelIndex = 0; ChannelIndex < CachedChannelCount; ++ChannelIndex)
-        {
-            const unsigned ChannelFlag = audio_chunk::g_extract_channel_flag(ChannelConfig, (unsigned) ChannelIndex);
-            const size_t ChannelBit    = (size_t) 1 << ChannelIndex;
-
-            if ((ChannelFlag & LeftChannelConfig) != 0)
-            {
-                LeftChannelMask |= ChannelBit;
-            }
-            else
-            if ((ChannelFlag & RightChannelConfig) != 0)
-            {
-                RightChannelMask |= ChannelBit;
-            }
-        }
-
-        for (size_t FrameIndex = 0; FrameIndex < FrameCount; ++FrameIndex)
-        {
-            double MonoSample = 0.;
-
-            for (size_t ChannelIndex = 0; ChannelIndex < ChannelCount; ++ChannelIndex, ++Sample)
-            {
-                const double ChannelSample       = (double) *Sample;
-                const double ChannelSampleEnergy = ChannelSample * ChannelSample;
-
-                TotalSignalEnergy += ChannelSampleEnergy;
-                MonoSample        += ChannelSample;
-
-                PeakAmplitude = std::max(PeakAmplitude, std::abs(ChannelSample));
-
-                bool IsLeftChannel  = false;
-                bool IsRightChannel = false;
-
-                if (ChannelIndex < CachedChannelCount)
-                {
-                    const size_t ChannelBit = (size_t) 1 << ChannelIndex;
-
-                    IsLeftChannel  = (LeftChannelMask  & ChannelBit) != 0;
-                    IsRightChannel = (RightChannelMask & ChannelBit) != 0;
-                }
-                else
-                {
-                    // This fallback only applies to channel counts larger than the native size_t mask.
-                    const unsigned ChannelFlag = audio_chunk::g_extract_channel_flag(ChannelConfig, (unsigned) ChannelIndex);
-
-                    IsLeftChannel  = (ChannelFlag & LeftChannelConfig)  != 0;
-                    IsRightChannel = (ChannelFlag & RightChannelConfig) != 0;
-                }
-
-                if (IsLeftChannel)
-                {
-                    LeftChannelEnergy += ChannelSampleEnergy;
-                }
-                else
-                if (IsRightChannel)
-                {
-                    RightChannelEnergy += ChannelSampleEnergy;
-                }
-                else
-                {
-                    // Center, LFE and unknown channels have no left/right bias.
-                    const double SharedChannelEnergy = ChannelSampleEnergy * .5;
-
-                    LeftChannelEnergy  += SharedChannelEnergy;
-                    RightChannelEnergy += SharedChannelEnergy;
-                }
-            }
-
-            // Analyze frequency content using a mono downmix.
-            MonoSample *= InverseChannelCount;
-
-            // Update the persistent one-pole low-pass filter states.
-            _LowState  = BassFilterInputCoefficient   * MonoSample + BassFilterCoefficient   * _LowState;
-            _HighState = TrebleFilterInputCoefficient * MonoSample + TrebleFilterCoefficient * _HighState;
-
-            // Split the mono signal into approximate frequency bands:
-            // - bass     = output of the 180 Hz low-pass filter
-            // - treble   = content removed by the 2400 Hz low-pass filter
-            // - midrange = content remaining between both cutoff frequencies
-            const double BassSample     = _LowState;
-            const double TrebleSample   = MonoSample - _HighState;
-            const double MidrangeSample = _HighState - _LowState;
-
-            BassEnergy     += BassSample     * BassSample;
-            MidrangeEnergy += MidrangeSample * MidrangeSample;
-            TrebleEnergy   += TrebleSample   * TrebleSample;
-        }
-
-        const double InverseFrameCount  = 1. / (double) FrameCount;
-        const double InverseSampleCount = InverseFrameCount * InverseChannelCount;
-
-        audio_t NewAudio;
-
-        // Convert accumulated signal energy to RMS amplitudes. The scale factors tune visual sensitivity.
-        NewAudio.Loudness = std::clamp(std::sqrt(TotalSignalEnergy * InverseSampleCount) * 3.4, 0., 1.);
-
-        NewAudio.Bass     = std::clamp(std::sqrt(BassEnergy        * InverseFrameCount) * 5.2, 0., 1.);
-        NewAudio.Mid      = std::clamp(std::sqrt(MidrangeEnergy    * InverseFrameCount) * 6.4, 0., 1.);
-        NewAudio.Treble   = std::clamp(std::sqrt(TrebleEnergy      * InverseFrameCount) * 8.5, 0., 1.);
-
-        // Energy balance ranges approximately from -1 for fully left to +1 for fully right.
-        NewAudio.Balance = (RightChannelEnergy - LeftChannelEnergy) / (LeftChannelEnergy + RightChannelEnergy + Epsilon);
-
-        NewAudio.Peak = std::clamp(PeakAmplitude, 0., 1.);
-
-        // Apply separate response speeds because each visual characteristic benefits from a different amount of motion and stability.
-        _Audio.Loudness = Interpolate(_Audio.Loudness, NewAudio.Loudness, deltaTime, 10);
-        _Audio.Bass     = Interpolate(_Audio.Bass,     NewAudio.Bass,     deltaTime,  7);
-        _Audio.Mid      = Interpolate(_Audio.Mid,      NewAudio.Mid,      deltaTime,  9);
-        _Audio.Treble   = Interpolate(_Audio.Treble,   NewAudio.Treble,   deltaTime, 13);
-        _Audio.Balance  = Interpolate(_Audio.Balance,  NewAudio.Balance,  deltaTime,  5);
-
-        // PeakAmplitude tracks the largest absolute sample in the entire chunk. Unlike RMS loudness, this responds directly to sharp transients such as drum hits.
-        // The smoothing logic gives peaks an immediate attack and an exponential release producing a stable peak-hold effect without hiding sudden transients.
-        const double PeakRelease = std::exp(-2.8 * deltaTime);
-
-        _Audio.Peak = std::max(NewAudio.Peak, _Audio.Peak * PeakRelease);
-
-        return _Audio;
-    }
-
-    /// <summary>
-    /// Decays the audio parameters.
-    /// </summary>
-    void analyzer_t::Decay(double deltaTime) noexcept
-    {
-        _Audio.Loudness *= std::exp(-2.4 * deltaTime);
-
-        _Audio.Bass     *= std::exp(-2   * deltaTime);
-        _Audio.Mid      *= std::exp(-2.5 * deltaTime);
-        _Audio.Treble   *= std::exp(-3   * deltaTime);
-
-        _Audio.Balance  *= std::exp(-2   * deltaTime);
-        _Audio.Peak     *= std::exp(-2.8 * deltaTime);
     }
 
     /// <summary>
@@ -405,6 +245,26 @@ namespace Aurora
         Red   = Clamp(Red   + (_Theme.BassRed    * _Audio.Bass)   + (.06 * Fold));
         Green = Clamp(Green + (_Theme.MidGreen   * _Audio.Mid)    + (.14 * Intensity));
         Blue  = Clamp(Blue  + (_Theme.TrebleBlue * _Audio.Treble) + (.10 * Fold));
+
+        const double BrightnessFactor = [&]() noexcept
+        {
+            switch (_Brightness)
+            {
+                case EyeCandy::Brightness::Low:
+                    return .50;
+
+                default:
+                case EyeCandy::Brightness::Medium:
+                    return 1.00;
+
+                case EyeCandy::Brightness::High:
+                    return 1.50;
+            }
+        }();
+
+        Red   *= BrightnessFactor;
+        Green *= BrightnessFactor;
+        Blue  *= BrightnessFactor;
 
         const uint32_t R = (uint32_t) ToRGB(Red);
         const uint32_t G = (uint32_t) ToRGB(Green);

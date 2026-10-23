@@ -290,7 +290,7 @@ namespace EyeCandy
             _Width  = width;
             _Height = height;
 
-            _CenterX  = width  * 0.5f;
+            _CenterX = width  * 0.5f;
             _CenterY = height * 0.5f;
 
             _Rectangle = D2D1::RectF(0.f, 0.f, _Width, _Height);

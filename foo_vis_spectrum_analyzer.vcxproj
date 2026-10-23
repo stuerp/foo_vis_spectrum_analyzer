@@ -267,6 +267,7 @@
     <ClInclude Include="Visuals\EyeCandy\Effects\DynamicSystems\LorenzAttractor.h" />
     <ClInclude Include="Visuals\EyeCandy\Effects\Effects.h" />
     <ClInclude Include="Visuals\EyeCandy\Effects\Fields\Aurora.h" />
+    <ClInclude Include="Visuals\EyeCandy\Effects\Fields\FieldEffect.h" />
     <ClInclude Include="Visuals\EyeCandy\Effects\Fields\FluidInk.h" />
     <ClInclude Include="Visuals\EyeCandy\Effects\Fields\Metaballs.h" />
     <ClInclude Include="Visuals\EyeCandy\Effects\Fields\Plasma.h" />
@@ -393,6 +394,7 @@
     <ClCompile Include="Visuals\EyeCandy\Effects\DynamicSystems\DynamicSystemEffect.cpp" />
     <ClCompile Include="Visuals\EyeCandy\Effects\DynamicSystems\LorenzAttractor.cpp" />
     <ClCompile Include="Visuals\EyeCandy\Effects\Fields\Aurora.cpp" />
+    <ClCompile Include="Visuals\EyeCandy\Effects\Fields\FieldEffect.cpp" />
     <ClCompile Include="Visuals\EyeCandy\Effects\Fields\FluidInk.cpp" />
     <ClCompile Include="Visuals\EyeCandy\Effects\Fields\Metaballs.cpp" />
     <ClCompile Include="Visuals\EyeCandy\Effects\Fields\Plasma.cpp" />

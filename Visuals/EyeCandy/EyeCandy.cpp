@@ -37,12 +37,12 @@ void eye_candy_t::Render(ID2D1DeviceContext * deviceContext) noexcept
         _EffectId = _State->_EffectId;
     }
 
-    double DeltaTime = _State->_PlaybackTime - _PlaybackTime;
-
     _Effect->SetQuality(_State->_EffectQuality);
     _Effect->SetSpeed(_State->_EffectSpeed);
     _Effect->SetBrightness(_State->_EffectBrightness);
     _Effect->SetDensity(_State->_EffectDensity);
+
+    double DeltaTime = _State->_PlaybackTime - _PlaybackTime;
 
     _Effect->Render(deviceContext, DeltaTime, _Analysis->_Chunk);
 
