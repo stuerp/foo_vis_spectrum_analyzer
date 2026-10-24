@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.h (2026.10.10) P. Stuer -  Implements a spectrum analyzer visualization **/
+/** $VER: Spectrum.h (2026.10.24) P. Stuer -  Implements a spectrum analyzer visualization **/
 
 #pragma once
 
@@ -17,14 +17,15 @@
 /// <summary>
 /// Implements the visualisation of the spectrum.
 /// </summary>
-class spectrum_t : public visualization_t
+class spectrum_t final : public visualization_t
 {
 public:
-    spectrum_t() = default;
+    spectrum_t(state_t & state) : visualization_t(state), _XAxis(state), _YAxis(state) { }
 
     spectrum_t(const spectrum_t &) = delete;
-    spectrum_t & operator=(const spectrum_t &) = delete;
     spectrum_t(spectrum_t &&) = delete;
+
+    spectrum_t & operator=(const spectrum_t &) = delete;
     spectrum_t & operator=(spectrum_t &&) = delete;
 
     virtual ~spectrum_t();
@@ -37,7 +38,7 @@ public:
     void OnConfigurationChanged(ConfigurationChanges configurationChanges) noexcept override final;
 
     // visualization_t
-    void Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice = nullptr, ID3D11DeviceContext * d3dDeviceContext = nullptr) noexcept override final;
+    void Configure(graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice = nullptr, ID3D11DeviceContext * d3dDeviceContext = nullptr) noexcept override final;
 
 private:
     HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept;
@@ -124,4 +125,8 @@ private:
 
     style_t _WindowFunctionStyle;
     style_t _WeighingFunctionStyle;
+
+    static constexpr double Pi    = std::numbers::pi;
+    static constexpr double TwoPi = 2. * Pi;
+    static constexpr double Pi2   = Pi * 0.5;
 };

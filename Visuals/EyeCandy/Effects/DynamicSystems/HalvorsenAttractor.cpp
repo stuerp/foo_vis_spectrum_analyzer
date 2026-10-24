@@ -47,14 +47,14 @@ namespace HalvorsenAttractor
     /// <summary>
     /// 
     /// </summary>
-    void effect_t::Render(ID2D1RenderTarget * renderTarget, double deltaTime, audio_chunk_impl & chunk) noexcept
+    void effect_t::Render(ID2D1RenderTarget * renderTarget, double deltaTime, audio_chunk & chunk) noexcept
     {
         HRESULT hr = CreateDeviceDependentResources(renderTarget);
 
         if (FAILED(hr))
             return;
 
-        deltaTime = std::clamp(deltaTime, 0.0, 0.1);
+        deltaTime = Clamp(deltaTime);
 
         AnalyzeAudio(chunk);
         Update(deltaTime);
@@ -106,6 +106,7 @@ namespace HalvorsenAttractor
 
         _SmoothedPeak        = ExponentialSmoothing(_SmoothedPeak,        _Peak,        deltaTime, (_Peak > _SmoothedPeak) ? 22. : 5.);
         _SmoothedRMS         = ExponentialSmoothing(_SmoothedRMS,         _RMS,         deltaTime, (_RMS  > _SmoothedRMS)  ? 16. : 4.);
+
         _SmoothedWidth       = ExponentialSmoothing(_SmoothedWidth,       _StereoWidth, deltaTime, 5.5);
         _SmoothedCorrelation = ExponentialSmoothing(_SmoothedCorrelation, _Correlation, deltaTime, 4.0);
 
@@ -120,7 +121,7 @@ namespace HalvorsenAttractor
         if ((_Width < 2.f) || (_Height < 2.f) || (_SplinePoints.size() < 2))
             return;
 
-        const double Energy = std::clamp(0.32 + _SmoothedRMS * 2.2 + _SmoothedPeak * 0.35, 0.32, 1.);
+        const double Energy = std::clamp(0.32 + (_SmoothedRMS * 2.2) + (_SmoothedPeak * 0.35), 0.32, 1.);
 
         const auto PreparedProjection = ThreeD::Prepare();
 
@@ -136,13 +137,14 @@ namespace HalvorsenAttractor
             if (Previous.IsProjectable && Current.IsProjectable)
             {
                 const double Amount = (double) i / (double) (_SplinePoints.size() - 1);
-                const uint32_t Color = GetCurveColor(Amount + _AnimationTime * 0.025);
 
-                const double Depth = 1. - (Previous.LinearDepth + Current.LinearDepth) * 0.5;
-                const double ViewDepth = (Previous.ViewDepth + Current.ViewDepth) * 0.5;
+                const double Depth     = 1. - (Previous.LinearDepth + Current.LinearDepth) * 0.5;
+                const double ViewDepth =      (Previous.ViewDepth   + Current.ViewDepth)   * 0.5;
 
-                const float Intensity = (float) (Energy * (0.52 + Depth * 0.48));
+                const float Intensity = (float) (Energy * (0.52 + (Depth * 0.48)));
                 const float Thickness = std::clamp(34.f / (float) std::max(ViewDepth, Projection.NearPlane), 0.55f, 2.20f);
+
+                const uint32_t Color = GetCurveColor(Amount + (_AnimationTime * 0.025));
 
                 DrawGlowLine(renderTarget, Previous.Position, Current.Position, Color, Intensity, Thickness);
             }
@@ -263,10 +265,10 @@ namespace HalvorsenAttractor
     /// </summary>
     void effect_t::UpdateScene(double deltaTime) noexcept
     {
-        const double Peak  = std::clamp(_SmoothedPeak,  0., 1.);
-        const double RMS   = std::clamp(_SmoothedRMS,   0., 1.);
-        const double Width = std::clamp(_SmoothedWidth, 0., 1.);
-        const double Phase = std::clamp(_PhaseEnergy,   0., 1.);
+        const double Peak  = Clamp(_SmoothedPeak);
+        const double RMS   = Clamp(_SmoothedRMS);
+        const double Width = Clamp(_SmoothedWidth);
+        const double Phase = Clamp(_PhaseEnergy);
 
         _AudioOrbit = ExponentialSmoothing(_AudioOrbit, Width * 0.34,                    deltaTime, 3.5);
         _AudioLift  = ExponentialSmoothing(_AudioLift, (Peak - RMS) * 2.0,               deltaTime, 5.0);
@@ -286,13 +288,13 @@ namespace HalvorsenAttractor
         };
         Object.Scale = { _AudioScale, _AudioScale, _AudioScale };
 
-        const double Orbit = Time * 0.055 + _AudioOrbit * std::sin(Time * 0.31);
-        const double Radius = 38.0 - RMS * 3.0;
+        const double Orbit = (Time * 0.055) + (_AudioOrbit * std::sin(Time * 0.31));
+        const double Radius = 38.0 - (RMS * 3.0);
 
         Camera.Position =
         {
             std::sin(Orbit) * Radius,
-            4.0 + std::sin(Time * 0.11) * 2.0 + _AudioLift * 0.35,
+            4.0 + (std::sin(Time * 0.11) * 2.) + (_AudioLift * 0.35),
             -std::cos(Orbit) * Radius
         };
         Camera.Target = { Object.Position.X, Object.Position.Y, 0. };
@@ -313,14 +315,19 @@ namespace HalvorsenAttractor
         {
             switch (_Quality)
             {
-                case EyeCandy::Quality::Low: return 3000;
-                case EyeCandy::Quality::High: return 12000;
-                case EyeCandy::Quality::Medium:
-                default: return 6000;
+                case Quality::Low:
+                    return 3'000;
+
+                default:
+                case Quality::Medium:
+                    return 6'000;
+
+                case Quality::High:
+                    return 12'000;
             }
         }();
 
-        const double AudioEnergy = std::clamp(_SmoothedRMS * 0.65 + _SmoothedPeak * 0.25 + _PhaseEnergy * 0.10, 0.0, 1.0);
+        const double AudioEnergy = Clamp((_SmoothedRMS * 0.65) + (_SmoothedPeak * 0.25) + (_PhaseEnergy * 0.10));
 
         const field_t Field
         {
@@ -331,7 +338,7 @@ namespace HalvorsenAttractor
 
         point3d_t Point { -5., 0., 0. };
 
-        for (size_t i = 0; i < 5000; ++i)
+        for (size_t i = 0; i < 5'000; ++i)
             Point = Integrate(Point, Field.Step, Field.A);
 
         _Points.resize(PointCount);
@@ -414,70 +421,4 @@ namespace HalvorsenAttractor
             point.Z + step * (k1.Z + 2. * k2.Z + 2. * k3.Z + k4.Z) / 6.
         };
     }
-/*
-    /// <summary>
-    /// 
-    /// </summary>
-    effect_t::point3d_t effect_t::EvaluateSpline(point3d_t p0, point3d_t p1, point3d_t p2, point3d_t p3, double amount) noexcept
-    {
-        const double Amount2 = amount * amount;
-        const double Amount3 = Amount2 * amount;
-
-        const double Weight0 = (1. - 3. * amount + 3. * Amount2 - Amount3) / 6.;
-        const double Weight1 = (4. - 6. * Amount2 + 3. * Amount3) / 6.;
-        const double Weight2 = (1. + 3. * amount + 3. * Amount2 - 3. * Amount3) / 6.;
-        const double Weight3 = Amount3 / 6.;
-
-        return
-        {
-            p0.X * Weight0 + p1.X * Weight1 + p2.X * Weight2 + p3.X * Weight3,
-            p0.Y * Weight0 + p1.Y * Weight1 + p2.Y * Weight2 + p3.Y * Weight3,
-            p0.Z * Weight0 + p1.Z * Weight1 + p2.Z * Weight2 + p3.Z * Weight3
-        };
-    }
-
-    /// <summary>
-    /// 
-    /// </summary>
-    void effect_t::GenerateSpline() noexcept
-    {
-        _SplinePoints.clear();
-
-        if (_Points.size() < 2)
-            return;
-
-        const size_t SubdivisionCount = std::clamp(_SplineSubdivision, (size_t) 1, (size_t) 12);
-        const double Smoothing = std::clamp(_SplineSmoothing, 0., 1.);
-
-        _SplinePoints.reserve((_Points.size() - 1) * SubdivisionCount + 1);
-        _SplinePoints.push_back(_Points.front());
-
-        for (size_t i = 0; i + 1 < _Points.size(); ++i)
-        {
-            const point3d_t p0 = _Points[i > 0 ? i - 1 : i];
-            const point3d_t p1 = _Points[i];
-            const point3d_t p2 = _Points[i + 1];
-            const point3d_t p3 = _Points[i + 2 < _Points.size() ? i + 2 : i + 1];
-
-            for (size_t j = 1; j <= SubdivisionCount; ++j)
-            {
-                const double Amount = (double) j / (double) SubdivisionCount;
-                const point3d_t Spline = EvaluateSpline(p0, p1, p2, p3, Amount);
-                const point3d_t Linear
-                {
-                    Lerp(p1.X, p2.X, Amount),
-                    Lerp(p1.Y, p2.Y, Amount),
-                    Lerp(p1.Z, p2.Z, Amount)
-                };
-
-                _SplinePoints.push_back
-                ({
-                    Lerp(Linear.X, Spline.X, Smoothing),
-                    Lerp(Linear.Y, Spline.Y, Smoothing),
-                    Lerp(Linear.Z, Spline.Z, Smoothing)
-                });
-            }
-        }
-    }
-*/
 }

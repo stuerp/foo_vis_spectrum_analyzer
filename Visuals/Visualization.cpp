@@ -1,5 +1,5 @@
 
-/** $VER: Visualization.cpp (2026.10.11) P. Stuer - Base class for all visualization elements. **/
+/** $VER: Visualization.cpp (2026.10.24) P. Stuer - Base class for all visualization elements. **/
 
 #include "pch.h"
 
@@ -21,7 +21,7 @@
 /// <summary>
 /// Creates an instance of the specified visualization.
 /// </summary>
-std::unique_ptr<visualization_t> visualization_t::Create(const state_t & state) noexcept
+std::unique_ptr<visualization_t> visualization_t::Create(state_t & state) noexcept
 {
     switch (state._VisualizationType)
     {
@@ -31,36 +31,36 @@ std::unique_ptr<visualization_t> visualization_t::Create(const state_t & state) 
         case VisualizationType::Curve:
         case VisualizationType::RadialBars:
         case VisualizationType::RadialCurve:
-            return std::make_unique<spectrum_t>();
+            return std::make_unique<spectrum_t>(state);
 
         case VisualizationType::Spectrogram:
-            return std::make_unique<spectrogram_t>();
+            return std::make_unique<spectrogram_t>(state);
 
         case VisualizationType::PeakMeter:
-            return std::make_unique<peak_meter_t>();
+            return std::make_unique<peak_meter_t>(state);
 
         case VisualizationType::LevelMeter:
-            return std::make_unique<level_meter_t>();
+            return std::make_unique<level_meter_t>(state);
 
         case VisualizationType::Oscilloscope:
             if (!state._XYMode)
-                return std::make_unique<oscilloscope_t>();
+                return std::make_unique<oscilloscope_t>(state);
 
-            return std::make_unique<oscilloscope_xy_t>();
+            return std::make_unique<oscilloscope_xy_t>(state);
 
         case VisualizationType::BitMeter:
-            return std::make_unique<bit_meter_t>();
+            return std::make_unique<bit_meter_t>(state);
 
         case VisualizationType::Goniometer:
-            return std::make_unique<goniometer_t>();
+            return std::make_unique<goniometer_t>(state);
 
         case VisualizationType::EyeCandy:
-            return std::make_unique<eye_candy_t>();
+            return std::make_unique<eye_candy_t>(state);
 
         case VisualizationType::Tester:
-            return std::make_unique<tester_t>();
+            return std::make_unique<tester_t>(state);
 
         case VisualizationType::D3DTester:
-            return std::make_unique<d3d_tester_t>();
+            return std::make_unique<d3d_tester_t>(state);
     }
 }

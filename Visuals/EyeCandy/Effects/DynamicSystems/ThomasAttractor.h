@@ -28,7 +28,7 @@ namespace ThomasAttractor
         effect_t & operator=(const effect_t &) = delete;
         effect_t & operator=(effect_t &&) = delete;
 
-        void Render(ID2D1RenderTarget *, double, audio_chunk_impl &) noexcept override final;
+        void Render(ID2D1RenderTarget * renderTarget, double deltaTime, audio_chunk & chunk) noexcept override final;
 
         std::wstring GetStatus() noexcept override final;
 

@@ -24,14 +24,14 @@ namespace LorenzAttractor
     /// <summary>
     /// 
     /// </summary>
-    void effect_t::Render(ID2D1RenderTarget * renderTarget, double deltaTime, audio_chunk_impl & chunk) noexcept
+    void effect_t::Render(ID2D1RenderTarget * renderTarget, double deltaTime, audio_chunk & chunk) noexcept
     {
         HRESULT hr = CreateDeviceDependentResources(renderTarget);
 
         if (FAILED(hr))
             return;
 
-        deltaTime = std::clamp(deltaTime, 0.0, 0.1);
+        deltaTime = Clamp(deltaTime);
 
         AnalyzeAudio(chunk);
         Update(deltaTime);
@@ -83,6 +83,7 @@ namespace LorenzAttractor
 
         _SmoothedPeak        = ExponentialSmoothing(_SmoothedPeak,        _Peak,        deltaTime, (_Peak > _SmoothedPeak) ? 22. : 5.);
         _SmoothedRMS         = ExponentialSmoothing(_SmoothedRMS,         _RMS,         deltaTime, (_RMS  > _SmoothedRMS)  ? 16. : 4.);
+
         _SmoothedWidth       = ExponentialSmoothing(_SmoothedWidth,       _StereoWidth, deltaTime, 5.5);
         _SmoothedCorrelation = ExponentialSmoothing(_SmoothedCorrelation, _Correlation, deltaTime, 4.0);
 
@@ -104,10 +105,10 @@ namespace LorenzAttractor
     /// </summary>
     void effect_t::UpdateScene(double deltaTime) noexcept
     {
-        const double Peak  = std::clamp(_SmoothedPeak,  0., 1.);
-        const double RMS   = std::clamp(_SmoothedRMS,   0., 1.);
-        const double Width = std::clamp(_SmoothedWidth, 0., 1.);
-        const double Phase = std::clamp(_PhaseEnergy,   0., 1.);
+        const double Peak  = Clamp(_SmoothedPeak);
+        const double RMS   = Clamp(_SmoothedRMS);
+        const double Width = Clamp(_SmoothedWidth);
+        const double Phase = Clamp(_PhaseEnergy);
 
         _AudioOrbit = ExponentialSmoothing(_AudioOrbit, Width * 0.34,                        deltaTime, 3.5);
         _AudioLift  = ExponentialSmoothing(_AudioLift, (Peak - RMS) * 5.5,                   deltaTime, 5.0);
@@ -259,14 +260,15 @@ namespace LorenzAttractor
 
             if (Previous.IsProjectable && Current.IsProjectable)
             {
-                const double Amount = (double) i / (double)(_SplinePoints.size() - 1);
-                const uint32_t Color = GetCurveColor(Amount + (_AnimationTime * 0.025));
+                const double Amount = (double) i / (double) (_SplinePoints.size() - 1);
 
                 const double Depth     = 1. - (Previous.LinearDepth + Current.LinearDepth) * 0.5;
-                const double ViewDepth = (Previous.ViewDepth + Current.ViewDepth) * 0.5f;
+                const double ViewDepth =      (Previous.ViewDepth   + Current.ViewDepth)   * 0.5;
 
-                const float Intensity = (float) (Energy * (0.52 + Depth * 0.48));
-                const float Thickness = std::clamp(78.0f / (float) std::max(ViewDepth, Projection.NearPlane), 0.55f, 2.20f);
+                const float Intensity = (float) (Energy * (0.52 + (Depth * 0.48)));
+                const float Thickness = std::clamp(78.f / (float) std::max(ViewDepth, Projection.NearPlane), 0.55f, 2.20f);
+
+                const uint32_t Color = GetCurveColor(Amount + (_AnimationTime * 0.025));
 
                 DrawGlowLine(renderTarget, Previous.Position, Current.Position, Color, Intensity, Thickness);
             }

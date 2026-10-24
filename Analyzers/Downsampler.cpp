@@ -10,7 +10,7 @@
 /// </summary>
 void downsampler_t::Process(const audio_chunk & srcChunk, audio_chunk & dstChunk, double ratio) noexcept
 {
-    const size_t ChannelCount  = srcChunk.get_channels();
+    const size_t ChannelCount  = srcChunk.get_channel_count();
     const size_t SrcFrameCount = srcChunk.get_sample_count();
 
     const audio_sample * const __restrict SrcFrames = srcChunk.get_data();

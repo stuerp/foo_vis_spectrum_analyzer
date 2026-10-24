@@ -159,7 +159,7 @@ private:
     void ProcessAudio() noexcept;
     void Animate(int64_t now) noexcept;
 
-    void InitializeSampleRateDependentParameters(const audio_chunk_impl & chunk) noexcept;
+    void InitializeSampleRateDependentParameters(const audio_chunk & chunk) noexcept;
 
     HRESULT CreateDeviceIndependentResources() noexcept;
     void DeleteDeviceIndependentResources() noexcept;

@@ -96,16 +96,9 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.14.0.0-alpha1, 2026-xx-xx
+v0.14.0.0-alpha2, 2026-xx-xx
 
-- New: Eye Candy visualizer with multiple effects in the following 5 categories.
-  - Dynamic Systems: Aizawa Attractor, Halvorsen Attractor, "Lorenz Attractor, Rössler Attractor, Thomas Attractor, Double Pendulum
-  - Fields: Aurora, Fluid Ink, Metaballs, Plasma
-  - Particle Systems: Audio Galaxy, Fireflies, Fireworks, Particle Vortex, Starfield, Swarm
-  - Retro: Neon Tunnel, Vector Grid
-  - Trails: Lissajous Trails, Ribbon Flow, Spirograph
-
-As the name suggests it uses the foobar2000 audio to render visually interesting graphics. The code still needs a lot of optimizing and the settings still need to be tweaked.
+- 
 
 You can read the full history [here](docs/History.md).
 

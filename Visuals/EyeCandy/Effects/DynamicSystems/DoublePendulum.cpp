@@ -37,7 +37,7 @@ namespace DoublePendulum
     /// <summary>
     /// 
     /// </summary>
-    void effect_t::Render(ID2D1RenderTarget * renderTarget, double deltaTime, audio_chunk_impl & chunk) noexcept
+    void effect_t::Render(ID2D1RenderTarget * renderTarget, double deltaTime, audio_chunk & chunk) noexcept
     {
         HRESULT hr = CreateDeviceDependentResources(renderTarget);
 
@@ -95,9 +95,10 @@ namespace DoublePendulum
 
         _AnimationTime += deltaTime * SpeedFactor;
 
-        _SmoothedPeak        = ExponentialSmoothing(_SmoothedPeak, _Peak, deltaTime, (_Peak > _SmoothedPeak) ? 22. : 5.);
-        _SmoothedRMS         = ExponentialSmoothing(_SmoothedRMS, _RMS, deltaTime, (_RMS > _SmoothedRMS) ? 16. : 4.);
-        _SmoothedWidth       = ExponentialSmoothing(_SmoothedWidth, _StereoWidth, deltaTime, 5.5);
+        _SmoothedPeak        = ExponentialSmoothing(_SmoothedPeak,        _Peak,        deltaTime, (_Peak > _SmoothedPeak) ? 22. : 5.);
+        _SmoothedRMS         = ExponentialSmoothing(_SmoothedRMS,         _RMS,         deltaTime, (_RMS  > _SmoothedRMS)  ? 16. : 4.);
+
+        _SmoothedWidth       = ExponentialSmoothing(_SmoothedWidth,       _StereoWidth, deltaTime, 5.5);
         _SmoothedCorrelation = ExponentialSmoothing(_SmoothedCorrelation, _Correlation, deltaTime, 4.);
 
         UpdateCurveTheme(deltaTime);
@@ -108,10 +109,10 @@ namespace DoublePendulum
     /// </summary>
     void effect_t::UpdateScene(double deltaTime) noexcept
     {
-        const double Peak  = std::clamp(_SmoothedPeak, 0., 1.);
-        const double RMS   = std::clamp(_SmoothedRMS, 0., 1.);
-        const double Width = std::clamp(_SmoothedWidth, 0., 1.);
-        const double Phase = std::clamp(_PhaseEnergy, 0., 1.);
+        const double Peak  = Clamp(_SmoothedPeak);
+        const double RMS   = Clamp(_SmoothedRMS);
+        const double Width = Clamp(_SmoothedWidth);
+        const double Phase = Clamp(_PhaseEnergy);
 
         _AudioOrbit = ExponentialSmoothing(_AudioOrbit, Width * 0.24,                   deltaTime, 3.5);
         _AudioLift  = ExponentialSmoothing(_AudioLift, (Peak - RMS) * 0.18,             deltaTime, 5.);
@@ -155,23 +156,28 @@ namespace DoublePendulum
         {
             switch (_Quality)
             {
-                case EyeCandy::Quality::Low: return 1200;
-                case EyeCandy::Quality::High: return 6000;
-                case EyeCandy::Quality::Medium:
-                default: return 3000;
+                case Quality::Low:
+                    return 1'200;
+
+                default:
+                case Quality::Medium:
+                    return 3'000;
+
+                case Quality::High:
+                    return 6'000;
             }
         }();
 
         _Field =
         {
             .PointCount = PointCount,
-            .Gravity = 9.81 + _SmoothedPeak * 0.75,
-            .Length1 = 1.,
-            .Length2 = 0.92 + _SmoothedWidth * 0.025,
-            .Mass1 = 1.,
-            .Mass2 = 1. + _PhaseEnergy * 0.08,
-            .Damping = 0.0015 + _SmoothedRMS * 0.0015,
-            .Step = 0.0035
+            .Gravity    = 9.81   + (_SmoothedPeak * 0.75),
+            .Length1    = 1.,
+            .Length2    = 0.92   + (_SmoothedWidth * 0.025),
+            .Mass1      = 1.,
+            .Mass2      = 1.     + (_PhaseEnergy * 0.08),
+            .Damping    = 0.0015 + (_SmoothedRMS * 0.0015),
+            .Step       = 0.0035
         };
 
         const size_t Advances = 2 + (size_t) std::clamp(_SmoothedPeak * 4., 0., 4.);
@@ -222,9 +228,9 @@ namespace DoublePendulum
         if (!PreparedProjection.IsValid)
             return;
 
-        const projected_point_t Pivot = Project(_PivotWorld, PreparedProjection);
-        const projected_point_t Bob1  = Project(_Bob1World,  PreparedProjection);
-        const projected_point_t Bob2  = Project(_Bob2World,  PreparedProjection);
+        const auto Pivot = Project(_PivotWorld, PreparedProjection);
+        const auto Bob1  = Project(_Bob1World,  PreparedProjection);
+        const auto Bob2  = Project(_Bob2World,  PreparedProjection);
 
         const uint32_t ArmColor = GetCurveColor(_AnimationTime * 0.035);
         const uint32_t BobColor = GetCurveColor(0.55 + _AnimationTime * 0.035);
@@ -253,7 +259,7 @@ namespace DoublePendulum
         if ((_Width < 2.f) || (_Height < 2.f) || (_SplinePoints.size() < 2))
             return;
 
-        const double Energy = std::clamp(0.32 + _SmoothedRMS * 2.2 + _SmoothedPeak * 0.35, 0.32, 1.);
+        const double Energy = std::clamp(0.32 + (_SmoothedRMS * 2.2) + (_SmoothedPeak * 0.35), 0.32, 1.);
 
         const auto PreparedProjection = ThreeD::Prepare();
 
@@ -313,19 +319,21 @@ namespace DoublePendulum
         const double Denominator2 = std::max(0.000001, field.Length2 * Common);
 
         const double Acceleration1 =
-            (-field.Gravity * (2. * field.Mass1 + field.Mass2) * std::sin(state.Theta1)
-             - field.Mass2 * field.Gravity * std::sin(state.Theta1 - 2. * state.Theta2)
-             - 2. * SinDelta * field.Mass2 *
-                (state.Omega2 * state.Omega2 * field.Length2
-                 + state.Omega1 * state.Omega1 * field.Length1 * CosDelta)
-            ) / Denominator1 - field.Damping * state.Omega1;
+        (
+            -field.Gravity * (2. * field.Mass1 + field.Mass2) * std::sin(state.Theta1)
+            - field.Mass2 * field.Gravity * std::sin(state.Theta1 - 2. * state.Theta2)
+            - 2. * SinDelta * field.Mass2 * (state.Omega2 * state.Omega2 * field.Length2 + state.Omega1 * state.Omega1 * field.Length1 * CosDelta)
+        ) / Denominator1 - field.Damping * state.Omega1;
 
         const double Acceleration2 =
-            ( 2. * SinDelta *
-                (state.Omega1 * state.Omega1 * field.Length1 * (field.Mass1 + field.Mass2) +
-                 field.Gravity * (field.Mass1 + field.Mass2) * std::cos(state.Theta1) +
-                 state.Omega2 * state.Omega2 * field.Length2 * field.Mass2 * CosDelta)
-            ) / Denominator2 - field.Damping * state.Omega2;
+        (
+            2. * SinDelta *
+            (
+                state.Omega1  * state.Omega1 * field.Length1 * (field.Mass1 + field.Mass2) +
+                field.Gravity * (field.Mass1 + field.Mass2) * std::cos(state.Theta1) +
+                state.Omega2  * state.Omega2 * field.Length2 * field.Mass2 * CosDelta
+            )
+        ) / Denominator2 - field.Damping * state.Omega2;
 
         return { state.Omega1, Acceleration1, state.Omega2, Acceleration2 };
     }

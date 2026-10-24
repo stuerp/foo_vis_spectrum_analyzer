@@ -36,14 +36,14 @@ namespace Starfield
     /// <summary>
     /// 
     /// </summary>
-    void effect_t::Render(ID2D1RenderTarget * renderTarget, double deltaTime, audio_chunk_impl & chunk) noexcept
+    void effect_t::Render(ID2D1RenderTarget * renderTarget, double deltaTime, audio_chunk & chunk) noexcept
     {
         const HRESULT hr = CreateDeviceDependentResources(renderTarget);
 
         if (FAILED(hr))
             return;
 
-        deltaTime = std::clamp(deltaTime, 0.0, 0.1);
+        deltaTime = Clamp(deltaTime);
 
         Projection.Width       = (double) _Width;
         Projection.Height      = (double) _Height;
@@ -75,9 +75,8 @@ namespace Starfield
 
                 Camera.Up = { std::sin(Roll), std::cos(Roll), 0. };
 
-                const ThreeD::prepared_projection_t PreparedProjection = ThreeD::Prepare();
-
-                const projected_point_t ProjectedCenter = ThreeD::Project({ 0., 0., Projection.FarPlane * 0.5 }, PreparedProjection);
+                const auto PreparedProjection = ThreeD::Prepare();
+                const auto ProjectedCenter    = ThreeD::Project({ 0., 0., Projection.FarPlane * 0.5 }, PreparedProjection);
 
                 _Center = ProjectedCenter.IsProjectable ? ProjectedCenter.Position : D2D1::Point2F(_CenterX, _CenterY);
             }
@@ -98,7 +97,7 @@ namespace Starfield
     /// <summary>
     /// Analyzes an audio chunk.
     /// </summary>
-    void effect_t::AnalyzeAudio(const audio_chunk_impl & chunk)
+    void effect_t::AnalyzeAudio(const audio_chunk & chunk)
     {
         _Peak       = 0.;
         _RMS        = 0.;
@@ -182,8 +181,8 @@ namespace Starfield
         _MidEnergy  = std::sqrt(SumMid  * CountScale);
 
         // Compress the bass and mid energy into ranges useful for visualization.
-        _BassEnergy = std::clamp(std::log1p(_BassEnergy * 36.) / std::log1p(36.), 0., 1.);
-        _MidEnergy  = std::clamp(std::log1p(_MidEnergy  * 18.) / std::log1p(18.), 0., 1.);
+        _BassEnergy = Clamp(std::log1p(_BassEnergy * 36.) / std::log1p(36.));
+        _MidEnergy  = Clamp(std::log1p(_MidEnergy  * 18.) / std::log1p(18.));
 
         _HasAudio = (_Peak > 1.0e-5) || (_RMS > 1.0e-6);
     }
@@ -212,10 +211,8 @@ namespace Starfield
             }
         }();
 
-        _AnimationTime += SpeedFactor * deltaTime;
-
-        // Cycle through galaxy-inspired color themes every five seconds.
-        _TransitionTime += deltaTime;
+        _AnimationTime  += deltaTime * SpeedFactor;
+        _TransitionTime += deltaTime;   // Cycle through galaxy-inspired color themes every five seconds.
 
         while (_TransitionTime >= TransitionInterval)
         {
@@ -273,7 +270,7 @@ namespace Starfield
             const double BassAboveAverage = std::max(0., _SmoothedBass - _BeatAverage); // Detects relative strengt.
 
             // BassRise receives much more weight because the desired effect is a sudden acceleration on the leading edge of a bass hit.
-            const double AttackStrength = std::clamp((BassAboveAverage * 2.5) + (BassRise * 9.0), 0., 1.);
+            const double AttackStrength = Clamp((BassAboveAverage * 2.5) + (BassRise * 9.0));
 
             _PreviousBass = _BassEnergy;
 
@@ -392,8 +389,8 @@ namespace Starfield
         Projection.LensOffsetY = 0.;
 
         _BassState = 0.;
-        _DCState = 0.;
-        _MidState = 0.;
+        _DCState   = 0.;
+        _MidState  = 0.;
 
         _MidEnergy = 0.;
 
@@ -402,17 +399,17 @@ namespace Starfield
 
         _MidDirectionCooldown = 0.;
 
-        _CameraRollVelocity = 0.;
+        _CameraRollVelocity  = 0.;
         _CameraRollDirection = 1.;
 
-        _FlightYaw = 0.;
-        _FlightPitch = 0.;
-        _FlightYawVelocity = 0.;
+        _FlightYaw           = 0.;
+        _FlightPitch         = 0.;
+        _FlightYawVelocity   = 0.;
         _FlightPitchVelocity = 0.;
 
         _PreviousBass = 0.;
-        _BeatAverage = 0.;
-        _BeatPulse = 0.;
+        _BeatAverage  = 0.;
+        _BeatPulse    = 0.;
         _BeatCooldown = 0.;
 
         _Stars.clear();
@@ -588,7 +585,7 @@ namespace Starfield
     /// </summary>
     void effect_t::RespawnStar(star_t & star, size_t index, bool randomDepth) noexcept
     {
-        uint32_t State = Hash((uint32_t) index * 0x9E3779B9u ^ star.Seed ^ (uint32_t)(_TravelDistance * 100000.0f));
+        uint32_t State = Hash((uint32_t) index * 0x9E3779B9u ^ star.Seed ^ (uint32_t)(_TravelDistance * 100'000.0f));
 
         star.Seed = State;
 
@@ -646,7 +643,7 @@ namespace Starfield
         _BackgroundBrush->SetRadiusX(_Width  * 0.72f);
         _BackgroundBrush->SetRadiusY(_Height * 0.72f);
 
-        _BackgroundBrush->SetOpacity((float) std::clamp(0.72 + (_SmoothedRMS * 0.4) + (_BeatPulse * 0.18), 0., 1.));
+        _BackgroundBrush->SetOpacity((float) Clamp(0.72 + (_SmoothedRMS * 0.4) + (_BeatPulse * 0.18)));
 
         renderTarget->FillRectangle(_Rectangle, _BackgroundBrush.Get());
     }
@@ -660,7 +657,7 @@ namespace Starfield
 
         GenerateStarTrails(Trails);
 
-        const float Pulse = (float) std::clamp(_BeatPulse, 0., 1.);
+        const float Pulse = (float) Clamp(_BeatPulse);
 
         // Draw each trail batch multiple times. Wide low-opacity strokes create the glow; the final narrow stroke supplies the bright core.
         {
@@ -705,18 +702,18 @@ namespace Starfield
 
         for (const star_t & Star : _Stars)
         {
-            const projected_point_t ProjectedPosition = ThreeD::Project({ Star.X, Star.Y, Star.Z }, PreparedProjection);
+            const auto ProjectedPosition = ThreeD::Project({ Star.X, Star.Y, Star.Z }, PreparedProjection);
 
             if (!ProjectedPosition.IsProjectable)
                 continue;
 
             const D2D1_POINT_2F Position = ProjectedPosition.Position;
 
-            if (Position.x < -16.0f || Position.y < -16.0f || Position.x > _Width + 16.0f || Position.y > _Height + 16.0f)
+            if (Position.x < -16.f || Position.y < -16.f || Position.x > (_Width + 16.f) || Position.y > (_Height + 16.f))
                 continue;
 
-            const float Depth       = (float) std::clamp(1. - (Star.Z - Projection.NearPlane) / (Projection.FarPlane - Projection.NearPlane), 0., 1.);
-            const float Brightness  = SmoothStep(0.0f, 1.0f, Depth);
+            const float Depth       = (float) Clamp(1. - (Star.Z - Projection.NearPlane) / (Projection.FarPlane - Projection.NearPlane));
+            const float Brightness  = SmoothStep(0.f, 1.f, Depth);
             const float Radius      = (float) Star.Size * Lerp(0.35f, 2.45f, Brightness) * (1.f + (Pulse * Brightness * 1.20f) + ((float) _SmoothedBass * 0.22f));
 
             const D2D1_COLOR_F Color = GetStarColor(Star, Brightness);
@@ -748,9 +745,9 @@ namespace Starfield
         const float ColorShift = (float) _BeatPulse * 0.035f;
 
         const float H = Fraction(CurrentThemeHue() + (float) (star.HueOffset * 0.035f) + ColorShift + (float) (_AnimationTime * 0.0025));
-        const float S = (float) std::clamp(0.12 + std::abs(star.HueOffset) * 0.42 + _SmoothedBass * 0.12, 0., 1.);
-        const float V = (float) std::clamp(star.Brightness * Lerp(0.30, 1.0, depthBrightness) * (1.0 + _BeatPulse * depthBrightness * 0.65), 0., 1.);
-        const float A = (float) std::clamp(Lerp(0.22, 1., depthBrightness), 0., 1.);
+        const float S = (float) Clamp(0.12 + std::abs(star.HueOffset) * 0.42 + _SmoothedBass * 0.12);
+        const float V = (float) Clamp(star.Brightness * Lerp(0.30, 1.0, depthBrightness) * (1.0 + _BeatPulse * depthBrightness * 0.65));
+        const float A = (float) Clamp(Lerp(0.22, 1., depthBrightness));
 
         return HSVToColor(H, S, V, A);
     }
@@ -762,7 +759,7 @@ namespace Starfield
     {
         const float Radius = std::min(_Width, _Height) * (0.045f + (float) (_BeatPulse * 0.28));
 
-        const float Opacity = (float) std::clamp(0.08 + (_SmoothedBass * 0.18) + (_BeatPulse * 1.05), 0., 1.);
+        const float Opacity = (float) Clamp(0.08 + (_SmoothedBass * 0.18) + (_BeatPulse * 1.05));
 
         ComPtr<ID2D1RadialGradientBrush> FlashBrush;
 
@@ -823,55 +820,48 @@ namespace Starfield
             Sinks[i]->SetFillMode(D2D1_FILL_MODE_WINDING);
         }
 
-        const double pulse = std::clamp(_BeatPulse, 0., 1.);
+        const double Pulse = Clamp(_BeatPulse);
+
         const ThreeD::prepared_projection_t PreparedProjection = ThreeD::Prepare();
 
-        for (const star_t & star : _Stars)
+        for (const star_t & Star : _Stars)
         {
             // Extend the tail backward along the Z axis. Beat pulses enlarge this distance, producing the forward-jump sensation.
-            const double trailDepth = Lerp(0.035, 0.24, pulse) * star.Speed * (1.0 + _SmoothedRMS * 2.4 + _SmoothedBass * 0.65);
-            const double tailZ = std::min(Projection.FarPlane, std::max(star.PreviousZ, star.Z + trailDepth));
+            const double trailDepth = Lerp(0.035, 0.24, Pulse) * Star.Speed * (1.0 + (_SmoothedRMS * 2.4) + (_SmoothedBass * 0.65));
+            const double tailZ      = std::min(Projection.FarPlane, std::max(Star.PreviousZ, Star.Z + trailDepth));
 
-            point3d_t HeadPoint { star.X, star.Y, star.Z };
-            point3d_t TailPoint { star.X, star.Y, tailZ };
+            point3d_t HeadPoint { Star.X, Star.Y, Star.Z };
+            point3d_t TailPoint { Star.X, Star.Y, tailZ };
 
             if (!ClipLineToNearPlane(HeadPoint, TailPoint, PreparedProjection))
                 continue;
 
-            const projected_point_t ProjectedHead = ThreeD::Project(HeadPoint, PreparedProjection);
-            const projected_point_t ProjectedTail = ThreeD::Project(TailPoint, PreparedProjection);
+            const auto ProjectedHead = ThreeD::Project(HeadPoint, PreparedProjection);
+            const auto ProjectedTail = ThreeD::Project(TailPoint, PreparedProjection);
 
             if (!ProjectedHead.IsProjectable || !ProjectedTail.IsProjectable)
                 continue;
 
-            const D2D1_POINT_2F head = ProjectedHead.Position;
-            const D2D1_POINT_2F tail = ProjectedTail.Position;
+            const D2D1_POINT_2F Head = ProjectedHead.Position;
+            const D2D1_POINT_2F Tail = ProjectedTail.Position;
 
-            const bool visible =
-                !(head.x < -64.0f &&
-                  tail.x < -64.0f) &&
-                !(head.y < -64.0f &&
-                  tail.y < -64.0f) &&
-                !(head.x > (float)_Width + 64.0f &&
-                  tail.x > (float)_Width + 64.0f) &&
-                !(head.y > (float)_Height + 64.0f &&
-                  tail.y > (float)_Height + 64.0f);
+            const bool IsVisible = !(Head.x < -64.f && Tail.x < -64.f) && !(Head.y < -64.f && Tail.y < -64.f) && !(Head.x > (_Width + 64.f) && Tail.x > (_Width + 64.f)) && !(Head.y > (_Height + 64.f) && Tail.y > (_Height + 64.f));
 
-            if (!visible)
+            if (!IsVisible)
                 continue;
 
-            const double depth = std::clamp(1. - (star.Z - Projection.NearPlane) / (Projection.FarPlane - Projection.NearPlane), 0., 1.);
+            const double Depth = Clamp(1. - (Star.Z - Projection.NearPlane) / (Projection.FarPlane - Projection.NearPlane));
 
-            const size_t layer = (size_t) (depth > 0.68f ? 2 : depth > 0.30f ? 1 : 0);
+            const size_t Layer = (size_t) (Depth > 0.68f ? 2 : Depth > 0.30f ? 1 : 0);
 
-            if (!Sinks[layer])
+            if (!Sinks[Layer])
                 continue;
 
-            Sinks[layer]->BeginFigure(D2D1::Point2F(tail.x, tail.y), D2D1_FIGURE_BEGIN_HOLLOW);
+            Sinks[Layer]->BeginFigure(D2D1::Point2F(Tail.x, Tail.y), D2D1_FIGURE_BEGIN_HOLLOW);
 
-            Sinks[layer]->AddLine(D2D1::Point2F(head.x, head.y));
+            Sinks[Layer]->AddLine(D2D1::Point2F(Head.x, Head.y));
 
-            Sinks[layer]->EndFigure(D2D1_FIGURE_END_OPEN);
+            Sinks[Layer]->EndFigure(D2D1_FIGURE_END_OPEN);
         }
 
         for (auto & Sink : Sinks)

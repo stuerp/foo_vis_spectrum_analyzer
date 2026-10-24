@@ -17,7 +17,7 @@ namespace ParticleVortex
         {
             const float Amount = (float) i / (float) (FrequencyBandCount - 1);
 
-            _Centers[i].Frequency = 40.f * std::pow(16'000.f / 40.f, Amount);
+            _Centers[i].Frequency = 40. * std::pow(16'500. / 40., Amount); // 40 Hz to 16.5 kHz
             _Centers[i].Phase     = Amount * TwoPi;
         }
 
@@ -70,14 +70,14 @@ namespace ParticleVortex
     /// <summary>
     ///
     /// </summary>
-    void effect_t::Render(ID2D1RenderTarget * renderTarget, double deltaTime, audio_chunk_impl & chunk) noexcept
+    void effect_t::Render(ID2D1RenderTarget * renderTarget, double deltaTime, audio_chunk & chunk) noexcept
     {
         const HRESULT hr = CreateDeviceDependentResources(renderTarget);
 
         if (FAILED(hr))
             return;
 
-        deltaTime = std::clamp(deltaTime, 0.0, 0.1);
+        deltaTime = Clamp(deltaTime);
 
         AnalyzeAudio(chunk);
         Update(deltaTime);
@@ -110,7 +110,7 @@ namespace ParticleVortex
     /// <summary>
     ///
     /// </summary>
-    void effect_t::AnalyzeAudio(const audio_chunk_impl & chunk)
+    void effect_t::AnalyzeAudio(const audio_chunk & chunk)
     {
         _Peak         = 0.;
         _RMS          = 0.;
@@ -225,7 +225,7 @@ namespace ParticleVortex
 
             const size_t FirstFrame = FrameCount - FrameCount;
 
-            const audio_sample * Frame = Frames + FirstFrame * ChannelCount;
+            const audio_sample *       Frame    = Frames + FirstFrame * ChannelCount;
             const audio_sample * const FrameEnd = Frame + FrameCount * ChannelCount;
 
             double * WindowedSample = WindowedSamples.data();
@@ -252,7 +252,7 @@ namespace ParticleVortex
 
                 // Apply a Hann window.
                 {
-                    const double Window = 0.5 - 0.5 * std::cos(TwoPi * (double) FrameIndex / (double) (FrameCount - 1));
+                    const double Window = 0.5 - (std::cos(TwoPi * (double) FrameIndex / (double) (FrameCount - 1)) * 0.5);
 
                     *WindowedSample++ = (audio_sample) ((double) Sample * Window);
                 }
@@ -281,7 +281,7 @@ namespace ParticleVortex
         for (size_t i = 0; i < FrequencyBandCount; ++i)
         {
             const double BandAmount      = (FrequencyBandCount > 1) ? (double) i / (double) (FrequencyBandCount - 1) : 0.; 
-            const double CenterFrequency = 40. * std::pow(16000. / 40., BandAmount);
+            const double CenterFrequency = 40. * std::pow(16'500. / 40., BandAmount); // 40 Hz to 16.5 kHz
 
             const double Frequencies[3] =
             {
@@ -294,7 +294,7 @@ namespace ParticleVortex
 
             for (const double j : Frequencies)
             {
-                const double Frequency   = std::clamp(j, 20., Nyquist * 0.94);
+                const double Frequency   = std::clamp(j, 20., Nyquist * 0.95);
                 const double Omega       = TwoPi * Frequency / (double) SampleRate;
                 const double Coefficient = 2. * std::cos(Omega);
 
@@ -318,7 +318,7 @@ namespace ParticleVortex
             const double Magnitude  = std::sqrt(BandPower / 3.) / (double) FrameCount;
             const double Compressed = std::log1p(Magnitude * 80.) / std::log1p(80.);
 
-            _BandEnergy[i] = std::clamp(Compressed * Lerp(0.85, 1.45, BandAmount), 0., 1.);
+            _BandEnergy[i] = Clamp(Compressed * Lerp(0.85, 1.45, BandAmount));
 
             MaximumEnergy = std::max(MaximumEnergy, _BandEnergy[i]);
         }
@@ -327,12 +327,12 @@ namespace ParticleVortex
         {
             const double Normalization = 1. / std::max(0.35, MaximumEnergy);
 
-            double * Energy = _BandEnergy.data();
+            double *       Energy    = _BandEnergy.data();
             double * const EnergyEnd = Energy + FrequencyBandCount;
 
             while (Energy < EnergyEnd)
             {
-                *Energy = std::clamp(*Energy * Normalization, 0., 1.);
+                *Energy = Clamp(*Energy * Normalization);
 
                 ++Energy;
             }
@@ -341,7 +341,7 @@ namespace ParticleVortex
         {
             double Flux = 0.;
 
-            const double * Energy = _BandEnergy.data();
+            const double *       Energy    = _BandEnergy.data();
             const double * const EnergyEnd = Energy + FrequencyBandCount;
 
             double * PreviousEnergy = _PreviousBandEnergy.data();
@@ -353,7 +353,7 @@ namespace ParticleVortex
                 *PreviousEnergy++ = *Energy++;
             }
 
-            _SpectralFlux = std::clamp(Flux / (double) FrequencyBandCount * 4., 0., 1.);
+            _SpectralFlux = Clamp(Flux / (double) FrequencyBandCount * 4.); // Boost the spectral flux artificially by 4 to make it react more strongly.
         }
     }
 
@@ -505,7 +505,7 @@ namespace ParticleVortex
 
         const double Margin = Dimension * 0.20;
 
-        const bool IsInvisble = (particle.Position.x < -Margin) || (particle.Position.y < -Margin) || (particle.Position.x > _Width + Margin) || (particle.Position.y > _Height + Margin);
+        const bool IsInvisble = (particle.Position.x < -Margin) || (particle.Position.y < -Margin) || (particle.Position.x > (_Width + Margin)) || (particle.Position.y > (_Height + Margin));
 
         if (IsInvisble)
             RespawnParticle(particle, index);
@@ -516,7 +516,7 @@ namespace ParticleVortex
     /// </summary>
     void effect_t::RespawnParticle(particle_t & particle, size_t index) noexcept
     {
-        uint32_t State = Hash((uint32_t)index * 0x9E3779B9u ^ particle.Seed ^ (uint32_t)(_AnimationTime * 1000.0));
+        uint32_t State = Hash((uint32_t)index * 0x9E3779B9u ^ particle.Seed ^ (uint32_t)(_AnimationTime * 1'000.0));
 
         particle.Seed = State;
         particle.Band = (index + (size_t) (Random(State) * (float) FrequencyBandCount)) % FrequencyBandCount;
@@ -557,9 +557,9 @@ namespace ParticleVortex
     void effect_t::Fade(ID2D1RenderTarget * renderTarget, double deltaTime) noexcept
     {
         const double Persistence = 0.902f + _BassEnergy * 0.026f + _SmoothedFlux * 0.018f;
-        const double Decay = std::pow(std::clamp(Persistence, 0.70, 0.965), (deltaTime * 60.));
+        const double Decay       = std::pow(std::clamp(Persistence, 0.70, 0.965), (deltaTime * 60.));
 
-        _Brush->SetColor(D2D1::ColorF(0.f, 0.f, 0.f, (float) std::clamp(1. - Decay, 0., 1.)));
+        _Brush->SetColor(D2D1::ColorF(0.f, 0.f, 0.f, (float) Clamp(1. - Decay)));
         _Brush->SetOpacity(1.f);
 
         renderTarget->FillRectangle(_Rectangle, _Brush.Get());
@@ -578,10 +578,10 @@ namespace ParticleVortex
 
         for (const particle_t & particle : _Particles)
         {
-            const double LifeAmount = std::clamp(particle.Age / std::max(particle.Lifetime, 0.001), 0., 1.);
+            const double LifeAmount      = Clamp(particle.Age / std::max(particle.Lifetime, 0.001));
 
-            const double FadeIn =        SmoothStep(0.00f, 0.08f, (float) LifeAmount);
-            const double FadeOut = 1.f - SmoothStep(0.72f, 1.00f, (float) LifeAmount);
+            const double FadeIn          =       SmoothStep(0.00f, 0.08f, (float) LifeAmount);
+            const double FadeOut         = 1.f - SmoothStep(0.72f, 1.00f, (float) LifeAmount);
 
             const double Speed           = Length(particle.Velocity.x, particle.Velocity.y);
             const double SpeedBrightness = std::clamp(Speed / (std::min(_Width, _Height) * 0.35), 0.15, 1.0);
@@ -602,7 +602,7 @@ namespace ParticleVortex
     /// </summary>
     void effect_t::RenderCenterGlow(ID2D1RenderTarget * renderTarget, const center_t & center, size_t band) noexcept
     {
-        const double Energy = std::clamp(center.Energy, 0., 1.);
+        const double Energy = Clamp(center.Energy);
 
         const int MaxRadius = [&]() noexcept
         {
@@ -628,7 +628,7 @@ namespace ParticleVortex
     /// </summary>
     void effect_t::RenderIdleVortex(ID2D1RenderTarget * renderTarget) noexcept
     {
-        if (_Width < 2.f || _Height < 2.f)
+        if ((_Width < 2.f) || (_Height < 2.f))
             return;
 
         const double Dimension = std::min(_Width, _Height);
@@ -685,7 +685,7 @@ namespace ParticleVortex
     /// </summary>
     void effect_t::DrawLine(ID2D1RenderTarget * renderTarget, D2D1_POINT_2F from, D2D1_POINT_2F to, uint32_t color, float intensity, int radius) noexcept
     {
-        intensity = std::clamp(intensity, 0.0f, 1.35f);
+        intensity = std::clamp(intensity, 0.f, 1.35f);
 
         if (intensity <= 0.0001f)
             return;
@@ -693,9 +693,9 @@ namespace ParticleVortex
         // Opacity itself is limited to one. Values above one are converted into an additional brightness boost in SetBrush.
         SetBrush(color, intensity);
 
-        const float strokeWidth = radius > 0 ? (float)(radius * 2 + 1) : 1.0f;
+        const float StrokeWidth = (radius > 0) ? (float) (radius * 2 + 1) : 1.f;
 
-        renderTarget->DrawLine(from, to, _Brush.Get(), strokeWidth, _StrokeStyle.Get());
+        renderTarget->DrawLine(from, to, _Brush.Get(), StrokeWidth, _StrokeStyle.Get());
     }
 
     /// <summary>
@@ -778,8 +778,8 @@ namespace ParticleVortex
         const double BandAmount = (double) band / (double) (FrequencyBandCount - 1);
 
         const float H = (float) Fraction(0.92 + (BandAmount * 0.62) + (particlePhase * 0.055) + (_AnimationTime * 0.006));
-        const float S = (float) std::clamp(0.76 + (energy * 0.19),                          0., 1.);
-        const float V = (float) std::clamp(0.54 + (energy * 0.44) + (_SmoothedFlux * 0.16), 0., 1.);
+        const float S = (float) Clamp(0.76 + (energy * 0.19));
+        const float V = (float) Clamp(0.54 + (energy * 0.44) + (_SmoothedFlux * 0.16));
 
         return HSVToBGRA(H, S, V);
     }
@@ -942,21 +942,23 @@ namespace ParticleVortex
             if (FAILED(hr))
                 return hr;
 
-            _BackBufferRenderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+            {
+                _BackBufferRenderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
-            _BackBufferRenderTarget->BeginDraw();
+                _BackBufferRenderTarget->BeginDraw();
 
-            _BackBufferRenderTarget->Clear(D2D1::ColorF(0., 0., 0., 1.));
+                _BackBufferRenderTarget->Clear(D2D1::ColorF(0., 0., 0., 1.));
 
-            hr = _BackBufferRenderTarget->EndDraw();
+                hr = _BackBufferRenderTarget->EndDraw();
 
-            if (FAILED(hr))
-                return hr;
+                if (FAILED(hr))
+                    return hr;
 
-            hr = _BackBufferRenderTarget->GetBitmap(_BackBuffer.ReleaseAndGetAddressOf());
+                hr = _BackBufferRenderTarget->GetBitmap(_BackBuffer.ReleaseAndGetAddressOf());
 
-            if (FAILED(hr))
-                return hr;
+                if (FAILED(hr))
+                    return hr;
+            }
         }
 
         _RenderTarget = renderTarget;

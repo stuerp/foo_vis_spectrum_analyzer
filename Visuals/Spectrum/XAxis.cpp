@@ -1,5 +1,5 @@
 
-/** $VER: XAXis.cpp (2026.10.10) P. Stuer - Implements the X axis of a graph. **/
+/** $VER: XAXis.cpp (2026.10.24) P. Stuer - Implements the X axis of a graph. **/
 
 #include "pch.h"
 
@@ -14,9 +14,8 @@
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void x_axis_t::Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept
+void x_axis_t::Configure(graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept
 {
-    _State        = state;
     _GraphOptions = graphOptions;
     _Analysis     = analysis;
 
@@ -92,7 +91,7 @@ void x_axis_t::Configure(state_t * state, graph_options_t * graphOptions, analys
             case XAxisMode::Octaves:
             {
                 double Note = -57.;                                                 // Index of C0 (57 semi-tones lower than A4 at 440Hz)
-                double Frequency = _State->_TuningPitch * std::exp2(Note / 12.);    // Frequency of C0
+                double Frequency = _State._TuningPitch * std::exp2(Note / 12.);    // Frequency of C0
 
                 for (int i = 0; Frequency < fb.back().Lo; ++i)
                 {
@@ -103,7 +102,7 @@ void x_axis_t::Configure(state_t * state, graph_options_t * graphOptions, analys
                     _Labels.push_back(lb);
 
                     Note += 12.;
-                    Frequency = _State->_TuningPitch * std::exp2(Note / 12.);
+                    Frequency = _State._TuningPitch * std::exp2(Note / 12.);
                 }
                 break;
             }
@@ -114,7 +113,7 @@ void x_axis_t::Configure(state_t * state, graph_options_t * graphOptions, analys
                 static constexpr const int Step[] = { 2, 2, 1, 2, 2, 2, 1 };
 
                 double Note = -57.;                                                 // Index of C0 (57 semi-tones lower than A4 at 440Hz)
-                double Frequency = _State->_TuningPitch * std::exp2(Note / 12.);    // Frequency of C0
+                double Frequency = _State._TuningPitch * std::exp2(Note / 12.);    // Frequency of C0
 
                 int j = 0;
 
@@ -132,7 +131,7 @@ void x_axis_t::Configure(state_t * state, graph_options_t * graphOptions, analys
                     _Labels.push_back(lb);
 
                     Note += Step[j];
-                    Frequency = _State->_TuningPitch * std::exp2(Note / 12.);
+                    Frequency = _State._TuningPitch * std::exp2(Note / 12.);
 
                     if (j < 6) j++; else j = 0;
                 }
@@ -155,7 +154,7 @@ void x_axis_t::Move(const D2D1_RECT_F & rect) noexcept
 /// </summary>
 void x_axis_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 {
-    auto & StyleManager = _GraphOptions->_UseLocalStyles ? _GraphOptions->_StyleManager : _State->_StyleManager;
+    auto & StyleManager = _GraphOptions->_UseLocalStyles ? _GraphOptions->_StyleManager : _State._StyleManager;
 
     HRESULT hr = CreateDeviceSpecificResources(deviceContext, StyleManager);
 
@@ -199,7 +198,7 @@ HRESULT x_axis_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceConte
 {
     HRESULT hr = S_OK;
 
-    if (_State->_ColorsHaveChanged || _State->_SizeHasChanged)
+    if (_State._ColorsHaveChanged || _State._SizeHasChanged)
     {
         DeleteColorDependentResources();
 
@@ -211,7 +210,7 @@ HRESULT x_axis_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceConte
             return hr;
     }
 
-    if (_State->_SizeHasChanged)
+    if (_State._SizeHasChanged)
     {
         DeleteSizeDependentResources();
 
@@ -259,7 +258,7 @@ HRESULT x_axis_t::CreateColorDependentResources(ID2D1DeviceContext * deviceConte
     {
         _LineStyle = *styleManager.GetStyle(VisualElement::VerticalGridLine);
 
-        _LineStyle.SetColor(_State);
+        _LineStyle.SetColor(&_State);
 
         HRESULT hr = _LineStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
 
@@ -271,7 +270,7 @@ HRESULT x_axis_t::CreateColorDependentResources(ID2D1DeviceContext * deviceConte
     {
         _TextStyle = *styleManager.GetStyle(VisualElement::XAxisText);
 
-        _TextStyle.SetColor(_State);
+        _TextStyle.SetColor(&_State);
 
         HRESULT hr = _TextStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"999.9k", 1.f);
 
@@ -306,7 +305,7 @@ void x_axis_t::Initialize() noexcept
 
     // Calculate the position of the labels.
     const FLOAT BarWidth = std::max(t, 2.f); // In DIP
-    const FLOAT SpectrumWidth = (_State->_VisualizationType == VisualizationType::Bars) ? BarWidth * (FLOAT) _BandCount : _Size.width;
+    const FLOAT SpectrumWidth = (_State._VisualizationType == VisualizationType::Bars) ? BarWidth * (FLOAT) _BandCount : _Size.width;
     const FLOAT HOffset = GetHOffset(_GraphOptions->_HorizontalAlignment, _Size.width - SpectrumWidth);
 
     const FLOAT x1 = !_GraphOptions->_FlipHorizontally ? _Rect.left  + HOffset : _Rect.right - HOffset;
@@ -315,13 +314,13 @@ void x_axis_t::Initialize() noexcept
     const FLOAT yt = _Rect.top    + (_GraphOptions->_XAxisTop    ? _TextStyle._Height : 0.f); // Top axis
     const FLOAT yb = _Rect.bottom - (_GraphOptions->_XAxisBottom ? _TextStyle._Height : 0.f); // Bottom axis
 
-    const double MinScale = ScaleFrequency(_LoFrequency, _State->_ScalingFunction, _State->_SkewFactor);
-    const double MaxScale = ScaleFrequency(_HiFrequency, _State->_ScalingFunction, _State->_SkewFactor);
+    const double MinScale = ScaleFrequency(_LoFrequency, _State._ScalingFunction, _State._SkewFactor);
+    const double MaxScale = ScaleFrequency(_HiFrequency, _State._ScalingFunction, _State._SkewFactor);
 
     // Calculate the rectangles of the labels.
     for (label_t & Iter : _Labels)
     {
-        const FLOAT dx = msc::Map(ScaleFrequency(Iter.Frequency, _State->_ScalingFunction, _State->_SkewFactor), MinScale, MaxScale, 0.f, SpectrumWidth);
+        const FLOAT dx = msc::Map(ScaleFrequency(Iter.Frequency, _State._ScalingFunction, _State._SkewFactor), MinScale, MaxScale, 0.f, SpectrumWidth);
 
         const FLOAT x = !_GraphOptions->_FlipHorizontally ? (x1 + dx) : (x1 - dx);
 

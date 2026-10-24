@@ -13,11 +13,12 @@
 class d3d_tester_t final : public visualization_t
 {
 public:
-    d3d_tester_t() noexcept = default;
+    d3d_tester_t(state_t & state) : visualization_t(state) { }
 
     d3d_tester_t(const d3d_tester_t &) = delete;
-    d3d_tester_t & operator=(const d3d_tester_t &) = delete;
     d3d_tester_t(d3d_tester_t &&) = delete;
+
+    d3d_tester_t & operator=(const d3d_tester_t &) = delete;
     d3d_tester_t & operator=(d3d_tester_t &&) = delete;
 
     ~d3d_tester_t() noexcept;
@@ -28,7 +29,7 @@ public:
     void Reset() noexcept override final;
 
     // visualization_t
-    void Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept override final;
+    void Configure(graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept override final;
 
 private:
     struct vertex_t

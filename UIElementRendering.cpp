@@ -305,7 +305,7 @@ void uielement_t::Animate(int64_t now) noexcept
 /// <summary>
 /// Initializes the parameters that depend on the sample rate of the chunk.
 /// </summary>
-void uielement_t::InitializeSampleRateDependentParameters(const audio_chunk_impl & chunk) noexcept
+void uielement_t::InitializeSampleRateDependentParameters(const audio_chunk & chunk) noexcept
 {
     assert(!fb2k::is_main_thread());
 
@@ -742,11 +742,14 @@ bool GetAudioChunk(audio_chunk & chunk, uint32_t sampleRate, uint32_t frameCount
     /** Bartlett
         Samples[i] = 1. - (double) i / (double) (frameCount - 1);
      **/
-        const double Frequency = 2'300.0;
+        constexpr double Frequency = 2'300.0;
+
+        constexpr double Pi    = std::numbers::pi;
+        constexpr double TwoPi = 2. * Pi;
 
         const double t = (double) i / (double) sampleRate;
 
-        Samples[i] = (audio_sample) std::sin(2. * std::numbers::pi * Frequency * t);
+        Samples[i] = (audio_sample) std::sin(TwoPi * Frequency * t);
     }
  
     chunk = audio_chunk_impl(Samples, frameCount, ChannelCount, sampleRate);

@@ -12,9 +12,8 @@
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void y_axis_t::Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept
+void y_axis_t::Configure(graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept
 {
-    _State = state;
     _GraphOptions = graphOptions;
     _Analysis = analysis;
 
@@ -53,7 +52,7 @@ void y_axis_t::Move(const D2D1_RECT_F & rect) noexcept
 /// </summary>
 void y_axis_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 {
-    auto & StyleManager = _GraphOptions->_UseLocalStyles ? _GraphOptions->_StyleManager : _State->_StyleManager;
+    auto & StyleManager = _GraphOptions->_UseLocalStyles ? _GraphOptions->_StyleManager : _State._StyleManager;
 
     HRESULT hr = CreateDeviceSpecificResources(deviceContext, StyleManager);
 
@@ -89,7 +88,7 @@ HRESULT y_axis_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceConte
 {
     HRESULT hr = S_OK;
 
-    if (_State->_ColorsHaveChanged || _State->_SizeHasChanged)
+    if (_State._ColorsHaveChanged || _State._SizeHasChanged)
     {
         DeleteColorDependentResources();
 
@@ -101,7 +100,7 @@ HRESULT y_axis_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceConte
             return hr;
     }
 
-    if (_State->_SizeHasChanged)
+    if (_State._SizeHasChanged)
     {
         DeleteSizeDependentResources();
 
@@ -150,7 +149,7 @@ HRESULT y_axis_t::CreateColorDependentResources(ID2D1DeviceContext * deviceConte
     {
         _LineStyle = *styleManager.GetStyle(VisualElement::HorizontalGridLine);
 
-        _LineStyle.SetColor(_State);
+        _LineStyle.SetColor(&_State);
 
         HRESULT hr = _LineStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
 
@@ -162,7 +161,7 @@ HRESULT y_axis_t::CreateColorDependentResources(ID2D1DeviceContext * deviceConte
     {
         _TextStyle = *styleManager.GetStyle(VisualElement::YAxisText);
 
-        _TextStyle.SetColor(_State);
+        _TextStyle.SetColor(&_State);
 
         HRESULT hr = _TextStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"+999", 1.f);
 

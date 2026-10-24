@@ -784,7 +784,7 @@ const std::vector<effect_category_t> EffectCategories
             { EyeCandy::Effect::AizawaAttractor,    L"Aizawa Attractor" },
             { EyeCandy::Effect::HalvorsenAttractor, L"Halvorsen Attractor" },
             { EyeCandy::Effect::LorenzAttractor,    L"Lorenz Attractor" },
-            { EyeCandy::Effect::RosslerAttractor,   L"Rössler Attractor" },
+            { EyeCandy::Effect::RosslerAttractor,   L"R\u00F6ssler Attractor" },
             { EyeCandy::Effect::ThomasAttractor,    L"Thomas Attractor" },
             { EyeCandy::Effect::DoublePendulum,     L"Double Pendulum" },
         }

@@ -19,20 +19,19 @@ goniometer_t::~goniometer_t()
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void goniometer_t::Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device *, ID3D11DeviceContext *) noexcept
+void goniometer_t::Configure(graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device *, ID3D11DeviceContext *) noexcept
 {
-    _State        = state;
     _GraphOptions = graphOptions;
     _Analysis     = analysis;
 
-    _LowBand  = _State->_LowBand;
-    _HighBand = _State->_HighBand;
+    _LowBand  = _State._LowBand;
+    _HighBand = _State._HighBand;
 
-    _AudioProcessor.Initialize(state);
+    _AudioProcessor.Initialize(&_State);
 
-    _AudioProcessor.SetColorMode(_State->_GoniometerColorMode);
-    _AudioProcessor.SetCrossoverMode(_State->_CrossoverMode);
-    _AudioProcessor.SetVisualGain(_State->_LowVisualGain, _State->_MidVisualGain, _State->_HighVisualGain);
+    _AudioProcessor.SetColorMode(_State._GoniometerColorMode);
+    _AudioProcessor.SetCrossoverMode(_State._CrossoverMode);
+    _AudioProcessor.SetVisualGain(_State._LowVisualGain, _State._MidVisualGain, _State._HighVisualGain);
 
     _SpriteDestinations.resize(0);
     _SpriteSources     .resize(0);
@@ -49,7 +48,7 @@ void goniometer_t::Move(const D2D1_RECT_F & rect) noexcept
 {
     InitializeMetrics(rect);
 
-    _TranslationMatrix = D2D1::Matrix3x2F::Translation(_Size.width / 2.f, _Size.height / 2.f);
+    _TranslationMatrix = D2D1::Matrix3x2F::Translation(_CenterX, _CenterY);
 }
 
 /// <summary>
@@ -92,14 +91,14 @@ void goniometer_t::Render(ID2D1DeviceContext * deviceContext) noexcept
         _DeviceContext->Clear();
 
         // Draw a faded and blurred version of the previous bitmap.
-        if (_State->_HasPhosphorDecay)
+        if (_State._HasPhosphorDecay)
         {
             {
-                const FLOAT Opacity = (_State->_Afterglow != 0.f) ? std::expf(-(1000.f / (FLOAT) _State->_TargetRefreshRate) / _State->_Afterglow) : 0.f;
+                const FLOAT Opacity = (_State._Afterglow != 0.f) ? std::expf(-(1000.f / (FLOAT) _State._TargetRefreshRate) / _State._Afterglow) : 0.f;
 
                 _OpacityEffect->SetValue(D2D1_OPACITY_PROP_OPACITY, Opacity);
 
-                _BlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_STANDARD_DEVIATION, _State->_BlurSigma);
+                _BlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_STANDARD_DEVIATION, _State._BlurSigma);
             }
 
             _OpacityEffect->SetInput(0, _Bitmaps[_PrevBitmapIndex].Get());
@@ -259,7 +258,7 @@ HRESULT goniometer_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceC
             return hr;
     }
 
-    if (_State->_ColorsHaveChanged || _State->_SizeHasChanged)
+    if (_State._ColorsHaveChanged || _State._SizeHasChanged)
     {
         DeleteColorDependentResources();
 
@@ -271,7 +270,7 @@ HRESULT goniometer_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceC
             return hr;
     }
 
-    if (_State->_SizeHasChanged)
+    if (_State._SizeHasChanged)
     {
         DeleteSizeDependentResources();
 
@@ -316,9 +315,9 @@ HRESULT goniometer_t::CreateSizeDependentResources(ID2D1DeviceContext * deviceCo
 
     if (_SignalStyle._Brush == nullptr)
     {
-        _SignalStyle = *_State->_StyleManager.GetStyle(VisualElement::Signal);
+        _SignalStyle = *_State._StyleManager.GetStyle(VisualElement::Signal);
 
-        _SignalStyle.SetColor(_State);
+        _SignalStyle.SetColor(&_State);
 
         hr = _SignalStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", _HalfSide);
 
@@ -354,9 +353,9 @@ HRESULT goniometer_t::CreateSizeDependentResources(ID2D1DeviceContext * deviceCo
 
     if (_StaticLinesStyle._Brush == nullptr)
     {
-        _StaticLinesStyle = *_State->_StyleManager.GetStyle(VisualElement::StaticLines);
+        _StaticLinesStyle = *_State._StyleManager.GetStyle(VisualElement::StaticLines);
 
-        _StaticLinesStyle.SetColor(_State);
+        _StaticLinesStyle.SetColor(&_State);
 
         // The font style is created prescaled to counter the Scale transform in the command list.
         hr = _StaticLinesStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
@@ -367,9 +366,9 @@ HRESULT goniometer_t::CreateSizeDependentResources(ID2D1DeviceContext * deviceCo
 
     if (_StaticTextStyle._Brush == nullptr)
     {
-        _StaticTextStyle = *_State->_StyleManager.GetStyle(VisualElement::StaticText);
+        _StaticTextStyle = *_State._StyleManager.GetStyle(VisualElement::StaticText);
 
-        _StaticTextStyle.SetColor(_State);
+        _StaticTextStyle.SetColor(&_State);
 
         // Create a temporary non-scaled version of the font.
         {
@@ -753,7 +752,7 @@ void goniometer_t::OnConfigurationChanged(ConfigurationChanges configurationChan
     if (!IsSet(configurationChanges, ConfigurationChanges::Goniometer))
         return;
 
-    _AudioProcessor.SetColorMode(_State->_GoniometerColorMode);
-    _AudioProcessor.SetCrossoverMode(_State->_CrossoverMode);
-    _AudioProcessor.SetVisualGain(_State->_LowVisualGain, _State->_MidVisualGain, _State->_HighVisualGain);
+    _AudioProcessor.SetColorMode(_State._GoniometerColorMode);
+    _AudioProcessor.SetCrossoverMode(_State._CrossoverMode);
+    _AudioProcessor.SetVisualGain(_State._LowVisualGain, _State._MidVisualGain, _State._HighVisualGain);
 }

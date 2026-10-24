@@ -33,7 +33,7 @@ namespace NeonTunnel
         effect_t & operator=(const effect_t &) = delete;
         effect_t & operator=(effect_t &&) = delete;
 
-        void Render(ID2D1RenderTarget * renderTarget, double deltaTime, audio_chunk_impl & chunk) noexcept override final;
+        void Render(ID2D1RenderTarget * renderTarget, double deltaTime, audio_chunk & chunk) noexcept override final;
         void Reset() noexcept override final;
 
         void SetBassResponse(double value) noexcept
@@ -106,7 +106,7 @@ namespace NeonTunnel
             bool Visible = false;
         };
 
-        void AnalyzeAudio(const audio_chunk_impl & chunk);
+        void AnalyzeAudio(const audio_chunk & chunk);
         void Update(double deltaTime);
 
         void GenerateWork() noexcept;

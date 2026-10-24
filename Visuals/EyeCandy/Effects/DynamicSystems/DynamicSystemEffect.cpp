@@ -25,7 +25,7 @@ namespace DynamicSystem
     /// </summary>
     void effect_t::SetSplineSmoothing(double smoothing) noexcept
     {
-        _SplineSmoothing = std::clamp(smoothing, 0., 1.);
+        _SplineSmoothing = Clamp(smoothing);
     }
 
     /// <summary>
@@ -47,7 +47,7 @@ namespace DynamicSystem
     /// <summary>
     /// Analyzes an audio chunk.
     /// </summary>
-    void effect_t::AnalyzeAudio(const audio_chunk_impl & chunk)
+    void effect_t::AnalyzeAudio(const audio_chunk & chunk)
     {
         _Peak        = 0.;
         _RMS         = 0.;
@@ -141,7 +141,7 @@ namespace DynamicSystem
         if (CorrelationScale > Epsilon)
             _Correlation = std::clamp(CrossProduct / CorrelationScale, -1., 1.);
 
-        _PhaseEnergy = std::clamp(SpatialPower * (double) ChannelCount / TotalPower, 0., 1.);
+        _PhaseEnergy = Clamp(SpatialPower * (double) ChannelCount / TotalPower);
     }
 
     /// <summary>
@@ -153,8 +153,8 @@ namespace DynamicSystem
         const double AntiPhase = 0.5 * (1. - _SmoothedCorrelation);
 
         const auto H = (float) Fraction(Phase + (_AnimationTime * 0.018) + (AntiPhase * 0.12));
-        const auto S = (float) std::clamp(0.80 + (_SmoothedWidth * 0.08), 0., 1.);
-        const auto V = (float) std::clamp(0.70 + (_SmoothedRMS   * 1.2 ) + (_SmoothedPeak * 0.18), 0.70, 1.); // Brightness
+        const auto S = (float)      Clamp(0.80 + (_SmoothedWidth * 0.08));
+        const auto V = (float) std::clamp(0.70 + (_SmoothedRMS   * 1.20) + (_SmoothedPeak * 0.18), 0.70, 1.); // Brightness
 
         return HSVToBGRA(H, S, V);
     }
@@ -268,7 +268,7 @@ namespace DynamicSystem
 
         _ThemeTransitionElapsed += deltaTime;
 
-        const double Progress = std::clamp(_ThemeTransitionElapsed / ThemeTransitionDuration, 0., 1.);
+        const double Progress = Clamp(_ThemeTransitionElapsed / ThemeTransitionDuration);
 
         // Cubic smoothstep avoids a visible velocity discontinuity at both ends.
         _ThemeBlend = Progress * Progress * (3. - 2. * Progress);
@@ -347,7 +347,7 @@ namespace DynamicSystem
         const double Persistence = 0.935 + (0.030 * _PhaseEnergy);
         const double Decay       = std::pow(Persistence, (deltaTime * 60.));
 
-        _Brush->SetColor(D2D1::ColorF(0.0015f, 0.0025f, 0.0060f, (float) std::clamp(1. - Decay, 0., 1.)));
+        _Brush->SetColor(D2D1::ColorF(0.0015f, 0.0025f, 0.0060f, (float) Clamp(1. - Decay)));
         _Brush->SetOpacity(1.f);
 
         renderTarget->FillRectangle(_Rectangle, _Brush.Get());

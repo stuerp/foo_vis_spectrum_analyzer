@@ -23,9 +23,9 @@ public:
     style_t() = default;
 
     style_t(const style_t &) noexcept;
-    style_t & operator=(const style_t & other) noexcept;
-
     style_t(const style_t &&) = delete;
+
+    style_t & operator=(const style_t & other) noexcept;
     style_t & operator=(const style_t && other) = delete;
 
     virtual ~style_t() = default;
@@ -124,4 +124,8 @@ public:
 
     FLOAT _Width;
     FLOAT _Height;
+
+    static constexpr double Pi    = std::numbers::pi;
+    static constexpr double TwoPi = 2. * Pi;
+    static constexpr double Pi2   = Pi * 0.5;
 };

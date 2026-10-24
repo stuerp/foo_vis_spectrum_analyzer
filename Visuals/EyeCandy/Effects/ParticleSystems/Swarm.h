@@ -31,7 +31,7 @@ namespace Swarm
         effect_t & operator=(const effect_t &) = delete;
         effect_t & operator=(effect_t &&) = delete;
 
-        void Render(ID2D1RenderTarget *, double, audio_chunk_impl &) noexcept override;
+        void Render(ID2D1RenderTarget *, double, audio_chunk &) noexcept override;
         void Reset() noexcept override;
         std::wstring GetStatus() noexcept override;
 
@@ -51,7 +51,7 @@ namespace Swarm
             double Brightness = 1.;
         };
 
-        void AnalyzeAudio(const audio_chunk_impl &);
+        void AnalyzeAudio(const audio_chunk & chunk);
 
         void Update(double) noexcept;
         void UpdateAgent(size_t, double) noexcept;
@@ -77,31 +77,26 @@ namespace Swarm
     private:
         std::vector<agent_t> _Agents;
         std::vector<agent_t> _Snapshot;
+
         std::array<double, BandCount> _BandEnergy {};
         std::array<double, BandCount> _SmoothedBandEnergy {};
         std::array<double, BandCount> _PreviousBandEnergy {};
 
-        double _StereoBalance = 0.;
+        double _StereoBalance         = 0.;
         double _SmoothedStereoBalance = 0.;
-        double _SpectralFlux = 0.;
-        double _SmoothedFlux = 0.;
-        double _SmoothedPeak = 0.;
-        double _SmoothedRMS = 0.;
-        double _BassEnergy = 0.;
-        double _MidEnergy = 0.;
-        double _TrebleEnergy = 0.;
-        double _BeatPulse = 0.;
-        double _PreviousBeatPulse = 0.;
-        double _BeatColorPhase = 0.;
-        double _GradientPhase = 0.;
-        double _PaletteBlend = 1.;
-        double _BeatCooldown = 0.;
 
-        size_t _PaletteIndex = 0;
-        size_t _PreviousPaletteIndex = 0;
+        double _PreviousBeatPulse     = 0.;
+        double _BeatColorPhase        = 0.;
+        double _GradientPhase         = 0.;
+        double _PaletteBlend          = 1.;
+        double _BeatCooldown          = 0.;
+
+        size_t _PaletteIndex          = 0;
+        size_t _PreviousPaletteIndex  = 0;
 
         ComPtr<ID2D1SolidColorBrush> _Brush;
         ComPtr<ID2D1StrokeStyle> _StrokeStyle;
+
         ComPtr<ID2D1BitmapRenderTarget> _BackBufferRenderTarget;
         ComPtr<ID2D1Bitmap> _BackBuffer;
     };

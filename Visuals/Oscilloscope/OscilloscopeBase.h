@@ -10,11 +10,12 @@
 class oscilloscope_base_t : public visualization_t
 {
 public:
-    oscilloscope_base_t() = default;
+    oscilloscope_base_t(state_t & state) : visualization_t(state) { }
 
     oscilloscope_base_t(const oscilloscope_base_t &) = delete;
-    oscilloscope_base_t & operator=(const oscilloscope_base_t &) = delete;
     oscilloscope_base_t(oscilloscope_base_t &&) = delete;
+
+    oscilloscope_base_t & operator=(const oscilloscope_base_t &) = delete;
     oscilloscope_base_t & operator=(oscilloscope_base_t &&) = delete;
 
     virtual ~oscilloscope_base_t() noexcept;

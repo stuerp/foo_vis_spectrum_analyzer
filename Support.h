@@ -47,5 +47,5 @@ HRESULT EvaluateTitleFormatScript(const std::wstring & script, pfc::string & res
 /// </summary>
 [[nodiscard]] inline constexpr double DegreesToRadians(double degrees) noexcept
 {
-    return degrees * std::numbers::pi / 180.0;
+    return degrees * std::numbers::pi / 180.;
 }

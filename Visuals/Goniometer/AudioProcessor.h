@@ -88,7 +88,7 @@ public:
         _State = state;
     }
 
-    void Process(const audio_chunk_impl & chunk, uint32_t selectedChannels, uint32_t pairedChannels, double loFreq, double hiFreq) noexcept;
+    void Process(const audio_chunk & chunk, uint32_t selectedChannels, uint32_t pairedChannels, double loFreq, double hiFreq) noexcept;
 
     void Reset() noexcept
     {

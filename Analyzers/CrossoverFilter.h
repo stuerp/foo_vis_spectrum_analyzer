@@ -42,6 +42,8 @@ private:
 
     double _Z1 = 0.;
     double _Z2 = 0.;
+
+    static constexpr double TwoPi = 2. * std::numbers::pi;
 };
 
 /// <summary>
@@ -99,4 +101,6 @@ private:
 
     lr4_crossover_t _LowMid;    // Low and everything lower
     lr4_crossover_t _MidHigh;   // High and everything higher
+
+    static constexpr double TwoPi = 2. * std::numbers::pi;
 };

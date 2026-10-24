@@ -1,5 +1,5 @@
 
-/** $VER: Graph.h (2026.10.11) P. Stuer - Implements a graph on which the visualizations are rendered. **/
+/** $VER: Graph.h (2026.10.24) P. Stuer - Implements a graph on which the visualizations are rendered. **/
 
 #pragma once
 
@@ -22,10 +22,7 @@
 class graph_t : public element_t
 {
 public:
-    graph_t(state_t & state, render_context_t & renderContext) : _State(state), _RenderContext(renderContext)
-    {
-        __super::_State = &state;
-    }
+    graph_t(state_t & state, render_context_t & renderContext) : element_t(state), _Analysis(state), _RenderContext(renderContext) { }
 
     virtual ~graph_t() = default;
 
@@ -77,7 +74,6 @@ public:
     analysis_t _Analysis;
 
 private:
-    state_t & _State;
     render_context_t & _RenderContext;
 
     std::wstring _Description;

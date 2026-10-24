@@ -10,11 +10,12 @@
 class tester_t final : public visualization_t
 {
 public:
-    tester_t() = default;
+    tester_t(state_t & state) : visualization_t(state) { }
 
     tester_t(const tester_t &) = delete;
-    tester_t & operator=(const tester_t &) = delete;
     tester_t(tester_t &&) = delete;
+
+    tester_t & operator=(const tester_t &) = delete;
     tester_t & operator=(tester_t &&) = delete;
 
     virtual ~tester_t();
@@ -27,7 +28,7 @@ public:
     void OnConfigurationChanged(ConfigurationChanges configurationChanges) noexcept override final;
 
     // visualization_t
-    void Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice = nullptr, ID3D11DeviceContext * d3dDeviceContext = nullptr) noexcept override final;
+    void Configure(graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice = nullptr, ID3D11DeviceContext * d3dDeviceContext = nullptr) noexcept override final;
 
 private:
     HRESULT CreateDeviceIndependentResources() noexcept;

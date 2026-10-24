@@ -8,9 +8,8 @@
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void eye_candy_t::Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept
+void eye_candy_t::Configure(graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept
 {
-    _State = state;
     _GraphOptions = graphOptions;
     _Analysis = analysis;
 
@@ -30,23 +29,23 @@ void eye_candy_t::Move(const D2D1_RECT_F & rect) noexcept
 /// </summary>
 void eye_candy_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 {
-    if ((_EffectId != _State->_EffectId) || (_Effect == nullptr))
+    if ((_EffectId != _State._EffectId) || (_Effect == nullptr))
     {
-        _Effect = EyeCandy::effect_t::Create(_State->_EffectId);
+        _Effect = EyeCandy::effect_t::Create(_State._EffectId);
 
-        _EffectId = _State->_EffectId;
+        _EffectId = _State._EffectId;
     }
 
-    _Effect->SetQuality(_State->_EffectQuality);
-    _Effect->SetSpeed(_State->_EffectSpeed);
-    _Effect->SetBrightness(_State->_EffectBrightness);
-    _Effect->SetDensity(_State->_EffectDensity);
+    _Effect->SetQuality(_State._EffectQuality);
+    _Effect->SetSpeed(_State._EffectSpeed);
+    _Effect->SetBrightness(_State._EffectBrightness);
+    _Effect->SetDensity(_State._EffectDensity);
 
-    double DeltaTime = _State->_PlaybackTime - _PlaybackTime;
+    double DeltaTime = _State._PlaybackTime - _PlaybackTime;
 
     _Effect->Render(deviceContext, DeltaTime, _Analysis->_Chunk);
 
-    _PlaybackTime = _State->_PlaybackTime;
+    _PlaybackTime = _State._PlaybackTime;
 }
 
 /// <summary>
@@ -54,14 +53,14 @@ void eye_candy_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 /// </summary>
 void eye_candy_t::Reset() noexcept
 {
-    if ((_EffectId != _State->_EffectId) || (_Effect == nullptr))
+    if ((_EffectId != _State._EffectId) || (_Effect == nullptr))
     {
-        _Effect = EyeCandy::effect_t::Create(_State->_EffectId);
+        _Effect = EyeCandy::effect_t::Create(_State._EffectId);
 
-        _EffectId = _State->_EffectId;
+        _EffectId = _State._EffectId;
     }
 
-    _PlaybackTime = _State->_PlaybackTime;
+    _PlaybackTime = _State._PlaybackTime;
 }
 
 /// <summary>
@@ -72,5 +71,5 @@ void eye_candy_t::OnConfigurationChanged(ConfigurationChanges configurationChang
     if (!IsSet(configurationChanges, ConfigurationChanges::Layout))
         return;
 
-    _State->_SizeHasChanged = true;
+    _State._SizeHasChanged = true;
 }

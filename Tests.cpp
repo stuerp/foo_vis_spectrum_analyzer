@@ -1,5 +1,5 @@
 
-/** $VER: Tests.cpp (2026.09.09) P. Stuer - Various unit tests **/
+/** $VER: Tests.cpp (2026.10.24) P. Stuer - Various unit tests **/
 
 #include "pch.h"
 
@@ -15,7 +15,8 @@ static void TestWeighting()
     constexpr double WeightTolerance  = 1.e-9;
     constexpr double DecibelTolerance = 1.e-6;
 
-    analysis_t Analysis;
+    state_t State;
+    analysis_t Analysis(State);
 
     struct weighting_test_t
     {
@@ -151,7 +152,7 @@ static void TestWindowFunctions()
     constexpr double Epsilon = std::numeric_limits<double>::epsilon();
 
     {
-        const BoxCar w{0., true};
+        const BoxCar w {0., true};
 
         assert(w( 0.)   == 1.);
         assert(w(-1.)   == 1.);
@@ -162,7 +163,7 @@ static void TestWindowFunctions()
     }
 
     {
-        const Hann w{0., true};
+        const Hann w {0., true};
 
         assert(std::abs(w( 0.) - 1.) < Epsilon);
         assert(std::abs(w(-1.))      < Epsilon);

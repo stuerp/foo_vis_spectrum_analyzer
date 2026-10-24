@@ -13,7 +13,7 @@ namespace Waveform
     /// <summary>
     /// 
     /// </summary>
-    void effect_t::Render(ID2D1RenderTarget * renderTarget, double deltaTime, audio_chunk_impl & chunk) noexcept
+    void effect_t::Render(ID2D1RenderTarget * renderTarget, double deltaTime, audio_chunk & chunk) noexcept
     {
         HRESULT hr = CreateDeviceDependentResources(renderTarget);
 
@@ -26,21 +26,21 @@ namespace Waveform
 
         // Draw the static content.
         {
-            renderTarget->DrawLine(D2D1::Point2F(0.f, _Center), D2D1::Point2F((float) _Width, _Center), _GridBrush.Get(), 1.f);
+            renderTarget->DrawLine(D2D1::Point2F(0.f, _Center), D2D1::Point2F(_Width, _Center), _GridBrush.Get(), 1.f);
 
             for (int i = 1; i < 8; ++i)
             {
                 const float x = (_Width * (float) i) / 8.f;
 
-                renderTarget->DrawLine(D2D1::Point2F(x, 0.f), D2D1::Point2F(x, (float) _Height), _GridBrush.Get(), 0.5f);
+                renderTarget->DrawLine(D2D1::Point2F(x, 0.f), D2D1::Point2F(x, _Height), _GridBrush.Get(), 0.5f);
             }
         }
 
         const size_t FrameCount  = chunk.get_sample_count();
-        const size_t ChannelCount = chunk.get_channels();
+        const size_t ChannelCount = chunk.get_channel_count();
         const audio_sample * Data = chunk.get_data();
 
-        if ((Data == nullptr) || (FrameCount == 0) || (ChannelCount == 0) || (_Width == 0))
+        if ((Data == nullptr) || (FrameCount == 0) || (ChannelCount == 0) || (_Width == 0.f))
             return;
 
         // Convert a frame to mono.
@@ -96,9 +96,9 @@ namespace Waveform
         }
 
         // Extend the final segment to the full requested width.
-        if (HasPreviousPoint && (_Width > 1))
+        if (HasPreviousPoint && (_Width > 1.f))
         {
-            const D2D1_POINT_2F FinalPoint = D2D1::Point2F((float) _Width, PreviousPoint.y);
+            const D2D1_POINT_2F FinalPoint = D2D1::Point2F(_Width, PreviousPoint.y);
 
             renderTarget->DrawLine(PreviousPoint, FinalPoint, _SignalBrush.Get(), 1.f);
         }

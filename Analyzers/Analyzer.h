@@ -1,5 +1,5 @@
 
-/** $VER: Analyzer.h (2026.10.19) P. Stuer **/
+/** $VER: Analyzer.h (2026.10.24) P. Stuer **/
 
 #pragma once
 
@@ -25,8 +25,9 @@ public:
     analyzer_t() = delete;
 
     analyzer_t(const analyzer_t &) = delete;
-    analyzer_t & operator=(const analyzer_t &) = delete;
     analyzer_t(analyzer_t &&) = delete;
+
+    analyzer_t & operator=(const analyzer_t &) = delete;
     analyzer_t & operator=(analyzer_t &&) = delete;
 
     virtual ~analyzer_t() = default;
@@ -34,7 +35,7 @@ public:
     /// <summary>
     /// Initializes a new instance.
     /// </summary>
-    analyzer_t(const state_t * state, uint32_t sampleRate, uint32_t channelCount, uint32_t channelConfig, const window_function_t & windowFunction) : _State(state), _SampleRate(sampleRate), _ChannelCount(channelCount), _ChannelConfig(channelConfig), _WindowFunction(windowFunction)
+    analyzer_t(const state_t & state, uint32_t sampleRate, uint32_t channelCount, uint32_t channelConfig, const window_function_t & windowFunction) : _State(state), _SampleRate(sampleRate), _ChannelCount(channelCount), _ChannelConfig(channelConfig), _WindowFunction(windowFunction)
     {
         _NyquistFrequency = (double) _SampleRate / 2.;
     }
@@ -75,7 +76,7 @@ public:
     }
 
 protected:
-    const state_t * _State;
+    const state_t & _State;
     uint32_t _SampleRate;
     uint32_t _ChannelCount; // Number of channels per frame.
     uint32_t _ChannelConfig; // Mask representing the channels present in the frame.

@@ -72,7 +72,7 @@ public:
     virtual double operator()(double x) const noexcept { return 0.; };
 
     [[nodiscard]]
-    static window_function_t * Create(WindowFunction windowFunction, double windowParameter, double windowSkew, bool truncate);
+    static std::unique_ptr<window_function_t> Create(WindowFunction windowFunction, double windowParameter, double windowSkew, bool truncate);
 
 protected:
     /// <summary>
@@ -117,6 +117,10 @@ protected:
         return x;
     }
 
+    static constexpr double Pi    = std::numbers::pi;
+    static constexpr double TwoPi = 2. * Pi;
+    static constexpr double Pi2   = Pi * 0.5;
+
 private:
     double _Skew = 0.;
     bool _Truncate = true; // True when the input value of the function should be truncated to 0 if it is outside the range of [-1, 1]
@@ -157,7 +161,7 @@ public:
         if (!t)
             return 0.;
 
-        return (1. + std::cos(*t * std::numbers::pi)) / 2.;
+        return 0.5 + 0.5 * std::cos(*t * Pi);
     }
 };
 
@@ -178,7 +182,7 @@ public:
         if (!t)
             return 0.;
 
-        return 0.54 + (0.46 * std::cos(*t * std::numbers::pi));
+        return 0.54 + (0.46 * std::cos(*t * Pi));
     }
 };
 
@@ -199,7 +203,7 @@ public:
         if (!t)
             return 0.;
 
-        const double Phase = *t * std::numbers::pi;
+        const double Phase = *t * Pi;
 
         return 0.42 + (0.5 * std::cos(Phase)) + (0.08 * std::cos(2. * Phase));
     }
@@ -222,7 +226,7 @@ public:
         if (!t)
             return 0.;
 
-        const double Phase = *t * std::numbers::pi;
+        const double Phase = *t * Pi;
 
         return 0.355768 + (0.487396 * std::cos(Phase)) + (0.144232 * std::cos(2. * Phase)) + (0.012604 * std::cos(3. * Phase));
     }
@@ -253,7 +257,7 @@ public:
 
         constexpr double Normalization = A0 + A1 + A2 + A3 + A4;
 
-        const double Phase = *t * std::numbers::pi;
+        const double Phase = *t * Pi;
 
         const double Value = A0 + (A1 * std::cos(Phase)) + (A2 * std::cos(2. * Phase)) + (A3 * std::cos(3. * Phase)) + (A4 * std::cos(4. * Phase));
 
@@ -349,7 +353,7 @@ public:
         if (!t)
             return 0.;
 
-        const double Phase = *t * std::numbers::pi / 2.;
+        const double Phase = *t * Pi2;
 
         return std::pow(std::cos(Phase), _Power);
     }
@@ -440,7 +444,7 @@ public:
         if (Absolute <= TaperStart)
             return 1.;
 
-        const double Phase = std::numbers::pi * (Absolute - TaperStart) / _Alpha;
+        const double Phase = Pi * (Absolute - TaperStart) / _Alpha;
 
         return (1. + std::cos(Phase)) / 2.;
     }
@@ -568,9 +572,9 @@ public:
         if (!t)
             return 0.;
 
-        const double Cosine = std::cos(std::numbers::pi / 2. * *t);
+        const double Cosine = std::cos(*t * Pi2);
 
-        return std::sin(std::numbers::pi / 2. * Cosine * Cosine);
+        return std::sin(Pi2 * Cosine * Cosine);
     }
 };
 
@@ -590,9 +594,9 @@ public:
         if (!t)
             return 0.;
 
-        const double Sine = std::sin(*t * std::numbers::pi / 2.);
+        const double Sine = std::sin(*t * Pi2);
 
-        return 1. - std::sin(std::numbers::pi / 2. * Sine * Sine);
+        return 1. - std::sin(Pi2 * Sine * Sine);
     }
 };
 
@@ -644,7 +648,7 @@ public:
         if (std::abs(*t) < std::numeric_limits<double>::epsilon())
             return 1.;
 
-        const auto z = std::numbers::pi * *t;
+        const auto z = Pi * *t;
 
         return std::sin(z) / z;
     }
@@ -672,7 +676,7 @@ public:
         constexpr double a2 = 0.14128;
         constexpr double a3 = 0.01168;
 
-        const auto p = std::numbers::pi * *t;
+        const auto p = Pi * *t;
 
         return a0 + (a1 * std::cos(p)) + (a2 * std::cos(2. * p)) + (a3 * std::cos(3. * p));
     }
@@ -681,82 +685,82 @@ public:
 /// <summary>
 /// Creates the specified window function.
 /// </summary>
-inline window_function_t * window_function_t::Create(WindowFunction windowFunction, double windowParameter, double windowSkew, bool truncate)
+inline std::unique_ptr<window_function_t> window_function_t::Create(WindowFunction windowFunction, double windowParameter, double windowSkew, bool truncate)
 {
     switch (windowFunction)
     {
         case WindowFunction::BoxCar:
-            return new BoxCar(windowSkew, truncate);
+            return std::make_unique<BoxCar>(windowSkew, truncate);
 
         case WindowFunction::Hann:
-            return new Hann(windowSkew, truncate);
+            return std::make_unique<Hann>(windowSkew, truncate);
 
         case WindowFunction::Hamming:
-            return new Hamming(windowSkew, truncate);
+            return std::make_unique<Hamming>(windowSkew, truncate);
 
         case WindowFunction::Blackman:
-            return new Blackman(windowSkew, truncate);
+            return std::make_unique<Blackman>(windowSkew, truncate);
 
         case WindowFunction::Nuttall:
-            return new Nuttall(windowSkew, truncate);
+            return std::make_unique<Nuttall>(windowSkew, truncate);
 
         case WindowFunction::FlatTop:
-            return new FlatTop(windowSkew, truncate);
+            return std::make_unique<FlatTop>(windowSkew, truncate);
 
         case WindowFunction::Lanczos:
-            return new Lanczos(windowSkew, truncate);
+            return std::make_unique<Lanczos>(windowSkew, truncate);
 
         case WindowFunction::BlackmanHarris4:
-            return new BlackmanHarris4(windowSkew, truncate);
+            return std::make_unique<BlackmanHarris4>(windowSkew, truncate);
 
         /** B-spline windows **/
 
         case WindowFunction::Bartlett:
-            return new Bartlett(windowSkew, truncate);
+            return std::make_unique<Bartlett>(windowSkew, truncate);
 
         case WindowFunction::Parzen:
-            return new Parzen(windowSkew, truncate);
+            return std::make_unique<Parzen>(windowSkew, truncate);
 
         /** Polynomial windows **/
 
         case WindowFunction::Welch:
-            return new Welch(windowSkew, truncate, windowParameter);
+            return std::make_unique<Welch>(windowSkew, truncate, windowParameter);
 
         case WindowFunction::PowerOfSine:
-            return new PowerOfSine(windowSkew, truncate, windowParameter);
+            return std::make_unique<PowerOfSine>(windowSkew, truncate, windowParameter);
 
         case WindowFunction::PowerOfCircle:
-            return new PowerOfCircle(windowSkew, truncate, windowParameter);
+            return std::make_unique<PowerOfCircle>(windowSkew, truncate, windowParameter);
 
         /** Adjustable windows **/
 
         case WindowFunction::Gaussian:
-            return new Gaussian(windowSkew, truncate, windowParameter);
+            return std::make_unique<Gaussian>(windowSkew, truncate, windowParameter);
 
         case WindowFunction::Tukey:
-            return new Tukey(windowSkew, truncate, windowParameter);
+            return std::make_unique<Tukey>(windowSkew, truncate, windowParameter);
 
         case WindowFunction::Kaiser:
-            return new Kaiser(windowSkew, truncate, windowParameter);
+            return std::make_unique<Kaiser>(windowSkew, truncate, windowParameter);
 
         case WindowFunction::Poisson:
-            return new Poisson(windowSkew, truncate, windowParameter);
+            return std::make_unique<Poisson>(windowSkew, truncate, windowParameter);
 
         // Other windows
         case WindowFunction::HyperbolicSecant:
-            return new HyperbolicSecant(windowSkew, truncate, windowParameter);
+            return std::make_unique<HyperbolicSecant>(windowSkew, truncate, windowParameter);
 
         case WindowFunction::QuadraticSpline:
-            return new QuadraticSpline(windowSkew, truncate);
+            return std::make_unique<QuadraticSpline>(windowSkew, truncate);
 
         case WindowFunction::OggVorbis:
-            return new OggVorbis(windowSkew, truncate);
+            return std::make_unique<OggVorbis>(windowSkew, truncate);
 
         case WindowFunction::CascadedSine:
-            return new CascadedSine(windowSkew, truncate);
+            return std::make_unique<CascadedSine>(windowSkew, truncate);
 
         case WindowFunction::Galss:
-            return new Galss(windowSkew, truncate);
+            return std::make_unique<Galss>(windowSkew, truncate);
 
         case WindowFunction::Count:
         default:

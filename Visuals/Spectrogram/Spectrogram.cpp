@@ -22,9 +22,8 @@ spectrogram_t::~spectrogram_t()
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void spectrogram_t::Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept
+void spectrogram_t::Configure(graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept
 {
-    _State = state;
     _GraphOptions = graphOptions;
     _Analysis = analysis;
 
@@ -57,14 +56,14 @@ void spectrogram_t::Render(ID2D1DeviceContext * deviceContext) noexcept
     {
         deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
 
-        if (_State->_IsHorizontalSpectrogram)
+        if (_State._IsHorizontalSpectrogram)
         {
             // Draw the offscreen bitmap.
-            if (!_State->_IsPaused || _State->_VisualizeDuringPause)
+            if (!_State._IsPaused || _State._VisualizeDuringPause)
             {
                 SetTransform(deviceContext, _BitmapRect);
 
-                if (_State->_IsScrollingSpectrogram)
+                if (_State._IsScrollingSpectrogram)
                 {
                     // Render the new lines.
                     auto Src = D2D1_RECT_F( _X, 0.f, _BitmapSize.width,      _BitmapSize.height);
@@ -131,11 +130,11 @@ void spectrogram_t::Render(ID2D1DeviceContext * deviceContext) noexcept
         else
         {
             // Draw the offscreen bitmap.
-            if (!_State->_IsPaused || _State->_VisualizeDuringPause)
+            if (!_State._IsPaused || _State._VisualizeDuringPause)
             {
                 SetTransform(deviceContext, _BitmapRect);
 
-                if (_State->_IsScrollingSpectrogram)
+                if (_State._IsScrollingSpectrogram)
                 {
                     // Render the new lines.
                     auto Src = D2D1_RECT_F(0.f,  _Y, _BitmapSize.width, _BitmapSize.height);
@@ -203,12 +202,12 @@ void spectrogram_t::Render(ID2D1DeviceContext * deviceContext) noexcept
     }
 
     // Draw the legend.
-    if (_State->_SpectrogramLegend)
+    if (_State._SpectrogramLegend)
         deviceContext->DrawBitmap(_LegendBitmap.Get(), _LegendRect, 1.f);
 
-    if (_State->_PlaybackTime != _PlaybackTime) // Not paused
+    if (_State._PlaybackTime != _PlaybackTime) // Not paused
     {
-        if (_State->_IsHorizontalSpectrogram)
+        if (_State._IsHorizontalSpectrogram)
         {
             _X++;
 
@@ -216,7 +215,7 @@ void spectrogram_t::Render(ID2D1DeviceContext * deviceContext) noexcept
             {
                 _X = 0.f;
 
-                if (!_State->_IsScrollingSpectrogram)
+                if (!_State._IsScrollingSpectrogram)
                     _TimeLabels.clear();
             }
         }
@@ -228,12 +227,12 @@ void spectrogram_t::Render(ID2D1DeviceContext * deviceContext) noexcept
             {
                 _Y = 0.f;
 
-                if (!_State->_IsScrollingSpectrogram)
+                if (!_State._IsScrollingSpectrogram)
                     _TimeLabels.clear();
             }
         }
 
-        _PlaybackTime = _State->_PlaybackTime;
+        _PlaybackTime = _State._PlaybackTime;
     }
 }
 
@@ -249,7 +248,7 @@ void spectrogram_t::RenderTimeAxis(ID2D1DeviceContext * deviceContext, bool firs
 
     IDWriteTextFormat * TimeTextFormat = _TimeTextStyle._TextFormat.Get();
 
-    if (_State->_IsHorizontalSpectrogram)
+    if (_State._IsHorizontalSpectrogram)
     {
         const FLOAT y1 = first ?                    0.f : _Size.height - _TimeTextStyle._Height;
         const FLOAT y2 = first ? _TimeTextStyle._Height : _Size.height;
@@ -336,7 +335,7 @@ void spectrogram_t::RenderFreqAxis(ID2D1DeviceContext * deviceContext, bool left
     const FLOAT Opacity      = TextBrush->GetOpacity();
     const FLOAT MinorOpacity = Opacity / 2.f;
 
-    if (_State->_IsHorizontalSpectrogram)
+    if (_State._IsHorizontalSpectrogram)
         _FreqTextStyle.SetHorizontalAlignment(left ? DWRITE_TEXT_ALIGNMENT_TRAILING : DWRITE_TEXT_ALIGNMENT_LEADING);
     else
         _FreqTextStyle.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
@@ -369,9 +368,9 @@ bool spectrogram_t::RenderSpectrum(ID2D1BitmapRenderTarget * renderTarget) noexc
     if (_Analysis->_NyquistFrequency == 0.f)
         return false;
 
-    const bool IsHorizontalSpectrogram = _State->_IsHorizontalSpectrogram;
-    const bool IsScrollingSpectrogram  = _State->_IsScrollingSpectrogram;
-    const bool SuppressMirrorImage     = _State->_SuppressMirrorImage;
+    const bool IsHorizontalSpectrogram = _State._IsHorizontalSpectrogram;
+    const bool IsScrollingSpectrogram  = _State._IsScrollingSpectrogram;
+    const bool SuppressMirrorImage     = _State._SuppressMirrorImage;
     const bool FlipHorizontally        = _GraphOptions->_FlipHorizontally;
     const bool FlipVertically          = _GraphOptions->_FlipVertically;
 
@@ -415,10 +414,10 @@ bool spectrogram_t::RenderSpectrum(ID2D1BitmapRenderTarget * renderTarget) noexc
     {
         // Draw the next spectrogram line.
         {
-            const FLOAT Bandwidth     = _State->_UseSpectrumBarMetrics ? std::max(std::floor(_BitmapSize.width / (FLOAT) Bands.size()), 2.f) : _BitmapSize.width / (FLOAT) Bands.size();
+            const FLOAT Bandwidth     = _State._UseSpectrumBarMetrics ? std::max(std::floor(_BitmapSize.width / (FLOAT) Bands.size()), 2.f) : _BitmapSize.width / (FLOAT) Bands.size();
             const FLOAT SpectrumWidth = Bandwidth * (FLOAT) Bands.size();
 
-            FLOAT x1 = _State->_UseSpectrumBarMetrics ? (_BitmapSize.width - SpectrumWidth) / 2.f : 0.f;
+            FLOAT x1 = _State._UseSpectrumBarMetrics ? (_BitmapSize.width - SpectrumWidth) / 2.f : 0.f;
             FLOAT x2 = Bandwidth;
 
             for (const auto & fb : Bands)
@@ -445,8 +444,8 @@ bool spectrogram_t::RenderSpectrum(ID2D1BitmapRenderTarget * renderTarget) noexc
     if (FAILED(hr))
         return false;
 
-    const double PlaybackTime = _State->_PlaybackTime;
-    const double TrackTime    = _State->_TrackTime;
+    const double PlaybackTime = _State._PlaybackTime;
+    const double TrackTime    = _State._TrackTime;
 
     // Update the time axis.
     if (IsScrollingSpectrogram && (PlaybackTime != _PlaybackTime))
@@ -530,13 +529,13 @@ void spectrogram_t::RenderNyquistFrequencyMarker(ID2D1BitmapRenderTarget * rende
         return;
 
     // Calculate the scale range.
-    const double MinScale = ScaleFrequency(_Analysis->_FrequencyBands.front().Mid, _State->_ScalingFunction, _State->_SkewFactor);
-    const double MaxScale = ScaleFrequency(_Analysis->_FrequencyBands.back() .Mid, _State->_ScalingFunction, _State->_SkewFactor);
+    const double MinScale = ScaleFrequency(_Analysis->_FrequencyBands.front().Mid, _State._ScalingFunction, _State._SkewFactor);
+    const double MaxScale = ScaleFrequency(_Analysis->_FrequencyBands.back() .Mid, _State._ScalingFunction, _State._SkewFactor);
 
     // The position of the Nyquist marker is calculated at the exact frequency and may not align with the center frequency of spectrum bar.
-    const double Scale = ScaleFrequency(_Analysis->_NyquistFrequency, _State->_ScalingFunction, _State->_SkewFactor);
+    const double Scale = ScaleFrequency(_Analysis->_NyquistFrequency, _State._ScalingFunction, _State._SkewFactor);
 
-    if (_State->_IsHorizontalSpectrogram)
+    if (_State._IsHorizontalSpectrogram)
     {
         const FLOAT y = msc::Map(Scale, MinScale, MaxScale, 0.f, _BitmapSize.height);
 
@@ -633,7 +632,7 @@ void spectrogram_t::InitializeFrequencyAxis() noexcept
             case XAxisMode::Octaves:
             {
                 double Note      = -57.;                                            // Index of C0 (57 semi-tones lower than A4 at 440Hz)
-                double Frequency = _State->_TuningPitch * std::exp2(Note / 12.);    // Frequency of C0
+                double Frequency = _State._TuningPitch * std::exp2(Note / 12.);    // Frequency of C0
 
                 for (int i = 0; Frequency < fb.back().Mid; ++i)
                 {
@@ -644,7 +643,7 @@ void spectrogram_t::InitializeFrequencyAxis() noexcept
                     _FreqLabels.push_back(lb);
 
                     Note     += 12.;
-                    Frequency = _State->_TuningPitch * std::exp2(Note / 12.);
+                    Frequency = _State._TuningPitch * std::exp2(Note / 12.);
                 }
                 break;
             }
@@ -655,7 +654,7 @@ void spectrogram_t::InitializeFrequencyAxis() noexcept
                 static const int Step[] = { 2, 2, 1, 2, 2, 2, 1 };
 
                 double Note      = -57.;                                            // Index of C0 (57 semi-tones lower than A4 at 440Hz)
-                double Frequency = _State->_TuningPitch * std::exp2(Note / 12.);    // Frequency of C0
+                double Frequency = _State._TuningPitch * std::exp2(Note / 12.);    // Frequency of C0
 
                 int i = 0;
 
@@ -673,7 +672,7 @@ void spectrogram_t::InitializeFrequencyAxis() noexcept
                     _FreqLabels.push_back(lb);
 
                     Note     += Step[i];
-                    Frequency = _State->_TuningPitch * std::exp2(Note / 12.);
+                    Frequency = _State._TuningPitch * std::exp2(Note / 12.);
 
                     if (i < 6)
                         i++;
@@ -704,7 +703,7 @@ HRESULT spectrogram_t::CreateDeviceSpecificResources(ID2D1DeviceContext * device
         (void) deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Green), _DebugBrush.GetAddressOf());
 #endif
 
-    if (_State->_ColorsHaveChanged || _State->_SizeHasChanged)
+    if (_State._ColorsHaveChanged || _State._SizeHasChanged)
     {
         DeleteColorDependentResources();
 
@@ -716,7 +715,7 @@ HRESULT spectrogram_t::CreateDeviceSpecificResources(ID2D1DeviceContext * device
             return hr;
     }
 
-    if (_State->_SizeHasChanged)
+    if (_State._SizeHasChanged)
     {
         DeleteSizeDependentResources();
 
@@ -796,9 +795,9 @@ HRESULT spectrogram_t::CreateColorDependentResources(ID2D1DeviceContext * device
         if (Style._Brush != nullptr)
             return S_OK;
 
-        Style = *_State->_StyleManager.GetStyle(Element);
+        Style = *_State._StyleManager.GetStyle(Element);
 
-        Style.SetColor(_State);
+        Style.SetColor(&_State);
 
         return Style.CreateDeviceSpecificResources(deviceContext, _Size, Text, 1.f);
     };
@@ -835,14 +834,14 @@ HRESULT spectrogram_t::CreateColorDependentResources(ID2D1DeviceContext * device
 
     if (_GradientStyle._Brush == nullptr)
     {
-        _GradientStyle = *_State->_StyleManager.GetStyle(VisualElement::Spectrogram);
+        _GradientStyle = *_State._StyleManager.GetStyle(VisualElement::Spectrogram);
 
-        _GradientStyle.SetColor(_State);
+        _GradientStyle.SetColor(&_State);
 
         // Remove these features.
         _GradientStyle._Flags &= ~style_t::Features::AmplitudeBasedColor;
 
-        if (_State->_IsHorizontalSpectrogram)
+        if (_State._IsHorizontalSpectrogram)
         {
             _GradientStyle._Flags &= ~style_t::Features::HorizontalGradient;
 
@@ -916,7 +915,7 @@ void spectrogram_t::CreateLegend(ID2D1BitmapRenderTarget * renderTarget) const n
 
 //  renderTarget->DrawRectangle(_LegendRect, _DebugBrush, 1.f, nullptr);
 
-    if (_State->_IsHorizontalSpectrogram)
+    if (_State._IsHorizontalSpectrogram)
     {
         // Draw the colors.
         const D2D1_RECT_F r1 = { 8.f, 8.f, r1.left + GradientSize, _LegendSize.height - 8.f };
@@ -987,7 +986,7 @@ void spectrogram_t::Initialize() noexcept
 
     // Resize the legend bitmap.
     {
-        if (_State->_IsHorizontalSpectrogram)
+        if (_State._IsHorizontalSpectrogram)
         {
             const FLOAT w = GradientSize + _FreqTextStyle._Width;
 
@@ -1007,15 +1006,15 @@ void spectrogram_t::Initialize() noexcept
     {
         _BitmapRect = _Rect;
 
-        if (_State->_SpectrogramLegend)
+        if (_State._SpectrogramLegend)
         {
-            if (_State->_IsHorizontalSpectrogram)
+            if (_State._IsHorizontalSpectrogram)
                 _BitmapRect.right -= (_LegendRect.right - _LegendRect.left);
             else
                 _BitmapRect.bottom -= (_LegendRect.bottom - _LegendRect.top);
         }
 
-        if (_State->_IsHorizontalSpectrogram)
+        if (_State._IsHorizontalSpectrogram)
         {
             if (_GraphOptions->_YAxisLeft)
                 _BitmapRect.left += _FreqTextStyle._Width;
@@ -1052,7 +1051,7 @@ void spectrogram_t::Initialize() noexcept
 
     // Resize the offscreen bitmap. Compensate for the spectrum bar rounding.
     {
-        if (_State->_UseSpectrumBarMetrics && !_State->_IsHorizontalSpectrogram)
+        if (_State._UseSpectrumBarMetrics && !_State._IsHorizontalSpectrogram)
         {
             const FLOAT dx = (_BitmapSize.width - SpectrumWidth) / 2.f;
 
@@ -1065,18 +1064,18 @@ void spectrogram_t::Initialize() noexcept
 
     // Resize the frequency axis.
     {
-        const double MinScale = ScaleFrequency(_LoFrequency, _State->_ScalingFunction, _State->_SkewFactor);
-        const double MaxScale = ScaleFrequency(_HiFrequency, _State->_ScalingFunction, _State->_SkewFactor);
+        const double MinScale = ScaleFrequency(_LoFrequency, _State._ScalingFunction, _State._SkewFactor);
+        const double MaxScale = ScaleFrequency(_HiFrequency, _State._ScalingFunction, _State._SkewFactor);
 
         rect_t Rect = { };
 
-        if (_State->_IsHorizontalSpectrogram)
+        if (_State._IsHorizontalSpectrogram)
         {
             const FLOAT y1 = (_GraphOptions->_XAxisTop ? _TimeTextStyle._Height : 0.f) - (_FreqTextStyle._Height / 2.f);
 
             for (auto & Label : _FreqLabels)
             {
-                const double Scale = ScaleFrequency(Label.Frequency, _State->_ScalingFunction, _State->_SkewFactor);
+                const double Scale = ScaleFrequency(Label.Frequency, _State._ScalingFunction, _State._SkewFactor);
 
                 const FLOAT y = msc::Map(Scale, MinScale, MaxScale, 0.f, _BitmapSize.height - 1.f);
 
@@ -1147,7 +1146,7 @@ void spectrogram_t::Initialize() noexcept
         {
             for (auto & Label : _FreqLabels)
             {
-                const double Scale = ScaleFrequency(Label.Frequency, _State->_ScalingFunction, _State->_SkewFactor);
+                const double Scale = ScaleFrequency(Label.Frequency, _State._ScalingFunction, _State._SkewFactor);
 
                 const FLOAT x = msc::Map(Scale, MinScale, MaxScale, 0.f, _BitmapSize.width);
 
@@ -1324,5 +1323,5 @@ void spectrogram_t::OnConfigurationChanged(ConfigurationChanges configurationCha
     if (!IsSet(configurationChanges, ConfigurationChanges::Layout))
         return;
 
-    _State->_SizeHasChanged = true;
+    _State._SizeHasChanged = true;
 }

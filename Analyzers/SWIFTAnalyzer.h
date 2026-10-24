@@ -7,10 +7,6 @@
 
 #pragma warning(disable: 4100 4625 4626 4710 4711 5045 ALL_CPPCORECHECK_WARNINGS)
 
-#include <SDKDDKVer.h>
-#include <WinSock2.h>
-#include <Windows.h>
-
 #include "Analyzer.h"
 #include "FrequencyBand.h"
 
@@ -19,20 +15,20 @@
 /// <summary>
 /// Implements a Sliding Windowed Infinite Fourier Transform (SWIFT) analyzer.
 /// </summary>
-#pragma warning(disable: 4820)
 class swift_analyzer_t : public analyzer_t
 {
 public:
     swift_analyzer_t() = delete;
 
     swift_analyzer_t(const swift_analyzer_t &) = delete;
-    swift_analyzer_t & operator=(const swift_analyzer_t &) = delete;
     swift_analyzer_t(swift_analyzer_t &&) = delete;
+
+    swift_analyzer_t & operator=(const swift_analyzer_t &) = delete;
     swift_analyzer_t & operator=(swift_analyzer_t &&) = delete;
 
-    virtual ~swift_analyzer_t() { }
+    virtual ~swift_analyzer_t() = default;
 
-    swift_analyzer_t(const state_t * state, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup);
+    swift_analyzer_t(const state_t & state, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup);
 
     bool Initialize(const frequency_bands_t & frequencyBands) noexcept;
     bool AnalyzeAudio(const audio_sample * frames , size_t frameCount, uint32_t channels, frequency_bands_t & frequencyBands) noexcept;
@@ -56,4 +52,8 @@ private:
     };
 
     std::vector<swift_coef_t> _Coefs;
+
+    static constexpr double Pi    = std::numbers::pi;
+    static constexpr double TwoPi = 2. * Pi;
+    static constexpr double Pi2   = Pi * 0.5;
 };

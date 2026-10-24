@@ -12,7 +12,7 @@
 class eye_candy_t final : public visualization_t
 {
 public:
-    eye_candy_t() = default;
+    eye_candy_t(state_t & state) : visualization_t(state) { }
 
     eye_candy_t(const eye_candy_t &) = delete;
     eye_candy_t & operator=(const eye_candy_t &) = delete;
@@ -29,7 +29,7 @@ public:
     void OnConfigurationChanged(ConfigurationChanges configurationChanges) noexcept override final;
 
     // visualization_t
-    void Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice = nullptr, ID3D11DeviceContext * d3dDeviceContext = nullptr) noexcept override final;
+    void Configure(graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice = nullptr, ID3D11DeviceContext * d3dDeviceContext = nullptr) noexcept override final;
 
 private:
     ComPtr<ID2D1SolidColorBrush> _Brush;

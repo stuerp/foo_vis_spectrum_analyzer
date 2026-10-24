@@ -18,9 +18,8 @@ bit_meter_t::~bit_meter_t() noexcept
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void bit_meter_t::Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept
+void bit_meter_t::Configure(graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept
 {
-    _State = state;
     _GraphOptions = graphOptions;
     _Analysis = analysis;
 
@@ -81,7 +80,7 @@ void bit_meter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 #ifdef v1
     D2D1_RECT_F r = { .bottom = ChannelHeight };
 
-    for (const auto & Channel : _State->_ChannelOrder)
+    for (const auto & Channel : _State._ChannelOrder)
     {
         auto it = std::find_if(_Analysis->_BitMeasurements.begin(), _Analysis->_BitMeasurements.end(), [Channel](const auto & m) { return m.Channel == Channel; });
 
@@ -104,13 +103,13 @@ void bit_meter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
             {
                 r.right = r.left + BarWidth - 1.f;
 
-                if (!_State->_IsPaused || (_State->_IsPaused && _State->_VisualizeDuringPause))
+                if (!_State._IsPaused || (_State._IsPaused && _State._VisualizeDuringPause))
                 {
                     style_t * Style = _Styles[BitNumber];
 
                     if (Style->IsEnabled())
                     {
-                        if (_State->_OpacityMode)
+                        if (_State._OpacityMode)
                             Style->_Brush->SetOpacity((FLOAT) BitCount);
                         else
                         {
@@ -130,7 +129,7 @@ void bit_meter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
         }
     }
 #else
-    const bool Visualize = !_State->_IsPaused || _State->_VisualizeDuringPause;
+    const bool Visualize = !_State._IsPaused || _State._VisualizeDuringPause;
     const FLOAT TranslationX = _Rect.left + YAxisWidth + XOffset;
     const FLOAT ChannelOffset = ChannelHeight + XAxisHeight;
 
@@ -140,7 +139,7 @@ void bit_meter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
         .bottom = ChannelHeight
     };
 
-    for (const auto & Channel : _State->_ChannelOrder)
+    for (const auto & Channel : _State._ChannelOrder)
     {
         const auto it = std::find_if(_Analysis->_BitMeasurements.begin(), _Analysis->_BitMeasurements.end(), [Channel](const auto & m){ return m.Channel == Channel; });
 
@@ -167,7 +166,7 @@ void bit_meter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 
                     if (Style->IsEnabled())
                     {
-                        if (_State->_OpacityMode)
+                        if (_State._OpacityMode)
                         {
                             r.top = 0.f;
                             Style->_Brush->SetOpacity((FLOAT) BitCount);
@@ -218,11 +217,11 @@ HRESULT bit_meter_t::CreateDeviceSpecificResources(_In_ ID2D1DeviceContext * dev
     {
         _MeasurementCount = _Analysis->_BitMeasurements.size();
 
-        _State->_SizeHasChanged = true;
-        _State->_ColorsHaveChanged = true;
+        _State._SizeHasChanged = true;
+        _State._ColorsHaveChanged = true;
     }
 
-    if (_State->_ColorsHaveChanged || _State->_SizeHasChanged)
+    if (_State._ColorsHaveChanged || _State._SizeHasChanged)
     {
         DeleteColorDependentResources();
 
@@ -234,7 +233,7 @@ HRESULT bit_meter_t::CreateDeviceSpecificResources(_In_ ID2D1DeviceContext * dev
             return hr;
     }
 
-    if (_State->_SizeHasChanged)
+    if (_State._SizeHasChanged)
     {
         DeleteSizeDependentResources();
 
@@ -315,9 +314,9 @@ HRESULT bit_meter_t::CreateColorDependentResources(ID2D1DeviceContext * deviceCo
         if (Style._Brush != nullptr)
             return S_OK;
 
-        Style = *_State->_StyleManager.GetStyle(Element);
+        Style = *_State._StyleManager.GetStyle(Element);
 
-        Style.SetColor(_State);
+        Style.SetColor(&_State);
 
         return Style.CreateDeviceSpecificResources(deviceContext, Size, Text, 1.f);
     };
@@ -364,13 +363,13 @@ HRESULT bit_meter_t::CreateColorDependentResources(ID2D1DeviceContext * deviceCo
     }
 
     // Predetermine the style for each bit.
-    if ((_Styles.size() != _BitCount) || (_CachedBitMeterMode != _State->_BitMeterMode))
+    if ((_Styles.size() != _BitCount) || (_CachedBitMeterMode != _State._BitMeterMode))
     {
         _Styles.resize(_BitCount);
 
         for (size_t BitNumber = 0; BitNumber < _BitCount; ++BitNumber)
         {
-            if (_State->_BitMeterMode == BitMeterMode::FloatingPoint)
+            if (_State._BitMeterMode == BitMeterMode::FloatingPoint)
                 _Styles[BitNumber] = (BitNumber == 0) ? &_BarSign : ((BitNumber <= ExponentBits) ? &_BarExponent : &_BarMantissa);
             else
                 _Styles[BitNumber] = &_BarMantissa;
@@ -443,7 +442,7 @@ HRESULT bit_meter_t::CreateStaticContentCommandList() noexcept
     // Draw the static content for each selected channel.
     D2D1_RECT_F r = { .bottom = ChannelHeight };
 
-    for (const auto & Channel : _State->_ChannelOrder)
+    for (const auto & Channel : _State._ChannelOrder)
     {
         const auto it = std::find_if(_Analysis->_BitMeasurements.begin(), _Analysis->_BitMeasurements.end(), [Channel](const auto & m){ return m.Channel == Channel; });
 
@@ -513,7 +512,7 @@ HRESULT bit_meter_t::CreateStaticContentCommandList() noexcept
 /// </summary>
 void bit_meter_t::Initialize() noexcept
 {
-    _BitCount = (size_t) ((_State->_BitMeterMode == BitMeterMode::FloatingPoint) ? audio_sample_size : _State->_BitsPerInteger);
+    _BitCount = (size_t) ((_State._BitMeterMode == BitMeterMode::FloatingPoint) ? audio_sample_size : _State._BitsPerInteger);
 
     // Create the labels.
     {
@@ -538,5 +537,5 @@ void bit_meter_t::OnConfigurationChanged(ConfigurationChanges configurationChang
     if (!IsSet(configurationChanges, ConfigurationChanges::Layout))
         _StaticContentCommandList.Reset();
 
-    _State->_SizeHasChanged = true;
+    _State._SizeHasChanged = true;
 }

@@ -17,14 +17,15 @@
 
 #include "Visualization.h"
 
-class bit_meter_t : public visualization_t
+class bit_meter_t final : public visualization_t
 {
 public:
-    bit_meter_t() = default;
+    bit_meter_t(state_t & state) : visualization_t(state) { }
 
     bit_meter_t(const bit_meter_t &) = delete;
-    bit_meter_t & operator=(const bit_meter_t &) = delete;
     bit_meter_t(bit_meter_t &&) = delete;
+
+    bit_meter_t & operator=(const bit_meter_t &) = delete;
     bit_meter_t & operator=(bit_meter_t &&) = delete;
 
     virtual ~bit_meter_t() noexcept;
@@ -37,7 +38,7 @@ public:
     void OnConfigurationChanged(ConfigurationChanges configurationChanges) noexcept override final;
 
     // visualization_t
-    void Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice = nullptr, ID3D11DeviceContext * d3dDeviceContext = nullptr) noexcept override final;
+    void Configure(graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice = nullptr, ID3D11DeviceContext * d3dDeviceContext = nullptr) noexcept override final;
 
 private:
     HRESULT CreateDeviceSpecificResources(_In_ ID2D1DeviceContext * deviceContext) noexcept;

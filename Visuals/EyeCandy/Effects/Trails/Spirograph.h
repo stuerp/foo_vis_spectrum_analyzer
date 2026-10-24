@@ -33,8 +33,8 @@ namespace Spirograph
 
         using channel_pair_t = std::array<size_t, 2>;
 
-        void Render(ID2D1RenderTarget * renderTarget, double deltaTime, audio_chunk_impl & chunk) noexcept override final;
-        void Render(ID2D1RenderTarget * renderTarget, double deltaTime, audio_chunk_impl & chunk, const channel_pair_t & channels) noexcept;
+        void Render(ID2D1RenderTarget * renderTarget, double deltaTime, audio_chunk & chunk) noexcept override final;
+        void Render(ID2D1RenderTarget * renderTarget, double deltaTime, audio_chunk & chunk, const channel_pair_t & channels) noexcept;
 
         std::wstring GetStatus() noexcept override final;
 
@@ -44,9 +44,10 @@ namespace Spirograph
 
         struct band_t
         {
-            double Energy         = 0.;
+            double Energy         = 0.; // Spectrum bands
             double SmoothedEnergy = 0.;
         };
+
         struct curve_t
         {
             std::vector<D2D1_POINT_2F> Points;
@@ -54,15 +55,16 @@ namespace Spirograph
             float Width     = 1.f;
             float Intensity = 0.f;
         };
+
     private:
-        void AnalyzeAudio(const audio_chunk_impl & chunk, const channel_pair_t & channels);
+        void AnalyzeAudio(const audio_chunk & chunk, const channel_pair_t & channels);
         void Update(double deltaTime);
 
         void GenerateCurves() noexcept;
 
         void Fade(ID2D1RenderTarget * renderTarget, double deltaTime) noexcept;
-        void RenderCurves(ID2D1RenderTarget * renderTarget) noexcept;
 
+        void RenderCurves(ID2D1RenderTarget * renderTarget) noexcept;
         void DrawSmoothCurve(ID2D1RenderTarget * renderTarget, const curve_t & curve) noexcept;
 
         void SetBrush(uint32_t color, float opacity) noexcept;
@@ -79,15 +81,20 @@ namespace Spirograph
         std::vector<curve_t> _Curves;
 
         double _SampleRate       = 44100.;
-        double _Rhythm           = 0.;
+
+        double _Rhythm           = 0.;  // Rhythm estimate
         double _SmoothedRhythm   = 0.;
+
         double _RhythmPulse      = 0.;
-        double _Tonality         = 0.;
+
+        double _Tonality         = 0.; // Dominant pitch
         double _SmoothedTonality = 0.;
+
         double _Rotation         = 0.;
 
         ComPtr<ID2D1SolidColorBrush> _Brush;
         ComPtr<ID2D1StrokeStyle> _StrokeStyle;
+
         ComPtr<ID2D1BitmapRenderTarget> _BackBufferRenderTarget;
         ComPtr<ID2D1Bitmap> _BackBuffer;
     };

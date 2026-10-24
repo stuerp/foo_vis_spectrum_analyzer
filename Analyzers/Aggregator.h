@@ -1,5 +1,5 @@
 
-/** $VER: Aggregator.h (2026.09.02) P. Stuer **/
+/** $VER: Aggregator.h (2026.10.24) P. Stuer **/
 
 #pragma once
 
@@ -7,8 +7,12 @@
 
 #pragma warning(disable: 4100 4625 4626 4710 4711 5045 ALL_CPPCORECHECK_WARNINGS)
 
+#include <algorithm>
+#include <cassert>
 #include <complex>
 #include <vector>
+
+#include <libmsc.h>
 
 /// <summary>
 /// Declares a base class for the FFT coefficient aggregators.

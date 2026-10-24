@@ -1,5 +1,5 @@
 
-/** $VER: LevelMeter.cpp (2026.10.10) P. Stuer - Implements a left/right/mid/side level meter. **/
+/** $VER: LevelMeter.cpp (2026.10.24) P. Stuer - Implements a left/right/mid/side level meter. **/
 
 #include "pch.h"
 
@@ -18,9 +18,8 @@ level_meter_t::~level_meter_t() noexcept
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void level_meter_t::Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept
+void level_meter_t::Configure(graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept
 {
-    _State = state;
     _GraphOptions = graphOptions;
     _Analysis = analysis;
 
@@ -57,7 +56,7 @@ void level_meter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
     const FLOAT CenterX = w / 2.f;
     const FLOAT CenterY = h / 2.f;
 
-    const FLOAT LEDHeight = _State->_LEDLight + _State->_LEDGap;
+    const FLOAT LEDHeight = _State._LEDLight + _State._LEDGap;
 
     ID2D1Bitmap * OpacityMask = _OpacityMask.Get();
 
@@ -66,9 +65,9 @@ void level_meter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
         if (!Style.IsEnabled())
             return;
 
-        if (_State->_LEDMode)
+        if (_State._LEDMode)
         {
-            if (_State->_LEDIntegralSize && (LEDHeight > 0.f))
+            if (_State._LEDIntegralSize && (LEDHeight > 0.f))
                 Rect.right = std::ceil(Rect.right / LEDHeight) * LEDHeight;
 
             deviceContext->FillOpacityMask(OpacityMask, Style._Brush.Get(), D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
@@ -82,9 +81,9 @@ void level_meter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
         if (!Style.IsEnabled())
             return;
 
-        if (_State->_LEDMode)
+        if (_State._LEDMode)
         {
-            if (_State->_LEDIntegralSize && (LEDHeight > 0.f))
+            if (_State._LEDIntegralSize && (LEDHeight > 0.f))
                 Rect.bottom = std::ceil(Rect.bottom / LEDHeight) * LEDHeight;
 
             deviceContext->FillOpacityMask(OpacityMask, Style._Brush.Get(), D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
@@ -93,7 +92,7 @@ void level_meter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
             deviceContext->FillRectangle(Rect, Style._Brush.Get());
     };
 
-    if (_State->_IsHorizontalLevelMeter)
+    if (_State._IsHorizontalLevelMeter)
     {
         // Render the bars.
         {
@@ -255,7 +254,7 @@ HRESULT level_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * device
         (void) deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), _DebugBrush.GetAddressOf());
 #endif
 
-    if (_State->_ColorsHaveChanged || _State->_SizeHasChanged)
+    if (_State._ColorsHaveChanged || _State._SizeHasChanged)
     {
         DeleteColorDependentResources();
 
@@ -267,7 +266,7 @@ HRESULT level_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * device
             return hr;
     }
 
-    if (_State->_SizeHasChanged)
+    if (_State._SizeHasChanged)
     {
         DeleteSizeDependentResources();
 
@@ -329,9 +328,9 @@ HRESULT level_meter_t::CreateColorDependentResources(ID2D1DeviceContext * device
         if (style._Brush != nullptr)
             return S_OK;
 
-        style = *_State->_StyleManager.GetStyle(visualElement);
+        style = *_State._StyleManager.GetStyle(visualElement);
 
-        style.SetColor(_State);
+        style.SetColor(&_State);
 
         return style.CreateDeviceSpecificResources(deviceContext, _Size, text, 1.f);
     };
@@ -403,29 +402,29 @@ HRESULT level_meter_t::CreateOpacityMask(ID2D1DeviceContext * deviceContext) noe
 
     rt->Clear(); // Transparent
 
-    const FLOAT LEDSize = _State->_LEDLight + _State->_LEDGap;
+    const FLOAT LEDSize = _State._LEDLight + _State._LEDGap;
 
     if (LEDSize > 0.f)
     {
-        if (_State->_IsHorizontalLevelMeter)
+        if (_State._IsHorizontalLevelMeter)
         {
             FLOAT w = Size.width;
 
-            if (_State->_LEDIntegralSize)
+            if (_State._LEDIntegralSize)
                 w = std::ceil(w / LEDSize) * LEDSize;
 
-            for (FLOAT x = ((Size.width - w) / 2.f) + _State->_LEDGap; x < w; x += LEDSize)
-                rt->FillRectangle(D2D1::RectF(x, 0.f, x + _State->_LEDLight, Size.height), Brush.Get());
+            for (FLOAT x = ((Size.width - w) / 2.f) + _State._LEDGap; x < w; x += LEDSize)
+                rt->FillRectangle(D2D1::RectF(x, 0.f, x + _State._LEDLight, Size.height), Brush.Get());
         }
         else
         {
             FLOAT h = Size.height;
 
-            if (_State->_LEDIntegralSize)
+            if (_State._LEDIntegralSize)
                 h = std::ceil(h / LEDSize) * LEDSize;
 
-            for (FLOAT y = ((Size.height - h) / 2.f) + _State->_LEDGap; y < h; y += LEDSize)
-                rt->FillRectangle(D2D1::RectF(0.f, y, Size.width, y + _State->_LEDLight), Brush.Get());
+            for (FLOAT y = ((Size.height - h) / 2.f) + _State._LEDGap; y < h; y += LEDSize)
+                rt->FillRectangle(D2D1::RectF(0.f, y, Size.width, y + _State._LEDLight), Brush.Get());
         }
     }
 
@@ -447,5 +446,5 @@ void level_meter_t::OnConfigurationChanged(ConfigurationChanges configurationCha
     if (!IsSet(configurationChanges, ConfigurationChanges::Layout))
         return;
 
-    _State->_SizeHasChanged = true;
+    _State._SizeHasChanged = true;
 }

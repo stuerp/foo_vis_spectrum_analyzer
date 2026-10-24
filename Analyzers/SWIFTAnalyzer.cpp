@@ -11,7 +11,7 @@
 /// <summary>
 /// Initializes a new instance.
 /// </summary>
-swift_analyzer_t::swift_analyzer_t(const state_t * state, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup) : analyzer_t(state, sampleRate, channelCount, channelSetup, window_function_t())
+swift_analyzer_t::swift_analyzer_t(const state_t & state, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup) : analyzer_t(state, sampleRate, channelCount, channelSetup, window_function_t())
 {
 }
 
@@ -20,10 +20,10 @@ swift_analyzer_t::swift_analyzer_t(const state_t * state, uint32_t sampleRate, u
 /// </summary>
 bool swift_analyzer_t::Initialize(const frequency_bands_t & frequencyBands) noexcept
 {
-    const double Constant1 = 4. * _State->_IIRBandwidth / (double) _SampleRate;
-    const double Constant2 = 1. / (_State->_TimeResolution * (double) _SampleRate / 2000.);
+    const double Constant1 = 4. * _State._IIRBandwidth / (double) _SampleRate;
+    const double Constant2 = 1. / (_State._TimeResolution * (double) _SampleRate / 2000.);
 
-    const double a = std::numbers::pi * 2. / (double) _SampleRate;
+    const double a = TwoPi / (double) _SampleRate;
 
     _Coefs.clear();
 
@@ -64,7 +64,7 @@ bool swift_analyzer_t::AnalyzeAudio(const audio_sample * frames, size_t frameCou
         {
             swift_value_t CurValue = { Sample, 0. };
 
-            for (uint32_t j = 0; j < _State->_FilterBankOrder; ++j)
+            for (uint32_t j = 0; j < _State._FilterBankOrder; ++j)
             {
                 swift_value_t & Value = Coef.Values[j];
 

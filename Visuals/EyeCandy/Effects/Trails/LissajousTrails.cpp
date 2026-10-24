@@ -32,10 +32,11 @@ namespace LissajousTrails
     /// <summary>
     /// 
     /// </summary>
-    void effect_t::Render(ID2D1RenderTarget * renderTarget, double deltaTime, audio_chunk_impl & chunk) noexcept
+    void effect_t::Render(ID2D1RenderTarget * renderTarget, double deltaTime, audio_chunk & chunk) noexcept
     {
-        const size_t ChannelCount = chunk.get_channels();
-        const channel_pair_t SelectedChannels { 0, ChannelCount > 1 ? 1u : 0u };
+        const size_t ChannelCount = chunk.get_channel_count();
+
+        const channel_pair_t SelectedChannels { 0, (ChannelCount > 1) ? 1u : 0u };
 
         Render(renderTarget, deltaTime, chunk, SelectedChannels);
     }
@@ -43,14 +44,14 @@ namespace LissajousTrails
     /// <summary>
     /// 
     /// </summary>
-    void effect_t::Render(ID2D1RenderTarget * renderTarget, double deltaTime, audio_chunk_impl & chunk, const channel_pair_t & channels) noexcept
+    void effect_t::Render(ID2D1RenderTarget * renderTarget, double deltaTime, audio_chunk & chunk, const channel_pair_t & channels) noexcept
     {
         const HRESULT hr = CreateDeviceDependentResources(renderTarget);
 
         if (FAILED(hr))
             return;
 
-        deltaTime = std::clamp(deltaTime, 0.0, 0.1);
+        deltaTime = Clamp(deltaTime);
 
         AnalyzeAudio(chunk, channels);
         Update(deltaTime);
@@ -83,7 +84,7 @@ namespace LissajousTrails
     /// <summary>
     /// 
     /// </summary>
-    void effect_t::AnalyzeAudio(const audio_chunk_impl & chunk, const channel_pair_t & channels)
+    void effect_t::AnalyzeAudio(const audio_chunk & chunk, const channel_pair_t & channels)
     {
         _Samples.clear();
 
@@ -97,7 +98,7 @@ namespace LissajousTrails
         if (chunk.is_empty())
             return;
 
-        const size_t ChannelCount = chunk.get_channels();
+        const size_t ChannelCount = chunk.get_channel_count();
         const size_t FrameCount   = chunk.get_sample_count();
         const audio_sample * Data = chunk.get_data();
 
@@ -224,7 +225,7 @@ namespace LissajousTrails
                 _Correlation = 1.;
         }
 
-        _PhaseEnergy = std::clamp(2. * SideSquared / TotalPower, 0., 1.);
+        _PhaseEnergy = Clamp(2. * SideSquared / TotalPower);
     }
 
     /// <summary>
@@ -250,9 +251,10 @@ namespace LissajousTrails
 
         _AnimationTime += deltaTime * SpeedFactor;
 
-        _SmoothedPeak        = ExponentialSmoothing(_SmoothedPeak, _Peak, deltaTime, _Peak > _SmoothedPeak ? 22. : 5.);
-        _SmoothedRMS         = ExponentialSmoothing(_SmoothedRMS, _RMS, deltaTime, (_RMS > _SmoothedRMS) ? 16. : 4.);
-        _SmoothedWidth       = ExponentialSmoothing(_SmoothedWidth, _StereoWidth, deltaTime, 5.5f);
+        _SmoothedPeak        = ExponentialSmoothing(_SmoothedPeak,        _Peak,        deltaTime, (_Peak > _SmoothedPeak) ? 22. : 5.);
+        _SmoothedRMS         = ExponentialSmoothing(_SmoothedRMS,         _RMS,         deltaTime, (_RMS > _SmoothedRMS)   ? 16. : 4.);
+
+        _SmoothedWidth       = ExponentialSmoothing(_SmoothedWidth,       _StereoWidth, deltaTime, 5.5f);
         _SmoothedCorrelation = ExponentialSmoothing(_SmoothedCorrelation, _Correlation, deltaTime, 4.0f);
     }
 
@@ -270,7 +272,7 @@ namespace LissajousTrails
         }
 
         const double BaseRotation     = -Pi * 0.25;
-        const double AnimatedRotation = 0.055 * std::sin(_AnimationTime * 0.37) * std::clamp(_SmoothedWidth, 0., 1.);
+        const double AnimatedRotation = 0.055 * std::sin(_AnimationTime * 0.37) * Clamp(_SmoothedWidth);
 
         const field_t Field
         {
@@ -395,11 +397,11 @@ namespace LissajousTrails
     {
         // Exponential phosphor decay makes persistence independent of the display frame rate.
         // High phase energy leaves a slightly longer trail because wide stereo material generally contains the most interesting Lissajous motion.
-        const double Persistence     = 0.88 + (0.055 * std::clamp(_PhaseEnergy, 0., 1.));
+        const double Persistence     = 0.88 + (0.055 * Clamp(_PhaseEnergy));
         const double ReferenceFrames = deltaTime * 60.;
         const double Decay           = std::pow(Persistence, ReferenceFrames);
 
-        const float Opacity = (float) std::clamp(1. - Decay, 0., 1.);
+        const float Opacity = (float) Clamp(1. - Decay);
 
         size_t FromTheme = 0;
         size_t ToTheme   = 0;
@@ -453,7 +455,7 @@ namespace LissajousTrails
     /// </summary>
     void effect_t::RenderIdleCurve(ID2D1RenderTarget * renderTarget) noexcept
     {
-        if ((_Width < 2) || (_Height < 2))
+        if ((_Width < 2.f) || (_Height < 2.f))
             return;
 
         constexpr size_t IdlePoints = 180;
@@ -465,13 +467,13 @@ namespace LissajousTrails
         for (size_t i = 0; i < IdlePoints; ++i)
         {
             const double Amount = (double) i / (double) (IdlePoints - 1);
-            const double Angle = Amount * 2. * Pi;
+            const double Angle = Amount * TwoPi;
 
             // A slowly evolving 3:2 Lissajous figure provides a subtle attractor while no audio is available.
             const D2D1_POINT_2F current
             {
-                _CenterX + (float) (std::sin(Angle * 3. + _AnimationTime * 0.31)            * Scale),
-                _CenterY + (float) (std::sin(Angle * 2. + _AnimationTime * 0.23 + Pi * 0.5) * Scale)
+                _CenterX + (float) (std::sin(Angle * 3. + _AnimationTime * 0.31)              * Scale),
+                _CenterY + (float) (std::sin(Angle * 2. + _AnimationTime * 0.23 + (Pi * 0.5)) * Scale)
             };
 
             if (i != 0)
@@ -575,7 +577,7 @@ namespace LissajousTrails
 /*
         // Cyan, magenta and electric-blue palette with a small phase-dependent hue shift. Anti-phase content gravitates toward magenta while correlated content remains cyan/green.
         const auto H = (float) Fraction(0.48 + (Phase * 0.34) + (AntiPhase * 0.15) + (_AnimationTime * 0.006));
-        const auto S = (float) std::clamp(0.68 + (AntiPhase * 0.24), 0., 1.);
+        const auto S = (float) Clamp(0.68 + (AntiPhase * 0.24));
 */
         // The inherited animation clock is the single source of theme-transition state, keeping every worker on the same palette without additional synchronization.
         const auto H = (float) Fraction
@@ -606,7 +608,8 @@ namespace LissajousTrails
         from = ThemeNumber % ThemeCount;
         to   = (from + 1) % ThemeCount;
 
-        const double LinearAmount = std::clamp((ThemeTime - (ThemeDuration - TransitionLength)) / TransitionLength, 0., 1.);
+        const double LinearAmount = Clamp((ThemeTime - (ThemeDuration - TransitionLength)) / TransitionLength);
+
         amount = LinearAmount * LinearAmount * (3. - (2. * LinearAmount));
     }
 
@@ -733,9 +736,11 @@ namespace LissajousTrails
         double Left  = ClampAudio(sample.Left);
         double Right = ClampAudio(sample.Right);
 
-        // Gentle nonlinear compression keeps transient peaks inside the viewport without flattening quiet detail.
-        Left  = std::tanh(Left  * 1.35);
-        Right = std::tanh(Right * 1.35);
+        // Normalize geometry from the smoothed peak before soft clipping. Brightness-only
+        // energy scaling does not make a low-level Lissajous curve occupy more of the viewport.
+        const double InputGain = std::clamp(0.82 / std::max(_SmoothedPeak, 0.04), 1.0, 8.0);
+        Left  = std::tanh(Left  * InputGain);
+        Right = std::tanh(Right * InputGain);
 
         const double Cos = std::cos(stereoRotation);
         const double Sin = std::sin(stereoRotation);
@@ -749,11 +754,8 @@ namespace LissajousTrails
         // while allowing the Lissajous trace to occupy substantially more of the available drawing area.
         const double Scale = std::min(_Width, _Height) * (0.5 - Margin) / 1.12;
 
-        // Quiet material receives a restrained visual gain so the trace remains useful without pushing louder transients outside the window.
-        const double VisualGain = std::clamp(1.38 - (_SmoothedRMS * 0.40f), 1.08, 1.34);
-
         // Apply the same scale to both axes. This preserves a strict 1:1 plotting aspect ratio regardless of the window dimensions or stereo width of the source material.
-        const double DisplayScale = Scale * VisualGain;
+        const double DisplayScale = Scale;
 
         return
         {

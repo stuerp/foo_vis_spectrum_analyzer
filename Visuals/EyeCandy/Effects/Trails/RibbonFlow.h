@@ -33,8 +33,8 @@ namespace RibbonFlow
 
         using channel_pair_t = std::array<size_t, 2>;
 
-        void Render(ID2D1RenderTarget * renderTarget, double deltaTime, audio_chunk_impl & chunk) noexcept override final;
-        void Render(ID2D1RenderTarget * renderTarget, double deltaTime, audio_chunk_impl & chunk, const channel_pair_t & channels) noexcept;
+        void Render(ID2D1RenderTarget * renderTarget, double deltaTime, audio_chunk & chunk) noexcept override final;
+        void Render(ID2D1RenderTarget * renderTarget, double deltaTime, audio_chunk & chunk, const channel_pair_t & channels) noexcept;
 
         std::wstring GetStatus() noexcept override final;
 
@@ -57,7 +57,7 @@ namespace RibbonFlow
         };
 
     private:
-        void AnalyzeAudio(const audio_chunk_impl & chunk, const channel_pair_t & channels);
+        void AnalyzeAudio(const audio_chunk & chunk, const channel_pair_t & channels);
         void Update(double deltaTime);
         void GenerateRibbons() noexcept;
         void Fade(ID2D1RenderTarget * renderTarget, double deltaTime) noexcept;

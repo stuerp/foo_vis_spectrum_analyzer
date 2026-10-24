@@ -14,14 +14,14 @@ namespace DeJongAttractor
     /// <summary>
     /// 
     /// </summary>
-    void effect_t::Render(ID2D1RenderTarget * renderTarget, double deltaTime, audio_chunk_impl & chunk) noexcept
+    void effect_t::Render(ID2D1RenderTarget * renderTarget, double deltaTime, audio_chunk & chunk) noexcept
     {
         const HRESULT hr = CreateDeviceDependentResources(renderTarget);
 
         if (FAILED(hr))
             return;
 
-        deltaTime = std::clamp(deltaTime, 0.0, 0.1);
+        deltaTime = Clamp(deltaTime);
 
         AnalyzeAudio(chunk);
         Update(deltaTime);
@@ -69,6 +69,7 @@ namespace DeJongAttractor
 
         _SmoothedPeak        = ExponentialSmoothing(_SmoothedPeak,        _Peak,        deltaTime, (_Peak > _SmoothedPeak) ? 22. : 5.);
         _SmoothedRMS         = ExponentialSmoothing(_SmoothedRMS,         _RMS,         deltaTime, (_RMS  > _SmoothedRMS)  ? 16. : 4.);
+
         _SmoothedWidth       = ExponentialSmoothing(_SmoothedWidth,       _StereoWidth, deltaTime, 5.5);
         _SmoothedCorrelation = ExponentialSmoothing(_SmoothedCorrelation, _Correlation, deltaTime, 4.0);
 
@@ -104,10 +105,15 @@ namespace DeJongAttractor
         {
             switch (_Speed)
             {
-                case EyeCandy::Speed::Slow: return 0.60;
-                case EyeCandy::Speed::Fast: return 1.65;
-                case EyeCandy::Speed::Normal:
-                default: return 1.0;
+                case Speed::Slow:
+                    return 0.60;
+
+                default:
+                case Speed::Normal:
+                    return 1.00;
+
+                case Speed::Fast:
+                    return 1.65;
             }
         }();
 
@@ -115,20 +121,25 @@ namespace DeJongAttractor
         {
             switch (_Quality)
             {
-                case EyeCandy::Quality::Low: return 180000.;
-                case EyeCandy::Quality::High: return 900000.;
-                case EyeCandy::Quality::Medium:
-                default: return 420000.;
+                case Quality::Low:
+                    return 180'000.;
+
+                default:
+                case Quality::Medium:
+                    return 420'000.;
+
+                case Quality::High:
+                    return 900'000.;
             }
         }();
 
-        _AccumulationRemainder += IterationsPerSecond * SpeedFactor * deltaTime;
+        _AccumulationRemainder += IterationsPerSecond * deltaTime * SpeedFactor;
 
         const size_t IterationCount = (size_t) _AccumulationRemainder;
 
         _AccumulationRemainder -= (double) IterationCount;
 
-        const double Deposit = 0.75 + std::clamp(_SmoothedRMS, 0., 1.) * 1.25;
+        const double Deposit = 0.75 + (Clamp(_SmoothedRMS) * 1.25);
 
         for (size_t i = 0; i < IterationCount; ++i)
         {
@@ -196,14 +207,14 @@ namespace DeJongAttractor
 
         const double BrightnessFactor = ((size_t) _Brightness == 0) ? 0.72 : ((size_t) _Brightness >= 2) ? 1.32 : 1.0;
 
-        const double AudioBrightness = 0.88 + (std::clamp(_SmoothedRMS, 0.0, 1.0) * 0.35) + (std::clamp(_SmoothedPeak, 0.0, 1.0) * 0.12);
+        const double AudioBrightness = 0.88 + (Clamp(_SmoothedRMS) * 0.35) + (Clamp(_SmoothedPeak) * 0.12);
 
         for (size_t i = 0; i < _Densities.size(); ++i)
         {
-            const double Normalized = std::clamp(std::log1p((double) _Densities[i]) * _Exposure, 0., 1.);
+            const double Normalized = Clamp(std::log1p((double) _Densities[i]) * _Exposure);
             const double Shaped     = std::pow(Normalized, 0.62);
 
-            const float Opacity = (float) std::clamp(Shaped * BrightnessFactor * AudioBrightness, 0., 1.);
+            const float Opacity = (float) Clamp(Shaped * BrightnessFactor * AudioBrightness);
             const uint32_t Color = GetCurveColor((Shaped * 0.82) + (_AnimationTime * 0.025));
 
             _Pixels[i] = PremultiplyColor(Color, Opacity);
@@ -214,25 +225,6 @@ namespace DeJongAttractor
 
         if (FAILED(_BackBuffer->CopyFromMemory(&Destination, _Pixels.data(), Pitch)))
             DeleteDeviceDependentResources();
-    }
-
-    /// <summary>
-    /// 
-    /// </summary>
-    uint32_t effect_t::PremultiplyColor(uint32_t color, float opacity) noexcept
-    {
-        assert((opacity >= 0.f) && (opacity <= 1.f));
-
-        const uint32_t R = (color >> 16) & 0xFFu;
-        const uint32_t G = (color >>  8) & 0xFFu;
-        const uint32_t B =  color        & 0xFFu;
-        const uint32_t A = (uint32_t) std::lround(opacity * 255.f);
-
-        const uint32_t PremultipliedRed   = (R * A + 127u) / 255u;
-        const uint32_t PremultipliedGreen = (G * A + 127u) / 255u;
-        const uint32_t PremultipliedBlue  = (B * A + 127u) / 255u;
-
-        return (A << 24) | (PremultipliedRed << 16) | (PremultipliedGreen << 8) | PremultipliedBlue;
     }
 
     /// <summary>
@@ -254,7 +246,7 @@ namespace DeJongAttractor
         if (FAILED(hr))
             return hr;
 
-        const UINT32 RequiredWidth = std::max<UINT32>(1u, (UINT32) std::ceil(_Width));
+        const UINT32 RequiredWidth  = std::max<UINT32>(1u, (UINT32) std::ceil(_Width));
         const UINT32 RequiredHeight = std::max<UINT32>(1u, (UINT32) std::ceil(_Height));
 
         if ((_RenderTarget == renderTarget) && _BackBuffer && (_BitmapWidth == RequiredWidth) && (_BitmapHeight == RequiredHeight))
@@ -269,13 +261,16 @@ namespace DeJongAttractor
         if (FAILED(hr))
             return hr;
 
-        _BitmapWidth = RequiredWidth;
+        _BitmapWidth  = RequiredWidth;
         _BitmapHeight = RequiredHeight;
+
         _Densities.assign((size_t) RequiredWidth * RequiredHeight, 0.f);
         _Pixels.assign((size_t) RequiredWidth * RequiredHeight, 0u);
+
         _Point = { 0.1, 0.1 };
-        _Exposure = 1.;
+        _Exposure              = 1.;
         _AccumulationRemainder = 0.;
+
         _RenderTarget = renderTarget;
 
         return S_OK;

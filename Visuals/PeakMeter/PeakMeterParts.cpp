@@ -1,5 +1,5 @@
 
-/** $VER: PeakMeterParts.cpp (2026.10.11) P. Stuer - Implements the parts of a peak meter. **/
+/** $VER: PeakMeterParts.cpp (2026.10.24) P. Stuer - Implements the parts of a peak meter. **/
 
 #include "pch.h"
 
@@ -21,7 +21,7 @@ void part_t::InitializeMetrics(const D2D1_RECT_F & rect) noexcept
     _Size = { rect.right - rect.left, rect.bottom - rect.top };
 
     // Precalculate the coordinates of all the parts.
-    if (_State->_IsHorizontalPeakMeter)
+    if (_State._IsHorizontalPeakMeter)
     {
         FLOAT & x1 = _Rect.left;
         FLOAT & x2 = _Rect.right;
@@ -201,7 +201,7 @@ void part_t::CreateAxis() noexcept
 
     constexpr double Epsilon = 1.e-3;
 
-    if (_State->_IsHorizontalPeakMeter)
+    if (_State._IsHorizontalPeakMeter)
     {
         const FLOAT xMin = (!_GraphOptions->_FlipHorizontally ? _Rect.left  : _Rect.right);
         const FLOAT xMax = (!_GraphOptions->_FlipHorizontally ? _Rect.right : _Rect.left);
@@ -438,7 +438,7 @@ void bar_t::InitializeMetrics(const D2D1_RECT_F & rect) noexcept
     if (_GraphOptions->_FlipHorizontally)
         _Transform = D2D1::Matrix3x2F::Scale(-1.0f, 1.0f, Center);
 
-    if (_State->_IsHorizontalPeakMeter)
+    if (_State._IsHorizontalPeakMeter)
     {
         if (_GraphOptions->_FlipVertically)
             _Transform = _Transform * D2D1::Matrix3x2F::Scale(1.0f, -1.0f, Center);
@@ -449,7 +449,7 @@ void bar_t::InitializeMetrics(const D2D1_RECT_F & rect) noexcept
             _Transform = _Transform * D2D1::Matrix3x2F::Scale(1.0f, -1.0f, Center);
     }
 
-    _LEDSize = _State->_LEDLight + _State->_LEDGap;
+    _LEDSize = _State._LEDLight + _State._LEDGap;
 
     HRESULT hr = S_OK;
 
@@ -461,7 +461,7 @@ void bar_t::InitializeMetrics(const D2D1_RECT_F & rect) noexcept
         hr = DirectWriteFactory::Get()->CreateTextLayout(_Measurement->ChannelName.c_str(), (UINT32) _Measurement->ChannelName.length(), _NameStyle->_TextFormat.Get(), Width, Height, _NameTextLayout.GetAddressOf());
     }
 
-    if (SUCCEEDED(hr) && (_StaticContent == nullptr) && _State->_HasScaleLines)
+    if (SUCCEEDED(hr) && (_StaticContent == nullptr) && _State._HasScaleLines)
         hr = CreateStaticContent();
 }
 
@@ -478,7 +478,7 @@ void bar_t::Render() const noexcept
     _DeviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
 
 /*
-    if (_State->_HorizontalPeakMeter)
+    if (_State._HorizontalPeakMeter)
     {
         for (const label_t & Label : _Labels)
             _DeviceContext->DrawLine(D2D1::Point2F(Label.P2.x, _Rect.top), D2D1::Point2F(Label.P2.x, _Rect.bottom), _ScaleLineStyle->_Brush.Get(), _ScaleLineStyle->_Thickness);
@@ -494,11 +494,11 @@ void bar_t::Render() const noexcept
         _DeviceContext->DrawImage(_StaticContent.Get());
 
     // Draw the bars.
-    if (!_State->_IsPaused || (_State->_IsPaused && _State->_VisualizeDuringPause))
+    if (!_State._IsPaused || (_State._IsPaused && _State._VisualizeDuringPause))
     {
         _DeviceContext->SetTransform(_Transform);
 
-        if (_State->_IsHorizontalPeakMeter)
+        if (_State._IsHorizontalPeakMeter)
         {
             // Draw the background.
             if (_BackgroundStyle->IsEnabled())
@@ -522,28 +522,28 @@ void bar_t::Render() const noexcept
                 }
             }
             // Draw the foreground (Peak Top).
-            if ((_State->_PeakMode != PeakMode::None) && (_Measurement->MaxNormalizedPeak > 0.) && _MaxPeakStyle->IsEnabled())
+            if ((_State._PeakMode != PeakMode::None) && (_Measurement->MaxNormalizedPeak > 0.) && _MaxPeakStyle->IsEnabled())
             {
                 const FLOAT x = (FLOAT) _Measurement->MaxNormalizedPeak * _Size.width;
 
                 Rect.left  = _Rect.left + x;
                 Rect.right = _Rect.left + x;
 
-                if (!_State->_LEDMode)
+                if (!_State._LEDMode)
                 {
                     Rect.left  -= _MaxPeakStyle->_Thickness / 2.f;
                     Rect.right += _MaxPeakStyle->_Thickness / 2.f;
                 }
                 else
                 {
-                    if (!_State->_LEDIntegralSize)
+                    if (!_State._LEDIntegralSize)
                     {
                         Rect.top    -= _LEDSize / 2.f;
                         Rect.bottom += _LEDSize / 2.f;
                     }
                 }
 
-                const FLOAT Opacity = ((_State->_PeakMode == PeakMode::FadeOut) || (_State->_PeakMode == PeakMode::FadingAIMP)) ? (FLOAT) _Measurement->Opacity : _MaxPeakStyle->_Opacity;
+                const FLOAT Opacity = ((_State._PeakMode == PeakMode::FadeOut) || (_State._PeakMode == PeakMode::FadingAIMP)) ? (FLOAT) _Measurement->Opacity : _MaxPeakStyle->_Opacity;
 
                 _MaxPeakStyle->_Brush->SetOpacity(Opacity);
 
@@ -594,28 +594,28 @@ void bar_t::Render() const noexcept
             }
 
             // Draw the foreground (Peak Top).
-            if ((_State->_PeakMode != PeakMode::None) && (_Measurement->MaxNormalizedPeak > 0.) && _MaxPeakStyle->IsEnabled())
+            if ((_State._PeakMode != PeakMode::None) && (_Measurement->MaxNormalizedPeak > 0.) && _MaxPeakStyle->IsEnabled())
             {
                 const FLOAT y = (FLOAT) _Measurement->MaxNormalizedPeak * _Size.height;
 
                 Rect.top    = _Rect.top + y;
                 Rect.bottom = _Rect.top + y;
 
-                if (!_State->_LEDMode)
+                if (!_State._LEDMode)
                 {
                     Rect.top    -= _MaxPeakStyle->_Thickness / 2.f;
                     Rect.bottom += _MaxPeakStyle->_Thickness / 2.f;
                 }
                 else
                 {
-                    if (!_State->_LEDIntegralSize)
+                    if (!_State._LEDIntegralSize)
                     {
                         Rect.top    -= _LEDSize / 2.f;
                         Rect.bottom += _LEDSize / 2.f;
                     }
                 }
 
-                const FLOAT Opacity = ((_State->_PeakMode == PeakMode::FadeOut) || (_State->_PeakMode == PeakMode::FadingAIMP)) ? (FLOAT) _Measurement->Opacity : _MaxPeakStyle->_Opacity;
+                const FLOAT Opacity = ((_State._PeakMode == PeakMode::FadeOut) || (_State._PeakMode == PeakMode::FadingAIMP)) ? (FLOAT) _Measurement->Opacity : _MaxPeakStyle->_Opacity;
 
                 _MaxPeakStyle->_Brush->SetOpacity(Opacity);
 
@@ -716,7 +716,7 @@ HRESULT bar_t::CreateStaticContent() noexcept
 
         _DeviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED); // Prevent line blurring
 
-        if (_State->_IsHorizontalPeakMeter)
+        if (_State._IsHorizontalPeakMeter)
         {
             for (const label_t & Label : _Labels)
                 _DeviceContext->DrawLine(D2D1::Point2F(Label.P2.x, _Rect.top), D2D1::Point2F(Label.P2.x, _Rect.bottom), _ScaleLineStyle->_Brush.Get(), _ScaleLineStyle->_Thickness);
@@ -748,9 +748,9 @@ void bar_t::DrawHorizontalRectangle(D2D1_RECT_F & rect, const style_t * style) c
 {
 //  _DeviceContext->DrawRectangle(rect, _DebugBrush);
 
-    if (_State->_LEDMode)
+    if (_State._LEDMode)
     {
-        if (_State->_LEDIntegralSize)
+        if (_State._LEDIntegralSize)
         {
             rect.left  = std::max(_Rect.left,  _Rect.left + std::floorf((rect.left  - _Rect.left) / _LEDSize) * _LEDSize);
             rect.right = std::min(_Rect.right, _Rect.left + std::ceilf ((rect.right - _Rect.left) / _LEDSize) * _LEDSize);
@@ -775,9 +775,9 @@ void bar_t::DrawVerticalRectangle(D2D1_RECT_F & rect, const style_t * style) con
 {
 //  _DeviceContext->DrawRectangle(rect, _DebugBrush);
 
-    if (_State->_LEDMode)
+    if (_State._LEDMode)
     {
-        if (_State->_LEDIntegralSize)
+        if (_State._LEDIntegralSize)
         {
             rect.top    = std::max(_Rect.top,    _Rect.top + std::floorf((rect.top    - _Rect.top) / _LEDSize) * _LEDSize);
             rect.bottom = std::min(_Rect.bottom, _Rect.top + std::ceilf ((rect.bottom - _Rect.top) / _LEDSize) * _LEDSize);

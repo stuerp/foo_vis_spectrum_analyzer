@@ -19,9 +19,9 @@ namespace Spirograph
     /// <summary>
     ///
     /// </summary>
-    void effect_t::Render(ID2D1RenderTarget * renderTarget, double deltaTime, audio_chunk_impl & chunk) noexcept
+    void effect_t::Render(ID2D1RenderTarget * renderTarget, double deltaTime, audio_chunk & chunk) noexcept
     {
-        const size_t ChannelCount = chunk.get_channels();
+        const size_t ChannelCount = chunk.get_channel_count();
         const channel_pair_t SelectedChannels { 0, ChannelCount > 1 ? 1u : 0u };
 
         Render(renderTarget, deltaTime, chunk, SelectedChannels);
@@ -30,14 +30,14 @@ namespace Spirograph
     /// <summary>
     ///
     /// </summary>
-    void effect_t::Render(ID2D1RenderTarget * renderTarget, double deltaTime, audio_chunk_impl & chunk, const channel_pair_t & channels) noexcept
+    void effect_t::Render(ID2D1RenderTarget * renderTarget, double deltaTime, audio_chunk & chunk, const channel_pair_t & channels) noexcept
     {
         const HRESULT hr = CreateDeviceDependentResources(renderTarget);
 
         if (FAILED(hr))
             return;
 
-        deltaTime = std::clamp(deltaTime, 0.0, 0.1);
+        deltaTime = Clamp(deltaTime);
 
         AnalyzeAudio(chunk, channels);
         Update(deltaTime);
@@ -64,93 +64,114 @@ namespace Spirograph
     /// <summary>
     /// Calculates logarithmic spectral bands, a broadband rhythm impulse and a chromatic tonality center.
     /// </summary>
-    void effect_t::AnalyzeAudio(const audio_chunk_impl & chunk, const channel_pair_t & channels)
+    void effect_t::AnalyzeAudio(const audio_chunk & chunk, const channel_pair_t & channels)
     {
         for (auto & Band : _Bands)
             Band.Energy = 0.;
 
         _PitchClasses.fill(0.);
+
         _Rhythm = 0.;
 
         if (chunk.is_empty())
             return;
 
-        const size_t ChannelCount = chunk.get_channels();
+        const size_t ChannelCount = chunk.get_channel_count();
         const size_t FrameCount   = chunk.get_sample_count();
 
         if ((channels[0] >= ChannelCount) || (channels[1] >= ChannelCount) || (FrameCount < 16))
             return;
 
         const audio_sample * Data = chunk.get_data();
+
         const size_t AnalysisCount = std::min<size_t>(FrameCount, _Quality == EyeCandy::Quality::High ? 1024 : 512);
-        const size_t FrameStep = std::max<size_t>(1, FrameCount / AnalysisCount);
+        const size_t FrameStep     = std::max<size_t>(1, FrameCount / AnalysisCount);
 
         std::vector<double> Samples(AnalysisCount);
 
-        double MeanSquare = 0.;
-        double Difference = 0.;
-        double Previous = 0.;
-
-        for (size_t i = 0; i < AnalysisCount; ++i)
         {
-            const size_t Frame = std::min(i * FrameStep, FrameCount - 1);
-            const double Mono   = 0.5 * (ClampAudio(Data[Frame * ChannelCount + channels[0]]) + ClampAudio(Data[Frame * ChannelCount + channels[1]]));
-            const double Window = 0.5 - (0.5 * std::cos((2. * Pi * (double) i) / (double) (AnalysisCount - 1)));
+            const double WindowScale = TwoPi / (double) (AnalysisCount - 1);
 
-            Samples[i] = Mono * Window;
+            double MeanSquare = 0.;
+            double Difference = 0.;
 
-            MeanSquare += Mono * Mono;
-            Difference += std::abs(Mono - Previous);
-
-            Previous = Mono;
-        }
-
-        _Rhythm = std::clamp((std::sqrt(MeanSquare / (double) AnalysisCount) * 4.8) + (Difference / (double) AnalysisCount * 2.2), 0., 1.);
-
-        constexpr double MinimumFrequency = 45.;
-
-        const double MaximumFrequency = std::min(18000., _SampleRate * 0.47);
-
-        std::array<double, BandCount> RawEnergies {};
-
-        for (size_t BandIndex = 0; BandIndex < BandCount; ++BandIndex)
-        {
-            const double Amount = ((double) BandIndex + 0.5) / (double) BandCount;
-            const double Frequency = MinimumFrequency * std::pow(MaximumFrequency / MinimumFrequency, Amount);
-            const double AngularStep = 2. * Pi * Frequency / _SampleRate;
-
-            double Real = 0.;
-            double Imaginary = 0.;
+            double Previous = 0.;
 
             for (size_t i = 0; i < AnalysisCount; ++i)
             {
-                const double Angle = AngularStep * (double) i;
-                Real += Samples[i] * std::cos(Angle);
-                Imaginary -= Samples[i] * std::sin(Angle);
+                const size_t Frame = std::min(i * FrameStep, FrameCount - 1);
+
+                // Convert to mono.
+                const double Mono   = 0.5 * (ClampAudio(Data[Frame * ChannelCount + channels[0]]) + ClampAudio(Data[Frame * ChannelCount + channels[1]]));
+
+                // Apply a Hann Window.
+                Samples[i] = Mono * (0.5 - (std::cos((double) i * WindowScale) * 0.5));
+
+                MeanSquare += Mono * Mono;
+                Difference += std::abs(Mono - Previous); // Sample-to-sample difference tends to be larger for percussion, transients, noisy or bright signals or rapidly varying waveforms
+
+                Previous = Mono;
             }
 
-            const double Magnitude = 2. * std::sqrt((Real * Real) + (Imaginary * Imaginary)) / (double) AnalysisCount;
-            const double FrequencyGain = 1.65 + (4.1 * std::pow(Amount, 1.18));
-
-            RawEnergies[BandIndex] = std::clamp(std::pow(Magnitude * FrequencyGain * 7.0, 0.74), 0., 1.);
-
-            const double MidiNote = 69. + (12. * std::log2(std::max(Frequency, 1.) / 440.));
-            const size_t PitchClass = (size_t) (((int) std::lround(MidiNote) % 12 + 12) % 12);
-
-            _PitchClasses[PitchClass] += RawEnergies[BandIndex];
+            _Rhythm = Clamp((std::sqrt(MeanSquare / (double) AnalysisCount) * 4.8) + (Difference / (double) AnalysisCount * 2.2));
         }
 
-        for (size_t BandIndex = 0; BandIndex < BandCount; ++BandIndex)
         {
-            const size_t PreviousBand = BandIndex > 0 ? BandIndex - 1 : BandIndex;
-            const size_t NextBand = BandIndex + 1 < BandCount ? BandIndex + 1 : BandIndex;
+            constexpr double MinFrequency = 40.; // Lowest analyzed frequency (Low end of most musical bass content)
 
-            _Bands[BandIndex].Energy = (RawEnergies[PreviousBand] * 0.20) + (RawEnergies[BandIndex] * 0.60) + (RawEnergies[NextBand] * 0.20);
+            const double MaxFrequency = std::min(16'500., _SampleRate * 0.50); // 40 Hz to 16.5 kHz
+
+            std::array<double, BandCount> RawEnergies {};
+
+            for (size_t i = 0; i < BandCount; ++i)
+            {
+                const double Amount          = ((double) i + 0.5) / (double) BandCount;
+                const double CenterFrequency = MinFrequency * std::pow(MaxFrequency / MinFrequency, Amount);
+                const double AngularStep     = TwoPi * CenterFrequency / _SampleRate;
+
+                // Evaluate one point of the discrete Fourier transform.
+                double Real      = 0.;
+                double Imaginary = 0.;
+
+                {
+                    for (size_t j = 0; j < AnalysisCount; ++j)
+                    {
+                        const double Angle = AngularStep * (double) j;
+
+                        Real      += Samples[j] * std::cos(Angle);
+                        Imaginary -= Samples[j] * std::sin(Angle);
+                    }
+                }
+
+                const double Magnitude = 2. * std::sqrt((Real * Real) + (Imaginary * Imaginary)) / (double) AnalysisCount;
+
+                // Apply perceptual frequency compensation.
+                const double FrequencyGain = 1.65 + (4.1 * std::pow(Amount, 1.18));
+
+                RawEnergies[i] = Clamp(std::pow(Magnitude * FrequencyGain * 7., 0.74)); // Boost quiet spectral components to give them more visual presence
+
+                const double MIDINote = 69. + (12. * std::log2(std::max(CenterFrequency, 1.) / 440.));
+
+                // Determine the pitch class (e.g. A2, A3, A4, A5...)
+                const size_t PitchClass = (size_t) (((int) std::lround(MIDINote) % 12 + 12) % 12);
+
+                _PitchClasses[PitchClass] += RawEnergies[i];
+            }
+
+            // Apply a three-point smoothing filter to the neighboring bands.
+            for (size_t i = 0; i < BandCount; ++i)
+            {
+                const size_t PreviousBand = (i > 0)             ? i - 1 : i;
+                const size_t NextBand     = (i + 1 < BandCount) ? i + 1 : i;
+
+                _Bands[i].Energy = (RawEnergies[PreviousBand] * 0.20) + (RawEnergies[i] * 0.60) + (RawEnergies[NextBand] * 0.20);
+            }
+
+            // Determine the strongest pitch class.
+            const auto Strongest = std::max_element(_PitchClasses.begin(), _PitchClasses.end());
+
+            _Tonality = Strongest != _PitchClasses.end() ? (double) std::distance(_PitchClasses.begin(), Strongest) / 12. : 0.;
         }
-
-        const auto Strongest = std::max_element(_PitchClasses.begin(), _PitchClasses.end());
-
-        _Tonality = Strongest != _PitchClasses.end() ? (double) std::distance(_PitchClasses.begin(), Strongest) / 12. : 0.;
     }
 
     /// <summary>
@@ -179,11 +200,11 @@ namespace Spirograph
         for (auto & Band : _Bands)
             Band.SmoothedEnergy = ExponentialSmoothing(Band.SmoothedEnergy, Band.Energy, deltaTime, Band.Energy > Band.SmoothedEnergy ? 11. : 2.6);
 
-        _SmoothedRhythm   = ExponentialSmoothing(_SmoothedRhythm, _Rhythm, deltaTime, _Rhythm > _SmoothedRhythm ? 15. : 3.2);
+        _SmoothedRhythm   = ExponentialSmoothing(_SmoothedRhythm, _Rhythm, deltaTime, (_Rhythm > _SmoothedRhythm) ? 15. : 3.2);
         _RhythmPulse      = std::max(_SmoothedRhythm, _RhythmPulse * std::pow(0.86, deltaTime * 60.));
         _SmoothedTonality = ExponentialSmoothing(_SmoothedTonality, _Tonality, deltaTime, 2.2);
 
-        _Rotation += deltaTime * SpeedFactor * (0.34 + (_SmoothedRhythm * 1.15));
+        _Rotation += (deltaTime * SpeedFactor) * (0.34 + (_SmoothedRhythm * 1.15));
     }
 
     /// <summary>
@@ -197,40 +218,41 @@ namespace Spirograph
 
         const double Extent = std::min(_Width, _Height) * 0.43;
 
-        for (size_t CurveIndex = 0; CurveIndex < CurveCount; ++CurveIndex)
+        for (size_t i = 0; i < CurveCount; ++i)
         {
-            auto & Curve = _Curves[CurveIndex];
+            auto & Curve = _Curves[i];
 
             Curve.Points.resize(PointCount + 1);
 
-            const double Layer = (double) CurveIndex / (double) (CurveCount - 1);
-            const double BandEnergy = _Bands[(CurveIndex * 2) % BandCount].SmoothedEnergy;
-            const double Response = std::pow(BandEnergy, 0.76);
+            const double Layer       = (double) i / (double) (CurveCount - 1);
+            const double BandEnergy  = _Bands[(i * 2) % BandCount].SmoothedEnergy;
+            const double Response    = std::pow(BandEnergy, 0.76);
             const double MajorRadius = Extent * (0.34 + (Layer * 0.60) + (_RhythmPulse * 0.10));
-            const double Ratio = 2.0 + (double) CurveIndex + std::round(_SmoothedTonality * 5.0);
+            const double Ratio       = 2.0 + (double) i + std::round(_SmoothedTonality * 5.0);
             const double MinorRadius = MajorRadius / Ratio;
             const double PenDistance = MinorRadius * (0.72 + (Response * 1.55));
-            const bool Inward = (CurveIndex & 1u) == 0u;
-            const double Turns = 2.0 + Ratio;
-            const double Direction = Inward ? 1. : -1.;
+            const bool Inward        = (i & 1u) == 0u;
+            const double Turns       = 2.0 + Ratio;
+            const double Direction   = Inward ? 1. : -1.;
 
-            for (size_t i = 0; i <= PointCount; ++i)
+            for (size_t j = 0; j <= PointCount; ++j)
             {
-                const double Amount = (double) i / (double) PointCount;
-                const double Angle = Amount * 2. * Pi * Turns;
+                const double Amount           = (double) j / (double) PointCount;
+                const double Angle            = Amount * TwoPi * Turns;
                 const double RadiusDifference = Inward ? MajorRadius - MinorRadius : MajorRadius + MinorRadius;
-                const double RotationAngle = Angle + (_Rotation * Direction * (0.46 + Layer * 0.52));
-                const double DetailAngle = (RadiusDifference / MinorRadius) * Angle - (_Rotation * Direction);
-                const double RhythmWarp = 1. + (_RhythmPulse * 0.08 * std::sin((Angle * 2.) + (double) CurveIndex));
+                const double RotationAngle    = Angle + (_Rotation * Direction * (0.46 + Layer * 0.52));
+                const double DetailAngle      = (RadiusDifference / MinorRadius) * Angle - (_Rotation * Direction);
+                const double RhythmWarp       = 1. + (_RhythmPulse * 0.08 * std::sin((Angle * 2.) + (double) i));
+
                 const double X = RadiusDifference * std::cos(RotationAngle) + Direction * PenDistance * std::cos(DetailAngle);
                 const double Y = RadiusDifference * std::sin(RotationAngle) - Direction * PenDistance * std::sin(DetailAngle);
 
-                Curve.Points[i] = D2D1::Point2F((float) (_CenterX + X * RhythmWarp), (float) (_CenterY + Y * RhythmWarp));
+                Curve.Points[j] = D2D1::Point2F((float) (_CenterX + (X * RhythmWarp)), (float) (_CenterY + (Y * RhythmWarp)));
             }
 
-            Curve.Color = Colorize(_SmoothedTonality + (Layer * 0.27) + (_AnimationTime * 0.008));
-            Curve.Width = (float) (0.85 + (Response * 3.8) + (_RhythmPulse * 1.2));
-            Curve.Intensity = (float) std::clamp(0.18 + (Response * 0.72) + (_RhythmPulse * 0.24), 0., 1.);
+            Curve.Color     = Colorize(_SmoothedTonality + (Layer * 0.27) + (_AnimationTime * 0.008));
+            Curve.Width     = (float) (0.85 + (Response * 3.8) + (_RhythmPulse * 1.2));
+            Curve.Intensity = (float) Clamp(0.18 + (Response * 0.72) + (_RhythmPulse * 0.24));
         }
     }
 
@@ -241,7 +263,7 @@ namespace Spirograph
     {
         const double Decay = std::pow(0.935, deltaTime * 60.);
 
-        _Brush->SetColor(D2D1::ColorF(0.f, 0.f, 0.f, (float) std::clamp(1. - Decay, 0., 1.)));
+        _Brush->SetColor(D2D1::ColorF(0.f, 0.f, 0.f, (float) Clamp(1. - Decay)));
         _Brush->SetOpacity(1.f);
 
         renderTarget->FillRectangle(_Rectangle, _Brush.Get());
@@ -354,29 +376,31 @@ namespace Spirograph
         if (FAILED(hr))
             return hr;
 
-        const D2D1_SIZE_U RequiredPixelSize = D2D1::SizeU(std::max<UINT32>(1u, (UINT32) std::ceil(_Width)), std::max<UINT32>(1u, (UINT32) std::ceil(_Height)));
-        const D2D1_SIZE_F DesiredSize = D2D1::SizeF(_Width, _Height);
+        {
+            const D2D1_SIZE_U RequiredPixelSize = D2D1::SizeU(std::max<UINT32>(1u, (UINT32) std::ceil(_Width)), std::max<UINT32>(1u, (UINT32) std::ceil(_Height)));
+            const D2D1_SIZE_F DesiredSize = D2D1::SizeF(_Width, _Height);
 
-        hr = renderTarget->CreateCompatibleRenderTarget(&DesiredSize, &RequiredPixelSize, nullptr, D2D1_COMPATIBLE_RENDER_TARGET_OPTIONS_NONE, _BackBufferRenderTarget.ReleaseAndGetAddressOf());
+            hr = renderTarget->CreateCompatibleRenderTarget(&DesiredSize, &RequiredPixelSize, nullptr, D2D1_COMPATIBLE_RENDER_TARGET_OPTIONS_NONE, _BackBufferRenderTarget.ReleaseAndGetAddressOf());
 
-        if (FAILED(hr))
-            return hr;
+            if (FAILED(hr))
+                return hr;
 
-        _BackBufferRenderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+            _BackBufferRenderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
-        _BackBufferRenderTarget->BeginDraw();
+            _BackBufferRenderTarget->BeginDraw();
 
-        _BackBufferRenderTarget->Clear(D2D1::ColorF(0.f, 0.f, 0.f, 1.f));
+            _BackBufferRenderTarget->Clear(D2D1::ColorF(0.f, 0.f, 0.f, 1.f));
 
-        hr = _BackBufferRenderTarget->EndDraw();
+            hr = _BackBufferRenderTarget->EndDraw();
 
-        if (FAILED(hr))
-            return hr;
+            if (FAILED(hr))
+                return hr;
 
-        hr = _BackBufferRenderTarget->GetBitmap(_BackBuffer.ReleaseAndGetAddressOf());
+            hr = _BackBufferRenderTarget->GetBitmap(_BackBuffer.ReleaseAndGetAddressOf());
 
-        if (FAILED(hr))
-            return hr;
+            if (FAILED(hr))
+                return hr;
+        }
 
         _RenderTarget = renderTarget;
 

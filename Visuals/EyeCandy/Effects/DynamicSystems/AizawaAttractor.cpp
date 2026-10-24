@@ -45,14 +45,14 @@ namespace AizawaAttractor
     /// <summary>
     /// 
     /// </summary>
-    void effect_t::Render(ID2D1RenderTarget * renderTarget, double deltaTime, audio_chunk_impl & chunk) noexcept
+    void effect_t::Render(ID2D1RenderTarget * renderTarget, double deltaTime, audio_chunk & chunk) noexcept
     {
         HRESULT hr = CreateDeviceDependentResources(renderTarget);
 
         if (FAILED(hr))
             return;
 
-        deltaTime = std::clamp(deltaTime, 0.0, 0.1);
+        deltaTime = Clamp(deltaTime);
 
         AnalyzeAudio(chunk);
         Update(deltaTime);
@@ -102,9 +102,10 @@ namespace AizawaAttractor
 
         _AnimationTime += deltaTime * SpeedFactor;
 
-        _SmoothedPeak        = ExponentialSmoothing(_SmoothedPeak, _Peak, deltaTime, (_Peak > _SmoothedPeak) ? 22. : 5.);
-        _SmoothedRMS         = ExponentialSmoothing(_SmoothedRMS, _RMS, deltaTime, (_RMS > _SmoothedRMS) ? 16. : 4.);
-        _SmoothedWidth       = ExponentialSmoothing(_SmoothedWidth, _StereoWidth, deltaTime, 5.5);
+        _SmoothedPeak        = ExponentialSmoothing(_SmoothedPeak,        _Peak,        deltaTime, (_Peak > _SmoothedPeak) ? 22. : 5.);
+        _SmoothedRMS         = ExponentialSmoothing(_SmoothedRMS,         _RMS,         deltaTime, (_RMS  > _SmoothedRMS)  ? 16. : 4.);
+
+        _SmoothedWidth       = ExponentialSmoothing(_SmoothedWidth,       _StereoWidth, deltaTime, 5.5);
         _SmoothedCorrelation = ExponentialSmoothing(_SmoothedCorrelation, _Correlation, deltaTime, 4.0);
 
         UpdateCurveTheme(deltaTime);
@@ -115,14 +116,14 @@ namespace AizawaAttractor
     /// </summary>
     void effect_t::UpdateScene(double deltaTime) noexcept
     {
-        const double Peak = std::clamp(_SmoothedPeak, 0.0, 1.0);
-        const double RMS = std::clamp(_SmoothedRMS, 0.0, 1.0);
-        const double Width = std::clamp(_SmoothedWidth, 0.0, 1.0);
-        const double Phase = std::clamp(_PhaseEnergy, 0.0, 1.0);
+        const double Peak  = Clamp(_SmoothedPeak);
+        const double RMS   = Clamp(_SmoothedRMS);
+        const double Width = Clamp(_SmoothedWidth);
+        const double Phase = Clamp(_PhaseEnergy);
 
-        _AudioOrbit = ExponentialSmoothing(_AudioOrbit, Width * 0.30, deltaTime, 3.5);
-        _AudioLift  = ExponentialSmoothing(_AudioLift, (Peak - RMS) * 0.35, deltaTime, 5.0);
-        _AudioScale = ExponentialSmoothing(_AudioScale, 1.0 + RMS * 0.10 + Peak * 0.035, deltaTime, 7.0);
+        _AudioOrbit = ExponentialSmoothing(_AudioOrbit, Width * 0.30,                        deltaTime, 3.5);
+        _AudioLift  = ExponentialSmoothing(_AudioLift,  (Peak - RMS) * 0.35,                 deltaTime, 5.0);
+        _AudioScale = ExponentialSmoothing(_AudioScale, 1.0 + (RMS * 0.10) + (Peak * 0.035), deltaTime, 7.0);
 
         const double Time = _AnimationTime;
 
@@ -175,12 +176,12 @@ namespace AizawaAttractor
         const field_t Field
         {
             .PointCount = PointCount,
-            .A = 0.95 + _SmoothedRMS * 0.035,
-            .B = 0.70 + _SmoothedPeak * 0.025,
-            .C = 0.60 + _PhaseEnergy * 0.030,
+            .A = 0.95 + _SmoothedRMS   * 0.035,
+            .B = 0.70 + _SmoothedPeak  * 0.025,
+            .C = 0.60 + _PhaseEnergy   * 0.030,
             .D = 3.50 + _SmoothedWidth * 0.10,
-            .E = 0.25 + _SmoothedRMS * 0.025,
-            .F = 0.10 + _SmoothedPeak * 0.015,
+            .E = 0.25 + _SmoothedRMS   * 0.025,
+            .F = 0.10 + _SmoothedPeak  * 0.015,
             .Step = 0.0060
         };
 
@@ -247,25 +248,28 @@ namespace AizawaAttractor
         if ((_Width < 2.f) || (_Height < 2.f) || (_SplinePoints.size() < 2))
             return;
 
-        const double Energy = std::clamp(0.32 + _SmoothedRMS * 2.2 + _SmoothedPeak * 0.35, 0.32, 1.);
+        const double Energy = std::clamp(0.32 + (_SmoothedRMS * 2.2) + (_SmoothedPeak * 0.35), 0.32, 1.);
 
         const auto PreparedProjection = ThreeD::Prepare();
 
         if (!PreparedProjection.IsValid)
             return;
 
-        projected_point_t Previous = Project(_SplinePoints.front(), PreparedProjection);
+        auto Previous = Project(_SplinePoints.front(), PreparedProjection);
 
         for (size_t i = 1; i < _SplinePoints.size(); ++i)
         {
-            const projected_point_t Current = Project(_SplinePoints[i], PreparedProjection);
+            const auto Current = Project(_SplinePoints[i], PreparedProjection);
 
             if (Previous.IsProjectable && Current.IsProjectable)
             {
                 const double Amount = (double) i / (double) (_SplinePoints.size() - 1);
+
                 const uint32_t Color = GetCurveColor(Amount + _AnimationTime * 0.025);
-                const double Depth = 1. - (Previous.LinearDepth + Current.LinearDepth) * 0.5;
+
+                const double Depth     = 1. - (Previous.LinearDepth + Current.LinearDepth) * 0.5;
                 const double ViewDepth = (Previous.ViewDepth + Current.ViewDepth) * 0.5;
+
                 const float Intensity = (float) (Energy * (0.52 + Depth * 0.48));
                 const float Thickness = std::clamp(7.8f / (float) std::max(ViewDepth, Projection.NearPlane), 0.55f, 2.20f);
 

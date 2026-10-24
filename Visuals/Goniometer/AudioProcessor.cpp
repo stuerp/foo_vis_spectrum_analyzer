@@ -66,7 +66,7 @@ HRESULT audio_processor_t::SetCrossoverMode(crossover::Mode mode) noexcept
 /// <summary>
 /// Processes the audio frames.
 /// </summary>
-void audio_processor_t::Process(const audio_chunk_impl & chunk, uint32_t activeChannelMask, uint32_t pairedChannelMask, double lowBand, double highBand) noexcept
+void audio_processor_t::Process(const audio_chunk & chunk, uint32_t activeChannelMask, uint32_t pairedChannelMask, double lowBand, double highBand) noexcept
 {
     _PointCount = 0;
 

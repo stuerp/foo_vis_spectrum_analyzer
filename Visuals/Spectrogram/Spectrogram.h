@@ -19,14 +19,15 @@
 
 #include <deque>
 
-class spectrogram_t : public visualization_t
+class spectrogram_t final : public visualization_t
 {
 public:
-    spectrogram_t() = default;
+    spectrogram_t(state_t & state) : visualization_t(state) { }
 
     spectrogram_t(const spectrogram_t &) = delete;
-    spectrogram_t & operator=(const spectrogram_t &) = delete;
     spectrogram_t(spectrogram_t &&) = delete;
+
+    spectrogram_t & operator=(const spectrogram_t &) = delete;
     spectrogram_t & operator=(spectrogram_t &&) = delete;
 
     virtual ~spectrogram_t();
@@ -39,7 +40,7 @@ public:
     void OnConfigurationChanged(ConfigurationChanges configurationChanges) noexcept;
 
     // visualization_t
-    void Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice = nullptr, ID3D11DeviceContext * d3dDeviceContext = nullptr) noexcept override final;
+    void Configure(graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice = nullptr, ID3D11DeviceContext * d3dDeviceContext = nullptr) noexcept override final;
 
     const D2D1_RECT_F & GetClientRect() const noexcept { return _BitmapRect; }
 
@@ -76,7 +77,7 @@ private:
         if (std::abs(x) >= a)
             return 0.;
 
-        const double PiX = std::numbers::pi * x;
+        const double PiX = Pi * x;
 
         return (a * std::sin(PiX) * std::sin(PiX / a)) / (PiX * PiX);
     }
@@ -159,4 +160,8 @@ private:
 
     static constexpr FLOAT GradientSize = 24.f;
     static constexpr FLOAT TickSize     =  4.f;
+
+    static constexpr double Pi    = std::numbers::pi;
+    static constexpr double TwoPi = 2. * Pi;
+    static constexpr double Pi2   = Pi * 0.5;
 };

@@ -32,7 +32,7 @@ namespace ParticleVortex
         effect_t & operator=(const effect_t &) = delete;
         effect_t & operator=(effect_t &&) = delete;
 
-        void Render(ID2D1RenderTarget * renderTarget, double deltaTime, audio_chunk_impl & chunk) noexcept override final;
+        void Render(ID2D1RenderTarget * renderTarget, double deltaTime, audio_chunk & chunk) noexcept override final;
         void Reset() noexcept override final;
 
         std::wstring GetStatus() noexcept override final;
@@ -70,7 +70,7 @@ namespace ParticleVortex
         };
 
     private:
-        void AnalyzeAudio(const audio_chunk_impl & chunk);
+        void AnalyzeAudio(const audio_chunk & chunk);
         void Update(double deltaTime);
 
         void UpdateCenters(double deltaTime);
@@ -113,15 +113,15 @@ namespace ParticleVortex
         std::array<double, FrequencyBandCount> _SmoothedBandEnergy {};
         std::array<double, FrequencyBandCount> _PreviousBandEnergy {};
 
-        double _SmoothedPeak = 0.0f;
-        double _SmoothedRMS = 0.0f;
+        double _SmoothedPeak = 0.;
+        double _SmoothedRMS  = 0.;
 
-        double _BassEnergy = 0.0f;
-        double _MidEnergy = 0.0f;
-        double _TrebleEnergy = 0.0f;
+        double _BassEnergy   = 0.;
+        double _MidEnergy    = 0.;
+        double _TrebleEnergy = 0.;
 
-        double _SpectralFlux = 0.0f;
-        double _SmoothedFlux = 0.0f;
+        double _SpectralFlux = 0.;
+        double _SmoothedFlux = 0.;
 
     private:
         static constexpr double TransitionInterval = 3.; // seconds

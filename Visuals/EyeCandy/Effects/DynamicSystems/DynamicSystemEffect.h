@@ -32,7 +32,7 @@ namespace DynamicSystem
     protected:
         virtual void Reset() noexcept override;
 
-        void AnalyzeAudio(const audio_chunk_impl & chunk);
+        void AnalyzeAudio(const audio_chunk & chunk);
 
         void Fade(ID2D1RenderTarget * renderTarget, double deltaTime) noexcept;
 

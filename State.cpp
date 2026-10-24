@@ -366,12 +366,12 @@ state_t & state_t::operator=(const state_t & other) noexcept
 
     #pragma region Transform
 
-        _TransformMethod = other._TransformMethod;
+        _TransformMethod   = other._TransformMethod;
 
-        _WindowFunction = other._WindowFunction;
-        _WindowParameter = other._WindowParameter;
-        _WindowSkew = other._WindowSkew;
-        _Truncate = other._Truncate;
+        _WindowFunction    = other._WindowFunction;
+        _WindowParameter   = other._WindowParameter;
+        _WindowSkew        = other._WindowSkew;
+        _Truncate          = other._Truncate;
 
         _ReactionAlignment = other._ReactionAlignment;
 

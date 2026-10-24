@@ -26,9 +26,8 @@
 class part_t
 {
 public:
-    part_t(const state_t * state, const graph_options_t * settings) noexcept
+    part_t(const state_t & state, const graph_options_t * settings) noexcept : _State(state)
     {
-        _State        = state;
         _GraphOptions = settings;
     }
 
@@ -48,7 +47,7 @@ private:
     void CreateAxis() noexcept;
 
 protected:
-    const state_t * _State;
+    const state_t & _State;
     const graph_options_t * _GraphOptions;
 
     D2D1_RECT_F _Rect { };
@@ -107,7 +106,7 @@ protected:
 class bar_t : public part_t
 {
 public:
-    bar_t(const state_t * state, const graph_options_t * settings, const peak_measurement_t * measurement) noexcept : part_t(state, settings)
+    bar_t(const state_t & state, const graph_options_t * settings, const peak_measurement_t * measurement) noexcept : part_t(state, settings)
     {
         _Measurement = measurement;
 
@@ -144,18 +143,19 @@ private:
 /// <summary>
 /// Represents a meter scale of a peak meter.
 /// </summary>
-class scale_t : public part_t
+class scale_t final : public part_t
 {
 public:
-    scale_t(const state_t * state, const graph_options_t * settings, DWRITE_TEXT_ALIGNMENT textAlignment, DWRITE_PARAGRAPH_ALIGNMENT paragraphAlignment) noexcept : part_t(state, settings)
+    scale_t(const state_t & state, const graph_options_t * settings, DWRITE_TEXT_ALIGNMENT textAlignment, DWRITE_PARAGRAPH_ALIGNMENT paragraphAlignment) noexcept : part_t(state, settings)
     {
         _TextAlignment      = textAlignment;
         _ParagraphAlignment = paragraphAlignment;
     }
 
     scale_t(const scale_t &) = delete;
-    scale_t & operator=(const scale_t &) = delete;
     scale_t(scale_t &&) = delete;
+
+    scale_t & operator=(const scale_t &) = delete;
     scale_t & operator=(scale_t &&) = delete;
 
     virtual void Unbind() noexcept override final;

@@ -41,7 +41,7 @@ namespace Fireflies
             Cool
         };
 
-        void Render(ID2D1RenderTarget * renderTarget, double deltaTime, audio_chunk_impl & chunk) noexcept override final;
+        void Render(ID2D1RenderTarget * renderTarget, double deltaTime, audio_chunk & chunk) noexcept override final;
         void Reset() noexcept override final;
 
         void SetPalette(Palette palette) noexcept;
@@ -84,7 +84,7 @@ namespace Fireflies
         };
 
     private:
-        void AnalyzeAudio(const audio_chunk_impl & chunk);
+        void AnalyzeAudio(const audio_chunk & chunk);
         void Update(double deltaTime);
 
         void UpdateCenters(double deltaTime);

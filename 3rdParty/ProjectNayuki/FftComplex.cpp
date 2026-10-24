@@ -37,6 +37,11 @@ using std::size_t;
 using std::uintmax_t;
 using std::vector;
 
+namespace
+{
+    constexpr double TwoPi = 2. * std::numbers::pi;
+}
+
 // Private function prototypes
 static constexpr size_t reverseBits(size_t val, int width) noexcept;
 
@@ -67,7 +72,7 @@ void Fft::transformRadix2(vector<complex<double> > & vec, bool inverse, trig_t &
 
         for (size_t i = 0; i < n / 2; ++i)
         {
-            const double angle = (inverse ? 2 : -2) * std::numbers::pi * (double) i / (double) n;
+            const double angle = (inverse ? TwoPi : -TwoPi) * (double) i / (double) n;
 
             trig._Exp[i] = std::polar(1.0, angle);
         }

@@ -10,7 +10,7 @@
 /// </summary>
 void decimator_t::ProcessFiltered(const audio_chunk & srcChunk, audio_chunk & dstChunk, double ratio) noexcept
 {
-    const uint32_t ChannelCount = srcChunk.get_channels();
+    const uint32_t ChannelCount = srcChunk.get_channel_count();
 
     const uint32_t SrcSampleRate = srcChunk.get_sample_rate();
     const size_t SrcFrameCount   = srcChunk.get_sample_count();

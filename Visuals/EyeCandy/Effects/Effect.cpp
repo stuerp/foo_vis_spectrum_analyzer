@@ -379,7 +379,7 @@ void effect_t::UpdateThemeTransition(double deltaTime) noexcept
     _ThemeTransitionElapsed += deltaTime;
     _ThemeResourceElapsed   += deltaTime;
 
-    const double Linear = (float) std::clamp(_ThemeTransitionElapsed / ThemeTransitionDuration, 0., 1.);
+    const double Linear = (float) Clamp(_ThemeTransitionElapsed / ThemeTransitionDuration);
 
     _ThemeBlend = Linear * Linear * (3. - 2. * Linear);
 
@@ -395,70 +395,6 @@ void effect_t::UpdateThemeTransition(double deltaTime) noexcept
         _ThemeBlend            = 1.;
         _ThemeTransitionActive = false;
         _ThemeResourcesDirty   = true;
-    }
-}
-
-/// <summary>
-/// Converts an HSV color to a normalized Direct2D color.
-/// </summary>
-D2D1_COLOR_F effect_t::HSVToColor(float h, float s, float v, float a) noexcept
-{
-    const rgb_t Color = HSVToRGB(h, s, v);
-
-    return D2D1::ColorF(Color.R, Color.G, Color.B, std::clamp(a, 0.f, 1.f));
-}
-
-/// <summary>
-/// Converts an HSV color to a packed, fully opaque BGRA color value.
-/// </summary>
-uint32_t effect_t::HSVToBGRA(float h, float s, float v) noexcept
-{
-    const rgb_t Color = HSVToRGB(h, s, v);
-
-    const uint32_t R = (uint8_t) ToByte(Color.R);
-    const uint32_t G = (uint8_t) ToByte(Color.G);
-    const uint32_t B = (uint8_t) ToByte(Color.B);
-
-    return 0xFF000000u | (R << 16u) | (G << 8u) | B;
-}
-
-/// <summary>
-/// Converts an HSV color to a packed BGRA color value.
-/// </summary>
-uint32_t effect_t::HSVToBGRA(float h, float s, float v, float a) noexcept
-{
-    const rgb_t color = HSVToRGB(h, s, v);
-
-    const uint32_t A = ToByte(std::clamp(a, 0.f, 1.f));
-
-    return (A << 24u) | (ToByte(color.R) << 16u) | (ToByte(color.G) << 8u) | ToByte(color.B);
-}
-
-/// <summary>
-/// Converts a color from HSV to RGB.
-/// </summary>
-void effect_t::HSVToRGB(double h, double s, double v, double & r, double & g, double & b) noexcept
-{
-    // Wrap hue into [0, 1].
-    h -= std::floor(h);
-
-    const double ScaledHue = h * 6.;
-    const int Sector = (int) ScaledHue;
-    const double Fraction = ScaledHue - Sector;
-
-    const double ChromaReduction = v * s;
-    const double p = v - ChromaReduction;
-    const double q = v - ChromaReduction * Fraction;
-    const double t = v - ChromaReduction * (1. - Fraction);
-
-    switch (Sector)
-    {
-        case 0:  { r = v; g = t; b = p; break; }
-        case 1:  { r = q; g = v; b = p; break; }
-        case 2:  { r = p; g = v; b = t; break; }
-        case 3:  { r = p; g = q; b = v; break; }
-        case 4:  { r = t; g = p; b = v; break; }
-        default: { r = v; g = p; b = q; break; } // 5
     }
 }
 

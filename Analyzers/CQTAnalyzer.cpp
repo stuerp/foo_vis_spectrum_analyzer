@@ -1,5 +1,5 @@
 
-/** $VER: CQTAnalyzer.cpp (2026.08.19) P. Stuer - Based on TF3RDL's Constant-Q analyzer, https://codepen.io/TF3RDL/pen/poQJwRW **/
+/** $VER: CQTAnalyzer.cpp (2026.10.24) P. Stuer - Based on TF3RDL's Constant-Q analyzer, https://codepen.io/TF3RDL/pen/poQJwRW **/
 
 #include "pch.h"
 
@@ -10,7 +10,7 @@
 /// <summary>
 /// Initializes a new instance.
 /// </summary>
-cqt_analyzer_t::cqt_analyzer_t(const state_t * state, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup, const window_function_t & windowFunction) : analyzer_t(state, sampleRate, channelCount, channelSetup, windowFunction)
+cqt_analyzer_t::cqt_analyzer_t(const state_t & state, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup, const window_function_t & windowFunction) : analyzer_t(state, sampleRate, channelCount, channelSetup, windowFunction)
 {
 }
 
@@ -43,7 +43,7 @@ bool cqt_analyzer_t::AnalyzeAudio(const audio_sample * frames, size_t frameCount
         assert(fb.Lo <= fb.Mid && fb.Mid <= fb.Hi);
 
         // Calculate the band width (in Hz).
-        const double Bandwidth = std::abs(fb.Hi - fb.Lo) + (FrequencyResolution * _State->_CQTBandwidthOffset);
+        const double Bandwidth = std::abs(fb.Hi - fb.Lo) + (FrequencyResolution * _State._CQTBandwidthOffset);
 
         if (Bandwidth <= 0.)
         {
@@ -69,7 +69,7 @@ bool cqt_analyzer_t::AnalyzeAudio(const audio_sample * frames, size_t frameCount
         const size_t BandFrameCount = (size_t) std::clamp(std::trunc(BandFrameCountFloat), 1., (double) frameCount);
 
         // Calculate the optimal sampling period.
-        double SamplingPeriodFloat = std::max(1., std::trunc(((double) _SampleRate * _State->_CQTDownSample) / (fb.Mid + Bandwidth)));
+        double SamplingPeriodFloat = std::max(1., std::trunc(((double) _SampleRate * _State._CQTDownSample) / (fb.Mid + Bandwidth)));
 
         if (!UseGranularSamplingPeriod)
             SamplingPeriodFloat = std::pow(2., std::trunc(std::log2(SamplingPeriodFloat)));
@@ -77,13 +77,13 @@ bool cqt_analyzer_t::AnalyzeAudio(const audio_sample * frames, size_t frameCount
         size_t SamplingPeriod = (size_t) std::max(1., SamplingPeriodFloat);
 
         // Goertzel coefficient. Effective sample rate is Fs / SamplingPeriod.
-        const double Omega = 2. * std::numbers::pi * fb.Mid * (double) SamplingPeriod / (double) _SampleRate;
+        const double Omega = TwoPi * fb.Mid * (double) SamplingPeriod / (double) _SampleRate;
 
         const double Cos   = std::cos(Omega);
         const double Sin   = std::sin(Omega);
         const double Coeff = 2. * Cos;
 
-        const double Alignment = std::clamp(_State->_CQTAlignment, -1., 1.);
+        const double Alignment = std::clamp(_State._CQTAlignment, -1., 1.);
 
         const double OffsetFloat = std::trunc((double)(frameCount - BandFrameCount) * (0.5 + Alignment * 0.5));
         const size_t Offset = (size_t) std::clamp(OffsetFloat, 0., (double)(frameCount - BandFrameCount));

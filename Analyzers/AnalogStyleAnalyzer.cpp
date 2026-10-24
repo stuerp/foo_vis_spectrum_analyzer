@@ -12,7 +12,7 @@
 /// <summary>
 /// Initializes a new instance.
 /// </summary>
-analog_style_analyzer_t::analog_style_analyzer_t(const state_t * state, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup, const window_function_t & windowFunction) : analyzer_t(state, sampleRate, channelCount, channelSetup, windowFunction)
+analog_style_analyzer_t::analog_style_analyzer_t(const state_t & state, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup, const window_function_t & windowFunction) : analyzer_t(state, sampleRate, channelCount, channelSetup, windowFunction)
 {
 }
 
@@ -23,20 +23,20 @@ bool analog_style_analyzer_t::Initialize(const vector<frequency_band_t> & freque
 {
     assert(_SampleRate != 0);
 
-    const double TimeResolution =  _State->_ConstantQ ? std::numeric_limits<double>::infinity() : _State->_TimeResolution;
+    const double TimeResolution =  _State._ConstantQ ? std::numeric_limits<double>::infinity() : _State._TimeResolution;
 
     for (const frequency_band_t & fb : frequencyBands)
     {
         assert(fb.Lo <= fb.Mid && fb.Mid <= fb.Hi);
 
         // Biquad bandpass filter. Cascaded biquad bandpass is not Butterworth nor Bessel, rather it is something called "critically-damped" since each filter stage shares the same every biquad coefficients.
-        const double rad = std::numbers::pi * fb.Mid / (double) _SampleRate;
+        const double rad = Pi * fb.Mid / (double) _SampleRate;
 
         const double K = std::tan(rad);
-        const double Bandwidth = std::abs(fb.Hi - fb.Lo) * _State->_IIRBandwidth + (1. / (TimeResolution / 1000.));
+        const double Bandwidth = std::abs(fb.Hi - fb.Lo) * _State._IIRBandwidth + (1. / (TimeResolution / 1000.));
 
-        const double QCompensationFactor = _State->_UsePreWarpedQ ? rad / K : 1.;
-        const double Q = fb.Mid / Bandwidth * QCompensationFactor / (_State->_CompensateBandwidth ? ::sqrt(_State->_FilterBankOrder) : 1.);
+        const double QCompensationFactor = _State._UsePreWarpedQ ? rad / K : 1.;
+        const double Q = fb.Mid / Bandwidth * QCompensationFactor / (_State._CompensateBandwidth ? ::sqrt(_State._FilterBankOrder) : 1.);
         const double Norm = 1 / (1 + K / Q + K * K);
 
         coef_t c = { };
@@ -47,7 +47,7 @@ bool analog_style_analyzer_t::Initialize(const vector<frequency_band_t> & freque
         c.b1 = 2. * (K * K - 1.)    * Norm;
         c.b2 = (1. - K / Q + K * K) * Norm;
 
-        for (uint32_t i = 0; i < _State->_FilterBankOrder; ++i)
+        for (uint32_t i = 0; i < _State._FilterBankOrder; ++i)
             c.z1[i] = c.z2[i] = c.Out[i] = 0.f;
 
         _Coefs.push_back(c);
@@ -77,7 +77,7 @@ bool analog_style_analyzer_t::AnalyzeAudio(const audio_sample * frames, size_t f
         {
             double Value = (double) Sample;
 
-            for (uint32_t j = 0; j < _State->_FilterBankOrder;)
+            for (uint32_t j = 0; j < _State._FilterBankOrder;)
             {
                 Coef.Out[j] = (Value * Coef.a0) + Coef.z1[j];
                 Coef.z1[j]  = (Value * Coef.a1) + Coef.z2[j] - (Coef.b1 * Coef.Out[j]);

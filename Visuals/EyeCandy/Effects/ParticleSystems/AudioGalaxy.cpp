@@ -36,7 +36,7 @@ namespace AudioGalaxy
     /// <summary>
     /// 
     /// </summary>
-    void effect_t::Render(ID2D1RenderTarget * renderTarget, double deltaTime, audio_chunk_impl & chunk) noexcept
+    void effect_t::Render(ID2D1RenderTarget * renderTarget, double deltaTime, audio_chunk & chunk) noexcept
     {
         const D2D1_SIZE_F Viewport = renderTarget->GetSize();
 
@@ -48,8 +48,8 @@ namespace AudioGalaxy
         {
             _ViewportWidth  = ViewportWidth;
             _ViewportHeight = ViewportHeight;
-            _Width  = ViewportWidth;
-            _Height = ViewportHeight;
+            _Width          = ViewportWidth;
+            _Height         = ViewportHeight;
 
             DeleteDeviceDependentResources();
         }
@@ -59,7 +59,7 @@ namespace AudioGalaxy
         if (FAILED(hr))
             return;
 
-        deltaTime = std::clamp(deltaTime, 0.0, 0.1);
+        deltaTime = Clamp(deltaTime);
 
         Projection.Width       = (double) ViewportWidth;
         Projection.Height      = (double) ViewportHeight;
@@ -91,9 +91,8 @@ namespace AudioGalaxy
 
                 Camera.Up = { std::sin(Roll), std::cos(Roll), 0. };
 
-                const ThreeD::prepared_projection_t PreparedProjection = ThreeD::Prepare();
-
-                const projected_point_t ProjectedCenter = ThreeD::Project({ 0., 0., .72 }, PreparedProjection);
+                const auto PreparedProjection = ThreeD::Prepare();
+                const auto ProjectedCenter    = ThreeD::Project({ 0., 0., .72 }, PreparedProjection);
 
                 _Center = ProjectedCenter.IsProjectable ? ProjectedCenter.Position : D2D1::Point2F(_CenterX, _CenterY);
             }
@@ -114,13 +113,13 @@ namespace AudioGalaxy
     /// <summary>
     /// Analyzes an audio chunk.
     /// </summary>
-    void effect_t::AnalyzeAudio(const audio_chunk_impl & chunk)
+    void effect_t::AnalyzeAudio(const audio_chunk & chunk)
     {
         _Peak         = 0.;
-        _RMS          = 0;
+        _RMS          = 0.;
 
-        _BassEnergy   = 0;
-        _MidEnergy    = 0;
+        _BassEnergy   = 0.;
+        _MidEnergy    = 0.;
         _TrebleEnergy = 0.;
 
         _HasAudio = false;
@@ -128,7 +127,10 @@ namespace AudioGalaxy
         if (chunk.is_empty())
             return;
 
-        const size_t FrameCount = chunk.get_sample_count(), ChannelCount = chunk.get_channel_count(), SampleRate = chunk.get_sample_rate();
+        const size_t FrameCount   = chunk.get_sample_count();
+        const size_t ChannelCount = chunk.get_channel_count();
+        const size_t SampleRate   = chunk.get_sample_rate();
+
         const size_t MaxFrames = std::min<size_t>(FrameCount, 4096), FrameIndex = FrameCount - MaxFrames;
 
         if ((MaxFrames < 8) || !ChannelCount || !SampleRate)
@@ -139,7 +141,9 @@ namespace AudioGalaxy
 
         double Sum = 0., SumBass = 0., SumMid = 0., SumTreble = 0.;
 
-        const double DC = std::exp(-TwoPi * 35. / (double) SampleRate), Low = std::exp(-TwoPi * 220. / (double) SampleRate), High = std::exp(-TwoPi * 2400. / (double) SampleRate);
+        const double DC   = std::exp(-TwoPi *   35. / (double) SampleRate);
+        const double Low  = std::exp(-TwoPi *  220. / (double) SampleRate);
+        const double High = std::exp(-TwoPi * 2400. / (double) SampleRate);
 
         while (Frame < End)
         {
@@ -154,9 +158,9 @@ namespace AudioGalaxy
 
             _Peak = std::max(_Peak, std::abs(Sample)); Sum += Sample * Sample;
 
-            _BassState = (1. - Low) * Sample + Low * _BassState;
-            _DCState   = (1. - DC) * _BassState + DC * _DCState;
-            _MidState  = (1. - High) * Sample + High * _MidState;
+            _BassState = (1. - Low)  * Sample     + Low  * _BassState;
+            _DCState   = (1. - DC)   * _BassState + DC   * _DCState;
+            _MidState  = (1. - High) * Sample     + High * _MidState;
 
             const double Bass   = _BassState - _DCState;
             const double Mid    = _MidState - _BassState;
@@ -171,9 +175,9 @@ namespace AudioGalaxy
 
         _RMS = std::sqrt(Sum * Scale);
 
-        _BassEnergy   = std::clamp(std::log1p(std::sqrt(SumBass   * Scale) * 36.) / std::log1p(36.), 0., 1.);
-        _MidEnergy    = std::clamp(std::log1p(std::sqrt(SumMid    * Scale) * 22.) / std::log1p(22.), 0., 1.);
-        _TrebleEnergy = std::clamp(std::log1p(std::sqrt(SumTreble * Scale) * 16.) / std::log1p(16.), 0., 1.);
+        _BassEnergy   = Clamp(std::log1p(std::sqrt(SumBass   * Scale) * 36.) / std::log1p(36.));
+        _MidEnergy    = Clamp(std::log1p(std::sqrt(SumMid    * Scale) * 22.) / std::log1p(22.));
+        _TrebleEnergy = Clamp(std::log1p(std::sqrt(SumTreble * Scale) * 16.) / std::log1p(16.));
 
         _HasAudio = (_Peak > 1.e-5) || (_RMS > 1.e-6);
     }
@@ -202,7 +206,7 @@ namespace AudioGalaxy
             }
         }();
 
-        _AnimationTime += SpeedFactor * deltaTime;
+        _AnimationTime  += deltaTime * SpeedFactor;
         _TransitionTime += deltaTime;
 
         while (_TransitionTime >= TransitionInterval)
@@ -219,7 +223,7 @@ namespace AudioGalaxy
         _SmoothedMid    = ExponentialSmoothing(_SmoothedMid,    _MidEnergy,    deltaTime, (_MidEnergy    > _SmoothedMid)    ? 20. : 4.5);
         _SmoothedTreble = ExponentialSmoothing(_SmoothedTreble, _TrebleEnergy, deltaTime, (_TrebleEnergy > _SmoothedTreble) ? 30. : 7.);
 
-        const double Strength = std::clamp(std::max(0., _Peak - _PreviousPeak) * 5.5 + std::max(0., _TrebleEnergy - _PreviousTreble) * 4., 0., 1.);
+        const double Strength = Clamp(std::max(0., _Peak - _PreviousPeak) * 5.5 + std::max(0., _TrebleEnergy - _PreviousTreble) * 4.);
 
         _PreviousPeak = _Peak; _PreviousTreble = _TrebleEnergy;
         _TransientCooldown = std::max(0., _TransientCooldown - deltaTime); _TransientPulse *= std::exp(-deltaTime * 9.);
@@ -270,9 +274,10 @@ namespace AudioGalaxy
         _BassState = 0.;
         _DCState = 0.;
         _MidState = 0.;
-        _TrebleEnergy = _SmoothedTreble = 0.;
-        _PreviousPeak = _PreviousTreble = 0.;
-        _TransientPulse = _TransientCooldown = 0.;
+
+        _TrebleEnergy       = _SmoothedTreble = 0.;
+        _PreviousPeak       = _PreviousTreble = 0.;
+        _TransientPulse     = _TransientCooldown = 0.;
         _TransientStarIndex = 0;
 
         _MidEnergy = 0.;
@@ -282,17 +287,17 @@ namespace AudioGalaxy
 
         _MidDirectionCooldown = 0.;
 
-        _CameraRollVelocity = 0.;
+        _CameraRollVelocity  = 0.;
         _CameraRollDirection = 1.;
 
-        _FlightYaw = 0.;
-        _FlightPitch = 0.;
-        _FlightYawVelocity = 0.;
+        _FlightYaw           = 0.;
+        _FlightPitch         = 0.;
+        _FlightYawVelocity   = 0.;
         _FlightPitchVelocity = 0.;
 
         _PreviousBass = 0.;
-        _BeatAverage = 0.;
-        _BeatPulse = 0.;
+        _BeatAverage  = 0.;
+        _BeatPulse    = 0.;
         _BeatCooldown = 0.;
 
         _Stars.clear();
@@ -509,7 +514,7 @@ namespace AudioGalaxy
     /// </summary>
     void effect_t::RespawnStar(star_t & star, size_t index, bool randomDepth) noexcept
     {
-        uint32_t State = Hash((uint32_t)index * 0x9E3779B9u ^ star.Seed ^ (uint32_t)(_TravelDistance * 100000.f)); star.Seed = State;
+        uint32_t State = Hash((uint32_t)index * 0x9E3779B9u ^ star.Seed ^ (uint32_t)(_TravelDistance * 100'000.f)); star.Seed = State;
 
         const double BW = .2 + _SmoothedBass;
         const double MW = .2 + _SmoothedMid;
@@ -524,8 +529,10 @@ namespace AudioGalaxy
         star.Speed      = Lerp(.72, 1.35, (double) Random(State));
 //      star.Size       = Lerp(.55, 1.55, (double) Random(State));
         star.Size       = Lerp(.55, 5.55, (double) Random(State));
-        star.Brightness = randomDepth ? Lerp(.25, .90, (double)Random(State)) : Lerp(1.35, 1.85, (double)Random(State)); star.HueOffset = RandomSigned(State);
-        star.Age        = randomDepth ? Random(State) * 10. : 0.; star.Lifetime = Lerp(7., 18., (double)Random(State));
+        star.Brightness = randomDepth ? Lerp(.25, .90, (double) Random(State)) : Lerp(1.35, 1.85, (double) Random(State));
+        star.HueOffset  = RandomSigned(State);
+        star.Age        = randomDepth ? Random(State) * 10. : 0.;
+        star.Lifetime   = Lerp(7., 18., (double) Random(State));
 
         const double Thickness = .035 + (1. - std::min(1., star.Radius)) * .18;
 
@@ -533,9 +540,15 @@ namespace AudioGalaxy
         star.Inclination = RandomSigned(State) * (.12 + (1. - std::min(1., star.Radius)) * .48);
         star.NodeAngle   = Random(State) * TwoPi;
 
-        const double A = star.Angle + star.Radius * 8.5 + (double) star.Band * (TwoPi / 3.); star.X = std::cos(A) * star.Radius; star.Y = std::sin(A) * star.Radius; star.Z = .82 + star.Height * .30;
+        const double A = star.Angle + star.Radius * 8.5 + (double) star.Band * (TwoPi / 3.);
 
-        star.PreviousX = star.X; star.PreviousY = star.Y; star.PreviousZ = star.Z;
+        star.X = std::cos(A) * star.Radius;
+        star.Y = std::sin(A) * star.Radius;
+        star.Z = .82 + star.Height * .30;
+
+        star.PreviousX = star.X;
+        star.PreviousY = star.Y;
+        star.PreviousZ = star.Z;
     }
 
     /// <summary>
@@ -574,7 +587,7 @@ namespace AudioGalaxy
         _BackgroundBrush->SetRadiusX(_Width  * 0.72f);
         _BackgroundBrush->SetRadiusY(_Height * 0.72f);
 
-        _BackgroundBrush->SetOpacity((float) std::clamp(0.72 + (_SmoothedRMS * 0.4) + (_BeatPulse * 0.18), 0., 1.));
+        _BackgroundBrush->SetOpacity((float) Clamp(0.72 + (_SmoothedRMS * 0.4) + (_BeatPulse * 0.18)));
 
         renderTarget->FillRectangle(_Rectangle, _BackgroundBrush.Get());
     }
@@ -586,7 +599,7 @@ namespace AudioGalaxy
     {
         std::array<ComPtr<ID2D1PathGeometry>, TrailLayerCount> Trails;
 
-        const float Pulse = (float) std::clamp(_BeatPulse, 0., 1.);
+        const float Pulse = (float) Clamp(_BeatPulse);
 
         // Draw each trail batch multiple times. Wide low-opacity strokes create the glow; the final narrow stroke supplies the bright core.
         {
@@ -631,19 +644,19 @@ namespace AudioGalaxy
 
         for (const star_t & Star : _Stars)
         {
-            const projected_point_t ProjectedPosition = ThreeD::Project({ Star.X, Star.Y, Star.Z }, PreparedProjection);
+            const auto ProjectedPosition = ThreeD::Project({ Star.X, Star.Y, Star.Z }, PreparedProjection);
 
             if (!ProjectedPosition.IsProjectable)
                 continue;
 
             const D2D1_POINT_2F Position = ProjectedPosition.Position;
 
-            if (Position.x < -16.0f || Position.y < -16.0f || Position.x > _Width + 16.0f || Position.y > _Height + 16.0f)
+            if (Position.x < -16.0f || Position.y < -16.0f || Position.x > (_Width + 16.f) || Position.y > (_Height + 16.f))
                 continue;
 
-            const float Depth       = (float) std::clamp(1. - Star.Radius / 1.35, 0., 1.);
+            const float Depth       = (float) Clamp(1. - Star.Radius / 1.35);
             const float BirthGlow   = (float) std::exp(-Star.Age * 2.15);
-            const float Brightness  = std::clamp(.30f + SmoothStep(0.f, 1.f, Depth) * .45f + BirthGlow * .42f, 0.f, 1.0f);
+            const float Brightness  = Clamp(.30f + SmoothStep(0.f, 1.f, Depth) * .45f + BirthGlow * .42f);
             const float Radius      = (float) Star.Size * Lerp(0.35f, 2.45f, Brightness) * (1.f + (Pulse * Brightness * 1.20f) + ((float) _SmoothedBass * 0.22f));
 
             const D2D1_COLOR_F Color = GetStarColor(Star, Brightness);
@@ -696,9 +709,9 @@ namespace AudioGalaxy
         const float ColorShift = (float) _BeatPulse * 0.035f;
 
         const float H = Fraction(CurrentThemeHue() + (float) (star.HueOffset * 0.035f) + ColorShift + (float) (_AnimationTime * 0.0025));
-        const float S = (float) std::clamp(0.12 + std::abs(star.HueOffset) * 0.42 + _SmoothedBass * 0.12, 0., 1.);
-        const float V = (float) std::clamp(star.Brightness * Lerp(0.30, 1.15, depthBrightness) * (1.0 + _BeatPulse * depthBrightness * 0.85), 0., 1.);
-        const float A = (float) std::clamp(Lerp(0.22, 1., depthBrightness), 0., 1.);
+        const float S = (float) Clamp(0.12 + std::abs(star.HueOffset) * 0.42 + _SmoothedBass * 0.12);
+        const float V = (float) Clamp(star.Brightness * Lerp(0.30, 1.15, depthBrightness) * (1.0 + _BeatPulse * depthBrightness * 0.85));
+        const float A = (float) Clamp(Lerp(0.22, 1., depthBrightness));
 
         return HSVToColor(H, S, V, A);
     }
@@ -710,7 +723,7 @@ namespace AudioGalaxy
     {
         const float Radius = std::min(_Width, _Height) * (0.025f + (float) (_BeatPulse * 0.12));
 
-        const float Opacity = (float) std::clamp(0.025 + (_SmoothedBass * 0.06) + (_BeatPulse * 0.28), 0., 1.);
+        const float Opacity = (float) Clamp(0.025 + (_SmoothedBass * 0.06) + (_BeatPulse * 0.28));
 
         ComPtr<ID2D1RadialGradientBrush> FlashBrush;
 

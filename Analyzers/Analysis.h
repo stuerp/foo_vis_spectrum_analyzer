@@ -1,5 +1,5 @@
 
-/** $VER: Analysis.h (2026.10.21)P. Stuer **/
+/** $VER: Analysis.h (2026.10.24)P. Stuer **/
 
 #pragma once
 
@@ -86,19 +86,20 @@ struct bit_measurement_t : measurement_t
 /// <summary>
 /// Represents the analysis of the sample data.
 /// </summary>
-class analysis_t
+class analysis_t final
 {
 public:
-    analysis_t() noexcept : _SampleRate(), _ChannelCount(), _ChannelConfig(), _RMSTimeElapsed(), _RMSFrameCount(), _Left(), _Right(), _Mid(), _Side(), _Balance(0.5), _Phase(0.5) { };
+    analysis_t(state_t & state) noexcept : _State(state), _SampleRate(), _ChannelCount(), _ChannelConfig(), _RMSTimeElapsed(), _RMSFrameCount(), _Left(), _Right(), _Mid(), _Side(), _Balance(0.5), _Phase(0.5) { };
 
     analysis_t(const analysis_t &) = delete;
-    analysis_t & operator=(const analysis_t &) = delete;
     analysis_t(analysis_t &&) = delete;
+
+    analysis_t & operator=(const analysis_t &) = delete;
     analysis_t & operator=(analysis_t &&) = delete;
 
-    virtual ~analysis_t() noexcept { Reset(); };
+    ~analysis_t() noexcept { Reset(); };
 
-    void Configure(const state_t * state, const graph_options_t * settings) noexcept;
+    void Configure(const graph_options_t * settings) noexcept;
     void Process(const audio_chunk & chunk) noexcept;
 
     void Reset() noexcept;
@@ -158,7 +159,7 @@ private:
 
     double SmoothValue(double value, double smoothedValue) const noexcept
     {
-        switch (_State->_SmoothingMethod)
+        switch (_State._SmoothingMethod)
         {
             default:
 
@@ -166,15 +167,15 @@ private:
                 return value;
 
             case SmoothingMethod::Average:
-                return std::clamp((smoothedValue * _State->_SmoothingFactor) + (value * (1. - _State->_SmoothingFactor)), 0., 1.);
+                return std::clamp((smoothedValue * _State._SmoothingFactor) + (value * (1. - _State._SmoothingFactor)), 0., 1.);
 
             case SmoothingMethod::Peak:
-                return std::clamp(std::max(smoothedValue * _State->_SmoothingFactor, value), 0., 1.);
+                return std::clamp(std::max(smoothedValue * _State._SmoothingFactor, value), 0., 1.);
         }
     }
 
 public:
-    const state_t * _State;
+    const state_t & _State;
     const graph_options_t * _GraphOptions;
 
     audio_chunk_impl _Chunk;
@@ -186,8 +187,8 @@ public:
 
     double _NyquistFrequency;
 
-    const window_function_t * _WindowFunction;
-    const window_function_t * _BrownPucketteKernel;
+    std::unique_ptr<window_function_t> _WindowFunction;
+    std::unique_ptr<window_function_t> _BrownPucketteKernel;
 
     fft_analyzer_t * _FFTAnalyzer;
     cqt_analyzer_t * _CQTAnalyzer;

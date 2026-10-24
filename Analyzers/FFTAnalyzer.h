@@ -1,5 +1,5 @@
 
-/** $VER: FFTAnalyzer.h (2026.09.13) P. Stuer **/
+/** $VER: FFTAnalyzer.h (2026.10.24) P. Stuer **/
 
 #pragma once
 
@@ -11,8 +11,9 @@
 #include <WinSock2.h>
 #include <Windows.h>
 
+#include <vector>
+
 #include "Analyzer.h"
-#include "Aggregator.h"
 #include "FrequencyBand.h"
 
 #include "FFT.h"
@@ -20,20 +21,20 @@
 /// <summary>
 /// Implements a Fast Fourier Transform analyzer.
 /// </summary>
-#pragma warning(disable: 4820)
 class fft_analyzer_t : public analyzer_t
 {
 public:
     fft_analyzer_t() = delete;
 
     fft_analyzer_t(const fft_analyzer_t &) = delete;
-    fft_analyzer_t & operator=(const fft_analyzer_t &) = delete;
     fft_analyzer_t(fft_analyzer_t &&) = delete;
+
+    fft_analyzer_t & operator=(const fft_analyzer_t &) = delete;
     fft_analyzer_t & operator=(fft_analyzer_t &&) = delete;
 
-    virtual ~fft_analyzer_t();
+    virtual ~fft_analyzer_t() = default;
 
-    fft_analyzer_t(const state_t * state, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup, size_t fftSize, const window_function_t & windowFunction, const window_function_t & brownPucketteKernel) noexcept;
+    fft_analyzer_t(const state_t & state, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup, const window_function_t & windowFunction, const window_function_t & brownPucketteKernel) noexcept;
 
     bool AnalyzeAudio(const audio_sample * frames, size_t frameCount, uint32_t channels, frequency_bands_t & frequencyBands) noexcept;
 
@@ -48,8 +49,6 @@ private:
 
     double Interpolate(const std::vector<std::complex<double>> & fftCoeffs, double value, int kernelSize) const noexcept;
 
-//  static double Median(std::vector<double> & data) noexcept;
-
     /// <summary>
     /// Gets the current FFT size.
     /// </summary>
@@ -63,7 +62,7 @@ private:
     /// </summary>
     size_t GetFFTIndex(double frequency) const noexcept
     {
-        return (size_t) (frequency / _NyquistFrequency * ((double) _FFTSize / 2.));
+        return (size_t) (frequency / _NyquistFrequency * ((double) _FFTSize * 0.5));
     }
 
     /// <summary>
@@ -71,7 +70,7 @@ private:
     /// </summary>
     double GetFrequency(int index) const noexcept
     {
-        return ((double) index * _NyquistFrequency) / ((double) _FFTSize / 2.);
+        return ((double) index * _NyquistFrequency) / ((double) _FFTSize * 0.5);
     }
 
     /// <summary>
@@ -102,4 +101,8 @@ private:
     std::vector<std::complex<double>> _FreqData;
 
     const window_function_t & _BrownPucketteKernel;
+
+    static constexpr double Pi    = std::numbers::pi;
+    static constexpr double TwoPi = 2. * Pi;
+    static constexpr double Pi2   = Pi * 0.5;
 };

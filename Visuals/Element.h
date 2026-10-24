@@ -1,5 +1,5 @@
 
-/** $VER: Element.h (2026.10.11) P. Stuer - Base class for all visual elements (both graph and visualizations). **/
+/** $VER: Element.h (2026.10.24) P. Stuer - Base class for all visual elements (both graph and visualizations). **/
 
 #pragma once
 
@@ -15,7 +15,8 @@
 class element_t
 {
 public:
-    element_t() = default;
+    element_t(state_t & state) : _State(state) { };
+
     virtual ~element_t() = default;
 
     virtual void Move(const D2D1_RECT_F & rect) noexcept { }
@@ -41,16 +42,19 @@ protected:
     void InitializeMetrics(const D2D1_RECT_F & rect) noexcept;
 
 protected:
-    state_t * _State { nullptr };
+    state_t & _State;
     graph_options_t * _GraphOptions { nullptr };
     analysis_t * _Analysis { nullptr };
 
-    bool _IsFirst { false };
-    bool _IsLast { false };
+    bool _IsFirst = false;
+    bool _IsLast  = false;
 
     D2D1_RECT_F _Rect { };
     D2D1_SIZE_F _Size { };
 
-    FLOAT _HalfSide { 0.f };
-    FLOAT _Side { 0.f };
+    FLOAT _HalfSide = 0.f;
+    FLOAT _Side     = 0.f;
+
+    FLOAT _CenterX  = 0.f;
+    FLOAT _CenterY  = 0.f;
 };

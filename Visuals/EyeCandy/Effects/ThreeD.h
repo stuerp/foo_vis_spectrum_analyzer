@@ -246,7 +246,7 @@ namespace EyeCandy
             (float) ((1. - NormalizedY) * prepared.HalfHeight)
         };
 
-        Result.LinearDepth   = std::clamp((CameraZ - prepared.NearPlane) * prepared.InverseDepthRange, 0., 1.);
+        Result.LinearDepth   = Clamp((CameraZ - prepared.NearPlane) * prepared.InverseDepthRange);
         Result.ViewDepth     = CameraZ;
         Result.IsProjectable = std::isfinite(Result.Position.x) && std::isfinite(Result.Position.y);
 

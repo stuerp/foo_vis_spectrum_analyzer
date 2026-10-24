@@ -27,7 +27,7 @@ namespace Field
     class analyzer_t
     {
     public:
-        audio_t Analyze(const audio_chunk_impl & chunk, double deltaTime) noexcept;
+        audio_t Analyze(const audio_chunk & chunk, double deltaTime) noexcept;
         void Decay(double deltaTime) noexcept;
 
     private:
@@ -366,7 +366,7 @@ namespace Field
         /// </summary>
         static inline theme_t Blend(const theme_t & a, const theme_t & b, double time) noexcept
         {
-            time = std::clamp(time, 0., 1.);
+            time = Clamp(time);
 
             time = time * time * (3. - (2. * time));
 

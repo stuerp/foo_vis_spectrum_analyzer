@@ -411,8 +411,6 @@ HRESULT style_t::CreateAmplitudeMap(ColorScheme colorScheme, const std::vector<D
         else
         {
             // Converted from the SoX source code.
-            constexpr double pi2 = std::numbers::pi / 2.;
-
             for (size_t Step = 0; Step <= StepCount; ++Step)
             {
                 const auto Amplitude = (double) Step / (double) StepCount;
@@ -423,7 +421,7 @@ HRESULT style_t::CreateAmplitudeMap(ColorScheme colorScheme, const std::vector<D
                     r = 0.f;
                 else
                 if (Amplitude < 0.73)
-                    r = (FLOAT) std::sin((Amplitude - 0.13) / 0.60 * pi2);
+                    r = (FLOAT) std::sin((Amplitude - 0.13) / 0.60 * Pi2);
                 else
                     r = 1.f;
 
@@ -433,14 +431,14 @@ HRESULT style_t::CreateAmplitudeMap(ColorScheme colorScheme, const std::vector<D
                     g = 0.f;
                 else
                 if (Amplitude < 0.91)
-                    g = (FLOAT) std::sin((Amplitude - 0.60) / 0.31 * pi2);
+                    g = (FLOAT) std::sin((Amplitude - 0.60) / 0.31 * Pi2);
                 else
                     g = 1.f;
 
                 FLOAT b;
 
                 if (Amplitude < 0.60)
-                    b = (FLOAT) (0.5 * std::sin(Amplitude / 0.60 * std::numbers::pi));
+                    b = (FLOAT) (0.5 * std::sin(Amplitude / 0.60 * Pi));
                 else
                 if (Amplitude < 0.78)
                     b = 0.f;

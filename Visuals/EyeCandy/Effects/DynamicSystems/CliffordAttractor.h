@@ -30,7 +30,7 @@ namespace CliffordAttractor
         effect_t & operator=(const effect_t &) = delete;
         effect_t & operator=(effect_t &&) = delete;
 
-        void Render(ID2D1RenderTarget * renderTarget, double deltaTime, audio_chunk_impl & chunk) noexcept override final;
+        void Render(ID2D1RenderTarget * renderTarget, double deltaTime, audio_chunk & chunk) noexcept override final;
         std::wstring GetStatus() noexcept override final;
 
     private:
@@ -61,7 +61,6 @@ namespace CliffordAttractor
         void DeleteDeviceDependentResources() noexcept;
 
         static point_t Iterate(point_t point, const parameters_t & parameters) noexcept;
-        static uint32_t PremultiplyColor(uint32_t color, float opacity) noexcept;
 
     private:
         parameters_t _Parameters {};

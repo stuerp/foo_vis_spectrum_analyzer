@@ -13,7 +13,7 @@ namespace Field
     /// <summary>
     /// Extracts six animation-friendly values from stereo audio: overall loudness, bass, midrange, treble, stereo balance, and peak amplitude
     /// </summary>
-    audio_t analyzer_t::Analyze(const audio_chunk_impl & chunk, double deltaTime) noexcept
+    audio_t analyzer_t::Analyze(const audio_chunk & chunk, double deltaTime) noexcept
     {
         if (chunk.is_empty())
         {
@@ -31,9 +31,8 @@ namespace Field
 
         const audio_sample * Sample = chunk.get_data();
 
-        // During track hand-off a chunk can be structurally empty even when
-        // is_empty() did not catch it. Do not divide by zero or construct invalid
-        // filter coefficients from that transient chunk.
+        // During track hand-off a chunk can be structurally empty even when is_empty() did not catch it.
+        // Do not divide by zero or construct invalid filter coefficients from that transient chunk.
         if (FrameCount == 0 || ChannelCount == 0 || SampleRate == 0 || Sample == nullptr)
         {
             Decay(deltaTime);
@@ -41,8 +40,8 @@ namespace Field
         }
 
         // One-pole low-pass filter coefficients. _LowState tracks frequencies below roughly 180 Hz, while _HighState tracks frequencies below 2400 Hz.
-        const double BassFilterCoefficient   = std::exp(-2. * Pi *  180. / (double) SampleRate);
-        const double TrebleFilterCoefficient = std::exp(-2. * Pi * 2400. / (double) SampleRate);
+        const double BassFilterCoefficient   = std::exp(-TwoPi *  180. / (double) SampleRate);
+        const double TrebleFilterCoefficient = std::exp(-TwoPi * 2400. / (double) SampleRate);
 
         const double BassFilterInputCoefficient   = 1. - BassFilterCoefficient;
         const double TrebleFilterInputCoefficient = 1. - TrebleFilterCoefficient;

@@ -41,15 +41,12 @@ namespace Plasma
     {
         constexpr uint32_t Dividers[] = { 9, 6, 3 };
 
-        const float Width  = std::max(_Width,  1.f);
-        const float Height = std::max(_Height, 1.f);
-
-        const float Scale = std::max(Width, Height) / std::min(Width, Height);
+        const float Scale = std::max(_Width, _Height) / std::min(_Width, _Height);
 
         const float Divider = (float) Dividers[std::min<size_t>((size_t) _Quality, _countof(Dividers) - 1)];
 
-        _RasterWidth  = std::max((uint32_t) std::lround(Width  * Scale / Divider), 1u);
-        _RasterHeight = std::max((uint32_t) std::lround(Height * Scale / Divider), 1u);
+        _RasterWidth  = std::max((uint32_t) std::lround(_Width  * Scale / Divider), 1u);
+        _RasterHeight = std::max((uint32_t) std::lround(_Height * Scale / Divider), 1u);
 
         _Pixels.resize((size_t) _RasterWidth * _RasterHeight);
 
@@ -60,7 +57,7 @@ namespace Plasma
     /// <summary>
     /// Renders this instance.
     /// </summary>
-    void effect_t::Render(ID2D1RenderTarget * renderTarget, double deltaTime, audio_chunk_impl & chunk) noexcept
+    void effect_t::Render(ID2D1RenderTarget * renderTarget, double deltaTime, audio_chunk & chunk) noexcept
     {
         const HRESULT hr = CreateDeviceDependentResources(renderTarget);
 
@@ -334,7 +331,7 @@ namespace Plasma
         const uint32_t G = (uint32_t) ToRGB(Green);
         const uint32_t B = (uint32_t) ToRGB(Blue);
 
-        return 0xFF000000u | (R << 16) | (G << 8) | B;
+        return 0xFF000000u | (R << 16u) | (G << 8u) | B;
     }
 
     /// <summary>

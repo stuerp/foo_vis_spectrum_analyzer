@@ -34,9 +34,8 @@ void oscilloscope_t::Move(const D2D1_RECT_F & rect) noexcept
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void oscilloscope_t::Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept
+void oscilloscope_t::Configure(graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept
 {
-    _State = state;
     _GraphOptions = graphOptions;
     _Analysis = analysis;
 
@@ -116,7 +115,7 @@ void oscilloscope_t::Render(ID2D1DeviceContext * deviceContext) noexcept
     ComPtr<ID2D1PathGeometry> Geometry;
 
     // Create the signal.
-    if (!_State->_IsPaused || (_State->_IsPaused && _State->_VisualizeDuringPause))
+    if (!_State._IsPaused || (_State._IsPaused && _State._VisualizeDuringPause))
     {
         // Create the signal geometry.
         const D2D1_SIZE_F SignalSize = { _Size.width - (YAxisWidth * YAxisCount), _Size.height };
@@ -138,11 +137,11 @@ void oscilloscope_t::Render(ID2D1DeviceContext * deviceContext) noexcept
         Geometry.Reset();
 
     {
-        const FLOAT Opacity = (_State->_Afterglow != 0.f) ? std::expf(-(1000.f / (FLOAT) _State->_TargetRefreshRate) / _State->_Afterglow) : 0.f;
+        const FLOAT Opacity = (_State._Afterglow != 0.f) ? std::expf(-(1000.f / (FLOAT) _State._TargetRefreshRate) / _State._Afterglow) : 0.f;
 
         _OpacityEffect->SetValue(D2D1_OPACITY_PROP_OPACITY, Opacity);
 
-        _BlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_STANDARD_DEVIATION, _State->_BlurSigma);
+        _BlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_STANDARD_DEVIATION, _State._BlurSigma);
     }
 
     const size_t BitmapIndex = 1 - _PrevBitmapIndex;
@@ -157,7 +156,7 @@ void oscilloscope_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 
         _DeviceContext->Clear();
 
-        if (_State->_HasPhosphorDecay)
+        if (_State._HasPhosphorDecay)
         {
             // Draw a faded and blurred version of the previous bitmap.
             {
@@ -243,7 +242,7 @@ void oscilloscope_t::DeleteDeviceIndependentResources() noexcept
 /// </summary>
 HRESULT oscilloscope_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept
 {
-    if (_State->_SizeHasChanged)
+    if (_State._SizeHasChanged)
         DeleteDeviceSpecificResources();
 
     HRESULT hr = oscilloscope_base_t::CreateDeviceSpecificResources(deviceContext);
@@ -254,9 +253,9 @@ HRESULT oscilloscope_t::CreateDeviceSpecificResources(ID2D1DeviceContext * devic
     // The font style is created prescaled to counter the Scale transform in the command list.
     if (_XAxisTextStyle._Brush == nullptr)
     {
-        _XAxisTextStyle = *_State->_StyleManager.GetStyle(VisualElement::XAxisText);
+        _XAxisTextStyle = *_State._StyleManager.GetStyle(VisualElement::XAxisText);
 
-        _XAxisTextStyle.SetColor(_State);
+        _XAxisTextStyle.SetColor(&_State);
 
         hr = _XAxisTextStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"-999", 1.f);
 
@@ -267,9 +266,9 @@ HRESULT oscilloscope_t::CreateDeviceSpecificResources(ID2D1DeviceContext * devic
     // The font style is created prescaled to counter the Scale transform in the command list.
     if (_YAxisTextStyle._Brush == nullptr)
     {
-        _YAxisTextStyle = *_State->_StyleManager.GetStyle(VisualElement::YAxisText);
+        _YAxisTextStyle = *_State._StyleManager.GetStyle(VisualElement::YAxisText);
 
-        _YAxisTextStyle.SetColor(_State);
+        _YAxisTextStyle.SetColor(&_State);
 
         hr = _YAxisTextStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"-999", 1.f);
 
@@ -277,7 +276,7 @@ HRESULT oscilloscope_t::CreateDeviceSpecificResources(ID2D1DeviceContext * devic
             return hr;
     }
 
-    const uint32_t AxesCount = (size_t) _State->_Downmix ? 1u : std::popcount(_Analysis->_Chunk.get_channel_config() & _GraphOptions->_ActiveChannelMask);
+    const uint32_t AxesCount = (size_t) _State._Downmix ? 1u : std::popcount(_Analysis->_Chunk.get_channel_config() & _GraphOptions->_ActiveChannelMask);
 
     if ((_StaticContext == nullptr) || (_AxesCount != AxesCount))
         hr = CreateStaticContent(AxesCount);
@@ -302,7 +301,7 @@ void oscilloscope_t::DeleteDeviceSpecificResources() noexcept
 /// <summary>
 /// Creates the path geometry for the signal.
 /// </summary>
-HRESULT oscilloscope_t::CreateSignalGeometry(const audio_chunk_impl & chunk, const D2D1_SIZE_F & clientSize, ComPtr<ID2D1PathGeometry> & geometry) noexcept
+HRESULT oscilloscope_t::CreateSignalGeometry(const audio_chunk & chunk, const D2D1_SIZE_F & clientSize, ComPtr<ID2D1PathGeometry> & geometry) noexcept
 {
     size_t FrameCount = chunk.get_sample_count();                       // get_sample_count() actually returns the number of frames.
 
@@ -318,7 +317,7 @@ HRESULT oscilloscope_t::CreateSignalGeometry(const audio_chunk_impl & chunk, con
 
     const audio_sample * Frames = chunk.get_data();
 
-    if (_State->_ZeroCrossingTrigger && (FrameCount >= 4))
+    if (_State._ZeroCrossingTrigger && (FrameCount >= 4))
     {
         const size_t SearchFrameCount = FrameCount / 2;
         const size_t CrossIndex = FindZeroCrossing(Frames, SearchFrameCount, ChannelCount);
@@ -354,7 +353,7 @@ HRESULT oscilloscope_t::CreateSignalGeometry(const audio_chunk_impl & chunk, con
         if (FAILED(hr))
             return hr;
 
-        const auto InputGain = _State->_YInputGain;
+        const auto InputGain = _State._YInputGain;
         const auto DeltaX    = clientSize.width / (FLOAT) FrameCount;
 
         ComPtr<ID2D1GeometrySink> Sink;
@@ -370,7 +369,7 @@ HRESULT oscilloscope_t::CreateSignalGeometry(const audio_chunk_impl & chunk, con
 
         uint32_t RemainingChannels = AvailableChannelMask;
 
-        for (const auto & Channel : _State->_ChannelOrder)
+        for (const auto & Channel : _State._ChannelOrder)
         {
             if ((RemainingChannels == 0) || (ActiveChannelMask == 0))
                 break;

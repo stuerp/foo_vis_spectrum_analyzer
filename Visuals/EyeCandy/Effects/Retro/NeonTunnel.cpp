@@ -30,21 +30,20 @@ namespace NeonTunnel
     /// </summary>
     std::wstring effect_t::GetStatus() noexcept
     {
-        return std::format(L"Neon Tunnel, {}, {} quality, {} speed",
-            GetThemeName(_ThemeFrom).c_str(), Qualities[(size_t) _Quality], Speeds[(size_t) _Speed]);
+        return std::format(L"Neon Tunnel, {}, {} quality, {} speed", GetThemeName(_ThemeFrom).c_str(), Qualities[(size_t) _Quality], Speeds[(size_t) _Speed]);
     }
 
     /// <summary>
     /// 
     /// </summary>
-    void effect_t::Render(ID2D1RenderTarget * renderTarget, double deltaTime, audio_chunk_impl & chunk) noexcept
+    void effect_t::Render(ID2D1RenderTarget * renderTarget, double deltaTime, audio_chunk & chunk) noexcept
     {
         const HRESULT hr = CreateDeviceDependentResources(renderTarget);
 
         if (FAILED(hr))
             return;
 
-        deltaTime = std::clamp(deltaTime, 0.0, 0.1);
+        deltaTime = Clamp(deltaTime);
 
         AnalyzeAudio(chunk);
 
@@ -77,7 +76,7 @@ namespace NeonTunnel
         RenderScanlines(renderTarget);
     
         // Draw a border around the full window.
-        _FrameBrush->SetColor(GetThemeColor(ThemeRole::Ring, 0.12f, 0.82f, 0.80f, (float) std::clamp(0.16 + (_BeatPulse * 0.20) + (_BassImpulse * 0.18), 0., 1.)));
+        _FrameBrush->SetColor(GetThemeColor(ThemeRole::Ring, 0.12f, 0.82f, 0.80f, (float) Clamp(0.16 + (_BeatPulse * 0.20) + (_BassImpulse * 0.18))));
 
         renderTarget->DrawRectangle(D2D1::RectF(0.5f, 0.5f, _Width - 0.5f, _Height - 0.5f), _FrameBrush.Get(), 1.f);
     }
@@ -85,7 +84,7 @@ namespace NeonTunnel
     /// <summary>
     /// Aanalyzes an audio chunk.
     /// </summary>
-    void effect_t::AnalyzeAudio(const audio_chunk_impl & chunk)
+    void effect_t::AnalyzeAudio(const audio_chunk & chunk)
     {
         _Peak         = 0.;
         _RMS          = 0.;
@@ -104,7 +103,7 @@ namespace NeonTunnel
         constexpr size_t MaximumFrameCount = 2048;
 
         const size_t SampleCount    = chunk.get_sample_count();
-        const size_t ChannelCount   = chunk.get_channels();
+        const size_t ChannelCount   = chunk.get_channel_count();
         const double SampleRate     = (double) chunk.get_sample_rate();
         const audio_sample * Data   = chunk.get_data();
 
@@ -132,7 +131,7 @@ namespace NeonTunnel
             const double Sample = ClampAudio((double) Frame[0]);
 
             // Apply a Hann window.
-            Samples[i] = Sample * (0.5 - (std::cos(WindowScale * (double) i) * 0.5));
+            Samples[i] = Sample * (0.5 - (std::cos((double) i * WindowScale) * 0.5));
 
             Sum += Sample * Sample;
 
@@ -148,16 +147,16 @@ namespace NeonTunnel
             return;
 
         // Perform the frequency analysis using a Goertzel-style frequency detector at selected frequencies.
-        const double NyquistFrequency = SampleRate * 0.5;
-        const double MaximumCenter    = NyquistFrequency * 0.92;
-        const double MaximumProbe     = NyquistFrequency * 0.94;
-        const double InverseFrameCount = 1. / (double) FrameCount;
-        const double MagnitudeScale    = 1. / std::log1p(90.0);
-        const double ProbeOffset       = 1.122462048;
+        const double NyquistFrequency   = SampleRate * 0.5;
+        const double MaximumCenter      = NyquistFrequency * 0.92;
+        const double MaximumProbe       = NyquistFrequency * 0.95;
+        const double InverseFrameCount  = 1. / (double) FrameCount;
+        const double MagnitudeScale     = 1. / std::log1p(90.0);
+        const double ProbeOffset        = 1.122462048;
         const double InverseProbeOffset = 1. / ProbeOffset;
 
         // Calculate the logarithmic step once instead of calculating pow() for every band.
-        const double CenterStep = std::pow(14000.0 / 45.0, 1. / (double) (FrequencyBandCount - 1));
+        const double CenterStep = std::pow(16'500.0 / 40.0, 1. / (double) (FrequencyBandCount - 1)); // 40 Hz to 16.5 kHz
 
         double Center = 45.;
 
@@ -212,7 +211,7 @@ namespace NeonTunnel
             const double Magnitude = std::sqrt(PowerSum / (double) std::size(Probes)) * InverseFrameCount;
 
             // Compress and shape the band magnitude to a value in the [0, 1] range.
-            _Bands[i] = std::clamp(std::log1p(Magnitude * 90.) * MagnitudeScale * Lerp(0.85, 1.45, NormalizedBandIndex), 0., 1.);
+            _Bands[i] = Clamp(std::log1p(Magnitude * 90.) * MagnitudeScale * Lerp(0.85, 1.45, NormalizedBandIndex));
 
             Center *= CenterStep;
         }
@@ -220,9 +219,9 @@ namespace NeonTunnel
         // Bass emphasizes the deepest bass band (48%). 48% + 34% + 18% = 100%
         const double Bass = (_Bands[0] * 0.48) + (_Bands[1] * 0.34) + (_Bands[2] * 0.18);
 
-        _BassEnergy   = std::clamp(1. - std::exp(-Bass * 2.75 * _BassResponse), 0., 1.); // Apply a nonlinear bass response.
-        _MidEnergy    = std::clamp((_Bands[3] + _Bands[4] + _Bands[5]) / 3.,    0., 1.); // Average the middle bands
-        _TrebleEnergy = std::clamp((_Bands[6] + _Bands[7]) * 0.5,               0., 1.); // Average the treble bands.
+        _BassEnergy   = Clamp(1. - std::exp(-Bass * 2.75 * _BassResponse)); // Apply a nonlinear bass response.
+        _MidEnergy    = Clamp((_Bands[3] + _Bands[4] + _Bands[5]) / 3.);    // Average the middle bands
+        _TrebleEnergy = Clamp((_Bands[6] + _Bands[7]) * 0.5);               // Average the treble bands.
     }
 
     /// <summary>
@@ -252,7 +251,7 @@ namespace NeonTunnel
             }
         }();
 
-        _AnimationTime += SpeedFactor * deltaTime;
+        _AnimationTime += deltaTime * SpeedFactor;
 
         // Apply temporal smoothing. Choose a different response rate based on a rising or falling signal.
         {
@@ -288,8 +287,7 @@ namespace NeonTunnel
                 // Map the amount above the threshold into a pulse strength.
                 const auto NormalizedExcess = (_BeatEnvelope - Threshold) / std::max(0.001, 1. - Threshold);
 
-                _BeatPulse = std::clamp((0.55 + (NormalizedExcess * 1.8)) * _BeatResponse, 0., 1.);
-
+                _BeatPulse    = Clamp((0.55 + (NormalizedExcess * 1.8)) * _BeatResponse);
                 _BeatCooldown = 0.115;
             }
             else
@@ -297,7 +295,7 @@ namespace NeonTunnel
         }
 
         // Bass impulse. It combines two different representations of a beat: Attack, immediate frame-to-frame bass acceleration. _BeatPulse, more stable contribution (validated beat-event strength).
-        const double ImpulseTarget = std::clamp((Attack * 8. * _BassResponse) + (_BeatPulse * 0.82 * _BeatResponse), 0., 1.);
+        const double ImpulseTarget = Clamp((Attack * 8. * _BassResponse) + (_BeatPulse * 0.82 * _BeatResponse));
 
         {
             constexpr double AttackResponse  = 48.; // A strong kick should produce a nearly immediate visual impact.
@@ -332,7 +330,7 @@ namespace NeonTunnel
             const auto validatedBeatContribution = _BeatPulse   * 0.30f;
             const auto ImmediateOnsetSensitivity = Attack * 5.5;            // Heavily amplified because the center kick should be mainly onset-driven. Sustained bass should not keep pushing the tunnel continuously.
 
-            const double CenterKickTrigger = std::clamp(TransientComponent + validatedBeatContribution + ImmediateOnsetSensitivity, 0., 1.);
+            const double CenterKickTrigger = Clamp(TransientComponent + validatedBeatContribution + ImmediateOnsetSensitivity);
 
             // Rising-edge detection
             {
@@ -344,7 +342,7 @@ namespace NeonTunnel
                 if (IsCenterKicked)
                 {
                     // Determine a pseudo-random kick direction.
-                    _CenterKickSeed = Hash(_CenterKickSeed ^ (uint32_t)(_TravelDistance * 131071.0f) ^ (uint32_t)(_AnimationTime * 1000.0));
+                    _CenterKickSeed = Hash(_CenterKickSeed ^ (uint32_t)(_TravelDistance * 131071.0f) ^ (uint32_t)(_AnimationTime * 1'000.0));
 
                     const double Direction = Random(_CenterKickSeed) * TwoPi;
 
@@ -409,7 +407,7 @@ namespace NeonTunnel
 
             {
                 // Rotation reversal is mainly caused by a strong transient, not ordinary continuous bass.
-                const double Trigger = std::clamp((_BassImpulse * 0.72) + (_BeatPulse * 0.20) + (_SmoothedBass * 0.18), 0., 1.);
+                const double Trigger = Clamp((_BassImpulse * 0.72) + (_BeatPulse * 0.20) + (_SmoothedBass * 0.18));
 
                 if (Trigger >= RotationSwitchThreshold && _PreviousRotationTrigger < RotationSwitchThreshold && _RotationSwitchCooldown <= 0.)
                 {
@@ -427,7 +425,7 @@ namespace NeonTunnel
         // Camera shake.
         {
             // Main component is _BassImpulse, so shake is most sensitive to sharp bass hits. _BeatPulse adds event-level impact. _SmoothedBass adds only a small continuous vibration.
-            const double CameraShake = std::clamp((_BassImpulse * 0.72) + (_BeatPulse * 0.48) + (_SmoothedBass * 0.10), 0., 1.);
+            const double CameraShake = Clamp((_BassImpulse * 0.72) + (_BeatPulse * 0.48) + (_SmoothedBass * 0.10));
 
             constexpr double AttackResponse  = 34.; // Camera shake rises rapidly.
             constexpr double ReleaseResponse =  8.; // Camera shake fades more slowly:
@@ -439,12 +437,12 @@ namespace NeonTunnel
         {
             constexpr double ConstantSpeed = 0.080;
 
-            const double OverallLoudness   = _SmoothedRMS  * 0.38;              // Louder music produces generally faster travel. RMS modifies speed continuously rather than creating sharp bursts.
-            const double SustainedBass     = _SmoothedBass * 0.62;              // Bass-heavy passages push the camera forward more strongly.
-            const double BeatEvent         = _BeatPulse * 0.80 * _BeatResponse; // A detected beat creates a brief speed burst.
-            const double BassTransient     = _BassResponse * 0.95;              // Largest coefficient. A sharp kick creates the strongest forward acceleration.
+            const double OverallLoudness   = _SmoothedRMS  * 0.38;                 // Louder music produces generally faster travel. RMS modifies speed continuously rather than creating sharp bursts.
+            const double SustainedBass     = _SmoothedBass * 0.62;                 // Bass-heavy passages push the camera forward more strongly.
+            const double BeatEvent         = _BeatPulse    * 0.80 * _BeatResponse; // A detected beat creates a brief speed burst.
+            const double BassTransient     = _BassResponse * 0.95;                 // Largest coefficient. A sharp kick creates the strongest forward acceleration.
 
-            const double Forward = (ConstantSpeed + OverallLoudness + SustainedBass * _BassResponse + BeatEvent + _BassImpulse * BassTransient) * SpeedFactor;
+            const double Forward = (ConstantSpeed + OverallLoudness + (SustainedBass * _BassResponse) + BeatEvent + (_BassImpulse * BassTransient)) * SpeedFactor;
 
             _TravelDistance += Forward * deltaTime;
         }
@@ -457,7 +455,7 @@ namespace NeonTunnel
             const double TrebleContribution = _SmoothedTreble * 0.08; // Treble has a smaller effect, adding activity without causing excessive spinning.
             const double BassContribution   = _BassTwist      * 0.20; // Bass contributes through the specially shaped twist envelope rather than directly through raw bass energy. That gives it a punchy attack and slower rotational release.
 
-            _TunnelRotation += (ConstantSpeed + MidContribution + TrebleContribution + BassContribution) * (_RotationDirection * SpeedFactor * deltaTime);
+            _TunnelRotation += (ConstantSpeed + MidContribution + TrebleContribution + BassContribution) * (_RotationDirection * deltaTime * SpeedFactor);
 
             _TunnelRotation = std::remainder(_TunnelRotation, TwoPi); // Angle wrapping
         }
@@ -553,7 +551,7 @@ namespace NeonTunnel
     {
         renderTarget->Clear(D2D1::ColorF(0.001f, 0.001f, 0.006f, 1.0f));
 
-        const auto Opacity = (float) std::clamp(0.76 + (_SmoothedRMS * 0.20) + (_SmoothedBass * 0.13), 0., 1.);
+        const auto Opacity = (float) Clamp(0.76 + (_SmoothedRMS * 0.20) + (_SmoothedBass * 0.13));
 
         _BackgroundBrush->SetStartPoint(D2D1::Point2F(0, 0));
         _BackgroundBrush->SetEndPoint  (D2D1::Point2F(_Width, _Height));
@@ -586,7 +584,7 @@ namespace NeonTunnel
         for (const size_t index : order)
             ProjectedRings.push_back(_ProjectedRings[index]);
 
-        const auto Pulse = std::clamp(_BeatPulse, 0., 1.);
+        const auto Pulse = Clamp(_BeatPulse);
 
         // Draw every ring independently. A continuous alpha curve replaces the former three depth buckets, eliminating the visible brightness boundary halfway through the tunnel.
         // The exponent below brightens the far and middle sections earlier while preserving a transparent vanishing point.
@@ -595,32 +593,32 @@ namespace NeonTunnel
             if (!pr.Visible || pr.SideCount < 3)
                 continue;
 
-            const double depth = std::clamp(pr.Depth, 0., 1.);
+            const double Depth = Clamp(pr.Depth);
 
-            const float linearFade = SmoothStep(0.f, 1.f, (float) depth);
+            const float LinearFade = SmoothStep(0.f, 1.f, (float) Depth);
 
             // Start at fully transparent alpha and use a sub-linear curve to reveal geometry gently but early. Applying SmoothStep a second time removes visible acceleration near both ends.
-            const float earlyFade = std::pow(linearFade, 0.46f);
-            const float lightFade = SmoothStep(0.f, 1.f, earlyFade);
+            const float EarlyFade = std::pow(LinearFade, 0.46f);
+            const float LightFade = SmoothStep(0.f, 1.f, EarlyFade);
 
-            const float outerOpacity = std::clamp(lightFade * 0.18f + (float) Pulse * lightFade * 0.030f, 0.0f, 0.22f);
-            const float coreOpacity  = std::clamp(lightFade * 0.80f + (float) Pulse * lightFade * 0.085f, 0.0f, 0.90f);
+            const float OuterOpacity = std::clamp(LightFade * 0.18f + (float) Pulse * LightFade * 0.030f, 0.0f, 0.22f);
+            const float CoreOpacity  = std::clamp(LightFade * 0.80f + (float) Pulse * LightFade * 0.085f, 0.0f, 0.90f);
 
-            const float outerWidth   = 1.25f + lightFade * 4.10f + (float) _BassExpansion * lightFade * 0.80f;
-            const float coreWidth    = 0.55f + lightFade * 0.92f + (float) Pulse          * lightFade * 0.18f;
+            const float OuterWidth   = 1.25f + LightFade * 4.10f + (float) _BassExpansion * LightFade * 0.80f;
+            const float CoreWidth    = 0.55f + LightFade * 0.92f + (float) Pulse          * LightFade * 0.18f;
 
-            const color_theme_t & ringThemeFrom = GetTheme(pr.ThemeFrom);
-            const color_theme_t & ringThemeTo   = GetTheme(pr.ThemeTo);
+            const color_theme_t & RingThemeFrom = GetTheme(pr.ThemeFrom);
+            const color_theme_t & RingThemeTo   = GetTheme(pr.ThemeTo);
 
-            const D2D1_COLOR_F ringColorFrom = GetThemeColor(ringThemeFrom, ringThemeFrom.RingHue, 0.0f, 0.90f, 1.0f, 1.0f);
-            const D2D1_COLOR_F ringColorTo   = GetThemeColor(ringThemeTo, ringThemeTo.RingHue, 0.0f, 0.90f, 1.0f, 1.0f);
-            const D2D1_COLOR_F TunnelColor   = LerpColor(ringColorFrom, ringColorTo, (float) pr.ThemeBlend);
+            const D2D1_COLOR_F RingColorFrom = GetThemeColor(RingThemeFrom, RingThemeFrom.RingHue, 0.0f, 0.90f, 1.0f, 1.0f);
+            const D2D1_COLOR_F RingColorTo   = GetThemeColor(RingThemeTo,   RingThemeTo  .RingHue, 0.0f, 0.90f, 1.0f, 1.0f);
+            const D2D1_COLOR_F TunnelColor   = LerpColor(RingColorFrom, RingColorTo, (float) pr.ThemeBlend);
 
             D2D1_COLOR_F outerColor = TunnelColor;
-            outerColor.a *= outerOpacity;
+            outerColor.a *= OuterOpacity;
 
             D2D1_COLOR_F coreColor = TunnelColor;
-            coreColor.a *= coreOpacity;
+            coreColor.a *= CoreOpacity;
 
             for (size_t side = 0; side < pr.SideCount; ++side)
             {
@@ -630,11 +628,11 @@ namespace NeonTunnel
 
                 _RingBrush->SetColor(outerColor);
 
-                renderTarget->DrawLine(from, to, _RingBrush.Get(), outerWidth, _RoundStrokeStyle.Get());
+                renderTarget->DrawLine(from, to, _RingBrush.Get(), OuterWidth, _RoundStrokeStyle.Get());
 
                 _RingBrush->SetColor(coreColor);
 
-                renderTarget->DrawLine(from, to, _RingBrush.Get(), coreWidth, _RoundStrokeStyle.Get());
+                renderTarget->DrawLine(from, to, _RingBrush.Get(), CoreWidth, _RoundStrokeStyle.Get());
             }
         }
 
@@ -642,69 +640,71 @@ namespace NeonTunnel
         // Alpha starts close to transparent at the center and grows without a layer boundary. The sub-linear fade exponent prevents the middle of the tunnel from remaining excessively dark.
         if (ProjectedRings.size() >= 2)
         {
-            const size_t sideCount = ProjectedRings.front().SideCount;
+            const size_t SideCount = ProjectedRings.front().SideCount;
 
-            for (size_t side = 0; side < sideCount; ++side)
+            for (size_t i = 0; i < SideCount; ++i)
             {
-                for (size_t index = 1; index < ProjectedRings.size(); ++index)
+                for (size_t j = 1; j < ProjectedRings.size(); ++j)
                 {
-                    const projected_ring_t & fromRing = ProjectedRings[index - 1];
-                    const projected_ring_t & toRing = ProjectedRings[index];
+                    const projected_ring_t & FromRing = ProjectedRings[j - 1];
+                    const projected_ring_t & ToRing   = ProjectedRings[j];
 
-                    if (!fromRing.Visible || !toRing.Visible || side >= fromRing.SideCount || side >= toRing.SideCount)
+                    if (!FromRing.Visible || !ToRing.Visible || i >= FromRing.SideCount || i >= ToRing.SideCount)
                         continue;
 
-                    const double depth = (float) std::clamp(0.5 * (fromRing.Depth + toRing.Depth), 0., 1.);
+                    const double Depth = (float) Clamp(0.5 * (FromRing.Depth + ToRing.Depth));
 
-                    const float linearFade = SmoothStep(0.0f, 1.0f, (float) depth);
-                    const float earlyFade = std::pow(linearFade, 0.46f);
-                    const float lightFade = SmoothStep(0.0f, 1.0f, earlyFade);
+                    const float LinearFade = SmoothStep(0.0f, 1.0f, (float) Depth);
+                    const float EarlyFade  = std::pow(LinearFade, 0.46f);
+                    const float LightFade  = SmoothStep(0.0f, 1.0f, EarlyFade);
 
-                    const float outerOpacity = std::clamp(lightFade * 0.13f + (float) Pulse * lightFade * 0.018f, 0.0f, 0.17f);
-                    const float coreOpacity  = std::clamp(lightFade * 0.61f + (float) Pulse * lightFade * 0.060f, 0.0f, 0.70f);
+                    const float OuterOpacity = std::clamp(LightFade * 0.13f + (float) Pulse * LightFade * 0.018f, 0.0f, 0.17f);
+                    const float CoreOpacity  = std::clamp(LightFade * 0.61f + (float) Pulse * LightFade * 0.060f, 0.0f, 0.70f);
 
-                    const float outerWidth   = 0.90f + lightFade * 3.25f + (float) _BassExpansion * lightFade * 0.65f;
-                    const float coreWidth    = 0.38f + lightFade * 1.15f + (float) Pulse          * lightFade * 0.24f;
+                    const float OuterWidth   = 0.90f + LightFade * 3.25f + (float) _BassExpansion * LightFade * 0.65f;
+                    const float CoreWidth    = 0.38f + LightFade * 1.15f + (float) Pulse          * LightFade * 0.24f;
 
                     // Resolve both endpoint snapshots and average them for the rail segment. This removes visible color steps at ring boundaries while preserving each ring's captured theme state.
-                    const color_theme_t & fromThemeA = GetTheme(fromRing.ThemeFrom);
-                    const color_theme_t & fromThemeB = GetTheme(fromRing.ThemeTo);
+                    const color_theme_t & FromThemeA = GetTheme(FromRing.ThemeFrom);
+                    const color_theme_t & FromThemeB = GetTheme(FromRing.ThemeTo);
 
                     const D2D1_COLOR_F fromColor = LerpColor
                     (
-                        GetThemeColor(fromThemeA, fromThemeA.RingHue, 0.0f, 0.90f, 1.0f, 1.0f),
-                        GetThemeColor(fromThemeB, fromThemeB.RingHue, 0.0f, 0.90f, 1.0f, 1.0f),
-                        (float) fromRing.ThemeBlend
+                        GetThemeColor(FromThemeA, FromThemeA.RingHue, 0.0f, 0.90f, 1.0f, 1.0f),
+                        GetThemeColor(FromThemeB, FromThemeB.RingHue, 0.0f, 0.90f, 1.0f, 1.0f),
+                        (float) FromRing.ThemeBlend
                     );
 
-                    const color_theme_t & toThemeA = GetTheme(toRing.ThemeFrom);
-                    const color_theme_t & toThemeB = GetTheme(toRing.ThemeTo);
+                    const color_theme_t & ToThemeA = GetTheme(ToRing.ThemeFrom);
+                    const color_theme_t & ToThemeB = GetTheme(ToRing.ThemeTo);
 
-                    const D2D1_COLOR_F toColor = LerpColor
+                    const D2D1_COLOR_F ToColor = LerpColor
                     (
-                        GetThemeColor(toThemeA, toThemeA.RingHue, 0.0f, 0.90f, 1.0f, 1.0f),
-                        GetThemeColor(toThemeB, toThemeB.RingHue, 0.0f, 0.90f, 1.0f, 1.0f),
-                        (float) toRing.ThemeBlend
+                        GetThemeColor(ToThemeA, ToThemeA.RingHue, 0.0f, 0.90f, 1.0f, 1.0f),
+                        GetThemeColor(ToThemeB, ToThemeB.RingHue, 0.0f, 0.90f, 1.0f, 1.0f),
+                        (float) ToRing.ThemeBlend
                     );
 
-                    const D2D1_COLOR_F tunnelColor = LerpColor(fromColor, toColor, 0.5f);
+                    const D2D1_COLOR_F TunnelColor = LerpColor(fromColor, ToColor, 0.5f);
 
-                    D2D1_COLOR_F outerColor = tunnelColor;
-                    outerColor.a *= outerOpacity;
+                    D2D1_COLOR_F OuterColor = TunnelColor;
 
-                    D2D1_COLOR_F coreColor = tunnelColor;
-                    coreColor.a *= coreOpacity;
+                    OuterColor.a *= OuterOpacity;
 
-                    const D2D1_POINT_2F & from = fromRing.Points[side];
-                    const D2D1_POINT_2F & to = toRing.Points[side];
+                    D2D1_COLOR_F CoreColor = TunnelColor;
 
-                    _RailBrush->SetColor(outerColor);
+                    CoreColor.a *= CoreOpacity;
 
-                    renderTarget->DrawLine(from, to, _RailBrush.Get(), outerWidth, _RoundStrokeStyle.Get());
+                    const D2D1_POINT_2F & From = FromRing.Points[i];
+                    const D2D1_POINT_2F & To   = ToRing.Points[i];
 
-                    _RailBrush->SetColor(coreColor);
+                    _RailBrush->SetColor(OuterColor);
 
-                    renderTarget->DrawLine(from, to, _RailBrush.Get(), coreWidth, _RoundStrokeStyle.Get());
+                    renderTarget->DrawLine(From, To, _RailBrush.Get(), OuterWidth, _RoundStrokeStyle.Get());
+
+                    _RailBrush->SetColor(CoreColor);
+
+                    renderTarget->DrawLine(From, To, _RailBrush.Get(), CoreWidth, _RoundStrokeStyle.Get());
                 }
             }
         }
@@ -719,7 +719,7 @@ namespace NeonTunnel
 
         const float Dimension = std::min(_Width, _Height);
 
-        const double AudioAmount = std::clamp((_SmoothedBass * 0.58) + (_BassImpulse * 0.72) + (_BeatPulse * 0.16), 0., 1.);
+        const double AudioAmount = Clamp((_SmoothedBass * 0.58) + (_BassImpulse * 0.72) + (_BeatPulse * 0.16));
 
         // Keep the center glow broad and restrained. The gradient itself supplies the radial falloff; low brush opacity prevents a bright disc from filling the vanishing point.
         const auto OuterRadius = Dimension * (0.072f + (float) AudioAmount * 0.045f);
@@ -753,13 +753,13 @@ namespace NeonTunnel
     /// </summary>
     void effect_t::RenderBeatFlash(ID2D1RenderTarget * renderTarget) noexcept
     {
-        const auto Amount = (float) std::clamp(_BeatPulse + _BassImpulse, 0., 1.);
+        const auto Amount = (float) Clamp(_BeatPulse + _BassImpulse);
 
         if (Amount <= 0.003f)
                 return;
 
         const auto Center  = ProjectPoint(0., FarPlane, 0.);
-        const float Radius = std::min(_Width, _Height) * (0.055f + Amount * 0.22f);
+        const float Radius = std::min(_Width, _Height) * (0.055f + (Amount * 0.22f));
 
         _FlashBrush->SetCenter(Center);
         _FlashBrush->SetRadiusX(Radius); _FlashBrush->SetRadiusY(Radius);
@@ -775,22 +775,22 @@ namespace NeonTunnel
     {
         projected_ring_t r {};
 
-        r.SideCount   = (size_t)((_Quality == EyeCandy::Quality::Low) ? 8 : (_Quality == EyeCandy::Quality::High) ? MaximumTunnelSides : 10);
+        r.SideCount   = (size_t) ((_Quality == EyeCandy::Quality::Low) ? 8 : (_Quality == EyeCandy::Quality::High) ? MaximumTunnelSides : 10);
         r.SourceIndex = index;
         r.ThemeFrom   = ring.ThemeFrom;
         r.ThemeTo     = ring.ThemeTo;
         r.ThemeBlend  = ring.ThemeBlend;
-        r.Depth       = std::clamp(1. - (ring.Z - NearPlane) / TunnelDepth, 0., 1.);
+        r.Depth       = Clamp(1. - (ring.Z - NearPlane) / TunnelDepth);
 
         const double Near       = SmoothStep(0.25f, 1.0f, (float) r.Depth);
-        const double pulse      = (float) (1.0f + (_BassExpansion * 0.10f) + (_BassImpulse * Near * 0.11f) + (_BeatPulse * Near * 0.055f) + (_SmoothedBands[index % FrequencyBandCount] * 0.018f));
-        const double depthTwist = (float) (r.Depth * MaximumDepthTwist * _RotationDirection);
-        const double wave       = (float) (std::sin(ring.Z * 5.5f - (float) _AnimationTime * (0.42f + _BassTwist * 0.28f) * (float) _RotationDirection));
+        const double Pulse      = (float) (1.0f + (_BassExpansion * 0.10f) + (_BassImpulse * Near * 0.11f) + (_BeatPulse * Near * 0.055f) + (_SmoothedBands[index % FrequencyBandCount] * 0.018f));
+        const double DepthTwist = (float) (r.Depth * MaximumDepthTwist * _RotationDirection);
+        const double Wave       = (float) (std::sin(ring.Z * 5.5f - (float) _AnimationTime * (0.42f + _BassTwist * 0.28f) * (float) _RotationDirection));
 
-        const double Twist = (float) (_TunnelRotation + _CenterRotationSway + depthTwist + wave * MaximumBassTwist * std::clamp(_BassTwist, 0., 1.));
+        const double Twist = (float) (_TunnelRotation + _CenterRotationSway + DepthTwist + Wave * MaximumBassTwist * Clamp(_BassTwist));
 
         for (size_t i = 0; i < r.SideCount; ++i)
-            r.Points[i] = ProjectPoint(((double) i / (double) r.SideCount * TwoPi + Twist), ring.Z, ring.RadiusScale * pulse);
+            r.Points[i] = ProjectPoint(((double) i / (double) r.SideCount * TwoPi + Twist), ring.Z, ring.RadiusScale * Pulse);
 
         r.Brightness = ring.Brightness * Lerp(0.28f, 1.0f, SmoothStep(0.05f, 0.92f, (float) r.Depth));
         r.Visible    = true;
@@ -806,59 +806,59 @@ namespace NeonTunnel
         z = std::clamp(z, NearPlane, FarPlane);
 
         const double Scale = std::min(_Width, _Height);
-        const double Depth = std::clamp(1. - (z - NearPlane) / TunnelDepth, 0., 1.);
+        const double Depth = Clamp(1. - (z - NearPlane) / TunnelDepth);
 
-        const double nearWeight = SmoothStep(0.0f, 1.0f, (float) Depth);
-        const double curveWeight = nearWeight * nearWeight;
-        const double pathTime = _AnimationTime * 0.20f + _TravelDistance * 0.72f;
+        const double NearWeight  = SmoothStep(0.0f, 1.0f, (float) Depth);
+        const double CurveWeight = NearWeight * NearWeight;
+        const double PathTime    = _AnimationTime * 0.20f + _TravelDistance * 0.72f;
 
-        const double bassDrive = std::clamp(_SmoothedBass * 0.72 + _BassImpulse * 0.78 + _BeatPulse * 0.22, 0., 1.55);
-        const double midDrive  = std::clamp(_SmoothedMid  * 0.82 + _SmoothedTreble * 0.14, 0., 1.); 
+        const double BassDrive = std::clamp(_SmoothedBass * 0.72 + _BassImpulse * 0.78 + _BeatPulse * 0.22, 0., 1.55);
+        const double MidDrive  = Clamp(_SmoothedMid  * 0.82 + _SmoothedTreble * 0.14); 
 
         // Phase-modulated, incommensurate sinusoidal components create an organic path that continuously changes shape without jumps or a visibly repeating circular orbit.
-        const double slowPhase = pathTime * 0.31f + std::sin(pathTime * 0.071f + 1.40f) * 0.55f;
-        const double mediumPhase = pathTime * 0.83f + std::sin(pathTime * 0.137f + 3.10f) * 0.42f;
-        const double fastPhase = pathTime * 1.43f + std::sin(pathTime * 0.223f + 5.00f) * 0.24f;
+        const double SlowPhase   = PathTime * 0.31f + std::sin(PathTime * 0.071f + 1.40f) * 0.55f;
+        const double MediumPhase = PathTime * 0.83f + std::sin(PathTime * 0.137f + 3.10f) * 0.42f;
+        const double FastPhase   = PathTime * 1.43f + std::sin(PathTime * 0.223f + 5.00f) * 0.24f;
 
-        const double swayX = std::sin(mediumPhase + 0.35f)         * 0.48f + std::sin(fastPhase + 2.10f)         * 0.24f + std::sin(slowPhase + 4.20f)         * 0.20f + std::sin(mediumPhase * 0.53f + fastPhase * 0.17f) * 0.08f;
-        const double swayY = std::cos(mediumPhase * 0.91f + 1.05f) * 0.45f + std::sin(fastPhase * 0.87f + 3.35f) * 0.25f + std::cos(slowPhase * 1.11f + 5.10f) * 0.21f + std::cos(mediumPhase * 0.29f - fastPhase * 0.23f) * 0.09f;
+        const double SwayX = std::sin(MediumPhase + 0.35f)         * 0.48f + std::sin(FastPhase + 2.10f)         * 0.24f + std::sin(SlowPhase + 4.20f)         * 0.20f + std::sin(MediumPhase * 0.53f + FastPhase * 0.17f) * 0.08f;
+        const double SwayY = std::cos(MediumPhase * 0.91f + 1.05f) * 0.45f + std::sin(FastPhase * 0.87f + 3.35f) * 0.25f + std::cos(SlowPhase * 1.11f + 5.10f) * 0.21f + std::cos(MediumPhase * 0.29f - FastPhase * 0.23f) * 0.09f;
 
-        const double globalAmplitude = Scale * (0.052f + bassDrive * 0.052f + midDrive * 0.017f);
+        const double GlobalAmplitude = Scale * (0.052f + BassDrive * 0.052f + MidDrive * 0.017f);
 
-        const double kickScale = Scale * 0.155f;
+        const double KickScale = Scale * 0.155f;
 
-        const double globalOffsetX = swayX * globalAmplitude + _CenterKickX * kickScale;
-        const double globalOffsetY = swayY * globalAmplitude + _CenterKickY * kickScale;
+        const double GlobalOffsetX = SwayX * GlobalAmplitude + _CenterKickX * KickScale;
+        const double GlobalOffsetY = SwayY * GlobalAmplitude + _CenterKickY * KickScale;
 
-        const double primaryPhase   = mediumPhase *  0.91f + z * (3.05f + bassDrive * 1.35f) + _BassTwist * 0.35f * _RotationDirection;
-        const double secondaryPhase = fastPhase   * -0.47f + z * (5.45f + midDrive  * 1.65f) + 1.21f;
+        const double PrimaryPhase   = MediumPhase *  0.91f + z * (3.05f + BassDrive * 1.35f) + _BassTwist * 0.35f * _RotationDirection;
+        const double SecondaryPhase = FastPhase   * -0.47f + z * (5.45f + MidDrive  * 1.65f) + 1.21f;
 
-        const double windingX = Scale * (0.010f + bassDrive * 0.045f + midDrive * 0.014f);
-        const double windingY = Scale * (0.009f + bassDrive * 0.039f + midDrive * 0.016f);
+        const double WindingX = Scale * (0.010f + BassDrive * 0.045f + MidDrive * 0.014f);
+        const double WindingY = Scale * (0.009f + BassDrive * 0.039f + MidDrive * 0.016f);
 
-        const double trebleRipple = Scale * _SmoothedTreble * 0.0045f * curveWeight;
+        const double TrebleRipple = Scale * _SmoothedTreble * 0.0045f * CurveWeight;
 
-        const double desiredOffsetX = globalOffsetX + std::sin(primaryPhase)                 * windingX * curveWeight + std::sin(secondaryPhase)         * Scale * midDrive * 0.020f * curveWeight + std::sin(fastPhase + z * 9.0f)         * trebleRipple;
-        const double desiredOffsetY = globalOffsetY + std::cos(primaryPhase * 0.91f + 0.31f) * windingY * curveWeight + std::cos(secondaryPhase * 1.06f) * Scale * midDrive * 0.018f * curveWeight + std::cos(fastPhase * 0.89f + z * 8.2f) * trebleRipple;
+        const double DesiredOffsetX = GlobalOffsetX + std::sin(PrimaryPhase)                 * WindingX * CurveWeight + std::sin(SecondaryPhase)         * Scale * MidDrive * 0.020f * CurveWeight + std::sin(FastPhase + z * 9.0f)         * TrebleRipple;
+        const double DesiredOffsetY = GlobalOffsetY + std::cos(PrimaryPhase * 0.91f + 0.31f) * WindingY * CurveWeight + std::cos(SecondaryPhase * 1.06f) * Scale * MidDrive * 0.018f * CurveWeight + std::cos(FastPhase * 0.89f + z * 8.2f) * TrebleRipple;
 
         // Soft-limit the center before it reaches the viewport edges. Tanh preserves small movement almost linearly and progressively compresses only large excursions, avoiding a hard bounce.
-        const double edgeMargin = Scale * 0.17f;
+        const double EdgeMargin = Scale * 0.17f;
 
-        const double limitX = std::max(Scale * 0.10f, _CenterX - edgeMargin);
-        const double limitY = std::max(Scale * 0.10f, _CenterY- edgeMargin);
+        const double LimitX = std::max(Scale * 0.10f, _CenterX - EdgeMargin);
+        const double LimitY = std::max(Scale * 0.10f, _CenterY- EdgeMargin);
 
-        const double limitedOffsetX = limitX * std::tanh(desiredOffsetX / limitX);
-        const double limitedOffsetY = limitY * std::tanh(desiredOffsetY / limitY);
+        const double LimitedOffsetX = LimitX * std::tanh(DesiredOffsetX / LimitX);
+        const double LimitedOffsetY = LimitY * std::tanh(DesiredOffsetY / LimitY);
 
-        const double CenterX = _CenterX  + limitedOffsetX;
-        const double CenterY = _CenterY + limitedOffsetY;
+        const double CenterX = _CenterX  + LimitedOffsetX;
+        const double CenterY = _CenterY + LimitedOffsetY;
 
-        const double projectedRadius = Scale * 0.158f * radiusScale / z;
+        const double ProjectedRadius = Scale * 0.158f * radiusScale / z;
 
         return
         {
-            (float) (CenterX + std::cos((double) angle) * projectedRadius),
-            (float) (CenterY + std::sin((double) angle) * projectedRadius)
+            (float) (CenterX + std::cos((double) angle) * ProjectedRadius),
+            (float) (CenterY + std::sin((double) angle) * ProjectedRadius)
         };
     }
 

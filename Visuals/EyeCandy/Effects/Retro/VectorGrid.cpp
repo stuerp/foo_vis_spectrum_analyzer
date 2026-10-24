@@ -53,7 +53,7 @@ namespace VectorGrid
     /// <summary>
     /// 
     /// </summary>
-    void effect_t::Render(ID2D1RenderTarget * renderTarget, double deltaTime, audio_chunk_impl & chunk) noexcept
+    void effect_t::Render(ID2D1RenderTarget * renderTarget, double deltaTime, audio_chunk & chunk) noexcept
     {
         HRESULT hr = CreateDeviceDependentResources(renderTarget);
 
@@ -139,7 +139,7 @@ namespace VectorGrid
     /// <summary>
     /// 
     /// </summary>
-    void effect_t::AnalyzeAudio(const audio_chunk_impl & chunk)
+    void effect_t::AnalyzeAudio(const audio_chunk & chunk)
     {
         _Peak         = 0.;
         _RMS          = 0.;
@@ -156,78 +156,86 @@ namespace VectorGrid
             return;
 
         const size_t SampleCount  = chunk.get_sample_count();
-        const size_t ChannelCount = chunk.get_channels();
+        const size_t ChannelCount = chunk.get_channel_count();
         const double SampleRate   = (double) chunk.get_sample_rate();
-        const audio_sample * Data = chunk.get_data();
         const size_t FrameCount   = std::min(SampleCount, MaximumFrameCount);
+
+        const audio_sample * Data = chunk.get_data();
 
         if (!Data || ChannelCount == 0 || FrameCount < 32 || SampleRate <= 0.)
             return;
 
         const size_t FirstFrame = SampleCount - FrameCount;
-        std::array<double, MaximumFrameCount> samples {};
-        double sum = 0.;
-        double peak = 0.;
+
+        std::array<double, MaximumFrameCount> Samples {};
+
+        double Sum  = 0.;
+        double Peak = 0.;
 
         for (size_t i = 0; i < FrameCount; ++i)
         {
-            const audio_sample * frame = Data + (FirstFrame + i) * ChannelCount;
-            double mono = 0.;
+            const audio_sample * Frame = Data + (FirstFrame + i) * ChannelCount;
 
-            for (size_t channel = 0; channel < ChannelCount; ++channel)
-                mono += (double)frame[channel];
+            double Mono = 0.;
 
-            mono = ClampAudio(mono / (double)ChannelCount);
+            for (size_t Channel = 0; Channel < ChannelCount; ++Channel)
+                Mono += (double) Frame[Channel];
 
-            const double window = 0.5 - 0.5 * std::cos(TwoPi * (double)i / (double)(FrameCount - 1));
+            Mono = ClampAudio(Mono / (double)ChannelCount);
 
-            samples[i] = mono * window;
-            sum += mono * mono;
-            peak = std::max(peak, std::abs(mono));
+            // Apply a Hann window.
+            {
+                const double Window = 0.5 - (std::cos(TwoPi * (double) i / (double) (FrameCount - 1)) * 0.5);
+
+                Samples[i] = Mono * Window;
+            }
+
+            Sum += Mono * Mono;
+            Peak = std::max(Peak, std::abs(Mono));
         }
 
-        _Peak = peak;
-        _RMS  = std::sqrt(sum / (double)FrameCount);
+        _Peak = Peak;
+        _RMS  = std::sqrt(Sum / (double) FrameCount);
 
         _HasAudio = (_Peak > 1e-5) || (_RMS > 1e-6);
 
         if (!_HasAudio)
             return;
 
-        const double maximumProbe = SampleRate * 0.47;
-        const double centerStep = std::pow(14000. / 45., 1. / (double)(FrequencyBandCount - 1));
+        const double Nyquist    = SampleRate * 0.50;
+        const double CenterStep = std::pow(16'500. / 40., 1. / (double)(FrequencyBandCount - 1)); // 40 Hz to 16.5 kHz
 
-        double Center = 45.;
+        double Center = 40.; // Hz
 
-        for (size_t band = 0; band < FrequencyBandCount; ++band)
+        for (size_t i = 0; i < FrequencyBandCount; ++i)
         {
-            const double frequency   = std::clamp(Center, 20., maximumProbe);
-            const double coefficient = 2. * std::cos(TwoPi * frequency / SampleRate);
+            const double Frequency   = std::clamp(Center, 20., Nyquist);
+            const double Coefficient = 2. * std::cos(TwoPi * Frequency / SampleRate);
 
             double q1 = 0.;
             double q2 = 0.;
 
-            for (size_t i = 0; i < FrameCount; ++i)
+            for (size_t j = 0; j < FrameCount; ++j)
             {
-                const double q0 = samples[i] + coefficient * q1 - q2;
+                const double q0 = Samples[j] + Coefficient * q1 - q2;
                 q2 = q1;
                 q1 = q0;
             }
 
-            const double power = std::max(0., q1 * q1 + q2 * q2 - coefficient * q1 * q2);
-            const double magnitude = std::sqrt(power) / (double)FrameCount;
+            const double Power     = std::max(0., q1 * q1 + q2 * q2 - Coefficient * q1 * q2);
+            const double Magnitude = std::sqrt(Power) / (double) FrameCount;
 
-            _Bands[band] = Clamp(std::log1p(magnitude * 110.) / std::log1p(110.));
+            _Bands[i] = Clamp(std::log1p(Magnitude * 110.) / std::log1p(110.));
 
-            Center *= centerStep;
+            Center *= CenterStep;
         }
 
-        const double Bass = _Bands[0] * 0.50 + _Bands[1] * 0.32 + _Bands[2] * 0.18;
+        const double Bass   = (_Bands[0] * 0.50) + (_Bands[1] * 0.32) + (_Bands[2] * 0.18);
 
         _BassEnergy = Clamp(1. - std::exp(-Bass * 2.9 * _BassResponse));
 
-        const double Mid    = _Bands[3] * 0.25 + _Bands[4] * 0.42 + _Bands[5] * 0.33;
-        const double Treble = _Bands[6] * 0.46 + _Bands[7] * 0.54;
+        const double Mid    = (_Bands[3] * 0.25) + (_Bands[4] * 0.42) + (_Bands[5] * 0.33);
+        const double Treble = (_Bands[6] * 0.46) + (_Bands[7] * 0.54);
 
         _MidEnergy    = Clamp(1. - std::exp(-Mid    * 2.35 * _MidResponse));
         _TrebleEnergy = Clamp(1. - std::exp(-Treble * 2.55 * _TrebleResponse));
@@ -247,11 +255,12 @@ namespace VectorGrid
 
         _AnimationTime += deltaTime * Speed;
 
-        _SmoothedPeak   = ExponentialSmoothing(_SmoothedPeak,   _Peak,         deltaTime, _Peak        > _SmoothedPeak    ? 24. : 5.);
-        _SmoothedRMS    = ExponentialSmoothing(_SmoothedRMS,    _RMS,          deltaTime, _RMS          > _SmoothedRMS    ? 18. : 4.);
-        _SmoothedBass   = ExponentialSmoothing(_SmoothedBass,   _BassEnergy,   deltaTime, _BassEnergy   > _SmoothedBass   ? 34. : 4.5);
-        _SmoothedMid    = ExponentialSmoothing(_SmoothedMid,    _MidEnergy,    deltaTime, _MidEnergy    > _SmoothedMid    ? 20. : 5.);
-        _SmoothedTreble = ExponentialSmoothing(_SmoothedTreble, _TrebleEnergy, deltaTime, _TrebleEnergy > _SmoothedTreble ? 18. : 6.);
+        _SmoothedPeak   = ExponentialSmoothing(_SmoothedPeak,   _Peak,         deltaTime, (_Peak         > _SmoothedPeak)   ? 24. : 5.);
+        _SmoothedRMS    = ExponentialSmoothing(_SmoothedRMS,    _RMS,          deltaTime, (_RMS          > _SmoothedRMS)    ? 18. : 4.);
+
+        _SmoothedBass   = ExponentialSmoothing(_SmoothedBass,   _BassEnergy,   deltaTime, (_BassEnergy   > _SmoothedBass)   ? 34. : 4.5);
+        _SmoothedMid    = ExponentialSmoothing(_SmoothedMid,    _MidEnergy,    deltaTime, (_MidEnergy    > _SmoothedMid)    ? 20. : 5.);
+        _SmoothedTreble = ExponentialSmoothing(_SmoothedTreble, _TrebleEnergy, deltaTime, (_TrebleEnergy > _SmoothedTreble) ? 18. : 6.);
 
         for (size_t i = 0; i < FrequencyBandCount; ++i)
             _SmoothedBands[i] = ExponentialSmoothing(_SmoothedBands[i], _Bands[i], deltaTime, _Bands[i] > _SmoothedBands[i] ? 20. : 5.);
@@ -310,8 +319,7 @@ namespace VectorGrid
         {
             const double MidAttack    = std::max(0., _SmoothedMid - _PreviousMidEnvelope);
 
-            _PreviousMidEnvelope    = _SmoothedMid;
-            _PreviousTrebleEnvelope = _SmoothedTreble;
+            _PreviousMidEnvelope = _SmoothedMid;
 
             const double MidTarget = std::clamp(_SmoothedMid * 0.82 + MidAttack * 5.2, 0., 1.25);
 
@@ -320,6 +328,8 @@ namespace VectorGrid
 
         {
             const double TrebleAttack = std::max(0., _SmoothedTreble - _PreviousTrebleEnvelope);
+            _PreviousTrebleEnvelope = _SmoothedTreble;
+
             const double TrebleTarget = std::clamp(_SmoothedTreble * 0.48 + TrebleAttack * 9.5, 0., 1.35);
 
             _TrebleImpulse = ExponentialSmoothing(_TrebleImpulse, TrebleTarget, deltaTime, TrebleTarget > _TrebleImpulse ? 42. : 12.);
@@ -358,15 +368,15 @@ namespace VectorGrid
         const double DistanceFade = SmoothStep(0.02f, 0.92f, (float) NearWeight);
 
         // All surface deformation is audio-driven. In silence the grid remains flat while its perspective rows continue travelling towards the camera.
-        const double AudioActivity = Clamp(_SmoothedRMS * 2.8 + _SmoothedBass * 1.4 + _MidEnvelope * 0.65 + _TrebleImpulse * 0.35 + _BassImpulse * 0.85);
+        const double AudioActivity = Clamp((_SmoothedRMS * 2.8) + (_SmoothedBass * 1.4) + (_MidEnvelope * 0.65) + (_TrebleImpulse * 0.35) + (_BassImpulse * 0.85));
 
-        const double BassWave      = std::sin(z * 7.4             - _AnimationTime * 3.15 + (x * 0.92)) * (_SmoothedBass * 0.125 + _BassImpulse * 0.085 + AudioActivity * 0.012);
-        const double BassSwell     = std::cos(z * 3.15            - _AnimationTime * 1.55) * (_SmoothedBass * 0.070 + _BassImpulse * 0.055);
-        const double CrossWave     = std::sin(x * 3.2  + z * 4.7  + _AnimationTime * 1.65) * (_SmoothedRMS   * 0.048);
-        const double MidWave       = std::cos(x * 5.8  - z * 3.1  + _AnimationTime * 2.35) * (_MidEnvelope   * 0.082);
-        const double MidFold       = std::sin(x * 7.2  + z * 5.4  - _AnimationTime * 2.8)  * (_MidEnvelope   * 0.035);
-        const double TrebleRipple  = std::sin(x * 12.5 + z * 14.0 - _AnimationTime * 6.4)  * (_TrebleImpulse * 0.046);
-        const double TrebleCross   = std::cos(x * 17.0 - z * 9.5  + _AnimationTime * 7.8)  * (_TrebleImpulse * 0.018);
+        const double BassWave      = std::sin(z * 7.4             - _AnimationTime * 3.15 + (x * 0.92)) * (_SmoothedBass  * 0.125 + _BassImpulse * 0.085 + AudioActivity * 0.012);
+        const double BassSwell     = std::cos(z * 3.15            - _AnimationTime * 1.55)              * (_SmoothedBass  * 0.070 + _BassImpulse * 0.055);
+        const double CrossWave     = std::sin(x * 3.2  + z * 4.7  + _AnimationTime * 1.65)              * (_SmoothedRMS   * 0.048);
+        const double MidWave       = std::cos(x * 5.8  - z * 3.1  + _AnimationTime * 2.35)              * (_MidEnvelope   * 0.082);
+        const double MidFold       = std::sin(x * 7.2  + z * 5.4  - _AnimationTime * 2.8)               * (_MidEnvelope   * 0.035);
+        const double TrebleRipple  = std::sin(x * 12.5 + z * 14.0 - _AnimationTime * 6.4)               * (_TrebleImpulse * 0.046);
+        const double TrebleCross   = std::cos(x * 17.0 - z * 9.5  + _AnimationTime * 7.8)               * (_TrebleImpulse * 0.018);
 
         // The beat wave starts near the viewer, expands towards the horizon and bends adjacent columns in opposite directions, producing a visible shockwave instead of a uniform lift.
         const double BeatRidge       = std::exp(-std::pow(z - (0.34 + _Travel * 1.4), 2.) * 7.0) * _BassImpulse * 0.24;
@@ -697,7 +707,7 @@ namespace VectorGrid
         const double nx          = x * (FocalLength / Aspect) / z;
         const double ny          = CameraY * FocalLength / z;
 
-        const double HorizonY    = (double)_Height * HorizonFraction;
+        const double HorizonY    = (double) _Height * HorizonFraction;
         const double sx          =            (nx + 1.) * (double) _CenterX;
         const double sy          = HorizonY -  ny       * (double) _CenterY;
 

@@ -36,7 +36,7 @@ namespace Swarm
     /// <summary>
     /// 
     /// </summary>
-    void effect_t::Render(ID2D1RenderTarget * renderTarget, double deltaTime, audio_chunk_impl & chunk) noexcept
+    void effect_t::Render(ID2D1RenderTarget * renderTarget, double deltaTime, audio_chunk & chunk) noexcept
     {
         HRESULT hr = CreateDeviceDependentResources(renderTarget);
 
@@ -48,22 +48,24 @@ namespace Swarm
         AnalyzeAudio(chunk);
         Update(deltaTime);
 
-        _BackBufferRenderTarget->BeginDraw();
-
-        Fade(_BackBufferRenderTarget.Get(), deltaTime);
-
-        DrawBackgroundGradient(_BackBufferRenderTarget.Get(), deltaTime);
-
-        if (_HasAudio)
-            RenderSwarm(_BackBufferRenderTarget.Get());
-        else
-            RenderIdleSwarm(_BackBufferRenderTarget.Get());
-
-        if (FAILED(_BackBufferRenderTarget->EndDraw()))
         {
-            DeleteDeviceDependentResources();
+            _BackBufferRenderTarget->BeginDraw();
 
-            return;
+            Fade(_BackBufferRenderTarget.Get(), deltaTime);
+
+            DrawBackgroundGradient(_BackBufferRenderTarget.Get(), deltaTime);
+
+            if (_HasAudio)
+                RenderSwarm(_BackBufferRenderTarget.Get());
+            else
+                RenderIdleSwarm(_BackBufferRenderTarget.Get());
+
+            if (FAILED(_BackBufferRenderTarget->EndDraw()))
+            {
+                DeleteDeviceDependentResources();
+
+                return;
+            }
         }
 
         renderTarget->DrawBitmap(_BackBuffer.Get(), _Rectangle);
@@ -72,7 +74,7 @@ namespace Swarm
     /// <summary>
     /// 
     /// </summary>
-    void effect_t::AnalyzeAudio(const audio_chunk_impl & chunk)
+    void effect_t::AnalyzeAudio(const audio_chunk & chunk)
     {
         _Peak          = 0.;
         _RMS           = 0.;
@@ -88,8 +90,9 @@ namespace Swarm
             return;
 
         const audio_sample * Frames = chunk.get_data();
+
         const unsigned ChannelCount = chunk.get_channel_count();
-        const unsigned SampleRate = chunk.get_sample_rate();
+        const unsigned SampleRate   = chunk.get_sample_rate();
 
         const size_t FrameCount = std::min(chunk.get_sample_count(), (size_t) 2048);
 
@@ -98,8 +101,8 @@ namespace Swarm
 
         std::vector<double> WindowedSamples(FrameCount);
 
-        double SquareSum = 0.;
-        double LeftPower = 0.;
+        double SquareSum  = 0.;
+        double LeftPower  = 0.;
         double RightPower = 0.;
 
         for (size_t i = 0; i < FrameCount; ++i)
@@ -108,12 +111,19 @@ namespace Swarm
 
             double Mono = 0.;
 
-            for (unsigned c = 0; c < ChannelCount; ++c)
-                Mono += Frame[c];
+            {
+                for (unsigned c = 0; c < ChannelCount; ++c)
+                    Mono += Frame[c];
 
-            Mono = ClampAudio(Mono / ChannelCount);
+                Mono = ClampAudio(Mono / ChannelCount);
+            }
 
-            WindowedSamples[i] = Mono * (.5 - .5 * std::cos(TwoPi * (double) i / ((double) FrameCount - 1.)));
+            // Apply a Hann window.
+            {
+                const double Window = 0.5 - (std::cos(TwoPi * (double) i / ((double) FrameCount - 1.)) * 0.5);
+
+                WindowedSamples[i] = Mono * Window;
+            }
 
             SquareSum += Mono * Mono;
 
@@ -135,11 +145,11 @@ namespace Swarm
 
         const double StereoPower = LeftPower + RightPower;
 
-        _StereoBalance = StereoPower > 1.e-12 ? std::clamp((RightPower - LeftPower) / StereoPower, -1., 1.) : 0.;
+        _StereoBalance = (StereoPower > 1.e-12) ? std::clamp((RightPower - LeftPower) / StereoPower, -1., 1.) : 0.;
 
-        const double NyquistFrequency = SampleRate * .5;
+        const double Nyquist = (double) SampleRate * 0.5;
 
-        double Maximum = 0.;
+        double MaximumEnergy = 0.;
 
         for (size_t i = 0; i < BandCount; ++i)
         {
@@ -150,8 +160,9 @@ namespace Swarm
 
             for (double Ratio : { .890898718, 1., 1.122462048 })
             {
-                const double Frequency = std::clamp(Center * Ratio, 20., NyquistFrequency * .94);
-                const double Coefficient = 2. * std::cos(TwoPi * Frequency / SampleRate);
+                const double Frequency   = std::clamp(Center * Ratio, 20., Nyquist * .95);
+                const double Omega       = TwoPi * Frequency / (double) SampleRate;
+                const double Coefficient = 2. * std::cos(Omega);
 
                 double q1 = 0.;
                 double q2 = 0.;
@@ -169,21 +180,25 @@ namespace Swarm
 
             const double Magnitude = std::sqrt(Power / 3.) / (double) FrameCount;
 
-            _BandEnergy[i] = std::clamp(std::log1p(Magnitude * 80.) / std::log1p(80.) * Lerp(.9, 1.5, Amount), 0., 1.);
+            _BandEnergy[i] = Clamp(std::log1p(Magnitude * 80.) / std::log1p(80.) * Lerp(.9, 1.5, Amount));
 
-            Maximum = std::max(Maximum, _BandEnergy[i]);
+            MaximumEnergy = std::max(MaximumEnergy, _BandEnergy[i]);
         }
 
-        if (Maximum > 1.e-5)
-            for (double & e : _BandEnergy) e = std::clamp(e / std::max(.3, Maximum), 0., 1.);
+        if (MaximumEnergy > 1.e-5)
+        {
+            for (double & e : _BandEnergy)
+                e = Clamp(e / std::max(.3, MaximumEnergy));
+        }
 
         for (size_t i = 0; i < BandCount; ++i)
         {
             _SpectralFlux += std::max(0., _BandEnergy[i] - _PreviousBandEnergy[i]);
+
             _PreviousBandEnergy[i] = _BandEnergy[i];
         }
 
-        _SpectralFlux = Clamp(_SpectralFlux / BandCount * 5.8);
+        _SpectralFlux = Clamp(_SpectralFlux / (double) BandCount * 5.8); // Boost the spectral flux artificially by 5.8 to make it react more strongly.
     }
 
     /// <summary>
@@ -198,9 +213,10 @@ namespace Swarm
 
         _AnimationTime += deltaTime * SpeedFactor;
 
-        _SmoothedPeak          = ExponentialSmoothing(_SmoothedPeak,          _Peak,          deltaTime, _Peak         > _SmoothedPeak ? 24. : 5.);
-        _SmoothedRMS           = ExponentialSmoothing(_SmoothedRMS,           _RMS,           deltaTime, _RMS          > _SmoothedRMS  ? 20. : 4.);
-        _SmoothedFlux          = ExponentialSmoothing(_SmoothedFlux,          _SpectralFlux,  deltaTime, _SpectralFlux > _SmoothedFlux ? 36. : 6.);
+        _SmoothedPeak          = ExponentialSmoothing(_SmoothedPeak,          _Peak,          deltaTime, (_Peak         > _SmoothedPeak) ? 24. : 5.);
+        _SmoothedRMS           = ExponentialSmoothing(_SmoothedRMS,           _RMS,           deltaTime, (_RMS          > _SmoothedRMS)  ? 20. : 4.);
+
+        _SmoothedSpectralFlux  = ExponentialSmoothing(_SmoothedSpectralFlux,  _SpectralFlux,  deltaTime, (_SpectralFlux > _SmoothedSpectralFlux) ? 36. : 6.);
         _SmoothedStereoBalance = ExponentialSmoothing(_SmoothedStereoBalance, _StereoBalance, deltaTime, 8.);
 
         _PreviousBeatPulse = _BeatPulse;
@@ -221,10 +237,10 @@ namespace Swarm
             _BeatColorPhase = Fraction(_BeatColorPhase + .16 + BeatEdge * .30);
         }
 
-        _PaletteBlend   = std::min(1., _PaletteBlend + deltaTime * (7.5 + _BeatPulse * 10.));
+        _PaletteBlend   = std::min(1., _PaletteBlend + deltaTime * (7.5 + (_BeatPulse * 10.)));
 
-        _BeatColorPhase = Fraction(_BeatColorPhase + deltaTime * (.018 + _SmoothedRMS * .045));
-        _GradientPhase  = Fraction(_GradientPhase  + deltaTime * (.035 + _BeatPulse   * .12));
+        _BeatColorPhase = Fraction(_BeatColorPhase + deltaTime * (.018 + (_SmoothedRMS * .045)));
+        _GradientPhase  = Fraction(_GradientPhase  + deltaTime * (.035 + (_BeatPulse   * .120)));
 
         for (size_t i = 0; i < BandCount; ++i)
             _SmoothedBandEnergy[i] = ExponentialSmoothing(_SmoothedBandEnergy[i], _HasAudio ? _BandEnergy[i] : 0., deltaTime, _BandEnergy[i] > _SmoothedBandEnergy[i] ? 22. : 4.5);
@@ -312,15 +328,15 @@ namespace Swarm
 
         const double Band     = (double) s.Band / (double) (BandCount - 1.);
         const double Energy   = _SmoothedBandEnergy[s.Band];
-        const double BalanceX = _CenterX + _SmoothedStereoBalance * _Width * .29;
+        const double BalanceX = _CenterX + (_SmoothedStereoBalance * _Width * .29);
         const double LaneY    = _CenterY + std::sin(s.Phase + _AnimationTime * (.25 + Band)) * Dimension * (.08 + Band * .18);
 
         ax += (BalanceX - s.Position.x) * (.32 + _BassEnergy * .55);
-        ay += (LaneY - s.Position.y) * (.20 + _MidEnergy * .42);
+        ay += (LaneY    - s.Position.y) * (.20 + _MidEnergy  * .42);
 
         const double Heading      = std::atan2(s.Velocity.y, s.Velocity.x);
         const double ImpulseAngle = Heading + ((Hash(s.Seed) & 1u) ? 1. : -1.) * (1.1 + Band * .9);
-        const double Impulse      = Dimension * _BeatPulse * (1.2 + Energy * 2.4);
+        const double Impulse      = Dimension * _BeatPulse * (1.2 + (Energy * 2.4));
 
         ax += std::cos(ImpulseAngle) * Impulse;
         ay += std::sin(ImpulseAngle) * Impulse;
@@ -333,12 +349,12 @@ namespace Swarm
         Agent.Velocity.x += (float) (ax * deltaTime);
         Agent.Velocity.y += (float) (ay * deltaTime);
 
-        const double Drag = std::exp(-deltaTime * (1.05 - _SmoothedRMS * .25));
+        const double Drag = std::exp(-deltaTime * (1.05 - (_SmoothedRMS * .25)));
 
         Agent.Velocity.x *= (float) Drag;
         Agent.Velocity.y *= (float) Drag;
 
-        const double MaxSpeed     = Dimension * (.34 + _SmoothedRMS * .42 + _BeatPulse * .28);
+        const double MaxSpeed     = Dimension * (.34 + (_SmoothedRMS * .42) + (_BeatPulse * .28));
         const double CurrentSpeed = Length(Agent.Velocity.x, Agent.Velocity.y);
 
         if (CurrentSpeed > MaxSpeed)
@@ -422,9 +438,10 @@ namespace Swarm
     {
         constexpr int Bands = 48;
 
-        const double beat = std::clamp(_BeatPulse, 0., 1.);
-        const double drift = _GradientPhase * TwoPi;
-        const double paletteHue = GetPaletteHue(.12, _PaletteBlend);
+        const double Beat  = Clamp(_BeatPulse);
+        const double Drift = _GradientPhase * TwoPi;
+
+        const double PaletteHue = GetPaletteHue(.12, _PaletteBlend);
 
         // Animated vertical color field, blended lightly so persistent trails survive.
         for (int i = 0; i < Bands; ++i)
@@ -432,10 +449,10 @@ namespace Swarm
             const double t = (double) i / (Bands - 1);
 
             const double centerGlow = 1. - std::abs(t * 2. - 1.);
-            const double waveA      = .5 + .5 * std::sin(TwoPi * t * 1.4 + drift);
-            const double waveB      = .5 + .5 * std::cos(TwoPi * t * 2.2 - drift * .63);
-            const double hue        = Fraction(paletteHue + t * .12 + waveB * .025);
-            const double value      = .008 + centerGlow * .024 + waveA * .018 + beat * centerGlow * .045;
+            const double waveA      = .5 + .5 * std::sin(TwoPi * t * 1.4 + Drift);
+            const double waveB      = .5 + .5 * std::cos(TwoPi * t * 2.2 - Drift * .63);
+            const double hue        = Fraction(PaletteHue + t * .12 + waveB * .025);
+            const double value      = .008 + centerGlow * .024 + waveA * .018 + Beat * centerGlow * .045;
 
             const uint32_t Color = HSVToBGRA((float) hue, .92f, (float) std::clamp(value, 0., .085));
 
@@ -443,7 +460,7 @@ namespace Swarm
 
             const float y0 = (float)((float) i * _Height / Bands);
 
-            renderTarget->FillRectangle(D2D1::RectF(0.f, y0, _Width, y0 + _Height / Bands + 1.f), _Brush.Get());
+            renderTarget->FillRectangle(D2D1::RectF(0.f, y0, _Width, y0 + (_Height / Bands) + 1.f), _Brush.Get());
         }
 
         // Moving radial blooms make the gradient breathe, pan, and flash with each beat.
@@ -451,23 +468,23 @@ namespace Swarm
 
         for (int Lobe = 0; Lobe < 3; ++Lobe)
         {
-            const double Phase = drift + Lobe * TwoPi / 3.;
+            const double Phase = Drift + Lobe * TwoPi / 3.;
 
             const D2D1_POINT_2F center
             {
-                (float)(_CenterX + std::sin(Phase * (1. + Lobe * .13) + _SmoothedStereoBalance * 1.8) * _Width * (.24 + beat * .15)),
-                (float)(_CenterY + std::cos(Phase * (.73 + Lobe * .09)) * _Height * .24)
+                (float) (_CenterX + std::sin(Phase * (1.   + Lobe * .13) + (_SmoothedStereoBalance * 1.8)) * _Width * (.24 + Beat * .15)),
+                (float) (_CenterY + std::cos(Phase * ( .73 + Lobe * .09))                                  * _Height * .24)
             };
 
-            const float Radius = Span * (float)(.24 + Lobe * .065 + beat * .28);
+            const float Radius = Span * (float)(.24 + Lobe * .065 + Beat * .28);
 
-            const uint32_t Color = HSVToBGRA((float)Fraction(paletteHue + Lobe * .115 + _BeatColorPhase * .18), .98f, 1.f);
+            const uint32_t Color = HSVToBGRA((float)Fraction(PaletteHue + Lobe * .115 + _BeatColorPhase * .18), .98f, 1.f);
 
-            SetBrush(Color, (float)(.010 + beat * .018));
+            SetBrush(Color, (float)(.010 + Beat * .018));
 
             renderTarget->FillEllipse(D2D1::Ellipse(center, Radius, Radius), _Brush.Get());
 
-            SetBrush(Color, (float)(.012 + beat * .026));
+            SetBrush(Color, (float)(.012 + Beat * .026));
 
             renderTarget->FillEllipse(D2D1::Ellipse(center, Radius * .48f, Radius * .48f), _Brush.Get());
         }
@@ -478,11 +495,13 @@ namespace Swarm
     /// </summary>
     void effect_t::Fade(ID2D1RenderTarget * renderTarget, double deltaTime) noexcept
     {
-        const double Persistence = .88 + _SmoothedRMS * .055 + _BeatPulse * .02;
-        const double Decay = std::pow(std::clamp(Persistence, .78, .965), deltaTime * 60.);
+        const double Persistence = .88 + (_SmoothedRMS * .055) + (_BeatPulse * .02);
+        const double Decay       = std::pow(std::clamp(Persistence, .78, .965), deltaTime * 60.);
 
-        _Brush->SetColor(D2D1::ColorF(0.f, 0.f, .008f, (float)(1. - Decay)));
-        _Brush->SetOpacity(1.f); renderTarget->FillRectangle(_Rectangle, _Brush.Get());
+        _Brush->SetColor(D2D1::ColorF(0.f, 0.f, .008f, (float) (1. - Decay)));
+        _Brush->SetOpacity(1.f);
+
+        renderTarget->FillRectangle(_Rectangle, _Brush.Get());
     }
 
     /// <summary>
@@ -496,19 +515,20 @@ namespace Swarm
         {
             const double Speed     = Length(Agent.Velocity.x, Agent.Velocity.y);
             const double Energy    = _SmoothedBandEnergy[Agent.Band];
-            const double Intensity = Agent.Brightness * (.58 + Energy * 1.05 + _SmoothedRMS * .78 + _BeatPulse * .35) * std::clamp(Speed / (Side * .20), .58, 1.45);
+            const double Intensity = Agent.Brightness * (.58 + (Energy * 1.05) + (_SmoothedRMS * .78) + (_BeatPulse * .35)) * std::clamp(Speed / (Side * .20), .58, 1.45);
 
             const uint32_t Color = Colorize(Agent.Band, Energy, Fraction(Agent.Phase / TwoPi + _AnimationTime * .025));
-            const double trail = std::clamp(.45 + _SmoothedRMS * 1.05 + _BeatPulse * .8, .45, 1.9);
+
+            const double Trail = std::clamp(.45 + (_SmoothedRMS * 1.05) + (_BeatPulse * .8), .45, 1.9);
 
             const D2D1_POINT_2F Tail
             {
-                (float) (Agent.Position.x - (Agent.Position.x - Agent.Previous.x) * trail),
-                (float) (Agent.Position.y - (Agent.Position.y - Agent.Previous.y) * trail)
+                (float) (Agent.Position.x - (Agent.Position.x - Agent.Previous.x) * Trail),
+                (float) (Agent.Position.y - (Agent.Position.y - Agent.Previous.y) * Trail)
             };
 
-            DrawNeonLine (renderTarget, Tail, Agent.Position, Color, (float) Intensity, (float)(Agent.Size * (1.25 + Energy * 1.9)));
-            DrawNeonPoint(renderTarget,       Agent.Position, Color, (float)(Intensity * (.45 + Energy * .3)), (float)(Agent.Size * (1.7 + Energy * 2.6)));
+            DrawNeonLine (renderTarget, Tail, Agent.Position, Color, (float) Intensity,                        (float) (Agent.Size * (1.25 + Energy * 1.9)));
+            DrawNeonPoint(renderTarget,       Agent.Position, Color, (float)(Intensity * (.45 + Energy * .3)), (float) (Agent.Size * (1.70 + Energy * 2.6)));
         }
     }
 
@@ -547,11 +567,11 @@ namespace Swarm
     uint32_t effect_t::Colorize(size_t band, double energy, double phase) const noexcept
     {
         const double Amount   = (double) band / (double) (BandCount - 1.);
-        const double Position = Fraction(Amount * .92 + phase * .08 + _SmoothedStereoBalance * .035);
+        const double Position = Fraction((Amount * .92) + (phase * .08) + (_SmoothedStereoBalance * .035));
 
         const float Hue = (float) GetPaletteHue(Position, _PaletteBlend);
 
-        return HSVToBGRA(Hue, 1.f, (float)std::clamp(.96 + energy * .08 + _BeatPulse * .16, 0., 1.));
+        return HSVToBGRA(Hue, 1.f, (float) Clamp(.96 + (energy * .08) + (_BeatPulse * .16)));
     }
 
     /// <summary>
@@ -671,7 +691,7 @@ namespace Swarm
         {
             const auto size = _BackBufferRenderTarget->GetPixelSize();
 
-            if (size.width == (UINT32)_Width && size.height == (UINT32)_Height)
+            if (size.width == (UINT32) _Width && size.height == (UINT32) _Height)
                 return S_OK;
         }
 
@@ -694,29 +714,31 @@ namespace Swarm
         if (FAILED(hr))
             return hr;
 
-        const auto DesiredSize = D2D1::SizeF(_Width, _Height);
-        const auto PixelSize = D2D1::SizeU((UINT32)_Width, (UINT32)_Height);
+        {
+            const auto DesiredSize = D2D1::SizeF(_Width, _Height);
+            const auto PixelSize = D2D1::SizeU((UINT32) _Width, (UINT32) _Height);
 
-        hr = renderTarget->CreateCompatibleRenderTarget(&DesiredSize, &PixelSize, nullptr, D2D1_COMPATIBLE_RENDER_TARGET_OPTIONS_NONE, _BackBufferRenderTarget.ReleaseAndGetAddressOf());
+            hr = renderTarget->CreateCompatibleRenderTarget(&DesiredSize, &PixelSize, nullptr, D2D1_COMPATIBLE_RENDER_TARGET_OPTIONS_NONE, _BackBufferRenderTarget.ReleaseAndGetAddressOf());
 
-        if (FAILED(hr))
-            return hr;
+            if (FAILED(hr))
+                return hr;
 
-        _BackBufferRenderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+            _BackBufferRenderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
-        _BackBufferRenderTarget->BeginDraw();
+            _BackBufferRenderTarget->BeginDraw();
 
-        _BackBufferRenderTarget->Clear(D2D1::ColorF(0.f, 0.f, .008f, 1.f));
+            _BackBufferRenderTarget->Clear(D2D1::ColorF(0.f, 0.f, .008f, 1.f));
 
-        hr = _BackBufferRenderTarget->EndDraw();
+            hr = _BackBufferRenderTarget->EndDraw();
 
-        if (FAILED(hr))
-            return hr;
+            if (FAILED(hr))
+                return hr;
 
-        hr = _BackBufferRenderTarget->GetBitmap(_BackBuffer.ReleaseAndGetAddressOf());
+            hr = _BackBufferRenderTarget->GetBitmap(_BackBuffer.ReleaseAndGetAddressOf());
 
-        if (FAILED(hr))
-            return hr;
+            if (FAILED(hr))
+                return hr;
+        }
 
         _RenderTarget = renderTarget;
 

@@ -1,5 +1,5 @@
 
-/** $VER: Element.cpp (2026.09.25) P. Stuer - Base class for all visual elements **/
+/** $VER: Element.cpp (2026.10.24) P. Stuer - Base class for all visual elements **/
 
 #include "pch.h"
 
@@ -18,7 +18,10 @@ void element_t::InitializeMetrics(const D2D1_RECT_F & rect) noexcept
     _Side     = std::min(_Size.width, _Size.height);
     _HalfSide = _Side / 2.f;
 
-    _State->_SizeHasChanged = true;
+    _CenterX  = _Size.width  / 2.f;
+    _CenterY  = _Size.height / 2.f;
+
+    _State._SizeHasChanged = true;
 }
 
 /// <summary>

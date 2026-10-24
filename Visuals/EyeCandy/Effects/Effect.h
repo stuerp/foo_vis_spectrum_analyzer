@@ -130,17 +130,17 @@ namespace EyeCandy
         float B;
     };
 
-    static float Clamp(float value) noexcept
+    inline float Clamp(float value) noexcept
     {
         return std::clamp(value, 0.f, 1.f);
     }
 
-    static double Clamp(double value) noexcept
+    inline double Clamp(double value) noexcept
     {
         return std::clamp(value, 0., 1.);
     }
 
-    static double ClampAudio(double value) noexcept
+    inline double ClampAudio(double value) noexcept
     {
         if (!std::isfinite(value))
             return 0.;
@@ -148,27 +148,37 @@ namespace EyeCandy
         return std::clamp(value, -2., 2.);
     }
 
-    static double Length(double x, double y) noexcept
+    inline double Length(double x, double y) noexcept
     {
         return std::sqrt(x * x + y * y);
     }
 
-    static double Interpolate(double a, double b, double deltaTime, double rate) noexcept
+    inline float Fraction(float value) noexcept
+    {
+        return value - std::floor(value);
+    }
+
+    inline double Fraction(double value) noexcept
+    {
+        return value - std::floor(value);
+    }
+
+    inline double Interpolate(double a, double b, double deltaTime, double rate) noexcept
     {
         return std::lerp(a, b, 1. - std::exp(-rate * deltaTime));
     }
 
-    static bool IsFinite(D2D1_POINT_2F point) noexcept
+    inline bool IsFinite(D2D1_POINT_2F point) noexcept
     {
         return std::isfinite(point.x) && std::isfinite(point.y);
     }
 
-    static constexpr float Lerp(float from, float to, float amount) noexcept
+    inline constexpr float Lerp(float from, float to, float amount) noexcept
     {
         return from + (to - from) * amount;
     }
 
-    static constexpr double Lerp(double from, double to, double amount) noexcept
+    inline constexpr double Lerp(double from, double to, double amount) noexcept
     {
         return from + (to - from) * amount;
     }
@@ -178,16 +188,6 @@ namespace EyeCandy
         const double Amount = 1. - std::exp(-std::max(0., deltaTime) * response);
 
         return Lerp(from, to, Amount);
-    }
-
-    static float Fraction(float value) noexcept
-    {
-        return value - std::floor(value);
-    }
-
-    static double Fraction(double value) noexcept
-    {
-        return value - std::floor(value);
     }
 
     static float InterpolateHue(float from, float to, float amount) noexcept
@@ -208,7 +208,7 @@ namespace EyeCandy
 
     static hsv_t InterpolateHSV(const hsv_t & from, const hsv_t & to, float amount) noexcept
     {
-        amount = std::clamp(amount, 0.f, 1.f);
+        amount = Clamp(amount);
 
         return
         {
@@ -255,7 +255,7 @@ namespace EyeCandy
         const uint32_t G = ToByte(color.g);
         const uint32_t B = ToByte(color.b);
 
-        return 0xFF000000u | (R << 16) | (G << 8) | B;
+        return 0xFF000000u | (R << 16u) | (G << 8u) | B;
     }
 
     /// <summary>
@@ -267,7 +267,122 @@ namespace EyeCandy
         const uint32_t G = ToByte(g);
         const uint32_t B = ToByte(b);
 
-        return 0xFF000000u | (R << 16) | (G << 8) | B;
+        return 0xFF000000u | (R << 16u) | (G << 8u) | B;
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    static uint32_t PremultiplyColor(uint32_t color, float opacity) noexcept
+    {
+        assert((opacity >= 0.f) && (opacity <= 1.f));
+
+        const uint32_t R = (color >> 16) & 0xFFu;
+        const uint32_t G = (color >>  8) & 0xFFu;
+        const uint32_t B = color         & 0xFFu;
+        const uint32_t A = (uint32_t) std::lround(opacity * 255.f);
+
+        const uint32_t PremultipliedRed   = (R * A + 127u) / 255u;
+        const uint32_t PremultipliedGreen = (G * A + 127u) / 255u;
+        const uint32_t PremultipliedBlue  = (B * A + 127u) / 255u;
+
+        return (A << 24) | (PremultipliedRed << 16) | (PremultipliedGreen << 8) | PremultipliedBlue;
+    }
+
+    /// <summary>
+    /// Converts a color from HSV to RGB.
+    /// </summary>
+    static rgb_t HSVToRGB(float h, float s, float v) noexcept
+    {
+        h = Fraction(h); // Wrap hue into [0, 1].
+        s = Clamp(s);
+        v = Clamp(v);
+
+        const float ScaledHue = h * 6.0f;
+        const auto  Sector    = (int) ScaledHue;
+        const float Fraction  = ScaledHue - (float) Sector;
+
+        const float ChromaReduction = v * s;
+
+        const float p = v - ChromaReduction;
+        const float q = v - ChromaReduction * Fraction;
+        const float t = v - ChromaReduction * (1.f - Fraction);
+
+        switch (Sector)
+        {
+            case 0: return { v, t, p };
+            case 1: return { q, v, p };
+            case 2: return { p, v, t };
+            case 3: return { p, q, v };
+            case 4: return { t, p, v };
+            default: return { v, p, q }; // 5
+        }
+    }
+
+    /// <summary>
+    /// Converts a color from HSV to RGB.
+    /// </summary>
+    static void HSVToRGB(double h, double s, double v, double & r, double & g, double & b) noexcept
+    {
+        h = Fraction(h); // Wrap hue into [0, 1].
+        s = Clamp(s);
+        v = Clamp(v);
+
+        const double ScaledHue = h * 6.0;
+        const auto   Sector    = (int) ScaledHue;
+        const double Fraction  = ScaledHue - Sector;
+
+        const double ChromaReduction = v * s;
+
+        const double p = v - ChromaReduction;
+        const double q = v - ChromaReduction * Fraction;
+        const double t = v - ChromaReduction * (1. - Fraction);
+
+        switch (Sector)
+        {
+            case 0:  { r = v; g = t; b = p; break; }
+            case 1:  { r = q; g = v; b = p; break; }
+            case 2:  { r = p; g = v; b = t; break; }
+            case 3:  { r = p; g = q; b = v; break; }
+            case 4:  { r = t; g = p; b = v; break; }
+            default: { r = v; g = p; b = q; break; } // 5
+        }
+    }
+
+    /// <summary>
+    /// Converts an HSV color to a normalized Direct2D color.
+    /// </summary>
+    static D2D1_COLOR_F HSVToColor(float h, float s, float v, float a = 1.f) noexcept
+    {
+        const rgb_t Color = HSVToRGB(h, s, v);
+
+        return D2D1::ColorF(Color.R, Color.G, Color.B, Clamp(a));
+    }
+
+    /// <summary>
+    /// Converts an HSV color to a packed, fully opaque BGRA color value.
+    /// </summary>
+    static uint32_t HSVToBGRA(float h, float s, float v) noexcept
+    {
+        const rgb_t Color = HSVToRGB(h, s, v);
+
+        const uint32_t R = (uint8_t) ToByte(Color.R);
+        const uint32_t G = (uint8_t) ToByte(Color.G);
+        const uint32_t B = (uint8_t) ToByte(Color.B);
+
+        return 0xFF000000u | (R << 16u) | (G << 8u) | B;
+    }
+
+    /// <summary>
+    /// Converts an HSV color to a packed BGRA color value.
+    /// </summary>
+    static uint32_t HSVToBGRA(float h, float s, float v, float a) noexcept
+    {
+        const rgb_t color = HSVToRGB(h, s, v);
+
+        const uint32_t A = ToByte(Clamp(a));
+
+        return (A << 24u) | (ToByte(color.R) << 16u) | (ToByte(color.G) << 8u) | ToByte(color.B);
     }
 
     /// <summary>
@@ -279,8 +394,9 @@ namespace EyeCandy
         effect_t() = default;
 
         effect_t(const effect_t &) = delete;
-        effect_t & operator=(const effect_t &) = delete;
         effect_t(effect_t &&) = delete;
+
+        effect_t & operator=(const effect_t &) = delete;
         effect_t & operator=(effect_t &&) = delete;
 
         virtual ~effect_t() = default;
@@ -298,7 +414,7 @@ namespace EyeCandy
             Reset();
         }
 
-        virtual void Render(ID2D1RenderTarget * renderTarget, double deltaTime, audio_chunk_impl & chunk) noexcept = 0;
+        virtual void Render(ID2D1RenderTarget * renderTarget, double deltaTime, audio_chunk & chunk) noexcept = 0;
 
         virtual void Reset() noexcept { };
 
@@ -384,36 +500,6 @@ namespace EyeCandy
         static D2D1_COLOR_F LerpColor(const D2D1_COLOR_F & from, const D2D1_COLOR_F & to, float amount) noexcept;
         static const color_theme_t & GetTheme(ColorTheme theme) noexcept;
         static const std::wstring GetThemeName(ColorTheme theme) noexcept;
-
-        static D2D1_COLOR_F HSVToColor(float hue, float saturation, float value, float alpha = 1.0f) noexcept;
-        static uint32_t HSVToBGRA(float hue, float saturation, float value) noexcept;
-        static uint32_t HSVToBGRA(float hue, float saturation, float value, float alpha) noexcept;
-        static void HSVToRGB(double h, double s, double v, double & r, double & g, double & b) noexcept;
-
-        static rgb_t HSVToRGB(float h, float s, float v) noexcept
-        {
-            h = Fraction(h);
-            s = std::clamp(s, 0.0f, 1.0f);
-            v = std::clamp(v, 0.0f, 1.0f);
-
-            const float ScaledHue = h * 6.0f;
-            const auto  Sector = (int) ScaledHue;
-            const float Fraction = ScaledHue - (float) Sector;
-
-            const float p = v * (1.f - s);
-            const float q = v * (1.f - s * Fraction);
-            const float t = v * (1.f - s * (1.0f - Fraction));
-
-            switch (Sector)
-            {
-                case 0: return { v, t, p };
-                case 1: return { q, v, p };
-                case 2: return { p, v, t };
-                case 3: return { p, q, v };
-                case 4: return { t, p, v };
-                default: return { v, p, q };
-            }
-        }
 
         static inline float SmoothStep(float lower, float upper, float value) noexcept;
 

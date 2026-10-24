@@ -1,9 +1,11 @@
 
-/** $VER: FFTAnalyzer.cpp (2026.10.19) P. Stuer - Based on TF3RDL's FFT analyzer, https://codepen.io/TF3RDL/pen/poQJwRW **/
+/** $VER: FFTAnalyzer.cpp (2026.10.24) P. Stuer - Based on TF3RDL's FFT analyzer, https://codepen.io/TF3RDL/pen/poQJwRW **/
 
 #include "pch.h"
 
 #include "FFTAnalyzer.h"
+
+#include "Aggregator.h"
 #include "Log.h"
 
 #include <execution>
@@ -11,17 +13,11 @@
 #pragma hdrstop
 
 /// <summary>
-/// Destroys this instance.
-/// </summary>
-fft_analyzer_t::~fft_analyzer_t()
-{ }
-
-/// <summary>
 /// Initializes an instance of the class.
 /// </summary>
-fft_analyzer_t::fft_analyzer_t(const state_t * state, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup, size_t fftSize, const window_function_t & windowFunction, const window_function_t & brownPucketteKernel) noexcept : analyzer_t(state, sampleRate, channelCount, channelSetup, windowFunction), _BrownPucketteKernel(brownPucketteKernel)
+fft_analyzer_t::fft_analyzer_t(const state_t & state, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup, const window_function_t & windowFunction, const window_function_t & brownPucketteKernel) noexcept : analyzer_t(state, sampleRate, channelCount, channelSetup, windowFunction), _BrownPucketteKernel(brownPucketteKernel)
 {
-    _FFTSize = fftSize;
+    _FFTSize = _State._BinCount;
 
     _FFT.Initialize(_FFTSize);
 
@@ -44,7 +40,7 @@ bool fft_analyzer_t::AnalyzeAudio(const audio_sample * frameData, size_t frameCo
 
     Transform();
 
-    switch (_State->_MappingMethod)
+    switch (_State._MappingMethod)
     {
         default:
 
@@ -162,9 +158,9 @@ void fft_analyzer_t::MapCoefficients(frequency_bands_t & freqBands) noexcept
     if (_FreqData.empty() || !(_SampleRate > 0.))
         return;
 
-    const auto AggregationMethod      = _State->_AggregationMethod;
-    const bool SmoothLowerFrequencies = _State->_SmoothLowerFrequencies;
-    const bool SmoothGainTransition   = _State->_SmoothGainTransition && (AggregationMethod == AggregationMethod::Sum || AggregationMethod == AggregationMethod::RMSSum);
+    const auto AggregationMethod      = _State._AggregationMethod;
+    const bool SmoothLowerFrequencies = _State._SmoothLowerFrequencies;
+    const bool SmoothGainTransition   = _State._SmoothGainTransition && (AggregationMethod == AggregationMethod::Sum || AggregationMethod == AggregationMethod::RMSSum);
 
     const bool IsRMS = (AggregationMethod == AggregationMethod::RMS) || (AggregationMethod == AggregationMethod::RMSSum);
 
@@ -235,7 +231,7 @@ void fft_analyzer_t::MapCoefficients(frequency_bands_t & freqBands) noexcept
         {
             const double Index = HzToBinIndex(fb.Mid, BinCount);
 
-            fb.RawValue = std::abs(Interpolate(_FreqData, Index, _State->_KernelSize)) * BandGain;
+            fb.RawValue = std::abs(Interpolate(_FreqData, Index, _State._KernelSize)) * BandGain;
             continue;
         }
 
@@ -328,13 +324,13 @@ void fft_analyzer_t::MapCoefficientsUsingBP(frequency_bands_t & freqBands) const
         double Norm = 0.;
 
         // In Hz
-        const double Bandwidth      = std::max(std::abs(fb.Hi - fb.Lo) + (BinToHz * _State->_BandwidthOffset), std::numeric_limits<double>::epsilon());
+        const double Bandwidth      = std::max(std::abs(fb.Hi - fb.Lo) + (BinToHz * _State._BandwidthOffset), std::numeric_limits<double>::epsilon());
         // In seconds (Time domain)
-        const double WindowDuration = std::min(1. / Bandwidth, HzToBin / _State->_BandwidthCap);
+        const double WindowDuration = std::min(1. / Bandwidth, HzToBin / _State._BandwidthCap);
         // In samples (Sample domain)
-        const double WindowSize     = std::max(_State->_UseGranularBandwidth ? WindowDuration * _SampleRate : std::min(std::trunc(std::pow(2., std::round(std::log2(WindowDuration * _SampleRate)))), BinCount / _State->_BandwidthCap), 1.);
+        const double WindowSize     = std::max(_State._UseGranularBandwidth ? WindowDuration * _SampleRate : std::min(std::trunc(std::pow(2., std::round(std::log2(WindowDuration * _SampleRate)))), BinCount / _State._BandwidthCap), 1.);
         // In bins (Frequency domain)
-        const double KernelSize     = std::min(_State->_BandwidthAmount * BinCount / WindowSize, BinCount);
+        const double KernelSize     = std::min(_State._BandwidthAmount * BinCount / WindowSize, BinCount);
 
         const double Center = fb.Mid * HzToBin;
 
@@ -447,7 +443,7 @@ double fft_analyzer_t::Interpolate(const std::vector<std::complex<double>> & fft
     for (int Tap = -kernelSize; Tap <= kernelSize; ++Tap)
     {
         // Distance from the interpolation point.
-        const double Distance = (Fraction - (double) Tap) * std::numbers::pi;
+        const double Distance = (Fraction - (double) Tap) * Pi;
 
         // Lanczos-a kernel.
         double Weight = sinc(Distance) * sinc(Distance * InverseKernelSize);

@@ -1,5 +1,5 @@
 
-/** $VER: Analysis.cpp (2026.10.11) P. Stuer **/
+/** $VER: Analysis.cpp (2026.10.24) P. Stuer **/
 
 #include "pch.h"
 
@@ -14,12 +14,11 @@
 /// <summary>
 /// Configures this instance.
 /// </summary>
-void analysis_t::Configure(const state_t * state, const graph_options_t * graphOptions) noexcept
+void analysis_t::Configure(const graph_options_t * graphOptions) noexcept
 {
-    _State = state;
     _GraphOptions = graphOptions;
 
-    switch (_State->_FrequencyDistribution)
+    switch (_State._FrequencyDistribution)
     {
         default:
 
@@ -48,9 +47,6 @@ void analysis_t::Configure(const state_t * state, const graph_options_t * graphO
 /// </summary>
 void analysis_t::Reset() noexcept
 {
-    if (_State == nullptr)
-        return;
-
     _SampleRate    = 0;
     _ChannelCount  = 0;
     _ChannelConfig = 0;
@@ -79,17 +75,11 @@ void analysis_t::Reset() noexcept
         _FFTAnalyzer = nullptr;
     }
 
-    if (_BrownPucketteKernel != nullptr)
-    {
-        delete _BrownPucketteKernel;
-        _BrownPucketteKernel = nullptr;
-    }
+    if (_BrownPucketteKernel)
+        _BrownPucketteKernel.reset();
 
-    if (_WindowFunction != nullptr)
-    {
-        delete _WindowFunction;
-        _WindowFunction = nullptr;
-    }
+    if (_WindowFunction)
+        _WindowFunction.reset();
 
     // FFT-based visualizations
     {
@@ -141,7 +131,7 @@ void analysis_t::Process(const audio_chunk & chunk) noexcept
     if (_ChannelMask == 0)
         return; // None of the selected channels are present in this chunk.
 
-    switch (_State->_VisualizationType)
+    switch (_State._VisualizationType)
     {
         default:
 
@@ -240,18 +230,17 @@ void analysis_t::ResetRMSDependentValues() noexcept
 /// </summary>
 void analysis_t::UpdatePeakValues(bool isStopped) noexcept
 {
-    if ((_State == nullptr) || (_GraphOptions == nullptr))
-        return;
+    assert(_GraphOptions);
 
     const double Elapsed = _Chrono.Elapsed();
     const double AmplitudeRange = _GraphOptions->_AmplitudeHi - _GraphOptions->_AmplitudeLo;
 
-    const double HoldTime = _State->_HoldTime * (double) _State->_TargetRefreshRate;
-    const double FallRate = (_State->_FallRate != 0) ? msc::Map(Elapsed, 0., AmplitudeRange / _State->_FallRate, 0., 1.) : 0.;
+    const double HoldTime = _State._HoldTime * (double) _State._TargetRefreshRate;
+    const double FallRate = (_State._FallRate != 0) ? msc::Map(Elapsed, 0., AmplitudeRange / _State._FallRate, 0., 1.) : 0.;
 
-    const bool IsAIMP = (_State->_PeakMode == PeakMode::AIMP) || (_State->_PeakMode == PeakMode::FadingAIMP);
+    const bool IsAIMP = (_State._PeakMode == PeakMode::AIMP) || (_State._PeakMode == PeakMode::FadingAIMP);
 
-    switch (_State->_VisualizationType)
+    switch (_State._VisualizationType)
     {
         default:
             break;
@@ -290,7 +279,7 @@ void analysis_t::UpdatePeakValues(bool isStopped) noexcept
                     }
                     else
                     {
-                        switch (_State->_PeakMode)
+                        switch (_State._PeakMode)
                         {
                             default:
 
@@ -381,7 +370,7 @@ void analysis_t::UpdatePeakValues(bool isStopped) noexcept
                     }
                     else
                     {
-                        switch (_State->_PeakMode)
+                        switch (_State._PeakMode)
                         {
                             default:
 
@@ -486,27 +475,27 @@ void analysis_t::UpdatePeakValues(bool isStopped) noexcept
 /// </summary>
 void analysis_t::GenerateLinearFrequencyBands()
 {
-    assert(_State->_BandCount != 0);
+    assert(_State._BandCount != 0);
 
-    const double MinScale = ScaleFrequency(_State->_LoFrequency, _State->_ScalingFunction, _State->_SkewFactor);
-    const double MaxScale = ScaleFrequency(_State->_HiFrequency, _State->_ScalingFunction, _State->_SkewFactor);
+    const double MinScale = ScaleFrequency(_State._LoFrequency, _State._ScalingFunction, _State._SkewFactor);
+    const double MaxScale = ScaleFrequency(_State._HiFrequency, _State._ScalingFunction, _State._SkewFactor);
 
-    const double Bandwidth = (((_State->_TransformMethod == TransformMethod::FFT) && (_State->_MappingMethod == CoefficientMapping::TriangularFilterBank)) || (_State->_TransformMethod == TransformMethod::CQT)) ? _State->_Bandwidth : 0.5;
+    const double Bandwidth = (((_State._TransformMethod == TransformMethod::FFT) && (_State._MappingMethod == CoefficientMapping::TriangularFilterBank)) || (_State._TransformMethod == TransformMethod::CQT)) ? _State._Bandwidth : 0.5;
 
-    _FrequencyBands.resize(_State->_BandCount);
+    _FrequencyBands.resize(_State._BandCount);
 
     double i = 0.;
 
-    const double MaxIndex = (double) (_State->_BandCount - 1);
+    const double MaxIndex = (double) (_State._BandCount - 1);
 
     for (frequency_band_t & fb: _FrequencyBands)
     {
         const double LoIndex = std::clamp(i - Bandwidth, 0., MaxIndex);
         const double HiIndex = std::clamp(i + Bandwidth, 0., MaxIndex);
 
-        fb.Lo  = DescaleFrequency(msc::Map(LoIndex, 0., MaxIndex, MinScale, MaxScale), _State->_ScalingFunction, _State->_SkewFactor);
-        fb.Mid = DescaleFrequency(msc::Map(i,       0., MaxIndex, MinScale, MaxScale), _State->_ScalingFunction, _State->_SkewFactor);
-        fb.Hi  = DescaleFrequency(msc::Map(HiIndex, 0., MaxIndex, MinScale, MaxScale), _State->_ScalingFunction, _State->_SkewFactor);
+        fb.Lo  = DescaleFrequency(msc::Map(LoIndex, 0., MaxIndex, MinScale, MaxScale), _State._ScalingFunction, _State._SkewFactor);
+        fb.Mid = DescaleFrequency(msc::Map(i,       0., MaxIndex, MinScale, MaxScale), _State._ScalingFunction, _State._SkewFactor);
+        fb.Hi  = DescaleFrequency(msc::Map(HiIndex, 0., MaxIndex, MinScale, MaxScale), _State._ScalingFunction, _State._SkewFactor);
 
         assert(std::isfinite(fb.Lo));
         assert(std::isfinite(fb.Mid));
@@ -547,23 +536,23 @@ static inline double NoteToFrequency(int note) noexcept
 /// </summary>
 void analysis_t::GenerateOctaveFrequencyBands()
 {
-    assert(_State->_TuningPitch > 0.); assert(_State->_BandsPerOctave != 0);
+    assert(_State._TuningPitch > 0.); assert(_State._BandsPerOctave != 0);
 
     const double Root24 = std::exp2(1. / 24.); // 24 quarter tones (https://en.wikipedia.org/wiki/Quarter_tone)
 
     constexpr double C0 = 16.35; // Hz
 
-    const double TuningOffset = (_State->_TuningPitch > 0.) ? std::round(12.* std::log2(_State->_TuningPitch / C0)) * 2. : 0.;  // Number of quarter-tone steps between C0 and the nearest equal-tempered semitone corresponding to the tuning frequency.
-    const double C0Frequency  =  _State->_TuningPitch * std::pow(Root24, -TuningOffset);                                        // Frequency of C0 tuned with the specified frequency (~16.35 Hz)
+    const double TuningOffset = (_State._TuningPitch > 0.) ? std::round(12.* std::log2(_State._TuningPitch / C0)) * 2. : 0.;  // Number of quarter-tone steps between C0 and the nearest equal-tempered semitone corresponding to the tuning frequency.
+    const double C0Frequency  =  _State._TuningPitch * std::pow(Root24, -TuningOffset);                                        // Frequency of C0 tuned with the specified frequency (~16.35 Hz)
 
-    const double NoteGroup = 24. / _State->_BandsPerOctave;
+    const double NoteGroup = 24. / _State._BandsPerOctave;
 
-    const double LoIndex = std::round(_State->_LoNote * 2. / NoteGroup);
-    const double HiIndex = std::round(_State->_HiNote * 2. / NoteGroup);
+    const double LoIndex = std::round(_State._LoNote * 2. / NoteGroup);
+    const double HiIndex = std::round(_State._HiNote * 2. / NoteGroup);
 
     assert(LoIndex <= HiIndex);
 
-    const double Bandwidth = (((_State->_TransformMethod == TransformMethod::FFT) && (_State->_MappingMethod == CoefficientMapping::TriangularFilterBank)) || (_State->_TransformMethod == TransformMethod::CQT)) ? _State->_Bandwidth : 0.5;
+    const double Bandwidth = (((_State._TransformMethod == TransformMethod::FFT) && (_State._MappingMethod == CoefficientMapping::TriangularFilterBank)) || (_State._TransformMethod == TransformMethod::CQT)) ? _State._Bandwidth : 0.5;
 
     _FrequencyBands.reserve((size_t) (HiIndex - LoIndex + 1.));
 
@@ -573,9 +562,9 @@ void analysis_t::GenerateOctaveFrequencyBands()
     {
         frequency_band_t fb = 
         {
-            C0Frequency * std::pow(Root24, (i - Bandwidth) * NoteGroup + _State->_Transpose),
-            C0Frequency * std::pow(Root24,  i              * NoteGroup + _State->_Transpose),
-            C0Frequency * std::pow(Root24, (i + Bandwidth) * NoteGroup + _State->_Transpose),
+            C0Frequency * std::pow(Root24, (i - Bandwidth) * NoteGroup + _State._Transpose),
+            C0Frequency * std::pow(Root24,  i              * NoteGroup + _State._Transpose),
+            C0Frequency * std::pow(Root24, (i + Bandwidth) * NoteGroup + _State._Transpose),
         };
 
         assert(fb.Lo <= fb.Mid && fb.Mid <= fb.Hi);
@@ -627,13 +616,13 @@ static inline double CalcBlendedLogLinearFrequency(double minFreq, double maxFre
 /// </summary>
 void analysis_t::GenerateAveePlayerFrequencyBands()
 {
-    assert(_State->_BandCount > 1); assert(0. <= _State->_Bandwidth && _State->_Bandwidth <= 64.);
+    assert(_State._BandCount > 1); assert(0. <= _State._Bandwidth && _State._Bandwidth <= 64.);
 
-    const double Bandwidth = (((_State->_TransformMethod == TransformMethod::FFT) && (_State->_MappingMethod == CoefficientMapping::TriangularFilterBank)) || (_State->_TransformMethod == TransformMethod::CQT)) ? _State->_Bandwidth : 0.5;
+    const double Bandwidth = (((_State._TransformMethod == TransformMethod::FFT) && (_State._MappingMethod == CoefficientMapping::TriangularFilterBank)) || (_State._TransformMethod == TransformMethod::CQT)) ? _State._Bandwidth : 0.5;
 
-    _FrequencyBands.resize(_State->_BandCount);
+    _FrequencyBands.resize(_State._BandCount);
 
-    const double MaxIndex = (double) (_State->_BandCount - 1);
+    const double MaxIndex = (double) (_State._BandCount - 1);
 
     double i = 0.;
 
@@ -642,9 +631,9 @@ void analysis_t::GenerateAveePlayerFrequencyBands()
         const double LoIndex = std::clamp(i - Bandwidth, 0., MaxIndex);
         const double HiIndex = std::clamp(i + Bandwidth, 0., MaxIndex);
 
-        fb.Lo  = CalcBlendedLogLinearFrequency(_State->_LoFrequency, _State->_HiFrequency, LoIndex, MaxIndex, _State->_SkewFactor);
-        fb.Mid = CalcBlendedLogLinearFrequency(_State->_LoFrequency, _State->_HiFrequency, i,       MaxIndex, _State->_SkewFactor);
-        fb.Hi  = CalcBlendedLogLinearFrequency(_State->_LoFrequency, _State->_HiFrequency, HiIndex, MaxIndex, _State->_SkewFactor);
+        fb.Lo  = CalcBlendedLogLinearFrequency(_State._LoFrequency, _State._HiFrequency, LoIndex, MaxIndex, _State._SkewFactor);
+        fb.Mid = CalcBlendedLogLinearFrequency(_State._LoFrequency, _State._HiFrequency, i,       MaxIndex, _State._SkewFactor);
+        fb.Hi  = CalcBlendedLogLinearFrequency(_State._LoFrequency, _State._HiFrequency, HiIndex, MaxIndex, _State._SkewFactor);
 
         assert(fb.Lo <= fb.Mid && fb.Mid <= fb.Hi);
 
@@ -679,24 +668,24 @@ static inline double MelToHz(const double mel) noexcept
 void analysis_t::GenerateMelFrequencyBands()
 {
     // Generate the frequencies for each of the Mel points.
-    std::vector<double> Frequencies(_State->_MelBandCount + 2);
+    std::vector<double> Frequencies(_State._MelBandCount + 2);
     {
-        assert(_State->_LoFrequency < _State->_HiFrequency);
+        assert(_State._LoFrequency < _State._HiFrequency);
 
-        const double LoMel   = HzToMel(_State->_LoFrequency);
-        const double HiMel   = HzToMel(_State->_HiFrequency);
-        const double MelStep = (HiMel - LoMel) / (double) (_State->_MelBandCount + 1);
+        const double LoMel   = HzToMel(_State._LoFrequency);
+        const double HiMel   = HzToMel(_State._HiFrequency);
+        const double MelStep = (HiMel - LoMel) / (double) (_State._MelBandCount + 1);
 
         double Mel = LoMel;
 
         for (size_t i = 0; i < Frequencies.size(); ++i, Mel += MelStep)
             Frequencies[i] = MelToHz(Mel);
 
-        Frequencies.front() = _State->_LoFrequency;
-        Frequencies.back()  = _State->_HiFrequency;
+        Frequencies.front() = _State._LoFrequency;
+        Frequencies.back()  = _State._HiFrequency;
     }
 
-    _FrequencyBands.resize(_State->_MelBandCount);
+    _FrequencyBands.resize(_State._MelBandCount);
 
     size_t i = 0;
 
@@ -730,8 +719,8 @@ void analysis_t::GenerateLogFrequencyBands()
 
     _FrequencyBands.resize(ScaleCount);
 
-    const auto fMin = _State->_LoFrequency;
-    const auto fMax = _State->_HiFrequency;
+    const auto fMin = _State._LoFrequency;
+    const auto fMax = _State._HiFrequency;
 
     size_t i = 0;
 
@@ -768,19 +757,19 @@ void analysis_t::SpectrumProcessing(const audio_chunk & chunk) noexcept
     const audio_sample * Frames = chunk.get_data();
     const size_t FrameCount = chunk.get_sample_count(); // get_sample_count() actually returns the number of frames.
 
-    if (_WindowFunction == nullptr)
-        _WindowFunction = window_function_t::Create(_State->_WindowFunction, _State->_WindowParameter, _State->_WindowSkew, _State->_Truncate);
+    if (!_WindowFunction)
+        _WindowFunction = window_function_t::Create(_State._WindowFunction, _State._WindowParameter, _State._WindowSkew, _State._Truncate);
 
-    switch (_State->_TransformMethod)
+    switch (_State._TransformMethod)
     {
         case TransformMethod::FFT:
         {
             if (_FFTAnalyzer == nullptr)
             {       
-                if (_BrownPucketteKernel == nullptr)
-                    _BrownPucketteKernel = window_function_t::Create(_State->_KernelShape, _State->_KernelShapeParameter, _State->_KernelAsymmetry, _State->_Truncate);
+                if (!_BrownPucketteKernel)
+                    _BrownPucketteKernel = window_function_t::Create(_State._KernelShape, _State._KernelShapeParameter, _State._KernelAsymmetry, _State._Truncate);
 
-                _FFTAnalyzer = new fft_analyzer_t(_State, _SampleRate, _ChannelCount, _ChannelConfig, _State->_BinCount, *_WindowFunction, *_BrownPucketteKernel);
+                _FFTAnalyzer = new fft_analyzer_t(_State, _SampleRate, _ChannelCount, _ChannelConfig, *_WindowFunction, *_BrownPucketteKernel);
             }
 
             _FFTAnalyzer->AnalyzeAudio(Frames, FrameCount, _GraphOptions->_ActiveChannelMask, _FrequencyBands);
@@ -824,11 +813,11 @@ void analysis_t::SpectrumProcessing(const audio_chunk & chunk) noexcept
     }
 
     // Filter the spectrum.
-    if (_State->_WeightingType != WeightingType::None)
+    if (_State._WeightingType != WeightingType::None)
         ApplyAcousticWeighting();
 
     // Smooth the spectrum.
-    switch (_State->_SmoothingMethod)
+    switch (_State._SmoothingMethod)
     {
         default:
 
@@ -840,13 +829,13 @@ void analysis_t::SpectrumProcessing(const audio_chunk & chunk) noexcept
 
         case SmoothingMethod::Average:
         {
-            NormalizeWithAverageSmoothing(_State->_SmoothingFactor);
+            NormalizeWithAverageSmoothing(_State._SmoothingFactor);
             break;
         }
 
         case SmoothingMethod::Peak:
         {
-            NormalizeWithPeakSmoothing(_State->_SmoothingFactor);
+            NormalizeWithPeakSmoothing(_State._SmoothingFactor);
             break;
         }
     }
@@ -870,10 +859,10 @@ void analysis_t::SpectrumProcessing(const audio_chunk & chunk) noexcept
 /// </summary>
 void analysis_t::ApplyAcousticWeighting() noexcept
 {
-    assert((_SampleRate != 0) && (_State->_BinCount != 0));
+    assert((_SampleRate != 0) && (_State._BinCount != 0));
 
-    const double BinWidth = (double) _SampleRate / (double) _State->_BinCount;
-    const double Offset   = _State->_FrequencyShift * BinWidth;
+    const double BinWidth = (double) _SampleRate / (double) _State._BinCount;
+    const double Offset   = _State._FrequencyShift * BinWidth;
 
     for (frequency_band_t & fb : _FrequencyBands)
     {
@@ -896,9 +885,9 @@ void analysis_t::ApplyAcousticWeighting() noexcept
 /// </summary>
 double analysis_t::GetWeight(double f) const noexcept
 {
-    const double a = GetFrequencyTilt (f, _State->_FrequencyTilt, _State->_FrequencyTiltPivot);
-    const double b = Equalize         (f, _State->_EqualizationAmount, _State->_EqualizationDepth, _State->_EqualizationFreqScale);
-    const double c = GetAcousticWeight(f, _State->_WeightingType, _State->_WeightingAmount);
+    const double a = GetFrequencyTilt (f, _State._FrequencyTilt, _State._FrequencyTiltPivot);
+    const double b = Equalize         (f, _State._EqualizationAmount, _State._EqualizationDepth, _State._EqualizationFreqScale);
+    const double c = GetAcousticWeight(f, _State._WeightingType, _State._WeightingAmount);
 
     if (!std::isfinite(a) || !std::isfinite(b) || !std::isfinite(c) || a < 0. || b < 0. || c < 0.)
         return 1.; // Neutral
@@ -1100,13 +1089,13 @@ void analysis_t::MeterProcessing(const audio_chunk & chunk) noexcept
     }
 
     // Has the RMS window elapsed yet?
-    if (_RMSTimeElapsed < _State->_RMSWindow)
+    if (_RMSTimeElapsed < _State._RMSWindow)
         return;
 
     for (auto & m : _PeakMeasurements)
     {
         // https://skippystudio.nl/2021/07/sound-intensity-and-decibels/
-        m.RMS           = ToDecibel(std::sqrt(m.RMSTotal / (double) _RMSFrameCount)) + (_State->_HasRMSPlus3 ? dBCorrection : 0.);
+        m.RMS           = ToDecibel(std::sqrt(m.RMSTotal / (double) _RMSFrameCount)) + (_State._HasRMSPlus3 ? dBCorrection : 0.);
         m.NormalizedRMS = SmoothValue(NormalizeValue(m.RMS), m.NormalizedRMS);
 
         // Reset the RMS window-dependent values.
@@ -1188,7 +1177,7 @@ void analysis_t::InitializePeakMeasurements(uint32_t activeChannelMask) noexcept
 /// </summary>
 void analysis_t::OscilloscopeProcessing(const audio_chunk & chunk) noexcept
 {
-    if (_State->_Downmix)
+    if (_State._Downmix)
     {
         downmixer_t Downmixer;
 
@@ -1215,7 +1204,7 @@ void analysis_t::BitMeterProcessing(const audio_chunk & chunk) noexcept
 
     InitializeBitMeasurements(_ChannelMask);
 
-    const auto MaxInteger = (audio_sample) (1LL << (_State->_BitsPerInteger - 1));
+    const auto MaxInteger = (audio_sample) (1LL << (_State._BitsPerInteger - 1));
 
     const audio_sample * CurrentFrame = Frames;
 
@@ -1236,7 +1225,7 @@ void analysis_t::BitMeterProcessing(const audio_chunk & chunk) noexcept
                 {
                     uint64_t SampleBits;
 
-                    if (_State->_BitMeterMode == BitMeterMode::FloatingPoint)
+                    if (_State._BitMeterMode == BitMeterMode::FloatingPoint)
                     {
                         using sample_bits_t = std::conditional_t<sizeof(audio_sample) == 8, uint64_t, uint32_t>;
 
@@ -1299,7 +1288,7 @@ void analysis_t::InitializeBitMeasurements(uint32_t activeChannelMask) noexcept
             L"TFL", L"TFC", L"TFR", L"TBL", L"TBC", L"TBR",
         };
 
-        const size_t n = (size_t) ((_State->_BitMeterMode == BitMeterMode::FloatingPoint) ? audio_sample_size : _State->_BitsPerInteger);
+        const size_t n = (size_t) ((_State._BitMeterMode == BitMeterMode::FloatingPoint) ? audio_sample_size : _State._BitsPerInteger);
 
         size_t i = 0;
 

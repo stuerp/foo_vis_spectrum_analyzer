@@ -30,9 +30,8 @@ void oscilloscope_xy_t::Move(const D2D1_RECT_F & rect) noexcept
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void oscilloscope_xy_t::Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept
+void oscilloscope_xy_t::Configure(graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept
 {
-    _State = state;
     _GraphOptions = graphOptions;
     _Analysis = analysis;
 
@@ -56,7 +55,7 @@ void oscilloscope_xy_t::Render(ID2D1DeviceContext * deviceContext) noexcept
     ComPtr<ID2D1TransformedGeometry> TransformedGeometry;
 
     // Create the signal.
-    if (!_State->_IsPaused || (_State->_IsPaused && _State->_VisualizeDuringPause))
+    if (!_State._IsPaused || (_State._IsPaused && _State._VisualizeDuringPause))
     {
         hr = CreateSignalGeometry(_Analysis->_Chunk, TransformedGeometry);
 
@@ -67,11 +66,11 @@ void oscilloscope_xy_t::Render(ID2D1DeviceContext * deviceContext) noexcept
         TransformedGeometry.Reset();
 
     {
-        const FLOAT Opacity = (_State->_Afterglow != 0.f) ? std::expf(-(1000.f / (FLOAT) _State->_TargetRefreshRate) / _State->_Afterglow) : 0.f;
+        const FLOAT Opacity = (_State._Afterglow != 0.f) ? std::expf(-(1000.f / (FLOAT) _State._TargetRefreshRate) / _State._Afterglow) : 0.f;
 
         _OpacityEffect->SetValue(D2D1_OPACITY_PROP_OPACITY, Opacity);
 
-        _BlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_STANDARD_DEVIATION, _State->_BlurSigma);
+        _BlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_STANDARD_DEVIATION, _State._BlurSigma);
     }
 
     const size_t BitmapIndex = 1 - _PrevBitmapIndex;
@@ -86,7 +85,7 @@ void oscilloscope_xy_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 
         _DeviceContext->Clear();
 
-        if (_State->_HasPhosphorDecay)
+        if (_State._HasPhosphorDecay)
         {
             // Draw a faded and blurred version of the previous bitmap.
             {
@@ -123,8 +122,8 @@ void oscilloscope_xy_t::Render(ID2D1DeviceContext * deviceContext) noexcept
     {
         // Draw the static content.
         {
-            const auto Translate = D2D1::Matrix3x2F::Translation(_Rect.left + (_Size.width / 2.f), _Rect.top + (_Size.height / 2.f));
-            const auto Rotate    = D2D1::Matrix3x2F::Rotation(_State->_Rotation, D2D1::Point2F(0.f, 0.f));
+            const auto Translate = D2D1::Matrix3x2F::Translation(_Rect.left + _CenterX, _Rect.top + _CenterY);
+            const auto Rotate    = D2D1::Matrix3x2F::Rotation(_State._Rotation, D2D1::Point2F(0.f, 0.f));
 
             deviceContext->SetTransform(Rotate * Translate);
 
@@ -180,7 +179,7 @@ void oscilloscope_xy_t::DeleteDeviceIndependentResources() noexcept
 /// </summary>
 HRESULT oscilloscope_xy_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept
 {
-    if (_State->_SizeHasChanged)
+    if (_State._SizeHasChanged)
         DeleteDeviceSpecificResources();
 
     HRESULT hr = oscilloscope_base_t::CreateDeviceSpecificResources(deviceContext);
@@ -190,9 +189,9 @@ HRESULT oscilloscope_xy_t::CreateDeviceSpecificResources(ID2D1DeviceContext * de
 
     if (_XAxisTextStyle._Brush == nullptr)
     {
-        _XAxisTextStyle = *_State->_StyleManager.GetStyle(VisualElement::XAxisText);
+        _XAxisTextStyle = *_State._StyleManager.GetStyle(VisualElement::XAxisText);
 
-        _XAxisTextStyle.SetColor(_State);
+        _XAxisTextStyle.SetColor(&_State);
 
         // The font style is created prescaled to counter the Scale transform in the command list.
         hr = _XAxisTextStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"+0.0", _HalfSide);
@@ -203,9 +202,9 @@ HRESULT oscilloscope_xy_t::CreateDeviceSpecificResources(ID2D1DeviceContext * de
 
     if (_YAxisTextStyle._Brush == nullptr)
     {
-        _YAxisTextStyle = *_State->_StyleManager.GetStyle(VisualElement::YAxisText);
+        _YAxisTextStyle = *_State._StyleManager.GetStyle(VisualElement::YAxisText);
 
-        _YAxisTextStyle.SetColor(_State);
+        _YAxisTextStyle.SetColor(&_State);
 
         // The font style is created prescaled to counter the Scale transform in the command list.
         hr = _YAxisTextStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"+0.0", _HalfSide);
@@ -362,7 +361,7 @@ HRESULT oscilloscope_xy_t::CreateStaticContent() noexcept
 /// <summary>
 /// Creates the path geometry for the signal.
 /// </summary>
-HRESULT oscilloscope_xy_t::CreateSignalGeometry(const audio_chunk_impl & chunk, ComPtr<ID2D1TransformedGeometry> & transformedGeometry) noexcept
+HRESULT oscilloscope_xy_t::CreateSignalGeometry(const audio_chunk & chunk, ComPtr<ID2D1TransformedGeometry> & transformedGeometry) noexcept
 {
     size_t FrameCount = chunk.get_sample_count();                                               // get_sample_count() actually returns the number of frames.
 
@@ -378,7 +377,7 @@ HRESULT oscilloscope_xy_t::CreateSignalGeometry(const audio_chunk_impl & chunk, 
 
     const audio_sample * Frames = chunk.get_data();
 
-    if (_State->_ZeroCrossingTrigger && (FrameCount >= 4))
+    if (_State._ZeroCrossingTrigger && (FrameCount >= 4))
     {
         FrameCount /= 2;
 
@@ -408,15 +407,15 @@ HRESULT oscilloscope_xy_t::CreateSignalGeometry(const audio_chunk_impl & chunk, 
 
             hr = Geometry->Open(Sink.GetAddressOf());
 
-            auto x = (FLOAT) std::clamp(Frames[Channel1] * _State->_XInputGain, -1., 1.);
-            auto y = (FLOAT) std::clamp(Frames[Channel2] * _State->_YInputGain, -1., 1.);
+            auto x = (FLOAT) std::clamp(Frames[Channel1] * _State._XInputGain, -1., 1.);
+            auto y = (FLOAT) std::clamp(Frames[Channel2] * _State._YInputGain, -1., 1.);
 
             Sink->BeginFigure(D2D1::Point2F(x, y), D2D1_FIGURE_BEGIN_HOLLOW);
 
             for (size_t i = ChannelCount; i < FrameCount; i += ChannelCount)
             {
-                x = (FLOAT) std::clamp(Frames[Channel1 + i] * _State->_XInputGain, -1., 1.);
-                y = (FLOAT) std::clamp(Frames[Channel2 + i] * _State->_YInputGain, -1., 1.);
+                x = (FLOAT) std::clamp(Frames[Channel1 + i] * _State._XInputGain, -1., 1.);
+                y = (FLOAT) std::clamp(Frames[Channel2 + i] * _State._YInputGain, -1., 1.);
 
                 Sink->AddLine(D2D1::Point2F(x, y));
             }
@@ -428,7 +427,7 @@ HRESULT oscilloscope_xy_t::CreateSignalGeometry(const audio_chunk_impl & chunk, 
 
         if (SUCCEEDED(hr))
         {
-            const auto Rotate = D2D1::Matrix3x2F::Rotation(_State->_Rotation, D2D1::Point2F(0.f, 0.f));
+            const auto Rotate = D2D1::Matrix3x2F::Rotation(_State._Rotation, D2D1::Point2F(0.f, 0.f));
 
             hr = Direct2DFactory::Get()->CreateTransformedGeometry(Geometry.Get(), Rotate * _ScaleTransform * _TranslateTransform, transformedGeometry.GetAddressOf());
         }

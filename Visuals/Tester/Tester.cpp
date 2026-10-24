@@ -21,9 +21,8 @@ tester_t::~tester_t()
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void tester_t::Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept
+void tester_t::Configure(graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept
 {
-    _State = state;
     _GraphOptions = graphOptions;
     _Analysis = analysis;
 
@@ -157,7 +156,7 @@ HRESULT tester_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceConte
         (void) deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), _Brush.GetAddressOf());
 #endif
 
-    if (_State->_ColorsHaveChanged || _State->_SizeHasChanged)
+    if (_State._ColorsHaveChanged || _State._SizeHasChanged)
     {
         DeleteColorDependentResources();
 
@@ -169,7 +168,7 @@ HRESULT tester_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceConte
             return hr;
     }
 
-    if (_State->_SizeHasChanged)
+    if (_State._SizeHasChanged)
     {
         DeleteSizeDependentResources();
 
@@ -242,5 +241,5 @@ void tester_t::OnConfigurationChanged(ConfigurationChanges configurationChanges)
     if (!IsSet(configurationChanges, ConfigurationChanges::Layout))
         return;
 
-    _State->_SizeHasChanged = true;
+    _State._SizeHasChanged = true;
 }

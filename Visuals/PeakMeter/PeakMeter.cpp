@@ -18,9 +18,8 @@ peak_meter_t::~peak_meter_t() noexcept
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void peak_meter_t::Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept
+void peak_meter_t::Configure(graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept
 {
-    _State = state;
     _GraphOptions = graphOptions;
     _Analysis = analysis;
 
@@ -76,9 +75,9 @@ HRESULT peak_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceC
 #endif
 
     if (_BarCount != _Analysis->_PeakMeasurements.size())
-        _State->_SizeHasChanged = true;
+        _State._SizeHasChanged = true;
 
-    if (_State->_ColorsHaveChanged || _State->_SizeHasChanged)
+    if (_State._ColorsHaveChanged || _State._SizeHasChanged)
     {
         DeleteColorDependentResources();
 
@@ -90,7 +89,7 @@ HRESULT peak_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceC
             return hr;
     }
 
-    if (_State->_SizeHasChanged)
+    if (_State._SizeHasChanged)
     {
         DeleteSizeDependentResources();
 
@@ -164,7 +163,7 @@ void peak_meter_t::DeleteSizeDependentResources() noexcept
 /// </summary>
 HRESULT peak_meter_t::CreateColorDependentResources(ID2D1DeviceContext * deviceContext) noexcept
 {
-    auto & StyleManager = _GraphOptions->_UseLocalStyles ? _GraphOptions->_StyleManager : _State->_StyleManager;
+    auto & StyleManager = _GraphOptions->_UseLocalStyles ? _GraphOptions->_StyleManager : _State._StyleManager;
 
     const auto InitializeStyle = [this, deviceContext, & StyleManager](auto & style, VisualElement visualElement, const wchar_t * text) noexcept -> HRESULT
     {
@@ -173,7 +172,7 @@ HRESULT peak_meter_t::CreateColorDependentResources(ID2D1DeviceContext * deviceC
 
         style = *StyleManager.GetStyle(visualElement);
 
-        style.SetColor(_State);
+        style.SetColor(&_State);
 
         return style.CreateDeviceSpecificResources(deviceContext, _Size, text, 1.f);
     };
@@ -283,19 +282,19 @@ HRESULT peak_meter_t::CreateOpacityMask(ID2D1DeviceContext * deviceContext) noex
 
     rt->Clear(); // Transparent
 
-    const FLOAT LEDSize = _State->_LEDLight + _State->_LEDGap;
+    const FLOAT LEDSize = _State._LEDLight + _State._LEDGap;
 
     if (LEDSize > 0.f)
     {
-        if (_State->_IsHorizontalPeakMeter)
+        if (_State._IsHorizontalPeakMeter)
         {
             for (FLOAT x = 0.f; x < _Size.width; x += LEDSize)
-                rt->FillRectangle(D2D1::RectF(x, 0.f, x + _State->_LEDLight, _Size.height), Brush.Get());
+                rt->FillRectangle(D2D1::RectF(x, 0.f, x + _State._LEDLight, _Size.height), Brush.Get());
         }
         else
         {
             for (FLOAT y = 0.f; y < _Size.height; y += LEDSize)
-                rt->FillRectangle(D2D1::RectF(0.f, y, _Size.width, y + _State->_LEDLight), Brush.Get());
+                rt->FillRectangle(D2D1::RectF(0.f, y, _Size.width, y + _State._LEDLight), Brush.Get());
         }
     }
 
@@ -326,15 +325,15 @@ void peak_meter_t::CreateParts() noexcept
         _Parts.push_back(std::make_unique<scale_t>
         (
             _State, _GraphOptions,
-            _State->_IsHorizontalPeakMeter ? DWRITE_TEXT_ALIGNMENT_CENTER   : DWRITE_TEXT_ALIGNMENT_TRAILING,
-            _State->_IsHorizontalPeakMeter ? DWRITE_PARAGRAPH_ALIGNMENT_FAR : DWRITE_PARAGRAPH_ALIGNMENT_CENTER
+            _State._IsHorizontalPeakMeter ? DWRITE_TEXT_ALIGNMENT_CENTER   : DWRITE_TEXT_ALIGNMENT_TRAILING,
+            _State._IsHorizontalPeakMeter ? DWRITE_PARAGRAPH_ALIGNMENT_FAR : DWRITE_PARAGRAPH_ALIGNMENT_CENTER
         ));
     }
 
     bool IsFirstBar = true;
 
     {
-        const bool ReverseLayout = _State->_IsHorizontalPeakMeter ? _GraphOptions->_FlipVertically : _GraphOptions->_FlipHorizontally;
+        const bool ReverseLayout = _State._IsHorizontalPeakMeter ? _GraphOptions->_FlipVertically : _GraphOptions->_FlipHorizontally;
 
         const auto AddMeter = [this, &IsFirstBar](const auto & channel)
         {
@@ -345,7 +344,7 @@ void peak_meter_t::CreateParts() noexcept
 
             if (Measurement != _Analysis->_PeakMeasurements.cend())
             {
-                if (_State->_HasCenterScale && !IsFirstBar)
+                if (_State._HasCenterScale && !IsFirstBar)
                     _Parts.push_back(std::make_unique<scale_t>(_State, _GraphOptions, DWRITE_TEXT_ALIGNMENT_CENTER, DWRITE_PARAGRAPH_ALIGNMENT_CENTER));
 
                 _Parts.push_back(std::make_unique<bar_t>(_State, _GraphOptions, std::addressof(*Measurement)));
@@ -354,7 +353,7 @@ void peak_meter_t::CreateParts() noexcept
             }
         };
 
-        const auto & ChannelOrder = _State->_ChannelOrder;
+        const auto & ChannelOrder = _State._ChannelOrder;
 
         if (ReverseLayout)
         {
@@ -373,8 +372,8 @@ void peak_meter_t::CreateParts() noexcept
         _Parts.push_back(std::make_unique<scale_t>
         (
             _State, _GraphOptions,
-            _State->_IsHorizontalPeakMeter ? DWRITE_TEXT_ALIGNMENT_CENTER    : DWRITE_TEXT_ALIGNMENT_LEADING,
-            _State->_IsHorizontalPeakMeter ? DWRITE_PARAGRAPH_ALIGNMENT_NEAR : DWRITE_PARAGRAPH_ALIGNMENT_CENTER
+            _State._IsHorizontalPeakMeter ? DWRITE_TEXT_ALIGNMENT_CENTER    : DWRITE_TEXT_ALIGNMENT_LEADING,
+            _State._IsHorizontalPeakMeter ? DWRITE_PARAGRAPH_ALIGNMENT_NEAR : DWRITE_PARAGRAPH_ALIGNMENT_CENTER
         ));
     }
 }
@@ -428,14 +427,14 @@ void peak_meter_t::MeasureParts(ID2D1DeviceContext * deviceContext) noexcept
 
         if (Scale != nullptr)
         {
-            if (_State->_IsHorizontalPeakMeter)
+            if (_State._IsHorizontalPeakMeter)
                 TotalScaleHeight += Scale->IsCenter() ? _ScaleTextStyle._Height : ScaleHeight;
             else
                 TotalScaleWidth  += Scale->IsCenter() ? _ScaleTextStyle._Width  : ScaleWidth;
         }
     }
 
-    const FLOAT TotalBarGap = _State->_HasCenterScale ? 0.f : ((_BarCount > 1) ? _State->_BarGap * (FLOAT) (_BarCount - 1) : 0.f);
+    const FLOAT TotalBarGap = _State._HasCenterScale ? 0.f : ((_BarCount > 1) ? _State._BarGap * (FLOAT) (_BarCount - 1) : 0.f);
 
     FLOAT Offset = 0.f;
     FLOAT BarWidth = 0.f;
@@ -443,12 +442,12 @@ void peak_meter_t::MeasureParts(ID2D1DeviceContext * deviceContext) noexcept
 
     // Calculate the width / height of a bar and the offset on the graph.
     {
-        if (_State->_IsHorizontalPeakMeter)
+        if (_State._IsHorizontalPeakMeter)
         {
             BarHeight = (_Size.height - TotalScaleHeight - TotalBarGap) / (FLOAT) _BarCount;
 
-            if ((_State->_MaxBarSize != 0.f) && (BarHeight > _State->_MaxBarSize))
-                BarHeight = _State->_MaxBarSize;
+            if ((_State._MaxBarSize != 0.f) && (BarHeight > _State._MaxBarSize))
+                BarHeight = _State._MaxBarSize;
 
             const FLOAT TotalBarHeight = (BarHeight * (FLOAT) _BarCount) + TotalBarGap;
 
@@ -458,8 +457,8 @@ void peak_meter_t::MeasureParts(ID2D1DeviceContext * deviceContext) noexcept
         {
             BarWidth = (_Size.width  - TotalScaleWidth  - TotalBarGap) / (FLOAT) _BarCount;
 
-            if ((_State->_MaxBarSize != 0.f) && (BarWidth > _State->_MaxBarSize))
-                BarWidth = _State->_MaxBarSize;
+            if ((_State._MaxBarSize != 0.f) && (BarWidth > _State._MaxBarSize))
+                BarWidth = _State._MaxBarSize;
 
             const FLOAT TotalBarWidth  = (BarWidth  * (FLOAT) _BarCount) + TotalBarGap;
 
@@ -472,7 +471,7 @@ void peak_meter_t::MeasureParts(ID2D1DeviceContext * deviceContext) noexcept
 
     D2D1_RECT_F Rect = _Rect;
 
-    if (_State->_IsHorizontalPeakMeter)
+    if (_State._IsHorizontalPeakMeter)
     {
         FLOAT y = Rect.top + Offset;
 
@@ -490,7 +489,7 @@ void peak_meter_t::MeasureParts(ID2D1DeviceContext * deviceContext) noexcept
             else // Bar
             {
                 if (NeedGap)
-                    y += _State->_BarGap;
+                    y += _State._BarGap;
 
                 Rect.top    = y;
                 Rect.bottom = y + BarHeight;
@@ -523,7 +522,7 @@ void peak_meter_t::MeasureParts(ID2D1DeviceContext * deviceContext) noexcept
             else
             {
                 if (NeedGap)
-                    x += _State->_BarGap;
+                    x += _State._BarGap;
 
                 Rect.left  = x;
                 Rect.right = x + BarWidth;
@@ -546,5 +545,5 @@ void peak_meter_t::OnConfigurationChanged(ConfigurationChanges configurationChan
     if (!IsSet(configurationChanges, ConfigurationChanges::Layout))
         return;
 
-    _State->_SizeHasChanged = true;
+    _State._SizeHasChanged = true;
 }

@@ -16,7 +16,7 @@
 #define NUM_PRODUCT_PATCH       0
 #define NUM_PRODUCT_PRERELEASE  0
 
-#define STR_RELEASE_TAG         "-alpha1"
+#define STR_RELEASE_TAG         "-alpha2"
 
 /** Component specific **/
 

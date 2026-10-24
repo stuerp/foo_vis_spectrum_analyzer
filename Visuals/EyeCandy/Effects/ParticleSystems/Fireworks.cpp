@@ -53,37 +53,39 @@ namespace Fireworks
     /// <summary>
     /// 
     /// </summary>
-    void effect_t::Render(ID2D1RenderTarget * renderTarget, double deltaTime, audio_chunk_impl & chunk) noexcept
+    void effect_t::Render(ID2D1RenderTarget * renderTarget, double deltaTime, audio_chunk & chunk) noexcept
     {
         const HRESULT hr = CreateDeviceDependentResources(renderTarget);
 
         if (FAILED(hr))
             return;
 
-        deltaTime = std::clamp(deltaTime, 0.0, 0.1);
+        deltaTime = Clamp(deltaTime);
 
         AnalyzeAudio(chunk);
         Update(deltaTime);
 
-        _BackBufferRenderTarget->BeginDraw();
-
-        _BackBufferRenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
-
-        ID2D1RenderTarget * BackBufferTarget = _BackBufferRenderTarget.Get();
-
-        Fade(BackBufferTarget, deltaTime);
-        RenderSky(BackBufferTarget);
-
-        // Only persistent particles and idle stars are rendered into the fading back buffer. Flare trails and heads are transient.
-        if (_HasAudio)
-            RenderFireworks(BackBufferTarget);
-        else
-            RenderIdle(BackBufferTarget);
-
-        if (FAILED(_BackBufferRenderTarget->EndDraw()))
         {
-            DeleteDeviceDependentResources();
-            return;
+            _BackBufferRenderTarget->BeginDraw();
+
+            _BackBufferRenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
+
+            ID2D1RenderTarget * BackBufferTarget = _BackBufferRenderTarget.Get();
+
+            Fade(BackBufferTarget, deltaTime);
+            RenderSky(BackBufferTarget);
+
+            // Only persistent particles and idle stars are rendered into the fading back buffer. Flare trails and heads are transient.
+            if (_HasAudio)
+                RenderFireworks(BackBufferTarget);
+            else
+                RenderIdle(BackBufferTarget);
+
+            if (FAILED(_BackBufferRenderTarget->EndDraw()))
+            {
+                DeleteDeviceDependentResources();
+                return;
+            }
         }
 
         renderTarget->DrawBitmap(_BackBuffer.Get(), _Rectangle);
@@ -96,7 +98,7 @@ namespace Fireworks
     /// <summary>
     /// 
     /// </summary>
-    void effect_t::AnalyzeAudio(const audio_chunk_impl & chunk)
+    void effect_t::AnalyzeAudio(const audio_chunk & chunk)
     {
         _Peak         = 0.;
         _RMS          = 0.;
@@ -112,7 +114,7 @@ namespace Fireworks
         const audio_sample * Frames = chunk.get_data();
 
         const size_t SampleCount  = chunk.get_sample_count();
-        const size_t ChannelCount = chunk.get_channels();
+        const size_t ChannelCount = chunk.get_channel_count();
         const double SampleRate   = (double) chunk.get_sample_rate();
 
         // Analyze only the most recent 1536 sample frames.
@@ -182,9 +184,10 @@ namespace Fireworks
         if (!_HasAudio)
             return;
 
-        const double NyquistFrequency  = SampleRate * 0.5;
-        const double InverseBandCount  = 1. / (double) (FrequencyBandCount - 1);
-        const double FrequencyRatio    = 16'500. / 38.;             // 38 Hz to 16.5 kHz
+        const double NyquistFrequency   = SampleRate * 0.5;
+        const double InverseBandCount   = 1. / (double) (FrequencyBandCount - 1);
+
+        constexpr double FrequencyRatio = 16'500. / 40.;            // 40 Hz to 16.5 kHz
 
         // Allocate the filter state.
         std::array<double, FrequencyBandCount> Coefficients;        // Goertzel-style resonators
@@ -196,8 +199,8 @@ namespace Fireworks
         {
             const double Amount = (double) Band * InverseBandCount; // [0, 1]
 
-            const double CenterFrequency = 38. * std::pow(FrequencyRatio, Amount);
-            const double Frequency       = std::clamp(CenterFrequency, 20.0, NyquistFrequency * 0.95);
+            const double CenterFrequency = 40. * std::pow(FrequencyRatio, Amount);
+            const double Frequency       = std::clamp(CenterFrequency, 20., NyquistFrequency * 0.95);
 
             Coefficients[Band] = 2. * std::cos(TwoPi * Frequency / SampleRate);
         }
@@ -231,7 +234,7 @@ namespace Fireworks
             const double Magnitude = std::sqrt(Power) * InverseFrameCount;
 
             // Compress and shape the band energy. Slightly suppress low bands and increasingly boosts high bands.
-            _BandEnergy[Band] = std::clamp(std::log1p(Magnitude * 100.0) * LogarithmicScale * Lerp(0.90, 1.50, Amount), 0., 1.);
+            _BandEnergy[Band] = Clamp(std::log1p(Magnitude * 100.0) * LogarithmicScale * Lerp(0.90, 1.50, Amount));
 
             MaximumEnergy = std::max(MaximumEnergy, _BandEnergy[Band]);
         }
@@ -242,7 +245,7 @@ namespace Fireworks
             const double Normalization = 1. / std::max(0.3, MaximumEnergy);
 
             for (auto & Energy : _BandEnergy)
-                Energy = std::clamp(Energy * Normalization, 0., 1.);
+                Energy = Clamp(Energy * Normalization);
         }
 
         // Calculate the spectral flux.
@@ -254,7 +257,7 @@ namespace Fireworks
                 _PreviousBandEnergy[Band] = _BandEnergy[Band]; // Remember the band energy for the next chunk.
             }
 
-            _SpectralFlux = std::clamp(_SpectralFlux / (double) FrequencyBandCount * 4., 0., 1.); // Boost the spectral flux artificially by 4 to make it react more strongly.
+            _SpectralFlux = Clamp(_SpectralFlux / (double) FrequencyBandCount * 4.); // Boost the spectral flux artificially by 4 to make it react more strongly.
         }
     }
 
@@ -268,9 +271,9 @@ namespace Fireworks
 
         _AnimationTime += AnimationDelta;
 
-        _SmoothedPeak         = ExponentialSmoothing(_SmoothedPeak,         _Peak,         deltaTime, _Peak         > _SmoothedPeak         ? 36.f : 7.f);
-        _SmoothedRMS          = ExponentialSmoothing(_SmoothedRMS,          _RMS,          deltaTime, _RMS          > _SmoothedRMS          ? 24.f : 5.f);
-        _SmoothedSpectralFlux = ExponentialSmoothing(_SmoothedSpectralFlux, _SpectralFlux, deltaTime, _SpectralFlux > _SmoothedSpectralFlux ? 42.f : 8.f);
+        _SmoothedPeak         = ExponentialSmoothing(_SmoothedPeak,         _Peak,         deltaTime, (_Peak         > _SmoothedPeak)         ? 36.f : 7.f);
+        _SmoothedRMS          = ExponentialSmoothing(_SmoothedRMS,          _RMS,          deltaTime, (_RMS          > _SmoothedRMS)          ? 24.f : 5.f);
+        _SmoothedSpectralFlux = ExponentialSmoothing(_SmoothedSpectralFlux, _SpectralFlux, deltaTime, (_SpectralFlux > _SmoothedSpectralFlux) ? 42.f : 8.f);
 
         for (size_t i = 0; i < FrequencyBandCount; ++i)
         {
@@ -319,7 +322,7 @@ namespace Fireworks
 
                 const double FlareEnergy = 0.5 + (_BandEnergy[StrongestBand] * 0.65);
 
-                LaunchFlare(StrongestBand, std::clamp(FlareEnergy, 0., 1.));
+                LaunchFlare(StrongestBand, Clamp(FlareEnergy));
 
                 // Reset the accumulator.
                 _LaunchAccumulator -= 1.;
@@ -346,10 +349,10 @@ namespace Fireworks
                 {
                     const double FlareEnergy = BassEnergy + BassImpact * 0.65;
 
-                    LaunchFlare(i % 3, std::clamp(FlareEnergy, 0., 1.));
+                    LaunchFlare(i % 3, Clamp(FlareEnergy));
                 }
 
-                _BassCooldown = Lerp(0.33, 0.58, 1. - std::clamp(BassImpact, 0., 1.));
+                _BassCooldown   = Lerp(0.33, 0.58, 1. - Clamp(BassImpact));
                 _SkyLightTarget = std::clamp(_SkyLightTarget + BassImpact * 0.16, 0., 0.82);
             }
         }
@@ -360,9 +363,9 @@ namespace Fireworks
             {
                 const double FlareEnergy = _BandEnergy[i];
 
-                const double Rise = std::max(0., FlareEnergy - (_SmoothedBandEnergy[i] * 0.78));
-                const double Trigger = 0.095 - (_SmoothedSpectralFlux * 0.035);
-                const double Probability = std::clamp(((Rise - Trigger) * 25.) + (_SpectralFlux * 0.24), 0., 1.) * DensityMultiplier * (deltaTime * 60.);
+                const double Rise        = std::max(0., FlareEnergy - (_SmoothedBandEnergy[i] * 0.78));
+                const double Trigger     = 0.095 - (_SmoothedSpectralFlux * 0.035);
+                const double Probability = Clamp(((Rise - Trigger) * 25.) + (_SpectralFlux * 0.24)) * DensityMultiplier * (deltaTime * 60.);
 
                 if ((_BandCooldown[i] <= 0.) && (FlareEnergy > 0.18) && (Random(_RandomState) < Probability))
                 {
@@ -410,8 +413,8 @@ namespace Fireworks
 
         Flare.Position =
         {
-            (float)(_Width * HorizontalAmount),
-            (float)_Height
+            (float) (_Width * HorizontalAmount),
+            (float)  _Height
         };
 
         Flare.Previous = Flare.Position;
@@ -420,8 +423,8 @@ namespace Fireworks
 
         Flare.Velocity =
         {
-            (float)(_Width * ((DirectionToCenter * 0.045) + (RandomSigned(State) * 0.040))),
-            (float)(-_Height * Lerp(0.48, 0.76, energy))
+            (float) ( _Width  * ((DirectionToCenter * 0.045) + (RandomSigned(State) * 0.040))),
+            (float) (-_Height * Lerp(0.48, 0.76, energy))
         };
 
         Flare.Age    = 0.;
@@ -524,12 +527,12 @@ namespace Fireworks
             if (!Spark.IsActive)
                 continue;
 
-            const double Life = std::clamp(Spark.Age / std::max(Spark.Lifetime, 0.001), 0., 1.);
-            const double Fade = (1. - Life) * (1. - Life);
-            const double Twinkle = 0.78 + (0.22 * std::sin(_AnimationTime * 21. + (Spark.Seed * 0.001)));
+            const double Life      = Clamp(Spark.Age / std::max(Spark.Lifetime, 0.001));
+            const double Fade      = (1. - Life) * (1. - Life);
+            const double Twinkle   = 0.78 + (0.22 * std::sin(_AnimationTime * 21. + (Spark.Seed * 0.001)));
             const double Intensity = Spark.Brightness * Fade * Twinkle;
 
-            const uint32_t Color = HSVToBGRA((float)Spark.Hue, (float)Spark.Saturation, (float)std::clamp(0.68 + (Intensity * 0.42), 0., 1.));
+            const uint32_t Color = HSVToBGRA((float) Spark.Hue, (float) Spark.Saturation, (float) Clamp(0.68 + (Intensity * 0.42)));
 
             DrawGlowLine(renderTarget, Spark.Previous, Spark.Position, Color, (float)(Intensity * 0.68), 0.70f);
 
@@ -585,11 +588,11 @@ namespace Fireworks
         {
             const flare_trail_point_t & Point = Flare.Trail[ReverseIndex - 1];
 
-            const double Life = std::clamp(1. - (Point.Age / FlareTrailLifetime), 0., 1.);
-
+            const double Life       = Clamp(1. - (Point.Age / FlareTrailLifetime));
             const double SmoothLife = Life * Life * (3. - (2. * Life));
+
             const float Intensity = (float)(SmoothLife * (0.38 + Flare.Energy * 0.22));
-            const float Width = (float)Lerp(0.45, 1.35, SmoothLife);
+            const float Width     = (float)Lerp(0.45, 1.35, SmoothLife);
 
             DrawForegroundGlowLine(renderTarget, Point.Position, To, Color, Intensity, Width);
 
@@ -843,22 +846,22 @@ namespace Fireworks
                 (float)(std::sin(Angle) * Speed * ScaleY + flare.Velocity.y * 0.10)
             };
 
-            Spark->Age = 0.;
-            Spark->Lifetime = Lerp(LifetimeMinimum, LifetimeMaximum, Random(State)) * Lerp(0.85, 1.20, flare.Energy);
+            Spark->Age        = 0.;
+            Spark->Lifetime   = Lerp(LifetimeMinimum, LifetimeMaximum, Random(State)) * Lerp(0.85, 1.20, flare.Energy);
 
-            Spark->Hue = Fraction(flare.Hue + RandomSigned(State) * HueSpread);
+            Spark->Hue        = Fraction(flare.Hue + RandomSigned(State) * HueSpread);
             Spark->Saturation = Lerp(0.72, 1.00, Random(State));
             Spark->Brightness = Lerp(0.78, 1.25, Random(State));
 
-            Spark->Drag = Lerp(DragMinimum, DragMaximum, Random(State));
-            Spark->Gravity = Lerp(GravityMinimum, GravityMaximum, Random(State));
-            Spark->Seed = State;
-            Spark->IsActive = true;
+            Spark->Drag       = Lerp(DragMinimum, DragMaximum, Random(State));
+            Spark->Gravity    = Lerp(GravityMinimum, GravityMaximum, Random(State));
+            Spark->Seed       = State;
+            Spark->IsActive   = true;
         }
 
         _SkyHue = flare.Hue;
 
-        const double Crowding = std::clamp((double)SparkCount / 260., 0., 1.);
+        const double Crowding = Clamp((double) SparkCount / 260.);
 
         _SkyLightTarget = std::clamp(_SkyLightTarget + (flare.Energy * 0.105) + (Crowding * 0.115), 0., 0.82);
 
@@ -1036,10 +1039,10 @@ namespace Fireworks
     /// </summary>
     void effect_t::Fade(ID2D1RenderTarget * renderTarget, double deltaTime) noexcept
     {
-        const double Persistence = 0.885 + _SmoothedRMS * 0.025;
-        const double Decay = std::pow(std::clamp(Persistence, 0.78, 0.955), (deltaTime * 60.));
+        const double Persistence = 0.885 + (_SmoothedRMS * 0.025);
+        const double Decay       = std::pow(std::clamp(Persistence, 0.78, 0.955), (deltaTime * 60.));
 
-        const auto Opacity = (float)std::clamp(1. - Decay, 0., 1.);
+        const auto Opacity = (float) Clamp(1. - Decay);
 
         _Brush->SetColor(D2D1::ColorF(0., 0., 0., Opacity));
         _Brush->SetOpacity(1.f);
@@ -1201,7 +1204,7 @@ namespace Fireworks
         {
             const D2D1_SIZE_U Size = _BackBufferRenderTarget->GetPixelSize();
 
-            if ((Size.width == (UINT32)_Width) && (Size.height == (UINT32)_Height))
+            if ((Size.width == (UINT32) _Width) && (Size.height == (UINT32) _Height))
                 return S_OK;
         }
 
@@ -1222,8 +1225,8 @@ namespace Fireworks
         }
 
         {
-            const D2D1_SIZE_F DesiredSize = D2D1::SizeF(_Width, _Height);
-            const D2D1_SIZE_U DesiredPixelSize = D2D1::SizeU((UINT32)_Width, (UINT32)_Height);
+            const D2D1_SIZE_F DesiredSize      = D2D1::SizeF(_Width, _Height);
+            const D2D1_SIZE_U DesiredPixelSize = D2D1::SizeU((UINT32) _Width, (UINT32) _Height);
 
             hr = renderTarget->CreateCompatibleRenderTarget(&DesiredSize, &DesiredPixelSize, nullptr, D2D1_COMPATIBLE_RENDER_TARGET_OPTIONS_NONE, _BackBufferRenderTarget.ReleaseAndGetAddressOf());
 

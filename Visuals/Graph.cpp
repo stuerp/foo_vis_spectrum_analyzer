@@ -1,5 +1,5 @@
 
-/** $VER: Graph.cpp (2026.10.11) P. Stuer - Implements a graph on which the visualizations are rendered. **/
+/** $VER: Graph.cpp (2026.10.24) P. Stuer - Implements a graph on which the visualizations are rendered. **/
 
 #include "pch.h"
 
@@ -23,14 +23,14 @@ void graph_t::Configure(graph_options_t * graphOptions, bool isFirst, bool isLas
     _Description = graphOptions->_Description;
 
     // Configure the analysis.
-    _Analysis.Configure(&_State, graphOptions);
+    _Analysis.Configure(graphOptions);
 
     // Configure the visualization.
     _Visualization.reset();
 
     _Visualization = visualization_t::Create(_State);
 
-    _Visualization->Configure(&_State, graphOptions, &_Analysis, _IsFirst, _IsLast, _RenderContext.D3DDevice, _RenderContext.D3DDeviceContext);
+    _Visualization->Configure(graphOptions, &_Analysis, _IsFirst, _IsLast, _RenderContext.D3DDevice, _RenderContext.D3DDeviceContext);
 }
 
 /// <summary>

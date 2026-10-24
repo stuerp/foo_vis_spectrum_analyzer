@@ -1,6 +1,15 @@
 
 # foo_vis_spectrum_analyzer History
 
+v0.14.0.0-alpha1, 2026-10-23
+
+- New: Eye Candy visualizer with multiple effects in the following 5 categories.
+  - Dynamic Systems: Aizawa Attractor, Halvorsen Attractor, Lorenz Attractor, Rössler Attractor, Thomas Attractor, Double Pendulum
+  - Fields: Aurora, Fluid Ink, Metaballs, Plasma
+  - Particle Systems: Audio Galaxy, Fireflies, Fireworks, Particle Vortex, Starfield, Swarm
+  - Retro: Neon Tunnel, Vector Grid
+  - Trails: Lissajous Trails, Ribbon Flow, Spirograph
+
 v0.13.0.0, 2026-10-11
 
 - Added: Artwork Fit Mode `Cover`.

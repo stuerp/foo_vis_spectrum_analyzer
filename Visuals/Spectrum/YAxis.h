@@ -20,15 +20,15 @@
 /// <summary>
 /// Implements the Y axis of a graph.
 /// </summary>
-#pragma warning(disable: 4820)
-class y_axis_t : public visualization_t
+class y_axis_t final : public visualization_t
 {
 public:
-    y_axis_t() = default;
+    y_axis_t(state_t & state) : visualization_t(state) { }
 
     y_axis_t(const y_axis_t &) = delete;
-    y_axis_t & operator=(const y_axis_t &) = delete;
     y_axis_t(y_axis_t &&) = delete;
+
+    y_axis_t & operator=(const y_axis_t &) = delete;
     y_axis_t & operator=(y_axis_t &&) = delete;
 
     // element_t
@@ -37,7 +37,7 @@ public:
     void Reset() noexcept override final { }
 
     // visualization_t
-    void Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice = nullptr, ID3D11DeviceContext * d3dDeviceContext = nullptr) noexcept override final;
+    void Configure(graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice = nullptr, ID3D11DeviceContext * d3dDeviceContext = nullptr) noexcept override final;
 
     HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext, style_manager_t & styleManager) noexcept;
     void DeleteDeviceSpecificResources() noexcept;
