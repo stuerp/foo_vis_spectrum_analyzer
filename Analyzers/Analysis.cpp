@@ -9,6 +9,11 @@
 
 #include "Support.h"
 
+#include <algorithm>
+#include <array>
+#include <cmath>
+#include <cstdint>
+
 #pragma hdrstop
 
 /// <summary>
@@ -694,7 +699,7 @@ void analysis_t::GenerateMelFrequencyBands()
 /// </summary>
 void analysis_t::GenerateLogFrequencyBands()
 {
-    constexpr std::size_t ScaleCount = 320;
+    constexpr size_t ScaleCount = 320;
 
     _FrequencyBands.resize(ScaleCount);
 
@@ -999,110 +1004,165 @@ void analysis_t::MeterProcessing(const audio_chunk & chunk) noexcept
     if (chunk.is_empty())
         return;
 
-    const audio_sample * Frames = chunk.get_data();
-    const size_t FrameCount     = chunk.get_sample_count(); // get_sample_count() actually returns the number of frames.
-    const uint32_t ChannelCount = chunk.get_channel_count();
+    const audio_sample * const Frames   = chunk.get_data();
+    const size_t FrameCount             = chunk.get_sample_count();
+    const uint32_t ChannelCount         = chunk.get_channel_count();
+    const uint32_t AvailableChannelMask = chunk.get_channel_config(); // Mask containing the channels in the audio chunk.
 
     InitializePeakMeasurements(_ChannelMask);
 
-    audio_sample BalanceSamples[2] = { };
+    constexpr size_t MaximumChannelCount = 32;
+    constexpr size_t BalanceChannelCount = 2;
 
-    const audio_sample * CurrentFrame = Frames;
+    struct meter_channel_t
+    {
+        uint32_t SampleOffset {};
+        size_t MeasurementIndex {};
+    };
+
+    std::array<meter_channel_t, MaximumChannelCount> MeterChannels {};
+
+    size_t MeterChannelCount = 0;
+
+    std::array<uint32_t, BalanceChannelCount> BalanceOffsets {};
+
+    size_t BalanceOffsetCount = 0;
+
+    const uint32_t ActiveChannelMask    = _GraphOptions->_ActiveChannelMask;
+    const size_t ChannelPairIndex = (size_t) _GraphOptions->_ChannelPair;
+
+    const uint32_t PairedChannelMask = ChannelPairs[ChannelPairIndex];
+
+    // Build the channel-to-sample-offset mappings once per chunk.
+    {
+        uint32_t ChannelMask  = AvailableChannelMask;
+        uint32_t ChannelBit   = 1;
+        uint32_t SampleOffset = 0;
+
+        size_t MeasurementIndex = 0;
+
+        while ((ChannelMask != 0) && (ChannelBit != 0))
+        {
+            if ((ChannelMask & ChannelBit) != 0)
+            {
+                const bool IsActive = (ActiveChannelMask & ChannelBit) != 0;
+
+                if (IsActive && (MeasurementIndex < _PeakMeasurements.size()))
+                {
+                    MeterChannels[MeterChannelCount++] =
+                    {
+                        SampleOffset,
+                        MeasurementIndex
+                    };
+
+                    if (((PairedChannelMask & ChannelBit) != 0) && (BalanceOffsetCount < BalanceOffsets.size()))
+                        BalanceOffsets[BalanceOffsetCount++] = SampleOffset;
+
+                    ++MeasurementIndex;
+                }
+
+                ++SampleOffset;
+                ChannelMask &= ~ChannelBit;
+            }
+
+            ChannelBit <<= 1;
+        }
+    }
 
     for (size_t FrameIndex = 0; FrameIndex < FrameCount; ++FrameIndex)
     {
-        const audio_sample * Sample = CurrentFrame; // First sample of the current frame.
+        const audio_sample * const Frame = Frames + (FrameIndex * (size_t) ChannelCount);
 
-        size_t i = 0;
-        size_t j = 0;
-
-        uint32_t AvailableChannelMask = chunk.get_channel_config();                         // Mask containing the channels in the audio chunk.
-        uint32_t ActiveChannelMask    = _GraphOptions->_ActiveChannelMask;                  // Mask containing the channels selected by the user for the level measuring.
-        uint32_t PairedChannelMask    = ChannelPairs[(size_t) _GraphOptions->_ChannelPair]; // Mask containing the channels selected by the user for the balance measuring.
-
-        while ((AvailableChannelMask & ActiveChannelMask) != 0)
+        for (size_t ChannelIndex = 0; ChannelIndex < MeterChannelCount; ++ChannelIndex)
         {
-            if (AvailableChannelMask & 1)
-            {
-                if ((ActiveChannelMask & 1) && (i < _PeakMeasurements.size()))
-                {
-                    auto & m = _PeakMeasurements[i++];
+            const meter_channel_t & Channel = MeterChannels[ChannelIndex];
 
-                    const double Magnitude = std::abs((double) *Sample);
+            const double Sample    = (double) Frame[Channel.SampleOffset];
+            const double Magnitude = std::abs(Sample);
 
-                    m.Peak = std::max(Magnitude, m.Peak); // Peak Magnitude
-                    m.RMSTotal += Magnitude * Magnitude;   // Sum the instantaneous power.
+            auto & Measurement = _PeakMeasurements[Channel.MeasurementIndex];
 
-                    if ((PairedChannelMask & 1) && (j < _countof(BalanceSamples)))
-                        BalanceSamples[j++] = *Sample;
-                }
-
-                Sample++;
-            }
-
-            AvailableChannelMask >>= 1;
-            ActiveChannelMask    >>= 1;
-            PairedChannelMask    >>= 1;
+            Measurement.Peak      = std::max(Measurement.Peak, Magnitude);
+            Measurement.RMSTotal += Sample * Sample;
         }
 
-        _Left  += BalanceSamples[0] * BalanceSamples[0];
-        _Right += BalanceSamples[1] * BalanceSamples[1];
+        // Reset the balance samples for every frame. This prevents a sample from an earlier frame being reused when fewer than two paired channels are available.
+        std::array<double, BalanceChannelCount> BalanceSamples {};
 
-        const double Mid  = (BalanceSamples[0] + BalanceSamples[1]) / 2.;
-        const double Side = (BalanceSamples[0] - BalanceSamples[1]) / 2.;
+        for (size_t ChannelIndex = 0; ChannelIndex < BalanceOffsetCount; ++ChannelIndex)
+            BalanceSamples[ChannelIndex] = (double) Frame[BalanceOffsets[ChannelIndex]];
+
+        const double Left  = BalanceSamples[0];
+        const double Right = BalanceSamples[1];
+
+        _Left  += Left  * Left;
+        _Right += Right * Right;
+
+        const double Mid  = (Left + Right) * 0.5;
+        const double Side = (Left - Right) * 0.5;
 
         _Mid  += Mid  * Mid;
         _Side += Side * Side;
-
-        CurrentFrame += ChannelCount;
     }
 
     _RMSFrameCount  += FrameCount;
     _RMSTimeElapsed += chunk.get_duration();
 
     // Normalize and smooth the peak values. https://skippystudio.nl/2021/07/sound-intensity-and-decibels/
-    for (auto & m : _PeakMeasurements)
+    for (auto & Measurement : _PeakMeasurements)
     {
-        m.Peak           = ToDecibel(m.Peak);
-        m.NormalizedPeak = SmoothValue(NormalizeValue(m.Peak), m.NormalizedPeak);
+        Measurement.Peak           = ToDecibel(Measurement.Peak);
+        Measurement.NormalizedPeak = SmoothValue(NormalizeValue(Measurement.Peak), Measurement.NormalizedPeak);
     }
 
-    // Has the RMS window elapsed yet?
+    // Keep accumulating until the configured RMS window has elapsed.
     if (_RMSTimeElapsed < _State._RMSWindow)
         return;
 
-    for (auto & m : _PeakMeasurements)
+    const double RMSFrameCount = (double) _RMSFrameCount;
+
+    for (auto & Measurement : _PeakMeasurements)
     {
+        const double MeanSquare = Measurement.RMSTotal / RMSFrameCount;
+
         // https://skippystudio.nl/2021/07/sound-intensity-and-decibels/
-        m.RMS           = ToDecibel(std::sqrt(m.RMSTotal / (double) _RMSFrameCount)) + (_State._HasRMSPlus3 ? dBCorrection : 0.);
-        m.NormalizedRMS = SmoothValue(NormalizeValue(m.RMS), m.NormalizedRMS);
+        Measurement.RMS           = ToDecibel(std::sqrt(MeanSquare)) + (_State._HasRMSPlus3 ? dBCorrection : 0.0);
+        Measurement.NormalizedRMS = SmoothValue(NormalizeValue(Measurement.RMS), Measurement.NormalizedRMS);
 
-        // Reset the RMS window-dependent values.
-        m.RMSTotal = 0.;
+        Measurement.RMSTotal = 0.0;
     }
 
-    // Calculate the phase and balance.
+    const double LeftRMS  = std::sqrt(_Left  / RMSFrameCount);
+    const double RightRMS = std::sqrt(_Right / RMSFrameCount);
+
+    // Converts a signed level difference into the normalized meter range. Silence, denormalized input, and non-finite values produce the centered normalized value instead of NaN.
+    const auto CalculateNormalizedDifference = [&](double Positive, double Negative) noexcept -> double
     {
-        {
-            _Left  = std::sqrt(_Left  / (double) _RMSFrameCount);
-            _Right = std::sqrt(_Right / (double) _RMSFrameCount);
+            const double Denominator = std::max(Positive, Negative);
 
-            if (!std::isfinite(_Balance))
-                _Balance = 0.5;
+            if (!(Denominator > 0.0) || !std::isfinite(Denominator))
+                return NormalizeLLevelValue(0.0);
 
-            _Balance = SmoothValue(NormalizeLLevelValue((_Right - _Left) / std::max(_Left, _Right)), _Balance);
-        }
+            const double Difference = (Positive - Negative) / Denominator;
 
-        {
-            _Mid   = std::sqrt(_Mid   / (double) _RMSFrameCount);
-            _Side  = std::sqrt(_Side  / (double) _RMSFrameCount);
+            if (!std::isfinite(Difference))
+                return NormalizeLLevelValue(0.0);
 
-            if (!std::isfinite(_Phase))
-                _Phase = 0.5;
+            return NormalizeLLevelValue(Difference);
+    };
 
-            _Phase = SmoothValue(NormalizeLLevelValue((_Mid - _Side) / std::max(_Mid, _Side)), _Phase);
-        }
-    }
+    if (!std::isfinite(_Balance))
+        _Balance = 0.5;
+
+    _Balance = SmoothValue(CalculateNormalizedDifference(RightRMS, LeftRMS), _Balance);
+
+    const double MidRMS  = std::sqrt(_Mid  / RMSFrameCount);
+    const double SideRMS = std::sqrt(_Side / RMSFrameCount);
+
+    if (!std::isfinite(_Phase))
+        _Phase = 0.5;
+
+    _Phase = SmoothValue(CalculateNormalizedDifference(MidRMS, SideRMS), _Phase);
 
     ResetRMSDependentValues();
 }
