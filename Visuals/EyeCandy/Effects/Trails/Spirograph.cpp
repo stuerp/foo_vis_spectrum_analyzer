@@ -305,9 +305,11 @@ namespace Spirograph
             const D2D1_POINT_2F P2 = curve.Points[i + 1];
             const D2D1_POINT_2F P3 = i + 2 < curve.Points.size() ? curve.Points[i + 2] : P2;
 
-            Sink->AddBezier(D2D1::BezierSegment(
+            Sink->AddBezier(D2D1::BezierSegment
+            (
                 D2D1::Point2F(P1.x + (P2.x - P0.x) / 6.f, P1.y + (P2.y - P0.y) / 6.f),
-                D2D1::Point2F(P2.x - (P3.x - P1.x) / 6.f, P2.y - (P3.y - P1.y) / 6.f), P2));
+                D2D1::Point2F(P2.x - (P3.x - P1.x) / 6.f, P2.y - (P3.y - P1.y) / 6.f), P2)
+            );
         }
 
         Sink->EndFigure(D2D1_FIGURE_END_OPEN);
@@ -331,18 +333,18 @@ namespace Spirograph
     /// <summary>
     ///
     /// </summary>
-    void effect_t::SetBrush(uint32_t color, float opacity) noexcept
+    void effect_t::SetBrush(const D2D1_COLOR_F & color, float opacity) noexcept
     {
-        _Brush->SetColor(D2D1::ColorF(color));
+        _Brush->SetColor(color);
         _Brush->SetOpacity(Clamp(opacity));
     }
 
     /// <summary>
     ///
     /// </summary>
-    uint32_t effect_t::Colorize(double value) const noexcept
+    D2D1_COLOR_F effect_t::Colorize(double value) const noexcept
     {
-        return HSVToBGRA((float) Fraction(0.54 + (value * 0.68)), 0.84f, 1.f);
+        return HSVToColor((float) Fraction(0.54 + (value * 0.68)), 0.84f, 1.f);
     }
 
     /// <summary>
@@ -363,7 +365,7 @@ namespace Spirograph
                 return S_OK;
         }
 
-        hr = renderTarget->CreateSolidColorBrush(D2D1::ColorF(0.f, 0.f, 0.f, 1.f), _Brush.ReleaseAndGetAddressOf());
+        hr = renderTarget->CreateSolidColorBrush(Black, _Brush.ReleaseAndGetAddressOf());
 
         if (FAILED(hr))
             return hr;
@@ -389,7 +391,7 @@ namespace Spirograph
 
             _BackBufferRenderTarget->BeginDraw();
 
-            _BackBufferRenderTarget->Clear(D2D1::ColorF(0.f, 0.f, 0.f, 1.f));
+            _BackBufferRenderTarget->Clear(Black);
 
             hr = _BackBufferRenderTarget->EndDraw();
 

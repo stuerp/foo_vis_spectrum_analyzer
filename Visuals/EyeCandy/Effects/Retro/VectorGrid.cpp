@@ -351,10 +351,10 @@ namespace VectorGrid
     {
         _Palette.BackgroundTop    = GetThemeColor(ThemeRole::BackgroundA, 0.f, 1.f, 0.72f, 1.f);
         _Palette.BackgroundBottom = GetThemeColor(ThemeRole::BackgroundB, 0.f, 1.f, 0.92f, 1.f);
-        _Palette.Horizon          = GetThemeColor(ThemeRole::Ring, 0.f, 1.f, 1.f, 1.f);
-        _Palette.Longitudinal     = GetThemeColor(ThemeRole::Rail, 0.f, 1.f, 1.f, 1.f);
-        _Palette.Lateral          = GetThemeColor(ThemeRole::Core, 0.f, 1.f, 1.f, 1.f);
-        _Palette.Accent           = GetThemeColor(ThemeRole::Flash, 0.f, 1.f, 1.f, 1.f);
+        _Palette.Horizon          = GetThemeColor(ThemeRole::Ring,        0.f, 1.f, 1.f, 1.f);
+        _Palette.Longitudinal     = GetThemeColor(ThemeRole::Rail,        0.f, 1.f, 1.f, 1.f);
+        _Palette.Lateral          = GetThemeColor(ThemeRole::Core,        0.f, 1.f, 1.f, 1.f);
+        _Palette.Accent           = GetThemeColor(ThemeRole::Flash,       0.f, 1.f, 1.f, 1.f);
         _Palette.Sun              = GetThemeColor(ThemeRole::Core, 0.035f, 0.82f, 1.f, 1.f);
     }
 
@@ -427,7 +427,7 @@ namespace VectorGrid
     /// </summary>
     void effect_t::RenderBackground(ID2D1RenderTarget * renderTarget) noexcept
     {
-        renderTarget->Clear(D2D1::ColorF(D2D1::ColorF::Black));
+        renderTarget->Clear(Black);
 
         const float HorizonY = _Height * (float) HorizonFraction;
 
@@ -593,9 +593,9 @@ namespace VectorGrid
 
         renderTarget->DrawLine(from, to, _GlowBrush.Get(), strokeWidth * 2.25f, _RoundStrokeStyle.Get());
 
-        const D2D1_COLOR_F WhiteCore = LerpColor(color, D2D1::ColorF(D2D1::ColorF::White), 0.08f);
+        const D2D1_COLOR_F WhiteCore = LerpColor(color, White, 0.08f);
 
-        _CoreLineBrush->SetColor(SetAlpha(WhiteCore, std::clamp(intensity * 1.28f, 0.f, 1.f)));
+        _CoreLineBrush->SetColor(SetAlpha(WhiteCore, Clamp(intensity * 1.28f)));
 
         renderTarget->DrawLine(from, to, _CoreLineBrush.Get(), strokeWidth, _RoundStrokeStyle.Get());
     }
@@ -743,7 +743,7 @@ namespace VectorGrid
         if (FAILED(hr))
             return hr;
 
-        hr = renderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::White), _CoreLineBrush.ReleaseAndGetAddressOf());
+        hr = renderTarget->CreateSolidColorBrush(White, _CoreLineBrush.ReleaseAndGetAddressOf());
 
         if (FAILED(hr))
             return hr;
@@ -752,8 +752,6 @@ namespace VectorGrid
 
         if (FAILED(hr))
             return hr;
-
-        const D2D1_COLOR_F Black = D2D1::ColorF(D2D1::ColorF::Black);
 
         const D2D1_GRADIENT_STOP SkyStops[] =
         {
@@ -775,10 +773,10 @@ namespace VectorGrid
 
         const D2D1_GRADIENT_STOP SunStops[] =
         {
-            { 0.00f, LerpColor(_Palette.Sun, D2D1::ColorF(D2D1::ColorF::White), 0.72f) },
-            { 0.18f, LerpColor(_Palette.Sun, D2D1::ColorF(D2D1::ColorF::White), 0.38f) },
-            { 0.55f, SetAlpha(_Palette.Sun, 0.88f) },
-            { 1.00f, SetAlpha(_Palette.Accent, 0.00f) }
+            { 0.00f, LerpColor(_Palette.Sun, White, 0.72f) },
+            { 0.18f, LerpColor(_Palette.Sun, White, 0.38f) },
+            { 0.55f, SetAlpha (_Palette.Sun,    0.88f) },
+            { 1.00f, SetAlpha (_Palette.Accent, 0.00f) }
         };
 
         hr = renderTarget->CreateGradientStopCollection(SunStops, _countof(SunStops), D2D1_GAMMA_2_2, D2D1_EXTEND_MODE_CLAMP, _SunStops.ReleaseAndGetAddressOf());

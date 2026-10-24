@@ -420,19 +420,13 @@ namespace LissajousTrails
 
         const D2D1_COLOR_F & From = Themes[FromTheme].Background;
         const D2D1_COLOR_F & To   = Themes[ToTheme].Background;
+
         const auto Blend = [ThemeAmount](float from, float to) noexcept
         {
             return (float) (from + ((to - from) * ThemeAmount));
         };
 
-        _Brush->SetColor(D2D1::ColorF
-        (
-            Blend(From.r, To.r),
-            Blend(From.g, To.g),
-            Blend(From.b, To.b),
-            Opacity
-        ));
-//      _Brush->SetColor(D2D1::ColorF(0.f, 0.f, 0.f, Opacity));
+        _Brush->SetColor(D2D1::ColorF(Blend(From.r, To.r), Blend(From.g, To.g), Blend(From.b, To.b), Opacity));
         _Brush->SetOpacity(1.f);
 
         renderTarget->FillRectangle(_Rectangle, _Brush.Get());
@@ -478,7 +472,7 @@ namespace LissajousTrails
 
             if (i != 0)
             {
-                const uint32_t Color = Colorize(Amount + (_AnimationTime * 0.02));
+                const auto Color = Colorize(Amount + (_AnimationTime * 0.02));
 
                 DrawGlowLine(renderTarget, Previous, current, Color, 0.085f);
             }
@@ -490,7 +484,7 @@ namespace LissajousTrails
     /// <summary>
     /// 
     /// </summary>
-    void effect_t::DrawGlowLine(ID2D1RenderTarget * renderTarget, D2D1_POINT_2F from, D2D1_POINT_2F to, uint32_t color, float intensity) noexcept
+    void effect_t::DrawGlowLine(ID2D1RenderTarget * renderTarget, D2D1_POINT_2F from, D2D1_POINT_2F to, const D2D1_COLOR_F & color, float intensity) noexcept
     {
         const int OuterRadius = [&]() noexcept
         {
@@ -521,7 +515,7 @@ namespace LissajousTrails
     /// <summary>
     /// 
     /// </summary>
-    void effect_t::DrawLine(ID2D1RenderTarget * renderTarget, D2D1_POINT_2F from, D2D1_POINT_2F to, uint32_t color, float intensity, int radius) noexcept
+    void effect_t::DrawLine(ID2D1RenderTarget * renderTarget, D2D1_POINT_2F from, D2D1_POINT_2F to, const D2D1_COLOR_F & color, float intensity, int radius) noexcept
     {
         intensity = Clamp(intensity);
 
@@ -530,24 +524,15 @@ namespace LissajousTrails
 
         SetBrush(color, intensity);
 
-        const float strokeWidth = (radius > 0) ? (float)((radius * 2) + 1) : 1.f;
+        const int StrokeWidth = (radius > 0) ? ((radius * 2) + 1) : 1;
 
-        renderTarget->DrawLine(from, to, _Brush.Get(), strokeWidth, _StrokeStyle.Get());
+        renderTarget->DrawLine(from, to, _Brush.Get(), (float) StrokeWidth, _StrokeStyle.Get());
     }
 
     /// <summary>
     /// 
     /// </summary>
-    void effect_t::SetBrush(uint32_t color, float opacity) noexcept
-    {
-        _Brush->SetColor(D2D1::ColorF(color, opacity));
-        _Brush->SetOpacity(Clamp(opacity));
-    }
-
-    /// <summary>
-    /// 
-    /// </summary>
-    uint32_t effect_t::Colorize(double value) const noexcept
+    D2D1_COLOR_F effect_t::Colorize(double value) const noexcept
     {
         static const std::array Themes
         {
@@ -588,7 +573,7 @@ namespace LissajousTrails
         const auto S = (float) Clamp(Blend(From.Saturation, To.Saturation) + (AntiPhase * Blend(From.AntiPhaseBoost, To.AntiPhaseBoost)));
         const auto V = (float) std::clamp(0.62 + (_SmoothedRMS * 1.35) + (_SmoothedPeak * 0.2), 0.62, 1.);
 
-        return HSVToBGRA(H, S, V);
+        return HSVToColor(H, S, V);
     }
 
     /// <summary>
@@ -783,7 +768,7 @@ namespace LissajousTrails
         }
 
         {
-            hr = renderTarget->CreateSolidColorBrush(D2D1::ColorF(0.f, 0.f, 0.f, 1.f), _Brush.ReleaseAndGetAddressOf());
+            hr = renderTarget->CreateSolidColorBrush(Black, _Brush.ReleaseAndGetAddressOf());
 
             if (FAILED(hr))
                 return hr;
@@ -816,7 +801,7 @@ namespace LissajousTrails
 
             _BackBufferRenderTarget->BeginDraw();
 
-            _BackBufferRenderTarget->Clear(D2D1::ColorF(0.f, 0.f, 0.f, 1.f));
+            _BackBufferRenderTarget->Clear(Black);
 
             hr = _BackBufferRenderTarget->EndDraw();
 

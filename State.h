@@ -1,11 +1,13 @@
 
-/** $VER: State.h (2026.10.23) P. Stuer **/
+/** $VER: State.h (2026.10.24) P. Stuer **/
 
 #pragma once
 
 #include <sdkddkver.h>
 #include <WinSock2.h>
 #include <Windows.h>
+
+#include <vector>
 
 #include "Constants.h"
 #include "WindowFunctions.h"
@@ -16,12 +18,9 @@
 
 #include "Log.h"
 
-#include <vector>
-
 /// <summary>
 /// Represents the configuration of the component.
 /// </summary>
-#pragma warning(disable: 4820)
 class state_t
 {
 public:
@@ -29,7 +28,7 @@ public:
 
     state_t & operator=(const state_t & other) noexcept;
 
-    virtual ~state_t() noexcept { }
+    ~state_t() noexcept = default;
 
     void Reset() noexcept;
 

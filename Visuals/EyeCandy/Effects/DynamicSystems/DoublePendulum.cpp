@@ -232,8 +232,8 @@ namespace DoublePendulum
         const auto Bob1  = Project(_Bob1World,  PreparedProjection);
         const auto Bob2  = Project(_Bob2World,  PreparedProjection);
 
-        const uint32_t ArmColor = GetCurveColor(_AnimationTime * 0.035);
-        const uint32_t BobColor = GetCurveColor(0.55 + _AnimationTime * 0.035);
+        const auto ArmColor = GetCurveColor(_AnimationTime * 0.035);
+        const auto BobColor = GetCurveColor(0.55 + _AnimationTime * 0.035);
 
         if (Pivot.IsProjectable && Bob1.IsProjectable)
             DrawGlowLine(renderTarget, Pivot.Position, Bob1.Position, ArmColor, 0.80f, 1.15f);
@@ -291,7 +291,7 @@ namespace DoublePendulum
     /// <summary>
     /// 
     /// </summary>
-    void effect_t::DrawAmbientGlow(ID2D1RenderTarget * renderTarget, D2D1_POINT_2F center, uint32_t color, float intensity, float radius) noexcept
+    void effect_t::DrawAmbientGlow(ID2D1RenderTarget * renderTarget, D2D1_POINT_2F center, const D2D1_COLOR_F & color, float intensity, float radius) noexcept
     {
         intensity = std::clamp(intensity, 0.f, 0.12f);
 

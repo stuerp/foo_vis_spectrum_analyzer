@@ -136,7 +136,7 @@ namespace Metaballs
         {
             _BackBuffer->CopyFromMemory(nullptr, _Pixels.data(), _RasterWidth * BytesPerPixel);
 
-            renderTarget->Clear(D2D1::ColorF(D2D1::ColorF::Black));
+            renderTarget->Clear(Black);
 
             const auto Size = renderTarget->GetSize();
 
@@ -238,18 +238,17 @@ namespace Metaballs
         edge     = Clamp(edge);
         glow     = Clamp(glow);
 
-        const double Hue = _Theme.BaseHue + (_Theme.HueSpan * (.12 + .72 * interior)) + (_Theme.BassHue * _Audio.Bass) + (_Theme.MidHue * _Audio.Mid) + (_Theme.TrebleHue * _Audio.Treble);
+        const double H = _Theme.BaseHue + (_Theme.HueSpan * (.12 + .72 * interior)) + (_Theme.BassHue * _Audio.Bass) + (_Theme.MidHue * _Audio.Mid) + (_Theme.TrebleHue * _Audio.Treble);
+        const double S = Clamp(_Theme.Saturation + .08 - .22 * edge);
+        const double V = Clamp(glow + surface * (_Theme.Brightness * (.36 + .50 * interior)) + .28 * edge);
 
-        const double Saturation = Clamp(_Theme.Saturation + .08 - .22 * edge);
-        const double Brightness = Clamp(glow + surface * (_Theme.Brightness * (.36 + .50 * interior)) + .28 * edge);
+        double R, G, B;
 
-        double Red, Green, Blue;
+        HSVToRGB(H, S, V, R, G, B);
 
-        HSVToRGB(Hue, Saturation, Brightness, Red, Green, Blue);
-
-        Red   = Clamp(Red   + surface * _Theme.BassRed    * _Audio.Bass   + .12 * edge);
-        Green = Clamp(Green + surface * _Theme.MidGreen   * _Audio.Mid    + .15 * edge);
-        Blue  = Clamp(Blue  + surface * _Theme.TrebleBlue * _Audio.Treble + .20 * edge);
+        R = Clamp(R + surface * _Theme.BassRed    * _Audio.Bass   + .12 * edge);
+        G = Clamp(G + surface * _Theme.MidGreen   * _Audio.Mid    + .15 * edge);
+        B = Clamp(B + surface * _Theme.TrebleBlue * _Audio.Treble + .20 * edge);
 
         const double BrightnessFactor = [&]() noexcept
         {
@@ -267,15 +266,11 @@ namespace Metaballs
             }
         }();
 
-        Red   *= BrightnessFactor;
-        Green *= BrightnessFactor;
-        Blue  *= BrightnessFactor;
+        R *= BrightnessFactor;
+        G *= BrightnessFactor;
+        B *= BrightnessFactor;
 
-        const uint32_t R = (uint32_t) ToRGB(Red);
-        const uint32_t G = (uint32_t) ToRGB(Green);
-        const uint32_t B = (uint32_t) ToRGB(Blue);
-
-        return 0xFF000000u | (R << 16u) | (G << 8u) | B;
+        return PackRGB(R, G, B);
     }
 
     /// <summary>
@@ -380,7 +375,9 @@ namespace Metaballs
             const double V = ((double) y + .5) * work.InverseHeight;
             const size_t PixelRowOffset = (size_t) y * (size_t) _RasterWidth;
 
-            for (uint32_t x = 0; x < (uint32_t) _RasterWidth; ++x)
+            auto * Row = &_Pixels[PixelRowOffset];
+
+            for (uint32_t x = 0; x < (uint32_t) _RasterWidth; ++x, ++Row)
             {
                 const double U = ((double) x + .5) * work.InverseWidth;
 
@@ -390,8 +387,9 @@ namespace Metaballs
                 {
                     const double DX = (U - work.BlobX[i]) * work.AspectRatio;
                     const double DY =  V - work.BlobY[i];
+
                     const double DistanceSquared = DX * DX + DY * DY + 1e-8;
-                    const double RadiusSquared = work.BlobRadius[i] * work.BlobRadius[i];
+                    const double RadiusSquared   = work.BlobRadius[i] * work.BlobRadius[i];
 
                     Field += work.BlobWeight[i] * RadiusSquared / DistanceSquared;
                 }
@@ -408,7 +406,7 @@ namespace Metaballs
                 const double Edge     = Surface * Clamp(1. - std::abs(Field - work.Threshold) / work.EdgeWidth);
                 const double Glow     = work.BackgroundGlow * Clamp(Field / work.Threshold) * (1. - Surface);
 
-                _Pixels[PixelRowOffset + x] = Colorize(Surface, Interior, Edge, Glow);
+                *Row = Colorize(Surface, Interior, Edge, Glow);
             }
         }
     }

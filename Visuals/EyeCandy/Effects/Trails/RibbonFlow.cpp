@@ -289,18 +289,18 @@ namespace RibbonFlow
     /// <summary>
     ///
     /// </summary>
-    void effect_t::SetBrush(uint32_t color, float opacity) noexcept
+    void effect_t::SetBrush(const D2D1_COLOR_F & color, float opacity) noexcept
     {
-        _Brush->SetColor(D2D1::ColorF(color));
+        _Brush->SetColor(color);
         _Brush->SetOpacity(Clamp(opacity));
     }
 
     /// <summary>
     ///
     /// </summary>
-    uint32_t effect_t::Colorize(double value) const noexcept
+    D2D1_COLOR_F effect_t::Colorize(double value) const noexcept
     {
-        return HSVToBGRA((float) Fraction(0.50 + (value * 0.42)), 0.82f, 1.f);
+        return HSVToColor((float) Fraction(0.50 + (value * 0.42)), 0.82f, 1.f);
     }
 
     /// <summary>
@@ -321,7 +321,7 @@ namespace RibbonFlow
                 return S_OK;
         }
 
-        hr = renderTarget->CreateSolidColorBrush(D2D1::ColorF(0.f, 0.f, 0.f, 1.f), _Brush.ReleaseAndGetAddressOf());
+        hr = renderTarget->CreateSolidColorBrush(Black, _Brush.ReleaseAndGetAddressOf());
 
         if (FAILED(hr))
             return hr;
@@ -347,7 +347,7 @@ namespace RibbonFlow
 
             _BackBufferRenderTarget->BeginDraw();
 
-            _BackBufferRenderTarget->Clear(D2D1::ColorF(0.f, 0.f, 0.f, 1.f));
+            _BackBufferRenderTarget->Clear(Black);
 
             hr = _BackBufferRenderTarget->EndDraw();
 

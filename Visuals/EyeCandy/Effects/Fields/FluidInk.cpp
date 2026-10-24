@@ -147,7 +147,7 @@ namespace FluidInk
 
         // Render the bitmap.
         {
-            renderTarget->Clear(D2D1::ColorF(D2D1::ColorF::Black));
+            renderTarget->Clear(Black);
 
             const auto Size = renderTarget->GetSize();
 
@@ -219,18 +219,21 @@ namespace FluidInk
         const double Stream    = Clamp(stream);
         const double Highlight = Clamp(highlight);
 
-        const double Hue = _Theme.BaseHue + (_Theme.HueSpan * (.12 + (.88 * Stream))) + (_Theme.BassHue * _Audio.Bass) + (_Theme.MidHue * _Audio.Mid) + (_Theme.TrebleHue * _Audio.Treble);
+        const double H = _Theme.BaseHue + (_Theme.HueSpan * (.12 + (.88 * Stream))) + (_Theme.BassHue * _Audio.Bass) + (_Theme.MidHue * _Audio.Mid) + (_Theme.TrebleHue * _Audio.Treble);
 
-        const double Saturation = Clamp((_Theme.Saturation * (.74 + (.24 * Density))) + (.12 * Stream));
-        const double Ambient    = .035 + (.22 * std::pow(Clamp(_Audio.Loudness), .55));
-        const double Brightness = Clamp(Ambient + (_Theme.Brightness * (.58 * Density + .34 * Highlight)));
+        const double S = Clamp((_Theme.Saturation * (.74 + (.24 * Density))) + (.12 * Stream));
 
-        double Red, Green, Blue;
-        HSVToRGB(Hue, Saturation, Brightness, Red, Green, Blue);
+        const double Ambient = .035 + (.22 * std::pow(Clamp(_Audio.Loudness), .55));
 
-        Red   = Clamp(Red   + (_Theme.BassRed    * _Audio.Bass)   + (.10 * Highlight));
-        Green = Clamp(Green + (_Theme.MidGreen   * _Audio.Mid)    + (.07 * Highlight));
-        Blue  = Clamp(Blue  + (_Theme.TrebleBlue * _Audio.Treble) + (.14 * Highlight));
+        const double V = Clamp(Ambient + (_Theme.Brightness * (.58 * Density + .34 * Highlight)));
+
+        double R, G, B;
+
+        HSVToRGB(H, S, V, R, G, B);
+
+        R = Clamp(R + (_Theme.BassRed    * _Audio.Bass)   + (.10 * Highlight));
+        G = Clamp(G + (_Theme.MidGreen   * _Audio.Mid)    + (.07 * Highlight));
+        B = Clamp(B + (_Theme.TrebleBlue * _Audio.Treble) + (.14 * Highlight));
 
         const double BrightnessFactor = [&]() noexcept
         {
@@ -248,15 +251,11 @@ namespace FluidInk
             }
         }();
 
-        Red   *= BrightnessFactor;
-        Green *= BrightnessFactor;
-        Blue  *= BrightnessFactor;
+        R *= BrightnessFactor;
+        G *= BrightnessFactor;
+        B *= BrightnessFactor;
 
-        const uint32_t R = (uint32_t) ToRGB(Red);
-        const uint32_t G = (uint32_t) ToRGB(Green);
-        const uint32_t B = (uint32_t) ToRGB(Blue);
-
-        return 0xFF000000u | (R << 16u) | (G << 8u) | B;
+        return PackRGB(R, G, B);
     }
 
     /// <summary>
@@ -360,7 +359,9 @@ namespace FluidInk
             const double InkY = (2. * (double) y * work.InverseHeight - 1.) * work.CoordinateScale - _Interaction.Y;
             const size_t PixelRowOffset = (size_t) (y * (uint32_t) _RasterWidth);
 
-            for (uint32_t x = 0; x < (uint32_t) _RasterWidth; ++x)
+            auto * Row = &_Pixels[PixelRowOffset];
+
+            for (uint32_t x = 0; x < (uint32_t) _RasterWidth; ++x, ++Row)
             {
                 double InkX = (2. * (double) x * work.InverseWidth - 1.) * work.HorizontalScale * work.CoordinateScale - _Interaction.X + work.BalanceOffset;
                 double FlowY = InkY;
@@ -408,7 +409,7 @@ namespace FluidInk
                 const double Stream = .5 + (.5 * std::sin(RibbonCoordinate * .47 + work.ColorPhase));
                 const double Highlight = Clamp((.62 * Filament) + (.38 * Ridge * work.TrebleDetail) + (.44 * ForceFalloff));
 
-                _Pixels[PixelRowOffset + x] = Colorize(Density, Stream, Highlight);
+                *Row = Colorize(Density, Stream, Highlight);
             }
         }
     }

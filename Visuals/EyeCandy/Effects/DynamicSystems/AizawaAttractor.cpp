@@ -265,7 +265,7 @@ namespace AizawaAttractor
             {
                 const double Amount = (double) i / (double) (_SplinePoints.size() - 1);
 
-                const uint32_t Color = GetCurveColor(Amount + _AnimationTime * 0.025);
+                const auto Color = GetCurveColor(Amount + _AnimationTime * 0.025);
 
                 const double Depth     = 1. - (Previous.LinearDepth + Current.LinearDepth) * 0.5;
                 const double ViewDepth = (Previous.ViewDepth + Current.ViewDepth) * 0.5;

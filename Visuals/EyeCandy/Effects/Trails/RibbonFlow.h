@@ -51,7 +51,7 @@ namespace RibbonFlow
         struct ribbon_t
         {
             std::vector<D2D1_POINT_2F> Points;
-            uint32_t Color  = 0;
+            D2D1_COLOR_F Color {};
             float Width     = 1.f;
             float Intensity = 0.f;
         };
@@ -63,9 +63,9 @@ namespace RibbonFlow
         void Fade(ID2D1RenderTarget * renderTarget, double deltaTime) noexcept;
         void RenderRibbons(ID2D1RenderTarget * renderTarget) noexcept;
         void DrawSmoothRibbon(ID2D1RenderTarget * renderTarget, const ribbon_t & ribbon) noexcept;
-        void SetBrush(uint32_t color, float opacity) noexcept;
+        void SetBrush(const D2D1_COLOR_F & color, float opacity) noexcept;
 
-        uint32_t Colorize(double value) const noexcept;
+        D2D1_COLOR_F Colorize(double value) const noexcept;
 
         HRESULT CreateDeviceDependentResources(ID2D1RenderTarget * renderTarget) noexcept;
         void DeleteDeviceDependentResources() noexcept;

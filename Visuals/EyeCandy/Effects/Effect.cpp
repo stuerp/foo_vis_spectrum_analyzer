@@ -193,7 +193,7 @@ void effect_t::DeleteDeviceDependentResources() noexcept
 /// </summary>
 void effect_t::RenderBackground(ID2D1RenderTarget * renderTarget) noexcept
 {
-    renderTarget->Clear(D2D1::ColorF(0.001f, 0.001f, 0.006f, 1.0f));
+    renderTarget->Clear(D2D1::ColorF(0.001f, 0.001f, 0.006f, 1.f));
 }
 
 /// <summary>
@@ -213,7 +213,7 @@ void effect_t::RenderScanlines(ID2D1RenderTarget * renderTarget) noexcept
 {
     const float Opacity = 0.04f + (float) (_SmoothedBass * 0.015);
 
-    _ScanlineBrush->SetColor(D2D1::ColorF(0.0f, 0.0f, 0.0f, Opacity));
+    _ScanlineBrush->SetColor(D2D1::ColorF(0.f, 0.f, 0.f, Opacity));
 
     const float Spacing = [&]() noexcept
     {
@@ -242,7 +242,7 @@ void effect_t::RenderScanlines(ID2D1RenderTarget * renderTarget) noexcept
 /// </summary>
 D2D1_COLOR_F effect_t::LerpColor(const D2D1_COLOR_F & from, const D2D1_COLOR_F & to, float amount) noexcept
 {
-    amount = std::clamp(amount, 0.f, 1.f);
+    amount = Clamp(amount);
 
     return D2D1::ColorF(Lerp(from.r, to.r, amount), Lerp(from.g, to.g, amount), Lerp(from.b, to.b, amount), Lerp(from.a, to.a, amount));
 }

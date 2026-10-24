@@ -63,13 +63,13 @@ namespace Swarm
         void RenderSwarm(ID2D1RenderTarget *) noexcept;
         void RenderIdleSwarm(ID2D1RenderTarget *) noexcept;
 
-        void DrawNeonLine(ID2D1RenderTarget *, D2D1_POINT_2F, D2D1_POINT_2F, uint32_t, float, float) noexcept;
-        void DrawNeonPoint(ID2D1RenderTarget *, D2D1_POINT_2F, uint32_t, float, float) noexcept;
-        void DrawLine(ID2D1RenderTarget *, D2D1_POINT_2F, D2D1_POINT_2F, uint32_t, float, float) noexcept;
+        void DrawNeonLine (ID2D1RenderTarget *, D2D1_POINT_2F, D2D1_POINT_2F, const D2D1_COLOR_F & color, float, float) noexcept;
+        void DrawNeonPoint(ID2D1RenderTarget *, D2D1_POINT_2F,                const D2D1_COLOR_F & color, float, float) noexcept;
+        void DrawLine     (ID2D1RenderTarget *, D2D1_POINT_2F, D2D1_POINT_2F, const D2D1_COLOR_F & color, float, float) noexcept;
 
-        uint32_t Colorize(size_t, double, double) const noexcept;
+        D2D1_COLOR_F Colorize(size_t, double, double) const noexcept;
         double GetPaletteHue(double, double) const noexcept;
-        void SetBrush(uint32_t, float, float = 1.f) noexcept;
+        void SetBrush(const D2D1_COLOR_F & color, float opacity, float gain = 1.f) noexcept;
 
         HRESULT CreateDeviceDependentResources(ID2D1RenderTarget *) noexcept;
         void DeleteDeviceDependentResources() noexcept;

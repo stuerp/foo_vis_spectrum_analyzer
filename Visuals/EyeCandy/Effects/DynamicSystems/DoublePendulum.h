@@ -65,7 +65,7 @@ namespace DoublePendulum
         void RenderCurve(ID2D1RenderTarget * renderTarget) noexcept;
         void RenderPendulum(ID2D1RenderTarget * renderTarget) noexcept;
 
-        void DrawAmbientGlow(ID2D1RenderTarget * renderTarget, D2D1_POINT_2F center, uint32_t color, float intensity, float radius) noexcept;
+        void DrawAmbientGlow(ID2D1RenderTarget * renderTarget, D2D1_POINT_2F center, const D2D1_COLOR_F & color, float intensity, float radius) noexcept;
 
         static state_t Derive(state_t state, const field_t & field) noexcept;
         static state_t Integrate(state_t state, const field_t & field) noexcept;

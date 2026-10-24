@@ -144,7 +144,7 @@ namespace HalvorsenAttractor
                 const float Intensity = (float) (Energy * (0.52 + (Depth * 0.48)));
                 const float Thickness = std::clamp(34.f / (float) std::max(ViewDepth, Projection.NearPlane), 0.55f, 2.20f);
 
-                const uint32_t Color = GetCurveColor(Amount + (_AnimationTime * 0.025));
+                const auto Color = GetCurveColor(Amount + (_AnimationTime * 0.025));
 
                 DrawGlowLine(renderTarget, Previous.Position, Current.Position, Color, Intensity, Thickness);
             }

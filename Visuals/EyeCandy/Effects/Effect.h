@@ -123,12 +123,8 @@ namespace EyeCandy
         float V = 0.f;
     };
 
-    struct rgb_t
-    {
-        float R;
-        float G;
-        float B;
-    };
+    const D2D1_COLOR_F Black = D2D1::ColorF(D2D1::ColorF::Black);
+    const D2D1_COLOR_F White = D2D1::ColorF(D2D1::ColorF::White);
 
     inline float Clamp(float value) noexcept
     {
@@ -249,18 +245,6 @@ namespace EyeCandy
     /// <summary>
     /// 
     /// </summary>
-    static uint32_t PackColor(const D2D1_COLOR_F & color) noexcept
-    {
-        const uint32_t R = ToByte(color.r);
-        const uint32_t G = ToByte(color.g);
-        const uint32_t B = ToByte(color.b);
-
-        return 0xFF000000u | (R << 16u) | (G << 8u) | B;
-    }
-
-    /// <summary>
-    /// 
-    /// </summary>
     static uint32_t PackColor(double r, double g, double b) noexcept
     {
         const uint32_t R = ToByte(r);
@@ -273,26 +257,19 @@ namespace EyeCandy
     /// <summary>
     /// 
     /// </summary>
-    static uint32_t PremultiplyColor(uint32_t color, float opacity) noexcept
+    static uint32_t PackRGB(double r, double g, double b) noexcept
     {
-        assert((opacity >= 0.f) && (opacity <= 1.f));
+        const uint32_t R = ToRGB(r);
+        const uint32_t G = ToRGB(g);
+        const uint32_t B = ToRGB(b);
 
-        const uint32_t R = (color >> 16) & 0xFFu;
-        const uint32_t G = (color >>  8) & 0xFFu;
-        const uint32_t B = color         & 0xFFu;
-        const uint32_t A = (uint32_t) std::lround(opacity * 255.f);
-
-        const uint32_t PremultipliedRed   = (R * A + 127u) / 255u;
-        const uint32_t PremultipliedGreen = (G * A + 127u) / 255u;
-        const uint32_t PremultipliedBlue  = (B * A + 127u) / 255u;
-
-        return (A << 24) | (PremultipliedRed << 16) | (PremultipliedGreen << 8) | PremultipliedBlue;
+        return 0xFF000000u | (R << 16u) | (G << 8u) | B;
     }
 
     /// <summary>
-    /// Converts a color from HSV to RGB.
+    /// Converts an HSV color to a normalized Direct2D color.
     /// </summary>
-    static rgb_t HSVToRGB(float h, float s, float v) noexcept
+    static D2D1_COLOR_F HSVToColor(float h, float s, float v, float a = 1.f) noexcept
     {
         h = Fraction(h); // Wrap hue into [0, 1].
         s = Clamp(s);
@@ -310,12 +287,12 @@ namespace EyeCandy
 
         switch (Sector)
         {
-            case 0: return { v, t, p };
-            case 1: return { q, v, p };
-            case 2: return { p, v, t };
-            case 3: return { p, q, v };
-            case 4: return { t, p, v };
-            default: return { v, p, q }; // 5
+            case 0:  return { v, t, p, Clamp(a) };
+            case 1:  return { q, v, p, Clamp(a) };
+            case 2:  return { p, v, t, Clamp(a) };
+            case 3:  return { p, q, v, Clamp(a) };
+            case 4:  return { t, p, v, Clamp(a) };
+            default: return { v, p, q, Clamp(a) }; // 5
         }
     }
 
@@ -347,42 +324,6 @@ namespace EyeCandy
             case 4:  { r = t; g = p; b = v; break; }
             default: { r = v; g = p; b = q; break; } // 5
         }
-    }
-
-    /// <summary>
-    /// Converts an HSV color to a normalized Direct2D color.
-    /// </summary>
-    static D2D1_COLOR_F HSVToColor(float h, float s, float v, float a = 1.f) noexcept
-    {
-        const rgb_t Color = HSVToRGB(h, s, v);
-
-        return D2D1::ColorF(Color.R, Color.G, Color.B, Clamp(a));
-    }
-
-    /// <summary>
-    /// Converts an HSV color to a packed, fully opaque BGRA color value.
-    /// </summary>
-    static uint32_t HSVToBGRA(float h, float s, float v) noexcept
-    {
-        const rgb_t Color = HSVToRGB(h, s, v);
-
-        const uint32_t R = (uint8_t) ToByte(Color.R);
-        const uint32_t G = (uint8_t) ToByte(Color.G);
-        const uint32_t B = (uint8_t) ToByte(Color.B);
-
-        return 0xFF000000u | (R << 16u) | (G << 8u) | B;
-    }
-
-    /// <summary>
-    /// Converts an HSV color to a packed BGRA color value.
-    /// </summary>
-    static uint32_t HSVToBGRA(float h, float s, float v, float a) noexcept
-    {
-        const rgb_t color = HSVToRGB(h, s, v);
-
-        const uint32_t A = ToByte(Clamp(a));
-
-        return (A << 24u) | (ToByte(color.R) << 16u) | (ToByte(color.G) << 8u) | ToByte(color.B);
     }
 
     /// <summary>
@@ -651,7 +592,7 @@ namespace EyeCandy
         if (lower == upper)
             return value >= upper ? 1.f : 0.f;
 
-        const float Amount = std::clamp((value - lower) / (upper - lower), 0.f, 1.f);
+        const float Amount = Clamp((value - lower) / (upper - lower));
 
         return Amount * Amount * (3.f - (2.f * Amount));
     }

@@ -37,8 +37,9 @@ namespace DynamicSystem
         void Fade(ID2D1RenderTarget * renderTarget, double deltaTime) noexcept;
 
         void RenderAxes(ID2D1RenderTarget * renderTarget, double length) noexcept;
-        void DrawGlowLine(ID2D1RenderTarget * renderTarget, D2D1_POINT_2F from, D2D1_POINT_2F to, uint32_t color, float intensity, float thickness) noexcept;
-        void DrawLine(ID2D1RenderTarget * renderTarget, D2D1_POINT_2F from, D2D1_POINT_2F to, uint32_t color, float intensity, float thickness) noexcept;
+
+        void DrawGlowLine(ID2D1RenderTarget * renderTarget, D2D1_POINT_2F from, D2D1_POINT_2F to, const D2D1_COLOR_F & color, float intensity, float thickness) noexcept;
+        void DrawLine    (ID2D1RenderTarget * renderTarget, D2D1_POINT_2F from, D2D1_POINT_2F to, const D2D1_COLOR_F & color, float intensity, float thickness) noexcept;
 
         void SetSplineSubdivision(size_t subdivision) noexcept;
         void SetSplineSmoothing(double smoothing) noexcept;
@@ -71,15 +72,17 @@ namespace DynamicSystem
         void UpdateCurveTheme(double deltaTime) noexcept;
         void BeginCurveThemeTransition(size_t themeIndex) noexcept;
         D2D1_COLOR_F SampleCurveTheme(const curve_theme_t & theme, double position) noexcept;
-        uint32_t GetCurveColor(double position) noexcept;
+        D2D1_COLOR_F GetCurveColor(double position) noexcept;
 
-        void SetBrush(uint32_t color, float opacity) noexcept
+        void SetBrush(const D2D1_COLOR_F & color, float opacity) noexcept
         {
-            _Brush->SetColor(D2D1::ColorF(color));
-            _Brush->SetOpacity(Clamp(opacity));
+            assert((0.f <= opacity) && (opacity <= 1.f));
+
+            _Brush->SetColor(color);
+            _Brush->SetOpacity(opacity);
         }
 
-        uint32_t Colorize(double value) const noexcept;
+        D2D1_COLOR_F Colorize(double value) const noexcept;
 
     protected:
         std::vector<point3d_t> _Points;

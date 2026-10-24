@@ -129,7 +129,7 @@ namespace Plasma
         {
             _BackBuffer->CopyFromMemory(nullptr, _Pixels.data(), _RasterWidth * BytesPerPixel);
 
-            renderTarget->Clear(D2D1::ColorF(D2D1::ColorF::Black));
+            renderTarget->Clear(Black);
 
             const auto Size = renderTarget->GetSize();
 
@@ -278,7 +278,7 @@ namespace Plasma
         const double LoudnessResponse = std::pow(Clamp(_Audio.Loudness), Colorization.LoudnessExponent);
 
         // Map plasma intensity across the theme palette, then shift its hue independently according to the energy in each frequency band.
-        const double Hue =
+        const double H =
             _Theme.BaseHue +
             _Theme.HueSpan   * PlasmaIntensity +
             _Theme.BassHue   * _Audio.Bass +
@@ -286,26 +286,26 @@ namespace Plasma
             _Theme.TrebleHue * _Audio.Treble;
 
         // Treble can increase saturation to make high-frequency activity appear sharper and more colorful.
-        const double Saturation = Clamp(_Theme.Saturation + (Colorization.TrebleSaturation * _Audio.Treble));
+        const double S = Clamp(_Theme.Saturation + (Colorization.TrebleSaturation * _Audio.Treble));
 
         // Shape brightness across the plasma field. With the default settings, middle intensities are brighter than either end of the palette.
-        const double Frequency = Colorization.IntensityCurveFrequency * PlasmaIntensity;
-        const double Phase     = Colorization.IntensityCurvePhase;
-
+        const double Frequency           = Colorization.IntensityCurveFrequency * PlasmaIntensity;
+        const double Phase               = Colorization.IntensityCurvePhase;
         const double IntensityBrightness = Colorization.IntensityBrightnessBase + (Colorization.IntensityBrightnessSpan * std::sin(Frequency + Phase));
 
         // Separate the continuous loudness response from short transient flashes.
         const double AudioBrightness = Colorization.MinimumBrightness + (Colorization.LoudnessBrightness * LoudnessResponse) + (Colorization.PeakBrightness * _Audio.Peak);
-        const double Brightness      = Clamp(_Theme.Brightness * AudioBrightness * IntensityBrightness);
 
-        double Red, Green, Blue;
+        const double V = Clamp(_Theme.Brightness * AudioBrightness * IntensityBrightness);
 
-        HSVToRGB(Hue, Saturation, Brightness, Red, Green, Blue);
+        double R, G, B;
+
+        HSVToRGB(H, S, V, R, G, B);
 
         // Apply frequency-specific RGB accents after HSV conversion.
-        Red   = Clamp(Red   + _Theme.BassRed    * _Audio.Bass);
-        Green = Clamp(Green + _Theme.MidGreen   * _Audio.Mid);
-        Blue  = Clamp(Blue  + _Theme.TrebleBlue * _Audio.Treble);
+        R = Clamp(R + _Theme.BassRed    * _Audio.Bass);
+        G = Clamp(G + _Theme.MidGreen   * _Audio.Mid);
+        B = Clamp(B + _Theme.TrebleBlue * _Audio.Treble);
 
         const double BrightnessFactor = [&]() noexcept
         {
@@ -323,15 +323,11 @@ namespace Plasma
             }
         }();
 
-        Red   *= BrightnessFactor;
-        Green *= BrightnessFactor;
-        Blue  *= BrightnessFactor;
+        R *= BrightnessFactor;
+        G *= BrightnessFactor;
+        B *= BrightnessFactor;
 
-        const uint32_t R = (uint32_t) ToRGB(Red);
-        const uint32_t G = (uint32_t) ToRGB(Green);
-        const uint32_t B = (uint32_t) ToRGB(Blue);
-
-        return 0xFF000000u | (R << 16u) | (G << 8u) | B;
+        return PackRGB(R, G, B);
     }
 
     /// <summary>
@@ -435,7 +431,9 @@ namespace Plasma
             const double DetailRowPhase = PlasmaY * 4. + work.DetailPhase;
             const size_t PixelRowOffset = (size_t) (y * (uint32_t) _RasterWidth);
 
-            for (uint32_t x = 0; x < (uint32_t) _RasterWidth; ++x)
+            auto * Row = &_Pixels[PixelRowOffset];
+
+            for (uint32_t x = 0; x < (uint32_t) _RasterWidth; ++x, ++Row)
             {
                 const double PlasmaX = (2. * (double) x * work.InverseWidth - 1.) * work.HorizontalScale - _Interaction.X + work.BalanceOffset;
 
@@ -459,7 +457,7 @@ namespace Plasma
 
                 PlasmaValue = .5 + (.5 * std::sin(PlasmaValue * 1.35 + work.ColorPhase));
 
-                _Pixels[PixelRowOffset + x] = Colorize(PlasmaValue);
+                *Row = Colorize(PlasmaValue);
             }
         }
     }

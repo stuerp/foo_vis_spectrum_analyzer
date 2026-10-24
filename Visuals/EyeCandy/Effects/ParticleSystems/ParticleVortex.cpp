@@ -588,9 +588,10 @@ namespace ParticleVortex
 
             const size_t Band            = particle.Band % FrequencyBandCount;
             const double Energy          = _Centers[Band].Energy;
-            const double Intensity       = particle.Brightness * FadeIn * FadeOut * (0.18 + (Energy * 0.92)) * (0.55 + (SpeedBrightness * 0.65));
             const double ParticlePhase   = Fraction(particle.OrbitOffset / TwoPi + LifeAmount + _AnimationTime * 0.025);
-            const uint32_t Color         = Colorize(Band, Energy, ParticlePhase);
+
+            const auto   Color           = Colorize(Band, Energy, ParticlePhase);
+            const double Intensity       = particle.Brightness * FadeIn * FadeOut * (0.18 + (Energy * 0.92)) * (0.55 + (SpeedBrightness * 0.65));
             const double Width           = 0.75 + (Energy * 1.8) + (_SmoothedFlux * 1.25);
 
             DrawGlowLine(renderTarget, particle.Previous, particle.Position, Color, (float) Intensity, (float) Width);
@@ -617,7 +618,7 @@ namespace ParticleVortex
 
         const int Radius = std::max(2, (int) std::lround(2. + (Energy * (double) MaxRadius)));
 
-        const uint32_t Color = Colorize(band, Energy, (float) (_AnimationTime * 0.03));
+        const auto Color = Colorize(band, Energy, (float) (_AnimationTime * 0.03));
 
         DrawGlowPoint(renderTarget, center.Position, Color, (float) (Energy * 0.15),               (float) Radius);
         DrawGlowPoint(renderTarget, center.Position, Color, (float) (Energy * 0.52), std::max(1.f, (float) Radius / 4.f));
@@ -646,14 +647,14 @@ namespace ParticleVortex
             const D2D1_POINT_2F Current  = { (float) (Center.x + std::cos(Phase)         * Radius * Spiral), (float) (Center.y + std::sin(Phase)         * Radius * Spiral * 0.68) };
             const D2D1_POINT_2F Previous = { (float) (Center.x + std::cos(Phase - 0.045) * Radius * Spiral), (float) (Center.y + std::sin(Phase - 0.045) * Radius * Spiral * 0.68) };
 
-            DrawGlowLine(renderTarget, Previous, Current, HSVToBGRA((float) (0.53 + Amount * 0.22), 0.82f, 0.58f), 0.072f, 1.f);
+            DrawGlowLine(renderTarget, Previous, Current, HSVToColor((float) (0.53 + Amount * 0.22), 0.82f, 0.58f), 0.072f, 1.f);
         }
     }
 
     /// <summary>
     ///
     /// </summary>
-    void effect_t::DrawGlowLine(ID2D1RenderTarget * renderTarget, D2D1_POINT_2F from, D2D1_POINT_2F to, uint32_t color, float intensity, float width) noexcept
+    void effect_t::DrawGlowLine(ID2D1RenderTarget * renderTarget, D2D1_POINT_2F from, D2D1_POINT_2F to, const D2D1_COLOR_F & color, float intensity, float width) noexcept
     {
         const int QualityRadius = [&]() noexcept
         {
@@ -683,7 +684,7 @@ namespace ParticleVortex
     /// <summary>
     ///
     /// </summary>
-    void effect_t::DrawLine(ID2D1RenderTarget * renderTarget, D2D1_POINT_2F from, D2D1_POINT_2F to, uint32_t color, float intensity, int radius) noexcept
+    void effect_t::DrawLine(ID2D1RenderTarget * renderTarget, D2D1_POINT_2F from, D2D1_POINT_2F to, const D2D1_COLOR_F & color, float intensity, int radius) noexcept
     {
         intensity = std::clamp(intensity, 0.f, 1.35f);
 
@@ -701,7 +702,7 @@ namespace ParticleVortex
     /// <summary>
     ///
     /// </summary>
-    void effect_t::DrawGlowPoint(ID2D1RenderTarget * renderTarget, D2D1_POINT_2F position, uint32_t color, float intensity, float radius) noexcept
+    void effect_t::DrawGlowPoint(ID2D1RenderTarget * renderTarget, D2D1_POINT_2F position, const D2D1_COLOR_F & color, float intensity, float radius) noexcept
     {
         if (radius <= 0)
             return;
@@ -738,7 +739,7 @@ namespace ParticleVortex
     /// <summary>
     ///
     /// </summary>
-    void effect_t::SetBrush(uint32_t color, float opacity) noexcept
+    void effect_t::SetBrush(const D2D1_COLOR_F & color, float opacity) noexcept
     {
         const float BrightnessFactor = [&]() noexcept
         {
@@ -756,24 +757,14 @@ namespace ParticleVortex
             }
         }();
 
-        _Brush->SetColor
-        (
-            D2D1::ColorF
-            (
-                std::clamp((float) GetChannel(color, 16u) / 255.f * BrightnessFactor, 0.f, 1.f),
-                std::clamp((float) GetChannel(color,  8u) / 255.f * BrightnessFactor, 0.f, 1.f),
-                std::clamp((float) GetChannel(color,  0u) / 255.f * BrightnessFactor, 0.f, 1.f),
-                           (float) GetChannel(color, 24u) / 255.f
-            )
-        );
-
-        _Brush->SetOpacity(std::clamp(opacity, 0.f, 1.f));
+        _Brush->SetColor(D2D1::ColorF(Clamp(color.r * BrightnessFactor), Clamp(color.g * BrightnessFactor), Clamp(color.b * BrightnessFactor), color.a));
+        _Brush->SetOpacity(Clamp(opacity));
     }
 
     /// <summary>
     ///
     /// </summary>
-    uint32_t effect_t::Colorize(size_t band, double energy, double particlePhase) const noexcept
+    D2D1_COLOR_F effect_t::Colorize(size_t band, double energy, double particlePhase) const noexcept
     {
         const double BandAmount = (double) band / (double) (FrequencyBandCount - 1);
 
@@ -781,7 +772,7 @@ namespace ParticleVortex
         const float S = (float) Clamp(0.76 + (energy * 0.19));
         const float V = (float) Clamp(0.54 + (energy * 0.44) + (_SmoothedFlux * 0.16));
 
-        return HSVToBGRA(H, S, V);
+        return HSVToColor(H, S, V);
     }
 
     /// <summary>
@@ -918,7 +909,7 @@ namespace ParticleVortex
         }
 
         {
-            hr = renderTarget->CreateSolidColorBrush(D2D1::ColorF(0., 0., 0., 1.), _Brush.ReleaseAndGetAddressOf());
+            hr = renderTarget->CreateSolidColorBrush(Black, _Brush.ReleaseAndGetAddressOf());
 
             if (FAILED(hr))
                 return hr;
@@ -947,7 +938,7 @@ namespace ParticleVortex
 
                 _BackBufferRenderTarget->BeginDraw();
 
-                _BackBufferRenderTarget->Clear(D2D1::ColorF(0., 0., 0., 1.));
+                _BackBufferRenderTarget->Clear(Black);
 
                 hr = _BackBufferRenderTarget->EndDraw();
 

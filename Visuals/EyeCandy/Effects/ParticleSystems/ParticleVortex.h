@@ -89,14 +89,13 @@ namespace ParticleVortex
         void RenderCenterGlow(ID2D1RenderTarget * renderTarget, const center_t & center, size_t band) noexcept;
         void RenderIdleVortex(ID2D1RenderTarget * renderTarget) noexcept;
 
-        void DrawGlowLine(ID2D1RenderTarget * renderTarget, D2D1_POINT_2F from, D2D1_POINT_2F to, uint32_t color, float intensity, float width) noexcept;
-        void DrawLine(ID2D1RenderTarget * renderTarget, D2D1_POINT_2F from, D2D1_POINT_2F to, uint32_t color, float intensity, int radius) noexcept;
+        void DrawGlowLine (ID2D1RenderTarget * renderTarget, D2D1_POINT_2F from, D2D1_POINT_2F to, const D2D1_COLOR_F & color, float intensity, float width) noexcept;
+        void DrawLine     (ID2D1RenderTarget * renderTarget, D2D1_POINT_2F from, D2D1_POINT_2F to, const D2D1_COLOR_F & color, float intensity, int radius) noexcept;
+        void DrawGlowPoint(ID2D1RenderTarget * renderTarget, D2D1_POINT_2F position,               const D2D1_COLOR_F & color, float intensity, float radius) noexcept;
 
-        void DrawGlowPoint(ID2D1RenderTarget * renderTarget, D2D1_POINT_2F position, uint32_t color, float intensity, float radius) noexcept;
+        D2D1_COLOR_F Colorize(size_t band, double energy, double particlePhase) const noexcept;
 
-        uint32_t Colorize(size_t band, double energy, double particlePhase) const noexcept;
-
-        void SetBrush(uint32_t color, float opacity) noexcept;
+        void SetBrush(const D2D1_COLOR_F & color, float opacity) noexcept;
 
         HRESULT CreateDeviceDependentResources(ID2D1RenderTarget * renderTarget) noexcept;
         void DeleteDeviceDependentResources() noexcept;

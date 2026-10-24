@@ -147,7 +147,7 @@ namespace DynamicSystem
     /// <summary>
     /// 
     /// </summary>
-    uint32_t effect_t::Colorize(double value) const noexcept
+    D2D1_COLOR_F effect_t::Colorize(double value) const noexcept
     {
         const double Phase     = Fraction(value);
         const double AntiPhase = 0.5 * (1. - _SmoothedCorrelation);
@@ -156,7 +156,7 @@ namespace DynamicSystem
         const auto S = (float)      Clamp(0.80 + (_SmoothedWidth * 0.08));
         const auto V = (float) std::clamp(0.70 + (_SmoothedRMS   * 1.20) + (_SmoothedPeak * 0.18), 0.70, 1.); // Brightness
 
-        return HSVToBGRA(H, S, V);
+        return HSVToColor(H, S, V);
     }
 
     /// <summary>
@@ -204,14 +204,14 @@ namespace DynamicSystem
             const double ViewDepth = (ProjectedOrigin.ViewDepth + ProjectedEnd.ViewDepth) * 0.5;
             const float Thickness  = std::clamp(58.f / (float) std::max(ViewDepth, Projection.NearPlane), 0.75f, 1.85f);
 
-            DrawGlowLine(renderTarget, ProjectedOrigin.Position, ProjectedEnd.Position, Axis.Color, Intensity, Thickness);
+            DrawGlowLine(renderTarget, ProjectedOrigin.Position, ProjectedEnd.Position, D2D1::ColorF(Axis.Color), Intensity, Thickness);
         }
     }
 
     /// <summary>
     /// Draws a 'glowing' line.
     /// </summary>
-    void effect_t::DrawGlowLine(ID2D1RenderTarget * renderTarget, D2D1_POINT_2F from, D2D1_POINT_2F to, uint32_t color, float intensity, float thickness) noexcept
+    void effect_t::DrawGlowLine(ID2D1RenderTarget * renderTarget, D2D1_POINT_2F from, D2D1_POINT_2F to, const D2D1_COLOR_F & color, float intensity, float thickness) noexcept
     {
         const int OuterRadius = [&]() noexcept
         {
@@ -234,9 +234,9 @@ namespace DynamicSystem
     /// <summary>
     /// 
     /// </summary>
-    void effect_t::DrawLine(ID2D1RenderTarget * renderTarget, D2D1_POINT_2F from, D2D1_POINT_2F to, uint32_t color, float intensity, float thickness) noexcept
+    void effect_t::DrawLine(ID2D1RenderTarget * renderTarget, D2D1_POINT_2F from, D2D1_POINT_2F to, const D2D1_COLOR_F & color, float intensity, float thickness) noexcept
     {
-        intensity = std::clamp(intensity, 0.f, 1.f);
+        intensity = Clamp(intensity);
 
         if (intensity <= 0.0001f)
             return;
@@ -331,12 +331,12 @@ namespace DynamicSystem
     /// <summary>
     /// 
     /// </summary>
-    uint32_t effect_t::GetCurveColor(double position) noexcept
+    D2D1_COLOR_F effect_t::GetCurveColor(double position) noexcept
     {
         const D2D1_COLOR_F From = SampleCurveTheme(CurveThemes[_CurveThemeFrom], position);
         const D2D1_COLOR_F To   = SampleCurveTheme(CurveThemes[_CurveThemeTo],   position);
 
-        return PackColor(LerpColor(From, To, (float) _ThemeBlend));
+        return LerpColor(From, To, (float) _ThemeBlend);
     }
 
     /// <summary>
@@ -438,7 +438,7 @@ namespace DynamicSystem
         }
 
         {
-            hr = renderTarget->CreateSolidColorBrush(D2D1::ColorF(0.f, 0.f, 0.f, 1.f), _Brush.ReleaseAndGetAddressOf());
+            hr = renderTarget->CreateSolidColorBrush(Black, _Brush.ReleaseAndGetAddressOf());
 
             if (FAILED(hr))
                 return hr;
@@ -471,7 +471,7 @@ namespace DynamicSystem
 
             _BackBufferRenderTarget->BeginDraw();
 
-            _BackBufferRenderTarget->Clear(D2D1::ColorF(0.f, 0.f, 0.f, 1.f));
+            _BackBufferRenderTarget->Clear(Black);
 
             hr = _BackBufferRenderTarget->EndDraw();
 

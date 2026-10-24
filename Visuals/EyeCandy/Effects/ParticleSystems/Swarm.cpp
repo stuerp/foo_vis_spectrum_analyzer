@@ -454,9 +454,9 @@ namespace Swarm
             const double hue        = Fraction(PaletteHue + t * .12 + waveB * .025);
             const double value      = .008 + centerGlow * .024 + waveA * .018 + Beat * centerGlow * .045;
 
-            const uint32_t Color = HSVToBGRA((float) hue, .92f, (float) std::clamp(value, 0., .085));
+            const auto Color = HSVToColor((float) hue, .92f, (float) std::clamp(value, 0., .085));
 
-            SetBrush(Color, (float)std::clamp(deltaTime * 5.2, .025, .16));
+            SetBrush(Color, (float) std::clamp(deltaTime * 5.2, .025, .16));
 
             const float y0 = (float)((float) i * _Height / Bands);
 
@@ -478,13 +478,13 @@ namespace Swarm
 
             const float Radius = Span * (float)(.24 + Lobe * .065 + Beat * .28);
 
-            const uint32_t Color = HSVToBGRA((float)Fraction(PaletteHue + Lobe * .115 + _BeatColorPhase * .18), .98f, 1.f);
+            const auto Color = HSVToColor((float)Fraction(PaletteHue + Lobe * .115 + _BeatColorPhase * .18), .98f, 1.f);
 
-            SetBrush(Color, (float)(.010 + Beat * .018));
+            SetBrush(Color, (float) (.010 + (Beat * .018)));
 
             renderTarget->FillEllipse(D2D1::Ellipse(center, Radius, Radius), _Brush.Get());
 
-            SetBrush(Color, (float)(.012 + Beat * .026));
+            SetBrush(Color, (float) (.012 + (Beat * .026)));
 
             renderTarget->FillEllipse(D2D1::Ellipse(center, Radius * .48f, Radius * .48f), _Brush.Get());
         }
@@ -517,7 +517,7 @@ namespace Swarm
             const double Energy    = _SmoothedBandEnergy[Agent.Band];
             const double Intensity = Agent.Brightness * (.58 + (Energy * 1.05) + (_SmoothedRMS * .78) + (_BeatPulse * .35)) * std::clamp(Speed / (Side * .20), .58, 1.45);
 
-            const uint32_t Color = Colorize(Agent.Band, Energy, Fraction(Agent.Phase / TwoPi + _AnimationTime * .025));
+            const auto Color = Colorize(Agent.Band, Energy, Fraction(Agent.Phase / TwoPi + _AnimationTime * .025));
 
             const double Trail = std::clamp(.45 + (_SmoothedRMS * 1.05) + (_BeatPulse * .8), .45, 1.9);
 
@@ -557,21 +557,21 @@ namespace Swarm
                 (float) (p.y - std::sin(Phase) * 3.2)
             };
 
-            DrawNeonLine(renderTarget, q, p, HSVToBGRA((float)Fraction(.48 + Angle * .50), 1.f, 1.f), .32f, 1.35f);
+            DrawNeonLine(renderTarget, q, p, HSVToColor((float)Fraction(.48 + Angle * .50), 1.f, 1.f), .32f, 1.35f);
         }
     }
 
     /// <summary>
     /// 
     /// </summary>
-    uint32_t effect_t::Colorize(size_t band, double energy, double phase) const noexcept
+    D2D1_COLOR_F effect_t::Colorize(size_t band, double energy, double phase) const noexcept
     {
         const double Amount   = (double) band / (double) (BandCount - 1.);
         const double Position = Fraction((Amount * .92) + (phase * .08) + (_SmoothedStereoBalance * .035));
 
         const float Hue = (float) GetPaletteHue(Position, _PaletteBlend);
 
-        return HSVToBGRA(Hue, 1.f, (float) Clamp(.96 + (energy * .08) + (_BeatPulse * .16)));
+        return HSVToColor(Hue, 1.f, (float) Clamp(.96 + (energy * .08) + (_BeatPulse * .16)));
     }
 
     /// <summary>
@@ -604,16 +604,16 @@ namespace Swarm
     /// <summary>
     /// 
     /// </summary>
-    void effect_t::DrawNeonLine(ID2D1RenderTarget * renderTarget, D2D1_POINT_2F from, D2D1_POINT_2F to, uint32_t color, float intensity, float width) noexcept
+    void effect_t::DrawNeonLine(ID2D1RenderTarget * renderTarget, D2D1_POINT_2F from, D2D1_POINT_2F to, const D2D1_COLOR_F & color, float intensity, float width) noexcept
     {
-        const float q = _Quality == Quality::High ? 1.35f : (_Quality == Quality::Low ? .8f : 1.f);
+        const float q = (_Quality == Quality::High) ? 1.35f : (_Quality == Quality::Low) ? .8f : 1.f;
 
-        DrawLine(renderTarget, from, to, color, intensity * .055f, width * 9.f * q);
-        DrawLine(renderTarget, from, to, color, intensity * .12f, width * 5.5f * q);
-        DrawLine(renderTarget, from, to, color, intensity * .30f, width * 2.8f * q);
-        DrawLine(renderTarget, from, to, color, intensity * .78f, width * 1.35f);
+        DrawLine(renderTarget, from, to, color, intensity * .055f, width * 9.0f * q);
+        DrawLine(renderTarget, from, to, color, intensity * .120f, width * 5.5f * q);
+        DrawLine(renderTarget, from, to, color, intensity * .300f, width * 2.8f * q);
+        DrawLine(renderTarget, from, to, color, intensity * .780f, width * 1.35f);
 
-        SetBrush(0xFFFFFFFFu, std::clamp(intensity * .72f, 0.f, 1.f), 1.f);
+        SetBrush(White, Clamp(intensity * .72f), 1.f);
 
         renderTarget->DrawLine(from, to, _Brush.Get(), std::max(.65f, width * .34f), _StrokeStyle.Get());
     }
@@ -621,7 +621,7 @@ namespace Swarm
     /// <summary>
     /// 
     /// </summary>
-    void effect_t::DrawNeonPoint(ID2D1RenderTarget * renderTarget, D2D1_POINT_2F pt, uint32_t color, float intensity, float radius) noexcept
+    void effect_t::DrawNeonPoint(ID2D1RenderTarget * renderTarget, D2D1_POINT_2F pt, const D2D1_COLOR_F & color, float intensity, float radius) noexcept
     {
         if (radius <= 0.f || intensity <= .001f)
             return;
@@ -631,22 +631,25 @@ namespace Swarm
         SetBrush(color, intensity * .270f, 1.15f); renderTarget->FillEllipse(D2D1::Ellipse(pt, radius * 1.55f, radius * 1.55f), _Brush.Get());
         SetBrush(color, intensity * .880f, 1.05f); renderTarget->FillEllipse(D2D1::Ellipse(pt, radius *  .62f, radius *  .62f), _Brush.Get());
 
-        SetBrush(0xFFFFFFFFu, intensity, 1.f); renderTarget->FillEllipse(D2D1::Ellipse(pt, std::max(.8f, radius * .22f), std::max(.8f, radius * .22f)), _Brush.Get());
+        SetBrush(White, intensity, 1.f);
+
+        renderTarget->FillEllipse(D2D1::Ellipse(pt, std::max(.8f, radius * .22f), std::max(.8f, radius * .22f)), _Brush.Get());
     }
 
     /// <summary>
     /// 
     /// </summary>
-    void effect_t::DrawLine(ID2D1RenderTarget * renderTarget, D2D1_POINT_2F from, D2D1_POINT_2F to, uint32_t color, float opacity, float width) noexcept
+    void effect_t::DrawLine(ID2D1RenderTarget * renderTarget, D2D1_POINT_2F from, D2D1_POINT_2F to, const D2D1_COLOR_F & color, float opacity, float width) noexcept
     {
         SetBrush(color, opacity, 1.15f);
+
         renderTarget->DrawLine(from, to, _Brush.Get(), std::max(.6f, width), _StrokeStyle.Get());
     }
 
     /// <summary>
     /// 
     /// </summary>
-    void effect_t::SetBrush(uint32_t color, float opacity, float gain) noexcept
+    void effect_t::SetBrush(const D2D1_COLOR_F & color, float opacity, float gain) noexcept
     {
         const float BrightnessFactor = [&]() noexcept
         {
@@ -666,15 +669,8 @@ namespace Swarm
 
         const float Boost = BrightnessFactor * gain;
 
-        // HSVToBGRA returns a Windows-style packed BGRA value whose numeric representation is 0xAARRGGBB.
-        const float B = (float) ((color >>  0) & 0xFFu) / 255.f;
-        const float G = (float) ((color >>  8) & 0xFFu) / 255.f;
-        const float R = (float) ((color >> 16) & 0xFFu) / 255.f;
-        const float A = (float) ((color >> 24) & 0xFFu) / 255.f;
-
-        _Brush->SetColor(D2D1::ColorF(Clamp(R * Boost), Clamp(G * Boost), Clamp(B * Boost), 1.f));
-
-        _Brush->SetOpacity(Clamp(opacity * A));
+        _Brush->SetColor(D2D1::ColorF(Clamp(color.r * Boost), Clamp(color.g * Boost), Clamp(color.b * Boost), 1.f));
+        _Brush->SetOpacity(Clamp(opacity * color.a));
     }
 
     /// <summary>
@@ -702,7 +698,7 @@ namespace Swarm
         if (FAILED(hr))
             return hr;
 
-        hr = renderTarget->CreateSolidColorBrush(D2D1::ColorF(0.f, 0.f, 0.f, 1.f), _Brush.ReleaseAndGetAddressOf());
+        hr = renderTarget->CreateSolidColorBrush(Black, _Brush.ReleaseAndGetAddressOf());
 
         if (FAILED(hr))
             return hr;

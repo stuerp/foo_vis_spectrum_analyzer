@@ -39,7 +39,7 @@ namespace Fireflies
 
         template <size_t Size> hsv_t SamplePalette(const std::array<palette_stop_t, Size> & palette, float position) noexcept
         {
-            position = std::clamp(position, 0.f, 1.f);
+            position = Clamp(position);
 
             if (position <= palette.front().Position)
                 return palette.front().Color;
@@ -628,7 +628,7 @@ namespace Fireflies
             const double Intensity     = particle.Brightness * FadeIn * FadeOut * Twinkle * AudioResponse;
             const double ParticlePhase = Fraction((particle.OrbitOffset / TwoPi) + LifeAmount + (_AnimationTime * 0.018));
 
-            const uint32_t Color = Colorize(Band, (float) Energy, (float) ParticlePhase);
+            const auto Color = Colorize(Band, (float) Energy, (float) ParticlePhase);
 
             const int Radius = std::max(1, (int) std::lround(1.35 + (Energy * 3.5) + (_SmoothedSpectralFlux * 1.75) + (particle.Brightness * 1.75)));
 
@@ -666,11 +666,11 @@ namespace Fireflies
 
         Radius = std::max(3, (int) std::lround(3. + (Energy * (double) Radius)));
 
-        const uint32_t Color = Colorize(band, (float) std::min(1., Energy * 1.20), (float) (_AnimationTime * 0.03));
+        const auto Color = Colorize(band, (float) std::min(1., Energy * 1.20), (float) (_AnimationTime * 0.03));
 
-        DrawGlowPoint(renderTarget, center.Position, Color,       (float) (Energy * 0.30 + _SmoothedSpectralFlux * 0.08),               (float) Radius);
-        DrawGlowPoint(renderTarget, center.Position, Color,       (float) (Energy * 0.90 + _SmoothedSpectralFlux * 0.14), std::max(2.f, (float) Radius / 3.f));
-        DrawGlowPoint(renderTarget, center.Position, 0xFFFFFFFFu, (float) (Energy * 0.74 + _SmoothedSpectralFlux * 0.18), std::max(1.f, (float) Radius / 7.f));
+        DrawGlowPoint(renderTarget, center.Position, Color, (float) (Energy * 0.30 + _SmoothedSpectralFlux * 0.08),               (float) Radius);
+        DrawGlowPoint(renderTarget, center.Position, Color, (float) (Energy * 0.90 + _SmoothedSpectralFlux * 0.14), std::max(2.f, (float) Radius / 3.f));
+        DrawGlowPoint(renderTarget, center.Position, White, (float) (Energy * 0.74 + _SmoothedSpectralFlux * 0.18), std::max(1.f, (float) Radius / 7.f));
     }
 
     /// <summary>
@@ -694,7 +694,7 @@ namespace Fireflies
                 (float) (_Height * (0.50 + std::sin(Phase) * 0.28 + std::cos(Phase * 0.43)          * 0.080))
             };
 
-            const uint32_t Color = HSVToBGRA((float) (0.11 + Amount * 0.08), 0.72f, 0.78f);
+            const auto Color = HSVToColor((float) (0.11 + Amount * 0.08), 0.72f, 0.78f);
 
             const double Twinkle = 0.55 + (0.45 * std::sin(Phase * 2.3));
 
@@ -707,7 +707,7 @@ namespace Fireflies
     /// <summary>
     ///
     /// </summary>
-    void effect_t::DrawGlowLine(ID2D1RenderTarget * renderTarget, D2D1_POINT_2F from, D2D1_POINT_2F to, uint32_t color, float intensity, float width) noexcept
+    void effect_t::DrawGlowLine(ID2D1RenderTarget * renderTarget, D2D1_POINT_2F from, D2D1_POINT_2F to, const D2D1_COLOR_F & color, float intensity, float width) noexcept
     {
         int Radius = [&]() noexcept
         {
@@ -737,9 +737,8 @@ namespace Fireflies
     /// <summary>
     ///
     /// </summary>
-    void effect_t::DrawLine(ID2D1RenderTarget * renderTarget, D2D1_POINT_2F from, D2D1_POINT_2F to, uint32_t color, float intensity, int radius) noexcept
+    void effect_t::DrawLine(ID2D1RenderTarget * renderTarget, D2D1_POINT_2F from, D2D1_POINT_2F to, const D2D1_COLOR_F & color, float intensity, int radius) noexcept
     {
-
         intensity = std::clamp(intensity, 0.0f, 1.35f);
 
         if (intensity <= 0.0001f)
@@ -756,7 +755,7 @@ namespace Fireflies
     /// <summary>
     ///
     /// </summary>
-    void effect_t::DrawGlowPoint(ID2D1RenderTarget * renderTarget, D2D1_POINT_2F position, uint32_t color, float intensity, float radius) noexcept
+    void effect_t::DrawGlowPoint(ID2D1RenderTarget * renderTarget, D2D1_POINT_2F position, const D2D1_COLOR_F & color, float intensity, float radius) noexcept
     {
         if (radius <= 0)
             return;
@@ -793,7 +792,7 @@ namespace Fireflies
     /// <summary>
     ///
     /// </summary>
-    void effect_t::SetBrush(uint32_t color, float opacity) noexcept
+    void effect_t::SetBrush(const D2D1_COLOR_F & color, float opacity) noexcept
     {
         const float BrightnessFactor = [&]() noexcept
         {
@@ -811,24 +810,14 @@ namespace Fireflies
             }
         }();
 
-        _Brush->SetColor
-        (
-            D2D1::ColorF
-            (
-                std::clamp((float) GetChannel(color, 16u) / 255.0f * BrightnessFactor, 0.f, 1.f),
-                std::clamp((float) GetChannel(color,  8u) / 255.0f * BrightnessFactor, 0.f, 1.f),
-                std::clamp((float) GetChannel(color,  0u) / 255.0f * BrightnessFactor, 0.f, 1.f),
-                           (float) GetChannel(color, 24u) / 255.0f
-            )
-        );
-
-        _Brush->SetOpacity(std::clamp(opacity, 0.f, 1.f));
+        _Brush->SetColor(D2D1::ColorF(Clamp(color.r * BrightnessFactor), Clamp(color.g * BrightnessFactor), Clamp(color.b * BrightnessFactor), color.a));
+        _Brush->SetOpacity(Clamp(opacity));
     }
 
     /// <summary>
     ///
     /// </summary>
-    uint32_t effect_t::Colorize(size_t band, float energy, float particlePhase) const noexcept
+    D2D1_COLOR_F effect_t::Colorize(size_t band, float energy, float particlePhase) const noexcept
     {
         const double BandAmount = (double) band / (double) (FrequencyBandCount - 1);
         const double Position   = Fraction((BandAmount * 0.88) + (particlePhase * 0.085) + (_AnimationTime * 0.0014));
@@ -859,7 +848,7 @@ namespace Fireflies
         const float S = (float) std::clamp(Color.S * (0.90 + energy * 0.13) + _SmoothedSpectralFlux * 0.025, 0.48, 0.92);
         const float V = std::clamp(Color.V * (0.86f + energy * 0.24f) + (float) ((_SmoothedRMS * 0.050) + (_SmoothedPeak * 0.025) + (_SmoothedSpectralFlux * 0.090)), 0.40f, 1.f);
 
-        return HSVToBGRA(H, S, V);
+        return HSVToColor(H, S, V);
     }
 
     /// <summary>
@@ -1018,7 +1007,7 @@ namespace Fireflies
         }
 
         {
-            hr = renderTarget->CreateSolidColorBrush(D2D1::ColorF(0., 0., 0., 1.), _Brush.ReleaseAndGetAddressOf());
+            hr = renderTarget->CreateSolidColorBrush(Black, _Brush.ReleaseAndGetAddressOf());
 
             if (FAILED(hr))
                 return hr;
@@ -1046,7 +1035,7 @@ namespace Fireflies
 
             _BackBufferRenderTarget->BeginDraw();
 
-            _BackBufferRenderTarget->Clear(D2D1::ColorF(0., 0., 0., 1.));
+            _BackBufferRenderTarget->Clear(Black);
 
             hr = _BackBufferRenderTarget->EndDraw();
 

@@ -226,10 +226,20 @@ namespace CliffordAttractor
             const double Normalized = Clamp(std::log1p((double) _Densities[i]) * _Exposure);
             const double Shaped     = std::pow(Normalized, 0.62);
 
-            const float Opacity  = (float) Clamp(Shaped * BrightnessFactor * AudioBrightness);
-            const uint32_t Color = GetCurveColor(Shaped * 0.82 + _AnimationTime * 0.025);
+            const float Opacity = (float) Clamp(Shaped * BrightnessFactor * AudioBrightness);
+            const D2D1_COLOR_F Color = GetCurveColor(Shaped * 0.82 + _AnimationTime * 0.025);
 
-            _Pixels[i] = PremultiplyColor(Color, Opacity);
+            const auto ToByte = [](float Value) noexcept -> uint32_t
+            {
+                return (uint32_t) std::lround(Clamp((double) Value) * 255.);
+            };
+
+            const uint32_t Alpha = ToByte(Color.a * Opacity);
+            const uint32_t Red   = ToByte(Color.r * Color.a * Opacity);
+            const uint32_t Green = ToByte(Color.g * Color.a * Opacity);
+            const uint32_t Blue  = ToByte(Color.b * Color.a * Opacity);
+
+            _Pixels[i] = (Alpha << 24) | (Red << 16) | (Green << 8) | Blue;
         }
 
         const D2D1_RECT_U Destination = D2D1::RectU(0, 0, _BitmapWidth, _BitmapHeight);

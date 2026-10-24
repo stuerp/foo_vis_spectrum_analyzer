@@ -108,17 +108,17 @@ namespace Fireworks
 
         void RenderFlareHeads(ID2D1RenderTarget * renderTarget) noexcept;
 
-        void DrawGlowLine(ID2D1RenderTarget * renderTarget, D2D1_POINT_2F from, D2D1_POINT_2F to, uint32_t color, float intensity, float width) noexcept;
-        void DrawLine(ID2D1RenderTarget * renderTarget, D2D1_POINT_2F from, D2D1_POINT_2F to, uint32_t color, float intensity, int radius) noexcept;
-        void DrawGlowPoint(ID2D1RenderTarget * renderTarget, D2D1_POINT_2F position, uint32_t color, float intensity, float radius) noexcept;
+        void DrawGlowPoint(ID2D1RenderTarget * renderTarget, D2D1_POINT_2F position,               const D2D1_COLOR_F & color, float intensity, float radius) noexcept;
+        void DrawGlowLine (ID2D1RenderTarget * renderTarget, D2D1_POINT_2F from, D2D1_POINT_2F to, const D2D1_COLOR_F & color, float intensity, float width) noexcept;
+        void DrawLine     (ID2D1RenderTarget * renderTarget, D2D1_POINT_2F from, D2D1_POINT_2F to, const D2D1_COLOR_F & color, float intensity, int radius) noexcept;
 
         void UpdateFlareTrail(flare_t & flare, double deltaTime) noexcept;
         void RenderFlareTrail(ID2D1RenderTarget * renderTarget, const flare_t & flare) noexcept;
 
-        void DrawForegroundLine(ID2D1RenderTarget * renderTarget, D2D1_POINT_2F from, D2D1_POINT_2F to, uint32_t color, float opacity, float width) noexcept;
-        void DrawForegroundGlowLine(ID2D1RenderTarget * renderTarget, D2D1_POINT_2F from, D2D1_POINT_2F to, uint32_t color, float intensity, float width) noexcept;
+        void DrawForegroundLine    (ID2D1RenderTarget * renderTarget, D2D1_POINT_2F from, D2D1_POINT_2F to, const D2D1_COLOR_F & color, float opacity, float width) noexcept;
+        void DrawForegroundGlowLine(ID2D1RenderTarget * renderTarget, D2D1_POINT_2F from, D2D1_POINT_2F to, const D2D1_COLOR_F & color, float intensity, float width) noexcept;
 
-        void SetBrush(ID2D1SolidColorBrush * brush, uint32_t color, float opacity) noexcept;
+        void SetBrush(ID2D1SolidColorBrush * brush, const D2D1_COLOR_F & color, float opacity) noexcept;
 
         void StartWorkers();
         void StopWorkers() noexcept;

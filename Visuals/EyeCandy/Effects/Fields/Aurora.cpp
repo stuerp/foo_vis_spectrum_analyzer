@@ -149,7 +149,7 @@ namespace Aurora
         {
             _BackBuffer->CopyFromMemory(nullptr, _Pixels.data(), _RasterWidth * BytesPerPixel);
 
-            renderTarget->Clear(D2D1::ColorF(D2D1::ColorF::Black));
+            renderTarget->Clear(Black);
 
             const auto Size = renderTarget->GetSize();
 
@@ -224,24 +224,26 @@ namespace Aurora
         const double Fold      = Clamp(fold);
         const double Height    = Clamp(height);
 
-        const double Hue =
+        const double H =
             _Theme.BaseHue +
            (_Theme.HueSpan   * ((Fold * .72) + (Height * .18))) +
            (_Theme.BassHue   * _Audio.Bass) +
            (_Theme.MidHue    * _Audio.Mid) +
            (_Theme.TrebleHue * _Audio.Treble);
 
-        const double Saturation = Clamp((_Theme.Saturation * .78) + (.14 * Fold) + (.08 * _Audio.Treble));
-        const double Ambient    = .012 + (.055 * std::pow(Clamp(_Audio.Loudness), .6));
-        const double Brightness = Clamp(Ambient + (_Theme.Brightness * Intensity * (.56 + (.44 * Fold))));
+        const double S = Clamp((_Theme.Saturation * .78) + (.14 * Fold) + (.08 * _Audio.Treble));
 
-        double Red, Green, Blue;
+        const double Ambient = .012 + (.055 * std::pow(Clamp(_Audio.Loudness), .6));
 
-        HSVToRGB(Hue, Saturation, Brightness, Red, Green, Blue);
+        const double V = Clamp(Ambient + (_Theme.Brightness * Intensity * (.56 + (.44 * Fold))));
 
-        Red   = Clamp(Red   + (_Theme.BassRed    * _Audio.Bass)   + (.06 * Fold));
-        Green = Clamp(Green + (_Theme.MidGreen   * _Audio.Mid)    + (.14 * Intensity));
-        Blue  = Clamp(Blue  + (_Theme.TrebleBlue * _Audio.Treble) + (.10 * Fold));
+        double R, G, B;
+
+        HSVToRGB(H, S, V, R, G, B);
+
+        R = Clamp(R + (_Theme.BassRed    * _Audio.Bass)   + (.06 * Fold));
+        G = Clamp(G + (_Theme.MidGreen   * _Audio.Mid)    + (.14 * Intensity));
+        B = Clamp(B + (_Theme.TrebleBlue * _Audio.Treble) + (.10 * Fold));
 
         const double BrightnessFactor = [&]() noexcept
         {
@@ -259,15 +261,11 @@ namespace Aurora
             }
         }();
 
-        Red   *= BrightnessFactor;
-        Green *= BrightnessFactor;
-        Blue  *= BrightnessFactor;
+        R *= BrightnessFactor;
+        G *= BrightnessFactor;
+        B *= BrightnessFactor;
 
-        const uint32_t R = (uint32_t) ToRGB(Red);
-        const uint32_t G = (uint32_t) ToRGB(Green);
-        const uint32_t B = (uint32_t) ToRGB(Blue);
-
-        return 0xFF000000u | (R << 16u) | (G << 8u) | B;
+        return PackRGB(R, G, B);
     }
 
     /// <summary>
@@ -371,7 +369,9 @@ namespace Aurora
             const double V = (double) y * work.InverseHeight;
             const size_t PixelRowOffset = (size_t) (y * (uint32_t) _RasterWidth);
 
-            for (uint32_t x = 0; x < (uint32_t) _RasterWidth; ++x)
+            auto * Row = &_Pixels[PixelRowOffset];
+
+            for (uint32_t x = 0; x < (uint32_t) _RasterWidth; ++x, ++Row)
             {
                 const double U = (double) x * work.InverseWidth + work.BalanceOffset;
                 const double Horizontal = (U - .5) * work.CurtainScale;
@@ -416,7 +416,7 @@ namespace Aurora
                     BrightestFold *= .12 * Reflection;
                 }
 
-                _Pixels[PixelRowOffset + x] = Colorize(Intensity, BrightestFold, 1. - V);
+                *Row = Colorize(Intensity, BrightestFold, 1. - V);
             }
         }
     }

@@ -51,7 +51,7 @@ namespace LissajousTrails
         {
             D2D1_POINT_2F From {};
             D2D1_POINT_2F To {};
-            uint32_t Color   = 0;
+            D2D1_COLOR_F Color {};
             double Intensity = 0.;
         };
 
@@ -84,13 +84,21 @@ namespace LissajousTrails
         void RenderCurve(ID2D1RenderTarget * renderTarget) noexcept;
         void RenderIdleCurve(ID2D1RenderTarget * renderTarget) noexcept;
 
-        void DrawGlowLine(ID2D1RenderTarget * renderTarget, D2D1_POINT_2F from, D2D1_POINT_2F to, uint32_t color, float intensity) noexcept;
-        void DrawLine(ID2D1RenderTarget * renderTarget, D2D1_POINT_2F from, D2D1_POINT_2F to, uint32_t color, float intensity, int radius) noexcept;
-        void SetBrush(uint32_t color, float opacity) noexcept;
+        void DrawGlowLine(ID2D1RenderTarget * renderTarget, D2D1_POINT_2F from, D2D1_POINT_2F to, const D2D1_COLOR_F & color, float intensity) noexcept;
+        void DrawLine    (ID2D1RenderTarget * renderTarget, D2D1_POINT_2F from, D2D1_POINT_2F to, const D2D1_COLOR_F & color, float intensity, int radius) noexcept;
 
         D2D1_POINT_2F TransformSample(stereo_sample_t sample, double stereoRotation) const noexcept;
         
-        uint32_t Colorize(double value) const noexcept;
+        D2D1_COLOR_F Colorize(double value) const noexcept;
+
+        void SetBrush(const D2D1_COLOR_F & color, float opacity) noexcept
+        {
+            assert((0.f <= opacity) && (opacity <= 1.f));
+
+            _Brush->SetColor(color);
+            _Brush->SetOpacity(opacity);
+        }
+
         void GetThemeTransition(size_t & from, size_t & to, double & amount) const noexcept;
 
         void StartWorkers();

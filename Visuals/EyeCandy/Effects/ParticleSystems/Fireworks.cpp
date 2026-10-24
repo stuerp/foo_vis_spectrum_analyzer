@@ -532,7 +532,7 @@ namespace Fireworks
             const double Twinkle   = 0.78 + (0.22 * std::sin(_AnimationTime * 21. + (Spark.Seed * 0.001)));
             const double Intensity = Spark.Brightness * Fade * Twinkle;
 
-            const uint32_t Color = HSVToBGRA((float) Spark.Hue, (float) Spark.Saturation, (float) Clamp(0.68 + (Intensity * 0.42)));
+            const auto Color = HSVToColor((float) Spark.Hue, (float) Spark.Saturation, (float) Clamp(0.68 + (Intensity * 0.42)));
 
             DrawGlowLine(renderTarget, Spark.Previous, Spark.Position, Color, (float)(Intensity * 0.68), 0.70f);
 
@@ -554,7 +554,7 @@ namespace Fireworks
 
             RenderFlareTrail(renderTarget, Flare);
 
-            const uint32_t Color = HSVToBGRA((float)Flare.Hue, 0.82f, 1.f); 
+            const auto Color = HSVToColor((float) Flare.Hue, 0.82f, 1.f); 
 
             const float Intensity = (float)std::clamp(0.82 + (Flare.Energy * 0.28), 0., 1.25);
 
@@ -566,7 +566,7 @@ namespace Fireworks
 
             renderTarget->FillEllipse(D2D1::Ellipse(Flare.Position, 3.45f, 3.45f), _ForegroundBrush.Get());
 
-            SetBrush(_ForegroundBrush.Get(), 0xFFFFFFFFu, Intensity);
+            SetBrush(_ForegroundBrush.Get(), White, Intensity);
 
             renderTarget->FillEllipse(D2D1::Ellipse(Flare.Position, 1.1f, 1.1f), _ForegroundBrush.Get());
         }
@@ -580,7 +580,7 @@ namespace Fireworks
         if (Flare.TrailCount == 0)
             return;
 
-        const uint32_t Color = HSVToBGRA((float) Flare.Hue, 0.78f, 1.f);
+        const auto Color = HSVToColor((float) Flare.Hue, 0.78f, 1.f);
 
         D2D1_POINT_2F To = Flare.Position;
 
@@ -627,7 +627,7 @@ namespace Fireworks
             const float Intensity = (float) Lerp(0.08, 0.48, Twinkle);
             const float Radius    = (float) Lerp(1.35, 2.25, Random(State));
 
-            DrawGlowPoint(renderTarget, Position, 0xFFDDE8FFu, Intensity, Radius);
+            DrawGlowPoint(renderTarget, Position, D2D1::ColorF(0xFFDDE8FFu), Intensity, Radius);
         }
     }
 
@@ -1058,11 +1058,11 @@ namespace Fireworks
         if (_SkyLight <= 0.002)
             return;
 
-        const uint32_t Color = HSVToBGRA((float)_SkyHue, 0.64f, 0.60f);
+        const auto Color = HSVToColor((float)_SkyHue, 0.64f, 0.60f);
 
         const double ShapedLight = _SkyLight * _SkyLight;
 
-        const float Opacity = (float)((_SkyLight * 0.032) + (ShapedLight * 0.060));
+        const float Opacity = (float) ((_SkyLight * 0.032) + (ShapedLight * 0.060));
 
         SetBrush(_Brush.Get(), Color, Opacity);
 
@@ -1072,7 +1072,7 @@ namespace Fireworks
     /// <summary>
     /// 
     /// </summary>
-    void effect_t::DrawGlowLine(ID2D1RenderTarget * renderTarget, D2D1_POINT_2F from, D2D1_POINT_2F to, uint32_t color, float intensity, float width) noexcept
+    void effect_t::DrawGlowLine(ID2D1RenderTarget * renderTarget, D2D1_POINT_2F from, D2D1_POINT_2F to, const D2D1_COLOR_F & color, float intensity, float width) noexcept
     {
         int Radius = [&]() noexcept
         {
@@ -1100,9 +1100,9 @@ namespace Fireworks
     /// <summary>
     /// 
     /// </summary>
-    void effect_t::DrawForegroundGlowLine(ID2D1RenderTarget * renderTarget, D2D1_POINT_2F from, D2D1_POINT_2F to, uint32_t color, float intensity, float width) noexcept
+    void effect_t::DrawForegroundGlowLine(ID2D1RenderTarget * renderTarget, D2D1_POINT_2F from, D2D1_POINT_2F to, const D2D1_COLOR_F & color, float intensity, float width) noexcept
     {
-        intensity = std::clamp(intensity, 0.f, 1.f);
+        intensity = Clamp(intensity);
 
         DrawForegroundLine(renderTarget, from, to, color, intensity * 0.07f, width * 4.5f);
         DrawForegroundLine(renderTarget, from, to, color, intensity * 0.22f, width * 2.2f);
@@ -1112,7 +1112,7 @@ namespace Fireworks
     /// <summary>
     /// 
     /// </summary>
-    void effect_t::DrawLine(ID2D1RenderTarget * renderTarget, D2D1_POINT_2F from, D2D1_POINT_2F to, uint32_t color, float intensity, int radius) noexcept
+    void effect_t::DrawLine(ID2D1RenderTarget * renderTarget, D2D1_POINT_2F from, D2D1_POINT_2F to, const D2D1_COLOR_F & color, float intensity, int radius) noexcept
     {
         SetBrush(_Brush.Get(), color, intensity);
 
@@ -1124,7 +1124,7 @@ namespace Fireworks
     /// <summary>
     /// 
     /// </summary>
-    void effect_t::DrawForegroundLine(ID2D1RenderTarget * renderTarget, D2D1_POINT_2F from, D2D1_POINT_2F to, uint32_t color, float opacity, float width) noexcept
+    void effect_t::DrawForegroundLine(ID2D1RenderTarget * renderTarget, D2D1_POINT_2F from, D2D1_POINT_2F to, const D2D1_COLOR_F & color, float opacity, float width) noexcept
     {
         if ((opacity <= 0.f) || (width <= 0.f))
             return;
@@ -1137,7 +1137,7 @@ namespace Fireworks
     /// <summary>
     /// 
     /// </summary>
-    void effect_t::DrawGlowPoint(ID2D1RenderTarget * renderTarget, D2D1_POINT_2F position, uint32_t color, float intensity, float radius) noexcept
+    void effect_t::DrawGlowPoint(ID2D1RenderTarget * renderTarget, D2D1_POINT_2F position, const D2D1_COLOR_F & color, float intensity, float radius) noexcept
     {
         SetBrush(_Brush.Get(), color, intensity * 0.06f);
 
@@ -1161,7 +1161,7 @@ namespace Fireworks
     /// <summary>
     /// 
     /// </summary>
-    void effect_t::SetBrush(ID2D1SolidColorBrush * brush, uint32_t color, float opacity) noexcept
+    void effect_t::SetBrush(ID2D1SolidColorBrush * brush, const D2D1_COLOR_F & color, float opacity) noexcept
     {
         const float BrightnessFactor = [&]() noexcept
         {
@@ -1170,24 +1170,17 @@ namespace Fireworks
                 case Brightness::Low:
                     return 0.78f;
 
-                default:
-                case Brightness::Medium:
-                    return 1.00f;
-
                 case Brightness::High:
                     return 1.28f;
+
+                case Brightness::Medium:
+                default:
+                    return 1.0f;
             }
         }();
 
-        brush->SetColor(D2D1::ColorF
-        (
-            std::clamp((float) GetChannel(color, 16u) / 255.f * BrightnessFactor, 0.f, 1.f),
-            std::clamp((float) GetChannel(color,  8u) / 255.f * BrightnessFactor, 0.f, 1.f),
-            std::clamp((float) GetChannel(color,  0u) / 255.f * BrightnessFactor, 0.f, 1.f),
-                       (float) GetChannel(color, 24u) / 255.f)
-        );
-
-        brush->SetOpacity(std::clamp(opacity, 0.f, 1.f));
+        brush->SetColor(D2D1::ColorF(Clamp(color.r * BrightnessFactor), Clamp(color.g * BrightnessFactor), Clamp(color.b * BrightnessFactor), color.a));
+        brush->SetOpacity(Clamp(opacity));
     }
 
     /// <summary>
@@ -1209,7 +1202,7 @@ namespace Fireworks
         }
 
         {
-            hr = renderTarget->CreateSolidColorBrush(D2D1::ColorF(0., 0., 0., 1.), _Brush.ReleaseAndGetAddressOf());
+            hr = renderTarget->CreateSolidColorBrush(Black, _Brush.ReleaseAndGetAddressOf());
 
             if (FAILED(hr))
                 return hr;
@@ -1237,7 +1230,7 @@ namespace Fireworks
 
             _BackBufferRenderTarget->BeginDraw();
 
-            _BackBufferRenderTarget->Clear(D2D1::ColorF(0., 0., 0., 1.));
+            _BackBufferRenderTarget->Clear(Black);
 
             hr = _BackBufferRenderTarget->EndDraw();
 
@@ -1251,7 +1244,7 @@ namespace Fireworks
         }
 
         {
-            hr = renderTarget->CreateSolidColorBrush(D2D1::ColorF(0., 0., 0., 1.), _ForegroundBrush.ReleaseAndGetAddressOf());
+            hr = renderTarget->CreateSolidColorBrush(Black, _ForegroundBrush.ReleaseAndGetAddressOf());
 
             if (FAILED(hr))
                 return hr;
