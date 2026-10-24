@@ -7,10 +7,6 @@
 
 #pragma warning(disable: 4100 4625 4626 4710 4711 5045 ALL_CPPCORECHECK_WARNINGS)
 
-#include <SDKDDKVer.h>
-#include <WinSock2.h>
-#include <Windows.h>
-
 #include <vector>
 
 #include "Analyzer.h"
@@ -21,7 +17,7 @@
 /// <summary>
 /// Implements a Fast Fourier Transform analyzer.
 /// </summary>
-class fft_analyzer_t : public analyzer_t
+class fft_analyzer_t final : public analyzer_t
 {
 public:
     fft_analyzer_t() = delete;
@@ -36,7 +32,7 @@ public:
 
     fft_analyzer_t(const state_t & state, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup, const window_function_t & windowFunction, const window_function_t & brownPucketteKernel) noexcept;
 
-    bool AnalyzeAudio(const audio_sample * frames, size_t frameCount, uint32_t channels, frequency_bands_t & frequencyBands) noexcept;
+    bool AnalyzeAudio(const audio_sample * frames, size_t frameCount, uint32_t channels, frequency_bands_t & frequencyBands) noexcept override final;
 
 private:
     void Add(const audio_sample * samples, size_t count, uint32_t channels) noexcept;

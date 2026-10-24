@@ -1,5 +1,5 @@
 
-/** $VER: Analyzer.h (2026.10.24) P. Stuer **/
+/** $VER: Analyzer.h (2026.10.24) P. Stuer - Base class for all analyzers **/
 
 #pragma once
 
@@ -7,18 +7,12 @@
 
 #pragma warning(disable: 4100 4625 4626 4710 4711 5045 ALL_CPPCORECHECK_WARNINGS)
 
-#include <SDKDDKVer.h>
-#include <Windows.h>
-
 using namespace std;
 
 #include "State.h"
 #include "WindowFunctions.h"
+#include "FrequencyBand.h"
 
-/// <summary>
-/// Provides a base class for analyzers.
-/// </summary>
-#pragma warning(disable: 4820)
 class analyzer_t
 {
 public:
@@ -35,10 +29,12 @@ public:
     /// <summary>
     /// Initializes a new instance.
     /// </summary>
-    analyzer_t(const state_t & state, uint32_t sampleRate, uint32_t channelCount, uint32_t channelConfig, const window_function_t & windowFunction) : _State(state), _SampleRate(sampleRate), _ChannelCount(channelCount), _ChannelConfig(channelConfig), _WindowFunction(windowFunction)
+    analyzer_t(const state_t & state, uint32_t sampleRate, uint32_t channelCount, uint32_t channelConfig, const window_function_t & windowFunction) : _State(state), _WindowFunction(windowFunction), _SampleRate(sampleRate), _ChannelCount(channelCount), _ChannelConfig(channelConfig)
     {
         _NyquistFrequency = (double) _SampleRate / 2.;
     }
+
+    virtual bool AnalyzeAudio(const audio_sample * frames, size_t frameCount, uint32_t selectedChannels, frequency_bands_t & frequencyBands) noexcept = 0;
 
     /// <summary>
     /// Downmixes the selected channels of an audio frame to a mono sample.
@@ -77,10 +73,11 @@ public:
 
 protected:
     const state_t & _State;
+    const window_function_t & _WindowFunction;
+
     uint32_t _SampleRate;
     uint32_t _ChannelCount; // Number of channels per frame.
     uint32_t _ChannelConfig; // Mask representing the channels present in the frame.
-    const window_function_t & _WindowFunction;
 
     double _NyquistFrequency;
 };

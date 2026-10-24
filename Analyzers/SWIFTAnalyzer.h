@@ -1,5 +1,5 @@
 
-/** $VER: SWIFTAnalyzer.h (2025.09.15) P. Stuer - Based on TF3RDL Sliding Windowed Infinite Fourier Transform (SWIFT), https://codepen.io/TF3RDL/pen/JjBzjeY **/
+/** $VER: SWIFTAnalyzer.h (2026.10.24) P. Stuer - Implements a Sliding Windowed Infinite Fourier Transform (SWIFT) analyzer. **/
 
 #pragma once
 
@@ -12,10 +12,7 @@
 
 #include <vector>
 
-/// <summary>
-/// Implements a Sliding Windowed Infinite Fourier Transform (SWIFT) analyzer.
-/// </summary>
-class swift_analyzer_t : public analyzer_t
+class swift_analyzer_t final : public analyzer_t
 {
 public:
     swift_analyzer_t() = delete;
@@ -31,7 +28,7 @@ public:
     swift_analyzer_t(const state_t & state, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup);
 
     bool Initialize(const frequency_bands_t & frequencyBands) noexcept;
-    bool AnalyzeAudio(const audio_sample * frames , size_t frameCount, uint32_t channels, frequency_bands_t & frequencyBands) noexcept;
+    bool AnalyzeAudio(const audio_sample * frames , size_t frameCount, uint32_t channels, frequency_bands_t & frequencyBands) noexcept override final;
 
 private:
     struct swift_value_t

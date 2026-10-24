@@ -171,6 +171,8 @@ enum class TransformMethod
 
     Min = FFT,
     Max = AnalogStyle,
+
+    Invalid = -1
 };
 
 enum class FFTMode

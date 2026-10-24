@@ -1,5 +1,5 @@
 
-/** $VER: AnalogStyleAnalyzer.h (2024.03.09) P. Stuer **/
+/** $VER: AnalogStyleAnalyzer.h (2026.10.24) P. Stuer **/
 
 #pragma once
 
@@ -15,7 +15,7 @@
 /// <summary>
 /// Implements an Analog-style spectrum analyzer.
 /// </summary>
-class analog_style_analyzer_t : public analyzer_t
+class analog_style_analyzer_t final : public analyzer_t
 {
 public:
     analog_style_analyzer_t() = delete;
@@ -31,7 +31,7 @@ public:
     analog_style_analyzer_t(const state_t & state, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup, const window_function_t & windowFunction);
 
     bool Initialize(const vector<frequency_band_t> & frequencyBands);
-    bool AnalyzeAudio(const audio_sample * frames, size_t frameCount, uint32_t selectedChannels, frequency_bands_t & frequencyBands) noexcept;
+    bool AnalyzeAudio(const audio_sample * frames, size_t frameCount, uint32_t selectedChannels, frequency_bands_t & frequencyBands) noexcept override final;
 
 private:
     struct coef_t

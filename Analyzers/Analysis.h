@@ -113,6 +113,8 @@ public:
     static double GetAcousticWeight(double x, WeightingType weightingType, double weightAmount) noexcept;
 
 private:
+    void CreateAnalyzer() noexcept;
+
     // Spectrum
     void SpectrumProcessing(const audio_chunk & chunk) noexcept;
 
@@ -187,13 +189,10 @@ public:
 
     double _NyquistFrequency;
 
+    std::unique_ptr<analyzer_t> _Analyzer;
+
     std::unique_ptr<window_function_t> _WindowFunction;
     std::unique_ptr<window_function_t> _BrownPucketteKernel;
-
-    fft_analyzer_t * _FFTAnalyzer;
-    cqt_analyzer_t * _CQTAnalyzer;
-    swift_analyzer_t * _SWIFTAnalyzer;
-    analog_style_analyzer_t * _AnalogStyleAnalyzer;
 
     frequency_bands_t _FrequencyBands;
 

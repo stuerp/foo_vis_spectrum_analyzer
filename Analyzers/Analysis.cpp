@@ -51,29 +51,8 @@ void analysis_t::Reset() noexcept
     _ChannelCount  = 0;
     _ChannelConfig = 0;
 
-    if (_AnalogStyleAnalyzer != nullptr)
-    {
-        delete _AnalogStyleAnalyzer;
-        _AnalogStyleAnalyzer = nullptr;
-    }
-
-    if (_SWIFTAnalyzer != nullptr)
-    {
-        delete _SWIFTAnalyzer;
-        _SWIFTAnalyzer = nullptr;
-    }
-
-    if (_CQTAnalyzer != nullptr)
-    {
-        delete _CQTAnalyzer;
-        _CQTAnalyzer = nullptr;
-    }
-
-    if (_FFTAnalyzer != nullptr)
-    {
-        delete _FFTAnalyzer;
-        _FFTAnalyzer = nullptr;
-    }
+    if (_Analyzer)
+        _Analyzer.reset();
 
     if (_BrownPucketteKernel)
         _BrownPucketteKernel.reset();
@@ -757,60 +736,9 @@ void analysis_t::SpectrumProcessing(const audio_chunk & chunk) noexcept
     const audio_sample * Frames = chunk.get_data();
     const size_t FrameCount = chunk.get_sample_count(); // get_sample_count() actually returns the number of frames.
 
-    if (!_WindowFunction)
-        _WindowFunction = window_function_t::Create(_State._WindowFunction, _State._WindowParameter, _State._WindowSkew, _State._Truncate);
+    CreateAnalyzer();
 
-    switch (_State._TransformMethod)
-    {
-        case TransformMethod::FFT:
-        {
-            if (_FFTAnalyzer == nullptr)
-            {       
-                if (!_BrownPucketteKernel)
-                    _BrownPucketteKernel = window_function_t::Create(_State._KernelShape, _State._KernelShapeParameter, _State._KernelAsymmetry, _State._Truncate);
-
-                _FFTAnalyzer = new fft_analyzer_t(_State, _SampleRate, _ChannelCount, _ChannelConfig, *_WindowFunction, *_BrownPucketteKernel);
-            }
-
-            _FFTAnalyzer->AnalyzeAudio(Frames, FrameCount, _GraphOptions->_ActiveChannelMask, _FrequencyBands);
-            break;
-        }
-
-        case TransformMethod::CQT:
-        {
-            if (_CQTAnalyzer == nullptr)
-                _CQTAnalyzer = new cqt_analyzer_t(_State, _SampleRate, _ChannelCount, _ChannelConfig, *_WindowFunction);
-
-            _CQTAnalyzer->AnalyzeAudio(Frames, FrameCount, _GraphOptions->_ActiveChannelMask, _FrequencyBands);
-            break;
-        }
-
-        case TransformMethod::SWIFT:
-        {
-            if (_SWIFTAnalyzer == nullptr)
-            {
-                _SWIFTAnalyzer = new swift_analyzer_t(_State, _SampleRate, _ChannelCount, _ChannelConfig);
-
-                _SWIFTAnalyzer->Initialize(_FrequencyBands);
-            }
-
-            _SWIFTAnalyzer->AnalyzeAudio(Frames, FrameCount, _GraphOptions->_ActiveChannelMask, _FrequencyBands);
-            break;
-        }
-
-        case TransformMethod::AnalogStyle:
-        {
-            if (_AnalogStyleAnalyzer == nullptr)
-            {
-                _AnalogStyleAnalyzer = new analog_style_analyzer_t(_State, _SampleRate, _ChannelCount, _ChannelConfig, *_WindowFunction);
-
-                _AnalogStyleAnalyzer->Initialize(_FrequencyBands);
-            }
-
-            _AnalogStyleAnalyzer->AnalyzeAudio(Frames, FrameCount, _GraphOptions->_ActiveChannelMask, _FrequencyBands);
-            break;
-        }
-    }
+    _Analyzer->AnalyzeAudio(Frames, FrameCount, _GraphOptions->_ActiveChannelMask, _FrequencyBands);
 
     // Filter the spectrum.
     if (_State._WeightingType != WeightingType::None)
@@ -850,6 +778,57 @@ void analysis_t::SpectrumProcessing(const audio_chunk & chunk) noexcept
     _FrequencyBands.back() .Value = .5;
 }
 */
+}
+
+/// <summary>
+/// Creates and initializes the analyze.
+/// </summary>
+void analysis_t::CreateAnalyzer() noexcept
+{
+    if (!_WindowFunction)
+        _WindowFunction = window_function_t::Create(_State._WindowFunction, _State._WindowParameter, _State._WindowSkew, _State._Truncate);
+
+    if (!_Analyzer)
+    {
+        #pragma warning(disable: 4062) // enumerator 'TransformMethod::Invalid' in switch of enum 'TransformMethod' is not handled
+        switch (_State._TransformMethod)
+        {
+            case TransformMethod::FFT:
+            {
+                if (!_BrownPucketteKernel)
+                    _BrownPucketteKernel = window_function_t::Create(_State._KernelShape, _State._KernelShapeParameter, _State._KernelAsymmetry, _State._Truncate);
+
+                _Analyzer = std::make_unique<fft_analyzer_t>(_State, _SampleRate, _ChannelCount, _ChannelConfig, *_WindowFunction, *_BrownPucketteKernel);
+                break;
+            }
+
+            case TransformMethod::CQT:
+            {
+                _Analyzer = std::make_unique<cqt_analyzer_t>(_State, _SampleRate, _ChannelCount, _ChannelConfig, *_WindowFunction);
+                break;
+            }
+
+            case TransformMethod::SWIFT:
+            {
+                auto Analyzer = std::make_unique<swift_analyzer_t>(_State, _SampleRate, _ChannelCount, _ChannelConfig);
+
+                Analyzer->Initialize(_FrequencyBands);
+
+                _Analyzer = std::move(Analyzer);
+                break;
+            }
+
+            case TransformMethod::AnalogStyle:
+            {
+                auto Analyzer = std::make_unique<analog_style_analyzer_t>(_State, _SampleRate, _ChannelCount, _ChannelConfig, *_WindowFunction);
+
+                Analyzer->Initialize(_FrequencyBands);
+
+                _Analyzer = std::move(Analyzer);
+                break;
+            }
+        }
+    }
 }
 
 #pragma region Acoustic Weighting

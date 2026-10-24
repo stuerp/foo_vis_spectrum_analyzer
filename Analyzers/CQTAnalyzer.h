@@ -15,7 +15,7 @@
 /// <summary>
 /// Implements a Constant-Q Transform analyzer.
 /// </summary>
-class cqt_analyzer_t : public analyzer_t
+class cqt_analyzer_t final : public analyzer_t
 {
 public:
     cqt_analyzer_t() = delete;
@@ -30,7 +30,7 @@ public:
 
     cqt_analyzer_t(const state_t & state, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup, const window_function_t & windowFunction);
 
-    bool AnalyzeAudio(const audio_sample * frames, size_t frameCount, uint32_t selectedChannels, frequency_bands_t & frequencyBands) noexcept;
+    bool AnalyzeAudio(const audio_sample * frames, size_t frameCount, uint32_t selectedChannels, frequency_bands_t & frequencyBands) noexcept override final;
 
 private:
     std::vector<audio_sample> _MonoSamples;
