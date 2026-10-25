@@ -96,13 +96,9 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.14.0.0-alpha2, 2026-10-25
+v0.14.0.0-alpha3, 2026-xx-xx
 
-- New: Composite three-tier FFT
-  - It uses all the settings of the normal FFT but it splits the spectrum into three logarithmic ranges.
-  - The bass tier uses four times the number of bins; the middle tier uses two times the number of bin.
-- New: Decades frequency distribution. It generates frequency bands whose center frequency is a multiple of 10, 100 or 1000 Hz.
-- Improved: The alignment of the X-axis frequency labels with the band centers.
+- 
 
 You can read the full history [here](docs/History.md).
 

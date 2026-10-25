@@ -1,6 +1,14 @@
 
 # foo_vis_spectrum_analyzer History
 
+v0.14.0.0-alpha2, 2026-10-25
+
+- New: Composite three-tier FFT
+  - It uses all the settings of the normal FFT but it splits the spectrum into three logarithmic ranges.
+  - The bass tier uses four times the number of bins; the middle tier uses two times the number of bin.
+- New: Decades frequency distribution. It generates frequency bands whose center frequency is a multiple of 10, 100 or 1000 Hz.
+- Improved: The alignment of the X-axis frequency labels with the band centers.
+
 v0.14.0.0-alpha1, 2026-10-23
 
 - New: Eye Candy visualizer with multiple effects in the following 5 categories.

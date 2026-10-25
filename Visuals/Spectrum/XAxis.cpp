@@ -62,29 +62,38 @@ void x_axis_t::Configure(graph_options_t * graphOptions, analysis_t * analysis, 
 
             case XAxisMode::Decades:
             {
-                double Frequency = 0.;
-                int i = 1;
-                int j = 10;
+                const double Max = fb.back().Low;
 
-                while (Frequency < fb.back().Low)
+                const auto AddLabel = [&](double frequency)
                 {
-                    Frequency = j * i;
-
-                    if (Frequency < 1000.)
-                        ::StringCchPrintfW(Text, _countof(Text), L"%.*f", graphOptions->_XAxisDecimals, Frequency);
+                    if (frequency < 1'000.)
+                        ::StringCchPrintfW(Text, _countof(Text), L"%.*f", graphOptions->_XAxisDecimals, frequency);
                     else
-                        ::StringCchPrintfW(Text, _countof(Text), L"%.*fk", graphOptions->_XAxisDecimals, Frequency / 1000.);
+                        ::StringCchPrintfW(Text, _countof(Text), L"%.*fk", graphOptions->_XAxisDecimals, frequency / 1000.);
 
-                    label_t lb = { Text, Frequency, 0 };
+                    label_t lb = { Text, frequency, 0 };
 
                     _Labels.push_back(lb);
+                };
 
-                    if (++i == 10)
+                // Add the regular decade labels: 10..90, 100..900 and 1k..9k.
+                for (double Decade = 10.; Decade < 10'000.; Decade *= 10.)
+                {
+                    for (int i = 1; i < 10; ++i)
                     {
-                        i = 1;
-                        j *= 10;
+                        const double Frequency = Decade * i;
+
+                        if (Frequency >= Max)
+                            break;
+
+                        AddLabel(Frequency);
                     }
                 }
+
+                // Add the labels for the frequencies higher than 10k Hz.
+                for (double Frequency = 10'000.; Frequency < Max; Frequency += 1'000.)
+                    AddLabel(Frequency);
+
                 break;
             }
 
