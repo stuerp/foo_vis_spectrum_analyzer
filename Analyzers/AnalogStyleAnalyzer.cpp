@@ -27,16 +27,16 @@ bool analog_style_analyzer_t::Initialize(const vector<frequency_band_t> & freque
 
     for (const frequency_band_t & fb : frequencyBands)
     {
-        assert(fb.Lo <= fb.Mid && fb.Mid <= fb.Hi);
+        assert(fb.Low <= fb.Center && fb.Center <= fb.High);
 
         // Biquad bandpass filter. Cascaded biquad bandpass is not Butterworth nor Bessel, rather it is something called "critically-damped" since each filter stage shares the same every biquad coefficients.
-        const double rad = Pi * fb.Mid / (double) _SampleRate;
+        const double rad = Pi * fb.Center / (double) _SampleRate;
 
         const double K = std::tan(rad);
-        const double Bandwidth = std::abs(fb.Hi - fb.Lo) * _State._IIRBandwidth + (1. / (TimeResolution / 1000.));
+        const double Bandwidth = std::abs(fb.High - fb.Low) * _State._IIRBandwidth + (1. / (TimeResolution / 1000.));
 
         const double QCompensationFactor = _State._UsePreWarpedQ ? rad / K : 1.;
-        const double Q = fb.Mid / Bandwidth * QCompensationFactor / (_State._CompensateBandwidth ? ::sqrt(_State._FilterBankOrder) : 1.);
+        const double Q = fb.Center / Bandwidth * QCompensationFactor / (_State._CompensateBandwidth ? ::sqrt(_State._FilterBankOrder) : 1.);
         const double Norm = 1 / (1 + K / Q + K * K);
 
         coef_t c = { };

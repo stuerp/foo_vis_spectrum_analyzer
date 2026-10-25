@@ -181,7 +181,7 @@ void spectrum_t::RenderBars(ID2D1DeviceContext * deviceContext) noexcept
 
         if (!_State._IsPaused || (_State._IsPaused && _State._VisualizeDuringPause))
         {
-            const bool GreaterThanNyquist = (fb.Lo >= _Analysis->_NyquistFrequency); // 24/09/25: Use the lower frequency of a band instead of the center frequency.
+            const bool GreaterThanNyquist = (fb.Low >= _Analysis->_NyquistFrequency); // 24/09/25: Use the lower frequency of a band instead of the center frequency.
 
             if (!GreaterThanNyquist || (GreaterThanNyquist && !_State._SuppressMirrorImage))
             {
@@ -376,7 +376,7 @@ void spectrum_t::RenderRadialBars(ID2D1DeviceContext * deviceContext) noexcept
 
     for (const auto & fb : _Analysis->_FrequencyBands)
     {
-        const bool GreaterThanNyquist = fb.Lo >= _Analysis->_NyquistFrequency; // 24/09/25: Use the lower frequency of a band instead of the center frequency.
+        const bool GreaterThanNyquist = fb.Low >= _Analysis->_NyquistFrequency; // 24/09/25: Use the lower frequency of a band instead of the center frequency.
 
         if (!GreaterThanNyquist || (GreaterThanNyquist && !_State._SuppressMirrorImage))
         {
@@ -563,8 +563,8 @@ void spectrum_t::RenderNyquistFrequencyMarker(ID2D1DeviceContext * deviceContext
         return;
 
     // Calculate the scale range.
-    const double MinScale = ScaleFrequency(_Analysis->_FrequencyBands.front().Mid, _State._ScalingFunction, _State._SkewFactor);
-    const double MaxScale = ScaleFrequency(_Analysis->_FrequencyBands.back() .Mid, _State._ScalingFunction, _State._SkewFactor);
+    const double MinScale = ScaleFrequency(_Analysis->_FrequencyBands.front().Center, _State._ScalingFunction, _State._SkewFactor);
+    const double MaxScale = ScaleFrequency(_Analysis->_FrequencyBands.back() .Center, _State._ScalingFunction, _State._SkewFactor);
 
     // The position of the Nyquist marker is calculated at the exact frequency and may not align with the center frequency of spectrum bar.
     const double Scale = ScaleFrequency(_Analysis->_NyquistFrequency, _State._ScalingFunction, _State._SkewFactor);
@@ -658,7 +658,7 @@ void spectrum_t::RenderDiagnostics(ID2D1DeviceContext * deviceContext) const noe
         const FLOAT y1 = _ClientRect.bottom;
         const FLOAT y2 = _ClientRect.top + 1.f;
 
-        double f = _Analysis->_FrequencyBands.front().Lo + Offset;
+        double f = _Analysis->_FrequencyBands.front().Low + Offset;
 
         FLOAT x = msc::Map(f, _State._LoFrequency, _State._HiFrequency, x1, x2);
         double y = ToDecibel(_Analysis->GetAcousticWeight(f, _State._WeightingType, _State._WeightingAmount));
@@ -667,7 +667,7 @@ void spectrum_t::RenderDiagnostics(ID2D1DeviceContext * deviceContext) const noe
 
         for (size_t i = 1; i < _Analysis->_FrequencyBands.size(); ++i)
         {
-            f = _Analysis->_FrequencyBands[i].Mid + Offset;
+            f = _Analysis->_FrequencyBands[i].Center + Offset;
 
             x = msc::Map(f, _State._LoFrequency, _State._HiFrequency, x1, x2);
             y = ToDecibel(_Analysis->GetAcousticWeight(f, _State._WeightingType, _State._WeightingAmount));
@@ -679,7 +679,7 @@ void spectrum_t::RenderDiagnostics(ID2D1DeviceContext * deviceContext) const noe
             p1 = p2;
         }
 
-        f = _Analysis->_FrequencyBands.back().Hi;
+        f = _Analysis->_FrequencyBands.back().High;
 
         x = msc::Map(f, _State._LoFrequency, _State._HiFrequency, x1, x2);
         y = ToDecibel(_Analysis->GetAcousticWeight(f, _State._WeightingType, _State._WeightingAmount));
@@ -1049,7 +1049,7 @@ HRESULT spectrum_t::CreateGeometryPointsFromAmplitude(geometry_points_t & points
         double Value = 0.;
 
         // Don't render anything above the Nyquist frequency.
-        if (!((fb.Lo > _Analysis->_NyquistFrequency) && _State._SuppressMirrorImage))
+        if (!((fb.Low > _Analysis->_NyquistFrequency) && _State._SuppressMirrorImage))
             Value = !usePeak ? fb.Value : fb.PeakValue;
 
         y = std::clamp((FLOAT) (Value * _ClientSize.height), 0.f, _ClientSize.height);
@@ -1161,7 +1161,7 @@ HRESULT spectrum_t::CreateRadialGeometryPointsFromAmplitude(geometry_points_t & 
     for (const auto & fb: _Analysis->_FrequencyBands)
     {
         // Don't render anything above the Nyquist frequency.
-        if ((fb.Lo > _Analysis->_NyquistFrequency) && _State._SuppressMirrorImage)
+        if ((fb.Low > _Analysis->_NyquistFrequency) && _State._SuppressMirrorImage)
             break;
 
         const double Value = !usePeak ? fb.Value : fb.PeakValue;

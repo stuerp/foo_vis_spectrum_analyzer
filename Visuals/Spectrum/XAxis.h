@@ -65,6 +65,7 @@ private:
     {
         std::wstring Text;
         double Frequency { 0. };
+        size_t BandIndex { 0 };
         bool IsDimmed { false };
         bool IsHidden { false };
 

@@ -514,26 +514,11 @@ namespace EyeCandy
         double _CameraShake          = 0.;
         double _CameraRoll           = 0.;
 
+    protected:
         Quality _Quality       = Quality::Medium;
         Speed _Speed           = Speed::Normal;
         Brightness _Brightness = Brightness::Medium;
         Density _Density       = Density::Medium;
-
-        ColorTheme _ColorTheme = ColorTheme::Synthwave;
-        ColorTheme _ThemeFrom  = ColorTheme::Synthwave;
-        ColorTheme _ThemeTo    = ColorTheme::Synthwave;
-
-        static constexpr double ThemeInterval = 3.0;
-        static constexpr double ThemeTransitionDuration = 1.2;
-        static constexpr double ThemeResourceUpdateInterval = 1.0 / 30.0;
-
-        double _ThemeElapsed           = 0.;
-        double _ThemeTransitionElapsed = ThemeTransitionDuration;
-        double _ThemeResourceElapsed   = 0.;
-        double _ThemeBlend             = 1.;
-
-        bool _ThemeTransitionActive = false;
-        bool _ThemeResourcesDirty   = true;
 
         static constexpr std::array<const wchar_t *, 3> Qualities =
         {{
@@ -562,6 +547,23 @@ namespace EyeCandy
             L"Medium",
             L"High"
         }};
+
+    protected:
+        ColorTheme _ColorTheme = ColorTheme::Synthwave;
+        ColorTheme _ThemeFrom  = ColorTheme::Synthwave;
+        ColorTheme _ThemeTo    = ColorTheme::Synthwave;
+
+        static constexpr double ThemeInterval = 3.0;
+        static constexpr double ThemeTransitionDuration = 1.2;
+        static constexpr double ThemeResourceUpdateInterval = 1.0 / 30.0;
+
+        double _ThemeElapsed           = 0.;
+        double _ThemeTransitionElapsed = ThemeTransitionDuration;
+        double _ThemeResourceElapsed   = 0.;
+        double _ThemeBlend             = 1.;
+
+        bool _ThemeTransitionActive = false;
+        bool _ThemeResourcesDirty   = true;
 
     protected:
         std::vector<std::thread> _Workers;

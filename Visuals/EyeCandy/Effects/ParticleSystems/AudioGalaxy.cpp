@@ -1,5 +1,5 @@
 
-/** $VER: AudioGalaxy.cpp (2026.10.23) **/
+/** $VER: AudioGalaxy.cpp (2026.10.24) **/
 
 #include <pch.h>
 
@@ -30,7 +30,7 @@ namespace AudioGalaxy
     /// </summary>
     std::wstring effect_t::GetStatus() noexcept
     {
-        return std::format(L"Audio Galaxy, {} quality, {} speed", Qualities[(size_t) _Quality], Speeds[(size_t) _Speed]);
+        return std::format(L"Audio Galaxy, {} quality, {} speed, {} density", Qualities[(size_t) _Quality], Speeds[(size_t) _Speed], DensityNames[(size_t) _Density]);
     }
 
     /// <summary>
@@ -38,32 +38,12 @@ namespace AudioGalaxy
     /// </summary>
     void effect_t::Render(ID2D1RenderTarget * renderTarget, double deltaTime, audio_chunk & chunk) noexcept
     {
-        const D2D1_SIZE_F Viewport = renderTarget->GetSize();
-
-        const float ViewportWidth  = std::max(1.f, Viewport.width);
-        const float ViewportHeight = std::max(1.f, Viewport.height);
-
-        // Recreate size-dependent brushes immediately after a viewport resize. Projection and galaxy coverage are updated in the same frame.
-        if ((std::abs(ViewportWidth - _ViewportWidth) > .5f) || (std::abs(ViewportHeight - _ViewportHeight) > .5f))
-        {
-            _ViewportWidth  = ViewportWidth;
-            _ViewportHeight = ViewportHeight;
-            _Width          = ViewportWidth;
-            _Height         = ViewportHeight;
-
-            DeleteDeviceDependentResources();
-        }
-
         const HRESULT hr = CreateDeviceDependentResources(renderTarget);
 
         if (FAILED(hr))
             return;
 
         deltaTime = Clamp(deltaTime);
-
-        Projection.Width       = (double) ViewportWidth;
-        Projection.Height      = (double) ViewportHeight;
-        Projection.AspectRatio = (double) ViewportWidth / (double) ViewportHeight;
 
         AnalyzeAudio(chunk);
         Update(deltaTime);
@@ -136,8 +116,8 @@ namespace AudioGalaxy
         if ((MaxFrames < 8) || !ChannelCount || !SampleRate)
             return;
 
-        const audio_sample * Frame = chunk.get_data() + FrameIndex * ChannelCount;
-        const audio_sample * const End = Frame + MaxFrames * ChannelCount;
+        const audio_sample *       Frame    = chunk.get_data() + (FrameIndex * ChannelCount);
+        const audio_sample * const EndFrame = Frame + MaxFrames * ChannelCount;
 
         double Sum = 0., SumBass = 0., SumMid = 0., SumTreble = 0.;
 
@@ -145,7 +125,7 @@ namespace AudioGalaxy
         const double Low  = std::exp(-TwoPi *  220. / (double) SampleRate);
         const double High = std::exp(-TwoPi * 2400. / (double) SampleRate);
 
-        while (Frame < End)
+        while (Frame < EndFrame)
         {
             double Mono = 0.;
 
@@ -156,7 +136,9 @@ namespace AudioGalaxy
 
             const double Sample = ClampAudio(Mono / (double) ChannelCount);
 
-            _Peak = std::max(_Peak, std::abs(Sample)); Sum += Sample * Sample;
+            _Peak = std::max(_Peak, std::abs(Sample));
+
+            Sum += Sample * Sample;
 
             _BassState = (1. - Low)  * Sample     + Low  * _BassState;
             _DCState   = (1. - DC)   * _BassState + DC   * _DCState;
@@ -207,13 +189,16 @@ namespace AudioGalaxy
         }();
 
         _AnimationTime  += deltaTime * SpeedFactor;
-        _TransitionTime += deltaTime;
 
-        while (_TransitionTime >= TransitionInterval)
         {
-            _TransitionTime -= TransitionInterval;
+            _TransitionTime += deltaTime;
 
-            _ThemeIndex = (_ThemeIndex + 1) % ThemeCount;
+            while (_TransitionTime >= TransitionInterval)
+            {
+                _TransitionTime -= TransitionInterval;
+
+                _ThemeIndex = (_ThemeIndex + 1) % ThemeCount;
+            }
         }
 
         _SmoothedPeak   = ExponentialSmoothing(_SmoothedPeak,   _Peak,         deltaTime, (_Peak         > _SmoothedPeak)   ? 34. : 6.5);
@@ -223,34 +208,49 @@ namespace AudioGalaxy
         _SmoothedMid    = ExponentialSmoothing(_SmoothedMid,    _MidEnergy,    deltaTime, (_MidEnergy    > _SmoothedMid)    ? 20. : 4.5);
         _SmoothedTreble = ExponentialSmoothing(_SmoothedTreble, _TrebleEnergy, deltaTime, (_TrebleEnergy > _SmoothedTreble) ? 30. : 7.);
 
-        const double Strength = Clamp(std::max(0., _Peak - _PreviousPeak) * 5.5 + std::max(0., _TrebleEnergy - _PreviousTreble) * 4.);
-
-        _PreviousPeak = _Peak; _PreviousTreble = _TrebleEnergy;
-        _TransientCooldown = std::max(0., _TransientCooldown - deltaTime); _TransientPulse *= std::exp(-deltaTime * 9.);
+        _PreviousPeak   = _Peak;
+        _PreviousTreble = _TrebleEnergy;
 
         // Transients create a compact group of genuinely new stars at the galactic core.
-        if (_HasAudio && (_TransientCooldown <= 0.) && (Strength > .11))
         {
-            _TransientPulse = std::max(_TransientPulse, Strength); _TransientCooldown = .045;
+            _TransientPulse   *= std::exp(-deltaTime * 9.);
+            _TransientCooldown = std::max(0., _TransientCooldown - deltaTime);
 
-            const size_t Count = std::min<size_t>(_Stars.size(), 4 + (size_t)std::lround(Strength * 22.));
+            const double Strength = Clamp(std::max(0., _Peak - _PreviousPeak) * 5.5 + std::max(0., _TrebleEnergy - _PreviousTreble) * 4.);
 
-            for (size_t i = 0; i < Count; ++i)
+            if (_HasAudio && (_TransientCooldown <= 0.) && (Strength > .11))
             {
-                RespawnStar(_Stars[_TransientStarIndex], _TransientStarIndex, false);
+                _TransientPulse    = std::max(_TransientPulse, Strength);
+                _TransientCooldown = .045;
 
-                _TransientStarIndex = (_TransientStarIndex + 1) % _Stars.size();
+                const size_t Count = std::min<size_t>(_Stars.size(), 4 + (size_t) std::lround(Strength * 22.));
+
+                for (size_t i = 0; i < Count; ++i)
+                {
+                    RespawnStar(_Stars[_TransientStarIndex], _TransientStarIndex, false);
+
+                    _TransientStarIndex = (_TransientStarIndex + 1) % _Stars.size();
+                }
             }
         }
 
         _BeatPulse = ExponentialSmoothing(_BeatPulse, _TransientPulse, deltaTime, 18.);
 
-        _CameraRollVelocity = ExponentialSmoothing(_CameraRollVelocity, 1.8 + _SmoothedMid * 5.2, deltaTime, 2.8);
-        _CameraRoll += _CameraRollVelocity * deltaTime * SpeedFactor; if (_CameraRoll > 180.) _CameraRoll -= 360.;
+        {
+            _CameraRollVelocity = ExponentialSmoothing(_CameraRollVelocity, 1.8 + _SmoothedMid * 5.2, deltaTime, 2.8);
+            _CameraRoll += _CameraRollVelocity * deltaTime * SpeedFactor;
 
-        const double RotationSpeed = (.08 + _SmoothedMid * .22 + _SmoothedTreble * .12) * SpeedFactor;
+            if (_CameraRoll > 180.)
+                _CameraRoll -= 360.;
+        }
 
-        _TravelDistance += RotationSpeed * deltaTime; GenerateWork(deltaTime, RotationSpeed);
+        {
+            const double RotationSpeed = (.08 + _SmoothedMid * .22 + _SmoothedTreble * .12) * SpeedFactor;
+
+            _TravelDistance += RotationSpeed * deltaTime;
+
+            GenerateWork(deltaTime, RotationSpeed);
+        }
     }
 
     /// <summary>
@@ -263,29 +263,29 @@ namespace AudioGalaxy
         Projection.Width       = (double) _Width;
         Projection.Height      = (double) _Height;
         Projection.AspectRatio = (_Height > 0.f) ? (double) _Width / (double) _Height : 1.;
+        Projection.LensOffsetX = 0.;
+        Projection.LensOffsetY = 0.;
 
         World  = {};
         Camera = {};
         Object = {};
 
-        Projection.LensOffsetX = 0.;
-        Projection.LensOffsetY = 0.;
+        _ScaleX = std::max(1.,      Projection.AspectRatio) * 1.08;
+        _ScaleY = std::max(1., 1. / Projection.AspectRatio) * 1.08;
 
         _BassState = 0.;
         _DCState = 0.;
         _MidState = 0.;
 
-        _TrebleEnergy       = _SmoothedTreble = 0.;
-        _PreviousPeak       = _PreviousTreble = 0.;
-        _TransientPulse     = _TransientCooldown = 0.;
+        _PreviousPeak   = 0.;
+        _PreviousTreble = 0.;
+
+        _TransientPulse     = 0.;
+        _TransientCooldown  = 0.;
         _TransientStarIndex = 0;
 
-        _MidEnergy = 0.;
-
-        _SmoothedMid = 0.;
-        _PreviousMid = 0.;
-
-        _MidDirectionCooldown = 0.;
+        _SmoothedMid    = 0.;
+        _SmoothedTreble = 0.;
 
         _CameraRollVelocity  = 0.;
         _CameraRollDirection = 1.;
@@ -295,26 +295,23 @@ namespace AudioGalaxy
         _FlightYawVelocity   = 0.;
         _FlightPitchVelocity = 0.;
 
-        _PreviousBass = 0.;
-        _BeatAverage  = 0.;
-        _BeatPulse    = 0.;
-        _BeatCooldown = 0.;
+        _BeatPulse = 0.;
 
         _Stars.clear();
 
         const size_t Count = [&]() noexcept
         {
-            switch (_Quality)
+            switch (_Density)
             {
-                case EyeCandy::Quality::Low:
-                    return size_t{ 450 };
+                case EyeCandy::Density::Low:
+                    return 450u;
 
-                case EyeCandy::Quality::High:
-                    return size_t{ 1800 };
-
-                case EyeCandy::Quality::Medium:
                 default:
-                    return size_t{ 950 };
+                case EyeCandy::Density::Medium:
+                    return 900u;
+
+                case EyeCandy::Density::High:
+                    return 1800u;
             }
         }();
 
@@ -455,26 +452,27 @@ namespace AudioGalaxy
     }
 
     /// <summary>
-    /// 
+    /// Updates the properties of an individual star.
     /// </summary>
     void effect_t::UpdateStar(size_t index, double deltaTime, double forwardSpeed) noexcept
     {
         star_t & Star = _Stars[index];
 
-        Star.PreviousX = Star.X;
-        Star.PreviousY = Star.Y;
-        Star.PreviousZ = Star.Z;
+        const double Energy    = (Star.Band == 0) ? _SmoothedBass : (Star.Band == 1) ? _SmoothedMid : _SmoothedTreble;
 
         Star.Age    += deltaTime;
-        Star.Angle  += forwardSpeed * Star.Speed * deltaTime * (.65 + (1. - Star.Radius) * 1.8);
-        Star.Radius += deltaTime * (.004 + _SmoothedBass * .010) * Star.Speed;
+        Star.Angle  += Star.Speed * deltaTime * (.500 + (1. - Star.Radius) * MaxAngularSpeed) * forwardSpeed;           // Increase the angular velocity
+        Star.Radius += Star.Speed * deltaTime * (.005 + (Energy * 0.01));                                               // Increase the distance from the center
 
-        const double AspectRatio = (_ViewportHeight > 0.f) ? (double) _ViewportWidth / (double) _ViewportHeight : 1.;
-        const double ScaleX      = std::max(1., AspectRatio) * 1.08;
-        const double ScaleY      = std::max(1., 1. / AspectRatio) * 1.08;
-        const double ArmAngle    = Star.Angle + Star.Radius * 8.5 + (double) Star.Band * (TwoPi / 3.);
-        const double Energy      = (Star.Band == 0) ? _SmoothedBass : (Star.Band == 1) ? _SmoothedMid : _SmoothedTreble;
-        const double Ripple      = std::sin(Star.Angle * 3. + Star.Seed * .0001) * (.035 + (1. - Energy) * .075);
+        if ((Star.Age >= Star.Lifetime) || (Star.Radius > MaxRadius))
+        {
+            RespawnStar(Star, index, false);
+
+            return;
+        }
+
+        const double ArmAngle  = Star.Angle + (Star.Radius * 18.5) + (double) Star.Band * (TwoPi / 3.);                  // Update the spiral-arm angle.
+        const double Ripple    = std::sin(Star.Angle * 3. + (Star.Seed * .0001)) * (.035 + ((1. - Energy) * .075));
 
         // Each star follows its own inclined orbital plane. A central bulge and a radius-dependent halo create real volume instead of a flat disk.
         const double OrbitalX  = std::cos(ArmAngle + Ripple) * Star.Radius;
@@ -488,51 +486,57 @@ namespace AudioGalaxy
         const double LocalZ    = InclinedZ;
 
         // Slowly rotate the complete three-dimensional galaxy around all three axes.
-        const double Pitch = .38 + std::sin(_AnimationTime * .13) * .16;
-        const double Yaw   = _AnimationTime * .10;
-        const double Roll  = _AnimationTime * .06;
+        const double Pitch     = .38 + (std::sin(_AnimationTime * .13) * .16);  // Rotation around the X-axis
+        const double Yaw       = _AnimationTime * .10;                          // Rotation around the Y-axis
+        const double Roll      = _AnimationTime * .05;                          // Rotation around the Z-axis
 
-        const double PitchY = LocalY * std::cos(Pitch) - LocalZ * std::sin(Pitch);
-        const double PitchZ = LocalY * std::sin(Pitch) + LocalZ * std::cos(Pitch);
+        const double PitchY    =  LocalY * std::cos(Pitch) - LocalZ * std::sin(Pitch);
+        const double PitchZ    =  LocalY * std::sin(Pitch) + LocalZ * std::cos(Pitch);
 
-        const double YawX = LocalX * std::cos(Yaw) + PitchZ * std::sin(Yaw);
-        const double YawZ = -LocalX * std::sin(Yaw) + PitchZ * std::cos(Yaw);
+        const double YawX      =  LocalX * std::cos(Yaw)   + PitchZ * std::sin(Yaw);
+        const double YawZ      = -LocalX * std::sin(Yaw)   + PitchZ * std::cos(Yaw);
 
-        const double RollX = YawX * std::cos(Roll) - PitchY * std::sin(Roll);
-        const double RollY = YawX * std::sin(Roll) + PitchY * std::cos(Roll);
+        const double RollX     =  YawX   * std::cos(Roll)  - PitchY * std::sin(Roll);
+        const double RollY     =  YawX   * std::sin(Roll)  + PitchY * std::cos(Roll);
 
-        Star.X = RollX * ScaleX;
-        Star.Y = RollY * ScaleY;
-        Star.Z = .82 + YawZ * .30;
+        Star.PreviousX = Star.X;
+        Star.PreviousY = Star.Y;
+        Star.PreviousZ = Star.Z;
 
-        if ((Star.Age >= Star.Lifetime) || (Star.Radius > 1.30))
-            RespawnStar(Star, index, false);
+        Star.X = RollX * _ScaleX;
+        Star.Y = RollY * _ScaleY;
+        Star.Z = .82 + (YawZ * .30);
     }
 
     /// <summary>
-    /// 
+    /// Respawns a star.
     /// </summary>
     void effect_t::RespawnStar(star_t & star, size_t index, bool randomDepth) noexcept
     {
-        uint32_t State = Hash((uint32_t)index * 0x9E3779B9u ^ star.Seed ^ (uint32_t)(_TravelDistance * 100'000.f)); star.Seed = State;
+        uint32_t State = Hash((uint32_t) index * 0x9E3779B9u ^ star.Seed ^ (uint32_t)(_TravelDistance * 100'000.f));
 
-        const double BW = .2 + _SmoothedBass;
-        const double MW = .2 + _SmoothedMid;
-        const double TW = .2 + _SmoothedTreble;
+        star.Seed = State;
 
-        const double Pick = Random(State) * (BW + MW + TW);
+        // Determine to which frequency band the star responds.
+        {
+            const double BW = .2 + _SmoothedBass;
+            const double MW = .2 + _SmoothedMid;
+            const double TW = .2 + _SmoothedTreble;
 
-        star.Band       = (Pick < BW) ? 0u : (Pick < BW + MW) ? 1u : 2u;
-//      star.Radius     = randomDepth ? Lerp(.055, 2.22, std::pow((double) Random(State), .72)) : Lerp(.035, 1.18, (double) Random(State));
-        star.Radius     = randomDepth ? Lerp(.055, 4.22, std::pow((double) Random(State), .72)) : Lerp(.035, 3.18, (double) Random(State));
+            const double Pick = Random(State) * (BW + MW + TW);
+
+            star.Band = (Pick < BW) ? 0u : (Pick < (BW + MW)) ? 1u : 2u;
+        }
+
+        star.Age        = randomDepth ? Random(State) * MaxBirthAge: MinBirthAge;
+        star.Lifetime   = Lerp(MinLifeTime, MaxLifeTime, (double) Random(State));
+        star.Size       = Lerp(.50, 2.50, (double) Random(State));
+
         star.Angle      = Random(State) * TwoPi;
+        star.Radius     = randomDepth ? Lerp(.055, 4.22, std::pow((double) Random(State), .72)) : Lerp(.035, 3.18, (double) Random(State));
         star.Speed      = Lerp(.72, 1.35, (double) Random(State));
-//      star.Size       = Lerp(.55, 1.55, (double) Random(State));
-        star.Size       = Lerp(.55, 5.55, (double) Random(State));
         star.Brightness = randomDepth ? Lerp(.25, .90, (double) Random(State)) : Lerp(1.35, 1.85, (double) Random(State));
         star.HueOffset  = RandomSigned(State);
-        star.Age        = randomDepth ? Random(State) * 10. : 0.;
-        star.Lifetime   = Lerp(7., 18., (double) Random(State));
 
         const double Thickness = .035 + (1. - std::min(1., star.Radius)) * .18;
 
@@ -540,11 +544,11 @@ namespace AudioGalaxy
         star.Inclination = RandomSigned(State) * (.12 + (1. - std::min(1., star.Radius)) * .48);
         star.NodeAngle   = Random(State) * TwoPi;
 
-        const double A = star.Angle + star.Radius * 8.5 + (double) star.Band * (TwoPi / 3.);
+        const double A = star.Angle + (star.Radius * 8.5) + ((double) star.Band * (TwoPi / 3.));
 
         star.X = std::cos(A) * star.Radius;
         star.Y = std::sin(A) * star.Radius;
-        star.Z = .82 + star.Height * .30;
+        star.Z = .82 + (star.Height * .30);
 
         star.PreviousX = star.X;
         star.PreviousY = star.Y;
@@ -559,23 +563,23 @@ namespace AudioGalaxy
         const size_t PreviousTheme = (_ThemeIndex + ThemeCount - 1) % ThemeCount;
 
         const float StartHue = ThemeHues[PreviousTheme];
-        const float EndHue = ThemeHues[_ThemeIndex];
+        const float EndHue   = ThemeHues[_ThemeIndex];
 
-        float Difference = EndHue - StartHue;
+        float Delta = EndHue - StartHue;
 
-        if (Difference > 0.5f)
-            Difference -= 1.f;
+        if (Delta > 0.5f)
+            Delta -= 1.f;
         else
-        if (Difference < -0.5f)
-            Difference += 1.f;
+        if (Delta < -0.5f)
+            Delta += 1.f;
 
         const float Blend = SmoothStep(0.f, (float) ThemeTransitionTime, (float) std::min(_TransitionTime, ThemeTransitionTime));
 
-        return Fraction(StartHue + Difference * Blend);
+        return Fraction(StartHue + (Delta * Blend));
     }
 
     /// <summary>
-    /// 
+    /// Renders a faint background glow.
     /// </summary>
     void effect_t::RenderBackground(ID2D1RenderTarget * renderTarget) noexcept
     {
@@ -597,49 +601,8 @@ namespace AudioGalaxy
     /// </summary>
     void effect_t::RenderStars(ID2D1RenderTarget * renderTarget)
     {
-        std::array<ComPtr<ID2D1PathGeometry>, TrailLayerCount> Trails;
-
         const float Pulse = (float) Clamp(_BeatPulse);
 
-        // Draw each trail batch multiple times. Wide low-opacity strokes create the glow; the final narrow stroke supplies the bright core.
-        {
-            const float ThemeHue = CurrentThemeHue();
-
-            const D2D1_COLOR_F TrailColors[TrailLayerCount] =
-            {
-                HSVToColor(Fraction(ThemeHue - 0.035f), 0.78f, 0.92f, 0.13f + Pulse * 0.09f),
-                HSVToColor(Fraction(ThemeHue + 0.018f), 0.64f, 1.00f, 0.22f + Pulse * 0.13f),
-                HSVToColor(Fraction(ThemeHue + 0.055f), 0.20f, 1.00f, 0.72f + Pulse * 0.24f)
-            };
-
-            const float Dimension = std::min(_Width, _Height);
-            const float OuterWidth = std::clamp(Dimension * 0.0055f, 3.0f, 11.0f);
-
-            for (size_t i = 0; i < TrailLayerCount; ++i)
-            {
-                if (!Trails[i])
-                    continue;
-
-                _TrailBrush->SetColor(TrailColors[i]);
-
-                switch (i)
-                {
-                    case 0:
-                        renderTarget->DrawGeometry(Trails[i].Get(), _TrailBrush.Get(), OuterWidth * (1.0f + Pulse * 0.75f), _RoundStrokeStyle.Get());
-                        break;
-
-                    case 1:
-                        renderTarget->DrawGeometry(Trails[i].Get(), _TrailBrush.Get(), 2.25f + Pulse * 2.0f, _RoundStrokeStyle.Get());
-                        break;
-
-                    default:
-                        renderTarget->DrawGeometry(Trails[i].Get(), _TrailBrush.Get(), 0.75f + Pulse * 0.60f, _RoundStrokeStyle.Get());
-                        break;
-                }
-            }
-        }
-
-        // Star heads use native Direct2D ellipses. Their colors and sizes vary independently, so drawing them individually is appropriate.
         const ThreeD::prepared_projection_t PreparedProjection = ThreeD::Prepare();
 
         for (const star_t & Star : _Stars)
@@ -657,46 +620,71 @@ namespace AudioGalaxy
             const float Depth       = (float) Clamp(1. - Star.Radius / 1.35);
             const float BirthGlow   = (float) std::exp(-Star.Age * 2.15);
             const float Brightness  = Clamp(.30f + SmoothStep(0.f, 1.f, Depth) * .45f + BirthGlow * .42f);
-            const float Radius      = (float) Star.Size * Lerp(0.35f, 2.45f, Brightness) * (1.f + (Pulse * Brightness * 1.20f) + ((float) _SmoothedBass * 0.22f));
 
             const D2D1_COLOR_F Color = GetStarColor(Star, Brightness);
+
+            const float Radius  = (float) (Star.Size * Lerp(0.35f, 2.45f, Brightness) * (1.f + (Pulse * Brightness * 1.20f) + ((float) _SmoothedBass * 0.22f)));
             const float Feather = (Brightness > 0.62f) ? 2.8f + (BirthGlow * 1.4f) : 1.65f;
 
-            DrawStar(renderTarget, Position, Radius, Feather, Color);
+            DrawStar(renderTarget, Position, Color, Radius, Feather);
         }
     }
 
     /// <summary>
     /// Draws a star with a solid core and an alpha-feathered outer glow.
     /// </summary>
-    void effect_t::DrawStar(ID2D1RenderTarget * renderTarget, D2D1_POINT_2F position, float radius, float feather, D2D1_COLOR_F color) noexcept
+    void effect_t::DrawStar(ID2D1RenderTarget * renderTarget, D2D1_POINT_2F position, const D2D1_COLOR_F & color, float radius, float feather) noexcept
     {
-        const float OuterRadius = radius * feather;
-        const float CoreEdge = std::clamp(1.f / feather, 0.08f, 0.92f);
+        float OuterRadius = radius;
 
-        ComPtr<ID2D1GradientStopCollection> Collection;
-        ComPtr<ID2D1RadialGradientBrush> Brush;
+        ComPtr<ID2D1Brush> Brush;
 
-        // Keep the star solid through its visible body, then quickly fade its color and alpha near the outside of the circle.
-        const D2D1_GRADIENT_STOP Stops[] =
+        if (_Quality == Quality::High)
         {
-            { 0.00f,                      D2D1::ColorF(color.r,         color.g,         color.b,         color.a) },
-            { CoreEdge * 0.80f,           D2D1::ColorF(color.r,         color.g,         color.b,         color.a) },
-            { CoreEdge,                   D2D1::ColorF(color.r * 0.96f, color.g * 0.96f, color.b * 0.96f, color.a * 0.55f) },
-            { Lerp(CoreEdge, 1.f, 0.18f), D2D1::ColorF(color.r * 0.82f, color.g * 0.82f, color.b * 0.82f, color.a * 0.07f) },
-            { Lerp(CoreEdge, 1.f, 0.38f), D2D1::ColorF(color.r * 0.68f, color.g * 0.68f, color.b * 0.68f, 0.00f) },
-            { 1.00f,                      D2D1::ColorF(color.r * 0.68f, color.g * 0.68f, color.b * 0.68f, 0.00f) },
-        };
+            ComPtr<ID2D1RadialGradientBrush> GradientBrush;
 
-        HRESULT hr = renderTarget->CreateGradientStopCollection(Stops, _countof(Stops), D2D1_GAMMA_2_2, D2D1_EXTEND_MODE_CLAMP, Collection.GetAddressOf());
+            {
+                ComPtr<ID2D1GradientStopCollection> Collection;
 
-        if (FAILED(hr))
-            return;
+                OuterRadius *= feather;
 
-        hr = renderTarget->CreateRadialGradientBrush(D2D1::RadialGradientBrushProperties(position, D2D1::Point2F(0.f, 0.f), OuterRadius, OuterRadius), Collection.Get(), Brush.ReleaseAndGetAddressOf());
+                const float CoreEdge = std::clamp(1.f / feather, 0.08f, 0.92f);
 
-        if (FAILED(hr))
-            return;
+                // Keep the star solid through its visible body, then quickly fade its color and alpha near the outside of the circle.
+                const D2D1_GRADIENT_STOP Stops[] =
+                {
+                    { 0.00f,                      D2D1::ColorF(color.r,         color.g,         color.b,         color.a) },
+                    { CoreEdge * 0.80f,           D2D1::ColorF(color.r,         color.g,         color.b,         color.a) },
+                    { CoreEdge,                   D2D1::ColorF(color.r * 0.96f, color.g * 0.96f, color.b * 0.96f, color.a * 0.55f) },
+                    { Lerp(CoreEdge, 1.f, 0.18f), D2D1::ColorF(color.r * 0.82f, color.g * 0.82f, color.b * 0.82f, color.a * 0.07f) },
+                    { Lerp(CoreEdge, 1.f, 0.38f), D2D1::ColorF(color.r * 0.68f, color.g * 0.68f, color.b * 0.68f, 0.00f) },
+                    { 1.00f,                      D2D1::ColorF(color.r * 0.68f, color.g * 0.68f, color.b * 0.68f, 0.00f) },
+                };
+
+                HRESULT hr = renderTarget->CreateGradientStopCollection(Stops, _countof(Stops), D2D1_GAMMA_2_2, D2D1_EXTEND_MODE_CLAMP, Collection.GetAddressOf());
+
+                if (FAILED(hr))
+                    return;
+
+                hr = renderTarget->CreateRadialGradientBrush(D2D1::RadialGradientBrushProperties(position, D2D1::Point2F(0.f, 0.f), OuterRadius, OuterRadius), Collection.Get(), GradientBrush.GetAddressOf());
+
+                if (FAILED(hr))
+                    return;
+            }
+
+            Brush = GradientBrush;
+        }
+        else
+        {
+            ComPtr<ID2D1SolidColorBrush> SolidBrush;
+
+            HRESULT hr = renderTarget->CreateSolidColorBrush(color, SolidBrush.GetAddressOf());
+
+            if (FAILED(hr))
+                return;
+
+            Brush = SolidBrush;
+        }
 
         renderTarget->FillEllipse(D2D1::Ellipse(position, OuterRadius, OuterRadius), Brush.Get());
     }
@@ -709,20 +697,19 @@ namespace AudioGalaxy
         const float ColorShift = (float) _BeatPulse * 0.035f;
 
         const float H = Fraction(CurrentThemeHue() + (float) (star.HueOffset * 0.035f) + ColorShift + (float) (_AnimationTime * 0.0025));
-        const float S = (float) Clamp(0.12 + std::abs(star.HueOffset) * 0.42 + _SmoothedBass * 0.12);
-        const float V = (float) Clamp(star.Brightness * Lerp(0.30, 1.15, depthBrightness) * (1.0 + _BeatPulse * depthBrightness * 0.85));
+        const float S = (float) Clamp(0.12 + std::abs(star.HueOffset) * 0.42 + (_SmoothedBass * 0.12));
+        const float V = (float) Clamp(star.Brightness * Lerp(0.30, 1.15, depthBrightness) * (1.0 + (_BeatPulse * depthBrightness * 0.85)));
         const float A = (float) Clamp(Lerp(0.22, 1., depthBrightness));
 
         return HSVToColor(H, S, V, A);
     }
 
     /// <summary>
-    /// 
+    /// Renders a faint background flash triggered by the beat and the bass.
     /// </summary>
     void effect_t::RenderFlash(ID2D1RenderTarget * renderTarget) noexcept
     {
-        const float Radius = std::min(_Width, _Height) * (0.025f + (float) (_BeatPulse * 0.12));
-
+        const float Radius  = std::min(_Width, _Height) * (0.025f + (float) (_BeatPulse * 0.12));
         const float Opacity = (float) Clamp(0.025 + (_SmoothedBass * 0.06) + (_BeatPulse * 0.28));
 
         ComPtr<ID2D1RadialGradientBrush> FlashBrush;
@@ -745,7 +732,7 @@ namespace AudioGalaxy
             if (FAILED(hr))
                 return;
 
-            hr = renderTarget->CreateRadialGradientBrush(D2D1::RadialGradientBrushProperties(D2D1::Point2F(_CenterX, _CenterY), D2D1::Point2F(0.f, 0.f), 64.f, 64.f), Collection.Get(), FlashBrush.ReleaseAndGetAddressOf());
+            hr = renderTarget->CreateRadialGradientBrush(D2D1::RadialGradientBrushProperties(D2D1::Point2F(_CenterX, _CenterY), D2D1::Point2F(0.f, 0.f), 64.f, 64.f), Collection.Get(), FlashBrush.GetAddressOf());
 
             if (FAILED(hr))
                 return;
@@ -772,28 +759,8 @@ namespace AudioGalaxy
         if (FAILED(hr))
             return hr;
 
-        if ((_RenderTarget == renderTarget) && _TrailBrush && _BackgroundBrush)
+        if ((_RenderTarget == renderTarget) && _BackgroundBrush)
             return S_OK;
-
-        renderTarget->GetFactory(_D2DFactory.ReleaseAndGetAddressOf());
-
-        if (!_D2DFactory)
-            return E_FAIL;
-
-        hr = renderTarget->CreateSolidColorBrush(D2D1::ColorF(0.4f, 0.8f, 1.0f, 1.0f), _TrailBrush.ReleaseAndGetAddressOf());
-
-        if (FAILED(hr))
-            return hr;
-
-        hr = renderTarget->CreateSolidColorBrush(D2D1::ColorF(0.0f, 0.0f, 0.0f, 0.05f), _ScanlineBrush.ReleaseAndGetAddressOf());
-
-        if (FAILED(hr))
-            return hr;
-
-        hr = renderTarget->CreateSolidColorBrush(D2D1::ColorF(0.1f, 0.35f, 0.5f, 0.25f), _FrameBrush.ReleaseAndGetAddressOf());
-
-        if (FAILED(hr))
-            return hr;
 
         {
             const D2D1_GRADIENT_STOP BackgroundStops[] =
@@ -815,15 +782,6 @@ namespace AudioGalaxy
                 return hr;
         }
 
-        {
-            const auto Properties = D2D1::StrokeStyleProperties(D2D1_CAP_STYLE_ROUND, D2D1_CAP_STYLE_ROUND, D2D1_CAP_STYLE_ROUND, D2D1_LINE_JOIN_ROUND, 10.0f, D2D1_DASH_STYLE_SOLID, 0.0f);
-
-            hr = _D2DFactory->CreateStrokeStyle(Properties, nullptr, 0, _RoundStrokeStyle.ReleaseAndGetAddressOf());
-
-            if (FAILED(hr))
-                return hr;
-        }
-
         _RenderTarget = renderTarget;
 
         return S_OK;
@@ -836,16 +794,8 @@ namespace AudioGalaxy
     {
         _RenderTarget = nullptr;
 
-        _TrailBrush.Reset();
-        _ScanlineBrush.Reset();
-        _FrameBrush.Reset();
-
         _BackgroundBrush.Reset();
         _BackgroundStops.Reset();
-
-        _RoundStrokeStyle.Reset();
-
-        _D2DFactory.Reset();
 
         __super::DeleteDeviceDependentResources();
     }

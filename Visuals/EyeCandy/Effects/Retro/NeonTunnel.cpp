@@ -396,7 +396,7 @@ namespace NeonTunnel
             const double CenterRotationTarget = (std::sin(_AnimationTime * 0.370f + 0.45f) * 0.055f) +       // Primary sway
                                                 (std::sin(_AnimationTime * 0.190f + 2.10f) * 0.032f) +       // Subtle irregularity
                                                 (std::sin(_AnimationTime * 0.071f + 4.30f) * 0.018f) +       // Subtle irregularity
-                                                (_CenterKickX * 0.035f) - (_CenterKickY * 0.025f);  // Small rotational coupling
+                                                (_CenterKickX * 0.035f) - (_CenterKickY * 0.025f);           // Small rotational coupling
 
             _CenterRotationSway = ExponentialSmoothing(_CenterRotationSway, CenterRotationTarget, deltaTime, 5.);
         }

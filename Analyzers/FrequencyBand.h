@@ -16,9 +16,9 @@
 #pragma warning(disable: 4820)
 struct frequency_band_t
 {
-    frequency_band_t() noexcept : RawValue(), Value(), PeakValue(), Lo(), Mid(), Hi(), HoldTime(), FallRate(), Opacity(1.) { }
+    frequency_band_t() noexcept : RawValue(), Value(), PeakValue(), Low(), Center(), High(), HoldTime(), FallRate(), Opacity(1.) { }
 
-    frequency_band_t(double l, double c, double h) noexcept : RawValue(), Value(), PeakValue(), Lo(l), Mid(c), Hi(h), HoldTime(), FallRate(), Opacity(1.) { }
+    frequency_band_t(double l, double c, double h) noexcept : RawValue(), Value(), PeakValue(), Low(l), Center(c), High(h), HoldTime(), FallRate(), Opacity(1.) { }
 
     frequency_band_t(const frequency_band_t & other) noexcept
     {
@@ -26,9 +26,9 @@ struct frequency_band_t
         Value     = other.Value;
         PeakValue = other.PeakValue;
 
-        Lo        = other.Lo;
-        Mid       = other.Mid;
-        Hi        = other.Hi;
+        Low       = other.Low;
+        Center    = other.Center;
+        High      = other.High;
 
         HoldTime  = other.HoldTime;
         FallRate  = other.FallRate;
@@ -47,9 +47,9 @@ struct frequency_band_t
     double Value;       // [0, 1], Normalized magnitude / power
     double PeakValue;   // [0, 1], Peak normalized magnitude / power
 
-    double Lo;          // Hz, Low frequency of this band
-    double Mid;         // Hz, Center frequency of this band
-    double Hi;          // Hz, High frequency of this band
+    double Low;         // Hz, Low frequency of this band
+    double Center;      // Hz, Center frequency of this band
+    double High;        // Hz, High frequency of this band
 
     double HoldTime;    // Time to hold the current peak value (in s)
     double FallRate;    // Rate at which the current peak value decays (in dB/s)

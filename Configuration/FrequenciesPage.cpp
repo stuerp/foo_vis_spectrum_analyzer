@@ -53,7 +53,7 @@ void frequencies_page_t::InitializeControls() noexcept
 
         w.ResetContent();
 
-        for (const auto & x : { L"Linear", L"Octaves", L"AveePlayer", L"Mel" })
+        for (const auto & x : { L"Linear", L"Octaves", L"AveePlayer", L"Mel", L"Decades" })
             w.AddString(x);
 
         w.SetCurSel((int) _State->_FrequencyDistribution);

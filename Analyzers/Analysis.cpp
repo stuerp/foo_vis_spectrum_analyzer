@@ -1,11 +1,17 @@
 
-/** $VER: Analysis.cpp (2026.10.24) P. Stuer **/
+/** $VER: Analysis.cpp (2026.10.25) P. Stuer **/
 
 #include "pch.h"
 
 #include "Analysis.h"
 #include "Downmixer.h"
 #include "FrequencyScaler.h"
+
+#include "FFTAnalyzer.h"
+#include "CompositeFFTAnalyzer.h"
+#include "CQTAnalyzer.h"
+#include "SWIFTAnalyzer.h"
+#include "AnalogStyleAnalyzer.h"
 
 #include "Support.h"
 
@@ -41,6 +47,10 @@ void analysis_t::Configure(const graph_options_t * graphOptions) noexcept
 
         case FrequencyDistribution::Mel:
             GenerateMelFrequencyBands();
+            break;
+
+        case FrequencyDistribution::Decades:
+            GenerateDecadeAlignedFrequencyBands();
             break;
     }
 
@@ -464,7 +474,8 @@ void analysis_t::GenerateLinearFrequencyBands()
     const double MinScale = ScaleFrequency(_State._LoFrequency, _State._ScalingFunction, _State._SkewFactor);
     const double MaxScale = ScaleFrequency(_State._HiFrequency, _State._ScalingFunction, _State._SkewFactor);
 
-    const double Bandwidth = (((_State._TransformMethod == TransformMethod::FFT) && (_State._MappingMethod == CoefficientMapping::TriangularFilterBank)) || (_State._TransformMethod == TransformMethod::CQT)) ? _State._Bandwidth : 0.5;
+    const double Bandwidth = ((((_State._TransformMethod == TransformMethod::FFT) || (_State._TransformMethod == TransformMethod::CompositeFFT)) &&
+                             (_State._MappingMethod == CoefficientMapping::TriangularFilterBank)) || (_State._TransformMethod == TransformMethod::CQT)) ? _State._Bandwidth : 0.5;
 
     _FrequencyBands.resize(_State._BandCount);
 
@@ -477,17 +488,17 @@ void analysis_t::GenerateLinearFrequencyBands()
         const double LoIndex = std::clamp(i - Bandwidth, 0., MaxIndex);
         const double HiIndex = std::clamp(i + Bandwidth, 0., MaxIndex);
 
-        fb.Lo  = DescaleFrequency(msc::Map(LoIndex, 0., MaxIndex, MinScale, MaxScale), _State._ScalingFunction, _State._SkewFactor);
-        fb.Mid = DescaleFrequency(msc::Map(i,       0., MaxIndex, MinScale, MaxScale), _State._ScalingFunction, _State._SkewFactor);
-        fb.Hi  = DescaleFrequency(msc::Map(HiIndex, 0., MaxIndex, MinScale, MaxScale), _State._ScalingFunction, _State._SkewFactor);
+        fb.Low    = DescaleFrequency(msc::Map(LoIndex, 0., MaxIndex, MinScale, MaxScale), _State._ScalingFunction, _State._SkewFactor);
+        fb.Center = DescaleFrequency(msc::Map(i,       0., MaxIndex, MinScale, MaxScale), _State._ScalingFunction, _State._SkewFactor);
+        fb.High   = DescaleFrequency(msc::Map(HiIndex, 0., MaxIndex, MinScale, MaxScale), _State._ScalingFunction, _State._SkewFactor);
 
-        assert(std::isfinite(fb.Lo));
-        assert(std::isfinite(fb.Mid));
-        assert(std::isfinite(fb.Hi));
+        assert(std::isfinite(fb.Low));
+        assert(std::isfinite(fb.Center));
+        assert(std::isfinite(fb.High));
 
-        assert(fb.Lo <= fb.Mid && fb.Mid <= fb.Hi);
+        assert(fb.Low <= fb.Center && fb.Center <= fb.High);
 
-        ::StringCchPrintfW(fb.Label, _countof(fb.Label), L"%.*f Hz", _GraphOptions->_XAxisDecimals, fb.Mid);
+        ::StringCchPrintfW(fb.Label, _countof(fb.Label), L"%.*f Hz", _GraphOptions->_XAxisDecimals, fb.Center);
 
         fb.HasDarkBackground = true;
 
@@ -536,7 +547,7 @@ void analysis_t::GenerateOctaveFrequencyBands()
 
     assert(LoIndex <= HiIndex);
 
-    const double Bandwidth = (((_State._TransformMethod == TransformMethod::FFT) && (_State._MappingMethod == CoefficientMapping::TriangularFilterBank)) || (_State._TransformMethod == TransformMethod::CQT)) ? _State._Bandwidth : 0.5;
+    const double Bandwidth = ((((_State._TransformMethod == TransformMethod::FFT) || (_State._TransformMethod == TransformMethod::CompositeFFT)) && (_State._MappingMethod == CoefficientMapping::TriangularFilterBank)) || (_State._TransformMethod == TransformMethod::CQT)) ? _State._Bandwidth : 0.5;
 
     _FrequencyBands.reserve((size_t) (HiIndex - LoIndex + 1.));
 
@@ -551,9 +562,9 @@ void analysis_t::GenerateOctaveFrequencyBands()
             C0Frequency * std::pow(Root24, (i + Bandwidth) * NoteGroup + _State._Transpose),
         };
 
-        assert(fb.Lo <= fb.Mid && fb.Mid <= fb.Hi);
+        assert(fb.Low <= fb.Center && fb.Center <= fb.High);
 
-        const double f = NoteToFrequency(FrequencyToNote(fb.Mid));
+        const double f = NoteToFrequency(FrequencyToNote(fb.Center));
 
         // Pre-calculate the tooltip text and the band background color.
         {
@@ -562,10 +573,10 @@ void analysis_t::GenerateOctaveFrequencyBands()
             const uint32_t n      = Note % (uint32_t) _countof(NoteNames);
             const uint32_t Octave = Note / (uint32_t) _countof(NoteNames);
 
-            if (msc::InRange(f, fb.Lo, fb.Hi))
-                ::StringCchPrintfW(fb.Label, _countof(fb.Label), L"%s%d\n%.*f Hz", NoteNames[n], Octave, _GraphOptions->_XAxisDecimals, fb.Mid);
+            if (msc::InRange(f, fb.Low, fb.High))
+                ::StringCchPrintfW(fb.Label, _countof(fb.Label), L"%s%d\n%.*f Hz", NoteNames[n], Octave, _GraphOptions->_XAxisDecimals, fb.Center);
             else
-                ::StringCchPrintfW(fb.Label, _countof(fb.Label), L"%.*f Hz", _GraphOptions->_XAxisDecimals, fb.Mid);
+                ::StringCchPrintfW(fb.Label, _countof(fb.Label), L"%.*f Hz", _GraphOptions->_XAxisDecimals, fb.Center);
 
             fb.HasDarkBackground = (n == 1 || n == 3 || n == 6 || n == 8 || n == 10);
         }
@@ -602,7 +613,7 @@ void analysis_t::GenerateAveePlayerFrequencyBands()
 {
     assert(_State._BandCount > 1); assert(0. <= _State._Bandwidth && _State._Bandwidth <= 64.);
 
-    const double Bandwidth = (((_State._TransformMethod == TransformMethod::FFT) && (_State._MappingMethod == CoefficientMapping::TriangularFilterBank)) || (_State._TransformMethod == TransformMethod::CQT)) ? _State._Bandwidth : 0.5;
+    const double Bandwidth = ((((_State._TransformMethod == TransformMethod::FFT) || (_State._TransformMethod == TransformMethod::CompositeFFT)) && (_State._MappingMethod == CoefficientMapping::TriangularFilterBank)) || (_State._TransformMethod == TransformMethod::CQT)) ? _State._Bandwidth : 0.5;
 
     _FrequencyBands.resize(_State._BandCount);
 
@@ -615,13 +626,13 @@ void analysis_t::GenerateAveePlayerFrequencyBands()
         const double LoIndex = std::clamp(i - Bandwidth, 0., MaxIndex);
         const double HiIndex = std::clamp(i + Bandwidth, 0., MaxIndex);
 
-        fb.Lo  = CalcBlendedLogLinearFrequency(_State._LoFrequency, _State._HiFrequency, LoIndex, MaxIndex, _State._SkewFactor);
-        fb.Mid = CalcBlendedLogLinearFrequency(_State._LoFrequency, _State._HiFrequency, i,       MaxIndex, _State._SkewFactor);
-        fb.Hi  = CalcBlendedLogLinearFrequency(_State._LoFrequency, _State._HiFrequency, HiIndex, MaxIndex, _State._SkewFactor);
+        fb.Low  = CalcBlendedLogLinearFrequency(_State._LoFrequency, _State._HiFrequency, LoIndex, MaxIndex, _State._SkewFactor);
+        fb.Center = CalcBlendedLogLinearFrequency(_State._LoFrequency, _State._HiFrequency, i,       MaxIndex, _State._SkewFactor);
+        fb.High  = CalcBlendedLogLinearFrequency(_State._LoFrequency, _State._HiFrequency, HiIndex, MaxIndex, _State._SkewFactor);
 
-        assert(fb.Lo <= fb.Mid && fb.Mid <= fb.Hi);
+        assert(fb.Low <= fb.Center && fb.Center <= fb.High);
 
-        ::StringCchPrintfW(fb.Label, _countof(fb.Label), L"%.*f Hz", _GraphOptions->_XAxisDecimals, fb.Mid);
+        ::StringCchPrintfW(fb.Label, _countof(fb.Label), L"%.*f Hz", _GraphOptions->_XAxisDecimals, fb.Center);
 
         fb.HasDarkBackground = true;
 
@@ -676,17 +687,17 @@ void analysis_t::GenerateMelFrequencyBands()
     for (frequency_band_t & fb: _FrequencyBands)
     {
         // Intentional overlap: Adjacent triangular Mel filters share their center and edge frequencies.
-        fb.Lo  = Frequencies[i];
-        fb.Mid = Frequencies[i + 1];
-        fb.Hi  = Frequencies[i + 2];
+        fb.Low  = Frequencies[i];
+        fb.Center = Frequencies[i + 1];
+        fb.High  = Frequencies[i + 2];
 
-        if (fb.Mid <= fb.Lo)
-            fb.Mid = fb.Lo + 1.;
+        if (fb.Center <= fb.Low)
+            fb.Center = fb.Low + 1.;
 
-        if (fb.Hi <= fb.Mid)
-            fb.Hi = fb.Mid + 1.;
+        if (fb.High <= fb.Center)
+            fb.High = fb.Center + 1.;
 
-        ::StringCchPrintfW(fb.Label, _countof(fb.Label), L"%d mel\n%.*f Hz", (int) HzToMel(fb.Mid), _GraphOptions->_XAxisDecimals, fb.Mid);
+        ::StringCchPrintfW(fb.Label, _countof(fb.Label), L"%d mel\n%.*f Hz", (int) HzToMel(fb.Center), _GraphOptions->_XAxisDecimals, fb.Center);
 
         fb.HasDarkBackground = true;
 
@@ -695,37 +706,67 @@ void analysis_t::GenerateMelFrequencyBands()
 }
 
 /// <summary>
-/// Generates logarithmically-spaced frequency bands.
+/// Generates frequency bands whose center frequencies are aligned to decade-dependent frequency intervals.
 /// </summary>
-void analysis_t::GenerateLogFrequencyBands()
+void analysis_t::GenerateDecadeAlignedFrequencyBands()
 {
-    constexpr size_t ScaleCount = 320;
+    assert(_State._LoFrequency <= _State._HiFrequency);
 
-    _FrequencyBands.resize(ScaleCount);
+    std::vector<double> CenterFrequencies;
 
-    const auto fMin = _State._LoFrequency;
-    const auto fMax = _State._HiFrequency;
-
-    size_t i = 0;
-
-    for (frequency_band_t & fb: _FrequencyBands)
+    const auto AddCenterFrequencies = [&](double minFrequency, double maxFrequency, double interval)
     {
-        const auto t = (double) i / (double) (ScaleCount - 1);
+        const double LoFrequency = std::max(_State._LoFrequency, minFrequency);
+        const double HiFrequency = std::min(_State._HiFrequency, maxFrequency);
 
-        // Linear to logarithmic spacing.
-        fb.Mid = fMin * std::pow(fMax / fMin, t); // Hz
+        if (LoFrequency > HiFrequency)
+            return;
 
-        // Increase the bandwidth as the frequency rises.
-        const auto Bandwidth = std::max(fb.Mid * 0.15, 1e-9); // Hz
+        double Frequency = std::ceil(LoFrequency / interval) * interval;
 
-        fb.Lo = std::max(fb.Mid - Bandwidth, MinFrequency); // Hz
-        fb.Hi = std::min(fb.Mid + Bandwidth, MaxFrequency); // Hz
+        while (Frequency <= HiFrequency)
+        {
+            CenterFrequencies.push_back(Frequency);
 
-        ::StringCchPrintfW(fb.Label, _countof(fb.Label), L"%.*f Hz", _GraphOptions->_XAxisDecimals, fb.Mid);
+            Frequency += interval;
+        }
+    };
+
+    AddCenterFrequencies(   1.,    10. - std::numeric_limits<double>::epsilon(),    1.);
+    AddCenterFrequencies(  10.,   100. - std::numeric_limits<double>::epsilon(),   10.);
+    AddCenterFrequencies( 100.,  1000. - std::numeric_limits<double>::epsilon(),  100.);
+    AddCenterFrequencies(1000., _State._HiFrequency,                             1000.);
+
+    _FrequencyBands.resize(CenterFrequencies.size());
+
+    for (size_t i = 0; i < CenterFrequencies.size(); ++i)
+    {
+        frequency_band_t & fb = _FrequencyBands[i];
+
+        fb.Center = CenterFrequencies[i];
+
+        if (i == 0)
+            fb.Low = _State._LoFrequency;
+        else
+            fb.Low = std::midpoint(CenterFrequencies[i - 1], fb.Center);
+
+        if (i + 1 == CenterFrequencies.size())
+            fb.High = _State._HiFrequency;
+        else
+            fb.High = std::midpoint(fb.Center, CenterFrequencies[i + 1]);
+
+        fb.Low  = std::clamp(fb.Low,  _State._LoFrequency, _State._HiFrequency);
+        fb.High = std::clamp(fb.High, _State._LoFrequency, _State._HiFrequency);
+
+        assert(std::isfinite(fb.Low));
+        assert(std::isfinite(fb.Center));
+        assert(std::isfinite(fb.High));
+
+        assert(fb.Low <= fb.Center && fb.Center <= fb.High);
+
+        ::StringCchPrintfW(fb.Label, _countof(fb.Label), L"%.*f", _GraphOptions->_XAxisDecimals, fb.Center);
 
         fb.HasDarkBackground = true;
-
-        ++i;
     }
 }
 
@@ -803,7 +844,7 @@ void analysis_t::CreateAnalyzer() noexcept
                 if (!_BrownPucketteKernel)
                     _BrownPucketteKernel = window_function_t::Create(_State._KernelShape, _State._KernelShapeParameter, _State._KernelAsymmetry, _State._Truncate);
 
-                _Analyzer = std::make_unique<fft_analyzer_t>(_State, _SampleRate, _ChannelCount, _ChannelConfig, *_WindowFunction, *_BrownPucketteKernel);
+                _Analyzer = std::make_unique<fft_analyzer_t>(_State, _State._BinCount, _SampleRate, _ChannelCount, _ChannelConfig, *_WindowFunction, *_BrownPucketteKernel);
                 break;
             }
 
@@ -832,6 +873,16 @@ void analysis_t::CreateAnalyzer() noexcept
                 _Analyzer = std::move(Analyzer);
                 break;
             }
+
+            case TransformMethod::CompositeFFT:
+            {
+                if (!_BrownPucketteKernel)
+                    _BrownPucketteKernel = window_function_t::Create(_State._KernelShape, _State._KernelShapeParameter, _State._KernelAsymmetry, _State._Truncate);
+
+                _Analyzer = std::make_unique<composite_fft_analyzer_t>(_State, _SampleRate, _ChannelCount, _ChannelConfig, *_WindowFunction, *_BrownPucketteKernel);
+                break;
+            }
+
         }
     }
 }
@@ -850,7 +901,7 @@ void analysis_t::ApplyAcousticWeighting() noexcept
 
     for (frequency_band_t & fb : _FrequencyBands)
     {
-        const double Frequency = fb.Mid + Offset;
+        const double Frequency = fb.Center + Offset;
 
         if (Frequency <= 0.)
             continue;

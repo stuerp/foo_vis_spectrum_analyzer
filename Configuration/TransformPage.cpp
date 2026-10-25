@@ -1,5 +1,5 @@
 
-/** $VER: TransformPage.cpp (2026.09.05) P. Stuer - Implements a configuration dialog page. **/
+/** $VER: TransformPage.cpp (2026.10.25) P. Stuer - Implements a configuration dialog page. **/
 
 #include "pch.h"
 
@@ -88,10 +88,12 @@ void transform_page_t::InitializeControls() noexcept
 
         w.ResetContent();
 
-        for (const auto & x : { L"FFT", L"CQT", L"SWIFT", L"Analog-style" })
+        for (const auto & x : { L"FFT", L"CQT", L"SWIFT", L"Analog-style", L"Composite FFT" })
             w.AddString(x);
 
         w.SetCurSel((int) _State->_TransformMethod);
+
+        assert(w.GetCount() == ((int) TransformMethod::Max + 1));
     }
 
     // FFT
@@ -242,7 +244,7 @@ void transform_page_t::UpdateControls() noexcept
 
     const bool SupportsTransform = !(IsPeakMeter || IsLevelMeter || IsOscilloscope || IsBitMeter || IsTester);
 
-    const bool IsFFT = (_State->_TransformMethod == TransformMethod::FFT);
+    const bool IsFFT = (_State->_TransformMethod == TransformMethod::FFT)   || (_State->_TransformMethod == TransformMethod::CompositeFFT);
     const bool IsIIR = (_State->_TransformMethod == TransformMethod::SWIFT) || (_State->_TransformMethod == TransformMethod::AnalogStyle);
 
     if (SupportsTransform)

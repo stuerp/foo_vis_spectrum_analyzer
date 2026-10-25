@@ -381,27 +381,27 @@ state_t & state_t::operator=(const state_t & other) noexcept
 
     #pragma region FFT
 
-        _FFTMode = other._FFTMode;
-        _FFTCustom = other._FFTCustom;
+        _FFTMode     = other._FFTMode;
+        _FFTCustom   = other._FFTCustom;
         _FFTDuration = other._FFTDuration;
 
-        _KernelSize = other._KernelSize;
-        _AggregationMethod = other._AggregationMethod;
+        _KernelSize             = other._KernelSize;
+        _AggregationMethod      = other._AggregationMethod;
         _SmoothLowerFrequencies = other._SmoothLowerFrequencies;
-        _SmoothGainTransition = other._SmoothGainTransition;
+        _SmoothGainTransition   = other._SmoothGainTransition;
 
         _MappingMethod = other._MappingMethod;
 
         #pragma region Brown-Puckette CQT
 
-            _BandwidthOffset = other._BandwidthOffset;
-            _BandwidthCap = other._BandwidthCap;
-            _BandwidthAmount = other._BandwidthAmount;
+            _BandwidthOffset      = other._BandwidthOffset;
+            _BandwidthCap         = other._BandwidthCap;
+            _BandwidthAmount      = other._BandwidthAmount;
             _UseGranularBandwidth = other._UseGranularBandwidth;
 
-            _KernelShape = other._KernelShape;
+            _KernelShape          = other._KernelShape;
             _KernelShapeParameter = other._KernelShapeParameter;
-            _KernelAsymmetry = other._KernelAsymmetry;
+            _KernelAsymmetry      = other._KernelAsymmetry;
 
         #pragma endregion
 
@@ -410,19 +410,19 @@ state_t & state_t::operator=(const state_t & other) noexcept
     #pragma region CQT
 
         _CQTBandwidthOffset = other._CQTBandwidthOffset;
-        _CQTAlignment = other._CQTAlignment;
-        _CQTDownSample = other._CQTDownSample;
+        _CQTAlignment       = other._CQTAlignment;
+        _CQTDownSample      = other._CQTDownSample;
 
     #pragma endregion
 
     #pragma region IIR
 
-        _FilterBankOrder = other._FilterBankOrder;
-        _TimeResolution = other._TimeResolution;
-        _IIRBandwidth = other._IIRBandwidth;
-        _ConstantQ = other._ConstantQ;
+        _FilterBankOrder     = other._FilterBankOrder;
+        _TimeResolution      = other._TimeResolution;
+        _IIRBandwidth        = other._IIRBandwidth;
+        _ConstantQ           = other._ConstantQ;
         _CompensateBandwidth = other._CompensateBandwidth;
-        _UsePreWarpedQ = other._UsePreWarpedQ;
+        _UsePreWarpedQ       = other._UsePreWarpedQ;
 
     #pragma endregion
 
@@ -430,11 +430,11 @@ state_t & state_t::operator=(const state_t & other) noexcept
 
         _FrequencyDistribution = other._FrequencyDistribution;
 
-        _BandCount = other._BandCount;
-        _MelBandCount = other._MelBandCount;
+        _BandCount             = other._BandCount;
+        _MelBandCount          = other._MelBandCount;
 
-        _LoFrequency = other._LoFrequency;
-        _HiFrequency = other._HiFrequency;
+        _LoFrequency           = other._LoFrequency;
+        _HiFrequency           = other._HiFrequency;
 
         // Note range
         _LoNote = other._LoNote;

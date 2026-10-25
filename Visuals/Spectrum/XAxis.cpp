@@ -1,5 +1,5 @@
 
-/** $VER: XAXis.cpp (2026.10.24) P. Stuer - Implements the X axis of a graph. **/
+/** $VER: XAXis.cpp (2026.10.25) P. Stuer - Implements the X axis of a graph. **/
 
 #include "pch.h"
 
@@ -28,8 +28,8 @@ void x_axis_t::Configure(graph_options_t * graphOptions, analysis_t * analysis, 
 
     _BandCount = fb.size();
 
-    _LoFrequency = fb.front().Mid;
-    _HiFrequency = fb.back().Mid;
+    _LoFrequency = fb.front().Center;
+    _HiFrequency = fb.back().Center;
 
     // Precalculate the labels.
     {
@@ -46,14 +46,14 @@ void x_axis_t::Configure(graph_options_t * graphOptions, analysis_t * analysis, 
             {
                 for (size_t i = 0; i < _BandCount; i += 10)
                 {
-                    const double Frequency = fb[i].Mid;
+                    const double Frequency = fb[i].Center;
 
                     if (Frequency < 1000.)
                         ::StringCchPrintfW(Text, _countof(Text), L"%.*f", graphOptions->_XAxisDecimals, Frequency);
                     else
                         ::StringCchPrintfW(Text, _countof(Text), L"%.*fk", graphOptions->_XAxisDecimals, Frequency / 1000.);
 
-                    label_t lb = { Text, Frequency };
+                    label_t lb = { Text, Frequency, i };
 
                     _Labels.push_back(lb);
                 }
@@ -66,7 +66,7 @@ void x_axis_t::Configure(graph_options_t * graphOptions, analysis_t * analysis, 
                 int i = 1;
                 int j = 10;
 
-                while (Frequency < fb.back().Lo)
+                while (Frequency < fb.back().Low)
                 {
                     Frequency = j * i;
 
@@ -75,7 +75,7 @@ void x_axis_t::Configure(graph_options_t * graphOptions, analysis_t * analysis, 
                     else
                         ::StringCchPrintfW(Text, _countof(Text), L"%.*fk", graphOptions->_XAxisDecimals, Frequency / 1000.);
 
-                    label_t lb = { Text, Frequency };
+                    label_t lb = { Text, Frequency, 0 };
 
                     _Labels.push_back(lb);
 
@@ -91,13 +91,13 @@ void x_axis_t::Configure(graph_options_t * graphOptions, analysis_t * analysis, 
             case XAxisMode::Octaves:
             {
                 double Note = -57.;                                                 // Index of C0 (57 semi-tones lower than A4 at 440Hz)
-                double Frequency = _State._TuningPitch * std::exp2(Note / 12.);    // Frequency of C0
+                double Frequency = _State._TuningPitch * std::exp2(Note / 12.);     // Frequency of C0
 
-                for (int i = 0; Frequency < fb.back().Lo; ++i)
+                for (int i = 0; Frequency < fb.back().Low; ++i)
                 {
                     ::StringCchPrintfW(Text, _countof(Text), L"C%d", i);
 
-                    label_t lb = { Text, Frequency };
+                    label_t lb = { Text, Frequency, 0 };
 
                     _Labels.push_back(lb);
 
@@ -113,11 +113,11 @@ void x_axis_t::Configure(graph_options_t * graphOptions, analysis_t * analysis, 
                 static constexpr const int Step[] = { 2, 2, 1, 2, 2, 2, 1 };
 
                 double Note = -57.;                                                 // Index of C0 (57 semi-tones lower than A4 at 440Hz)
-                double Frequency = _State._TuningPitch * std::exp2(Note / 12.);    // Frequency of C0
+                double Frequency = _State._TuningPitch * std::exp2(Note / 12.);     // Frequency of C0
 
                 int j = 0;
 
-                while (Frequency < fb.back().Lo)
+                while (Frequency < fb.back().Low)
                 {
                     int Octave = (int) ((Note + 57.) / 12.);
 
@@ -126,7 +126,7 @@ void x_axis_t::Configure(graph_options_t * graphOptions, analysis_t * analysis, 
                     else
                         ::StringCchPrintfW(Text, _countof(Text), L"%c", Name[j]);
 
-                    label_t lb = { Text, Frequency, j != 0 };
+                    label_t lb = { Text, Frequency, 0, j != 0 };
 
                     _Labels.push_back(lb);
 
@@ -136,6 +136,35 @@ void x_axis_t::Configure(graph_options_t * graphOptions, analysis_t * analysis, 
                     if (j < 6) j++; else j = 0;
                 }
                 break;
+            }
+        }
+    }
+
+    // Associate labels that represent arbitrary frequencies with the nearest actual band. This keeps the grid line and text centered on that band.
+    if (graphOptions->_XAxisMode != XAxisMode::Bands)
+    {
+        for (label_t & Label : _Labels)
+        {
+            const auto Iter = std::lower_bound(fb.begin(), fb.end(), Label.Frequency, [](const frequency_band_t & Band, double Frequency)
+            {
+                return Band.Center < Frequency;
+            });
+
+            if (Iter == fb.begin())
+                Label.BandIndex = 0;
+            else
+            if (Iter == fb.end())
+                Label.BandIndex = fb.size() - 1;
+            else
+            {
+                const size_t HiIndex = (size_t) std::distance(fb.begin(), Iter);
+                const size_t LoIndex = HiIndex - 1;
+
+                const double LabelScale = ScaleFrequency(Label.Frequency, _State._ScalingFunction, _State._SkewFactor);
+                const double LoDistance = std::abs(LabelScale - ScaleFrequency(fb[LoIndex].Center, _State._ScalingFunction, _State._SkewFactor));
+                const double HiDistance = std::abs(ScaleFrequency(fb[HiIndex].Center, _State._ScalingFunction, _State._SkewFactor) - LabelScale);
+
+                Label.BandIndex = (LoDistance <= HiDistance) ? LoIndex : HiIndex;
             }
         }
     }
@@ -320,7 +349,16 @@ void x_axis_t::Initialize() noexcept
     // Calculate the rectangles of the labels.
     for (label_t & Iter : _Labels)
     {
-        const FLOAT dx = msc::Map(ScaleFrequency(Iter.Frequency, _State._ScalingFunction, _State._SkewFactor), MinScale, MaxScale, 0.f, SpectrumWidth);
+        FLOAT dx;
+
+        if (_State._VisualizationType == VisualizationType::Bars)
+            dx = std::min(((FLOAT) Iter.BandIndex + .5f) * BarWidth, SpectrumWidth);
+        else
+        {
+            const double Frequency = _Analysis->_FrequencyBands[Iter.BandIndex].Center;
+
+            dx = msc::Map(ScaleFrequency(Frequency, _State._ScalingFunction, _State._SkewFactor), MinScale, MaxScale, 0.f, SpectrumWidth);
+        }
 
         const FLOAT x = !_GraphOptions->_FlipHorizontally ? (x1 + dx) : (x1 - dx);
 

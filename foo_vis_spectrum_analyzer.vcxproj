@@ -221,6 +221,7 @@
     <ClInclude Include="Analyzers\Aggregator.h" />
     <ClInclude Include="Analyzers\AnalogStyleAnalyzer.h" />
     <ClInclude Include="Analyzers\Analysis.h" />
+    <ClInclude Include="Analyzers\CompositeFFTAnalyzer.h" />
     <ClInclude Include="Analyzers\CrossoverFilter.h" />
     <ClInclude Include="Analyzers\Downmixer.h" />
     <ClInclude Include="Analyzers\Downsampler.h" />
@@ -349,6 +350,7 @@
     <ClCompile Include="3rdParty\ProjectNayuki\FftComplex.cpp" />
     <ClCompile Include="Analyzers\AnalogStyleAnalyzer.cpp" />
     <ClCompile Include="Analyzers\Analysis.cpp" />
+    <ClCompile Include="Analyzers\CompositeFFTAnalyzer.cpp" />
     <ClCompile Include="Analyzers\CQTAnalyzer.cpp" />
     <ClCompile Include="Analyzers\CrossoverFilter.cpp" />
     <ClCompile Include="Analyzers\Decimator.cpp" />

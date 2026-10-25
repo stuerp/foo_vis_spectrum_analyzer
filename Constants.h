@@ -1,5 +1,5 @@
 
-/** $VER: Constants.h (2026.10.22) P. Stuer **/
+/** $VER: Constants.h (2026.10.25) P. Stuer **/
 
 #pragma once
 
@@ -165,12 +165,13 @@ inline constexpr int MaxKernelSize = 64;
 enum class TransformMethod
 {
     FFT = 0,
-    CQT = 1,
-    SWIFT = 2,
-    AnalogStyle = 3,
+    CQT,
+    SWIFT,
+    AnalogStyle,
+    CompositeFFT,
 
     Min = FFT,
-    Max = AnalogStyle,
+    Max = CompositeFFT,
 
     Invalid = -1
 };
@@ -272,7 +273,7 @@ inline constexpr int MaxNote                = 143;
 inline constexpr int MinBandsPerOctave      =  1;
 inline constexpr int MaxBandsPerOctave      = 48;
 
-inline constexpr double MinPitch            =    16.35; // Hz, C0
+inline constexpr double MinPitch            =    16.35;  // Hz, C0
 inline constexpr double MaxPitch            = 63'217.06; // Hz, B11
 
 inline constexpr int MinTranspose           = -24;
@@ -299,12 +300,13 @@ inline constexpr int MaxXAxisDecimals       = 3;
 enum class FrequencyDistribution
 {
     Linear = 0,
-    Octaves = 1,
-    AveePlayer = 2,
-    Mel = 3,
+    Octaves,
+    AveePlayer,
+    Mel,
+    Decades,
 
     Min = Linear,
-    Max = Mel,
+    Max = Decades,
 };
 
 enum class ScalingFunction

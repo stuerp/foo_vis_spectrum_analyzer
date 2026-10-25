@@ -212,7 +212,7 @@ namespace Starfield
         }();
 
         _AnimationTime  += deltaTime * SpeedFactor;
-        _TransitionTime += deltaTime;   // Cycle through galaxy-inspired color themes every five seconds.
+        _TransitionTime += deltaTime; // Cycle through galaxy-inspired color themes every five seconds.
 
         while (_TransitionTime >= TransitionInterval)
         {
@@ -240,7 +240,7 @@ namespace Starfield
 
             {
                 // High attack rate to detect drums which have a very short leading edge and falls faster than the other smoothed measurements. Makes consecutive bass hits distinguishable.
-                constexpr double AttackRate  = 42.0; 
+                constexpr double AttackRate  = 42.0;
                 constexpr double ReleaseRate = 12.0;
 
                 _SmoothedBass = ExponentialSmoothing(_SmoothedBass, _BassEnergy, deltaTime, (_BassEnergy > _SmoothedBass) ? AttackRate : ReleaseRate);
@@ -258,7 +258,7 @@ namespace Starfield
                 // The baseline falls moderately quickly but rises very slowly. That asymmetry is intentional. When a kick arrives,
                 // _BassEnergy rises rapidly. If _BeatAverage rose at the same speed, the difference between them would disappear.
                 // Prevents continuously loud bass from being interpreted as a new beat forever.
-                constexpr double AttackRate  = 5.00; 
+                constexpr double AttackRate  = 5.00;
                 constexpr double ReleaseRate = 0.85;
 
                 _BeatAverage = ExponentialSmoothing(_BeatAverage, _BassEnergy, deltaTime, (_BassEnergy < _BeatAverage) ? AttackRate : ReleaseRate);

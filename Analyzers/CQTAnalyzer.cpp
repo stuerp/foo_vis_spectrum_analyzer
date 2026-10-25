@@ -40,10 +40,10 @@ bool cqt_analyzer_t::AnalyzeAudio(const audio_sample * frames, size_t frameCount
 
     for (frequency_band_t & fb : frequencyBands)
     {
-        assert(fb.Lo <= fb.Mid && fb.Mid <= fb.Hi);
+        assert(fb.Low <= fb.Center && fb.Center <= fb.High);
 
         // Calculate the band width (in Hz).
-        const double Bandwidth = std::abs(fb.Hi - fb.Lo) + (FrequencyResolution * _State._CQTBandwidthOffset);
+        const double Bandwidth = std::abs(fb.High - fb.Low) + (FrequencyResolution * _State._CQTBandwidthOffset);
 
         if (Bandwidth <= 0.)
         {
@@ -69,7 +69,7 @@ bool cqt_analyzer_t::AnalyzeAudio(const audio_sample * frames, size_t frameCount
         const size_t BandFrameCount = (size_t) std::clamp(std::trunc(BandFrameCountFloat), 1., (double) frameCount);
 
         // Calculate the optimal sampling period.
-        double SamplingPeriodFloat = std::max(1., std::trunc(((double) _SampleRate * _State._CQTDownSample) / (fb.Mid + Bandwidth)));
+        double SamplingPeriodFloat = std::max(1., std::trunc(((double) _SampleRate * _State._CQTDownSample) / (fb.Center + Bandwidth)));
 
         if (!UseGranularSamplingPeriod)
             SamplingPeriodFloat = std::pow(2., std::trunc(std::log2(SamplingPeriodFloat)));
@@ -77,7 +77,7 @@ bool cqt_analyzer_t::AnalyzeAudio(const audio_sample * frames, size_t frameCount
         size_t SamplingPeriod = (size_t) std::max(1., SamplingPeriodFloat);
 
         // Goertzel coefficient. Effective sample rate is Fs / SamplingPeriod.
-        const double Omega = TwoPi * fb.Mid * (double) SamplingPeriod / (double) _SampleRate;
+        const double Omega = TwoPi * fb.Center * (double) SamplingPeriod / (double) _SampleRate;
 
         const double Cos   = std::cos(Omega);
         const double Sin   = std::sin(Omega);

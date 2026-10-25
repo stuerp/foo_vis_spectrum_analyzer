@@ -1,5 +1,5 @@
 
-/** $VER: FFTAnalyzer.h (2026.10.24) P. Stuer **/
+/** $VER: FFTAnalyzer.h (2026.10.25) P. Stuer **/
 
 #pragma once
 
@@ -30,7 +30,7 @@ public:
 
     virtual ~fft_analyzer_t() = default;
 
-    fft_analyzer_t(const state_t & state, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup, const window_function_t & windowFunction, const window_function_t & brownPucketteKernel) noexcept;
+    fft_analyzer_t(const state_t & state, size_t fftSize, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup, const window_function_t & windowFunction, const window_function_t & brownPucketteKernel) noexcept;
 
     bool AnalyzeAudio(const audio_sample * frames, size_t frameCount, uint32_t channels, frequency_bands_t & frequencyBands) noexcept override final;
 
@@ -44,14 +44,6 @@ private:
     void MapCoefficientsUsingGaussianFilter(frequency_bands_t & freqBands) const noexcept;
 
     double Interpolate(const std::vector<std::complex<double>> & fftCoeffs, double value, int kernelSize) const noexcept;
-
-    /// <summary>
-    /// Gets the current FFT size.
-    /// </summary>
-    size_t GetFFTSize() const noexcept
-    {
-        return _FFTSize;
-    }
 
     /// <summary>
     /// Gets the band index of the specified frequency.

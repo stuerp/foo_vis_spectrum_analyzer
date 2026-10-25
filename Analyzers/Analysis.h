@@ -1,5 +1,5 @@
 
-/** $VER: Analysis.h (2026.10.24)P. Stuer **/
+/** $VER: Analysis.h (2026.10.25)P. Stuer **/
 
 #pragma once
 
@@ -11,16 +11,10 @@
 #include <WinSock2.h>
 #include <Windows.h>
 
-#include "State.h"
-
-#include "WindowFunctions.h"
-
-#include "FFTAnalyzer.h"
-#include "CQTAnalyzer.h"
-#include "SWIFTAnalyzer.h"
-#include "AnalogStyleAnalyzer.h"
-
+#include "Analyzer.h"
 #include "FrequencyBand.h"
+#include "State.h"
+#include "WindowFunctions.h"
 
 /// <summary>
 /// Represents a meter measurement.
@@ -123,6 +117,7 @@ private:
     void GenerateAveePlayerFrequencyBands();
     void GenerateMelFrequencyBands();
     void GenerateLogFrequencyBands();
+    void GenerateDecadeAlignedFrequencyBands();
 
     void ApplyAcousticWeighting() noexcept;
 

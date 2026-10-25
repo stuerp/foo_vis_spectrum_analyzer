@@ -398,7 +398,7 @@ bool spectrogram_t::RenderSpectrum(ID2D1BitmapRenderTarget * renderTarget) noexc
 
             for (const auto & fb : Bands)
             {
-                if ((fb.Lo >= _Analysis->_NyquistFrequency) && SuppressMirrorImage)
+                if ((fb.Low >= _Analysis->_NyquistFrequency) && SuppressMirrorImage)
                     break;
 
                 _SpectrogramStyle.SetBrushColor(fb.Value);
@@ -422,7 +422,7 @@ bool spectrogram_t::RenderSpectrum(ID2D1BitmapRenderTarget * renderTarget) noexc
 
             for (const auto & fb : Bands)
             {
-                if ((fb.Lo >= _Analysis->_NyquistFrequency) && SuppressMirrorImage)
+                if ((fb.Low >= _Analysis->_NyquistFrequency) && SuppressMirrorImage)
                     break;
 
                 _SpectrogramStyle.SetBrushColor(fb.Value);
@@ -529,8 +529,8 @@ void spectrogram_t::RenderNyquistFrequencyMarker(ID2D1BitmapRenderTarget * rende
         return;
 
     // Calculate the scale range.
-    const double MinScale = ScaleFrequency(_Analysis->_FrequencyBands.front().Mid, _State._ScalingFunction, _State._SkewFactor);
-    const double MaxScale = ScaleFrequency(_Analysis->_FrequencyBands.back() .Mid, _State._ScalingFunction, _State._SkewFactor);
+    const double MinScale = ScaleFrequency(_Analysis->_FrequencyBands.front().Center, _State._ScalingFunction, _State._SkewFactor);
+    const double MaxScale = ScaleFrequency(_Analysis->_FrequencyBands.back() .Center, _State._ScalingFunction, _State._SkewFactor);
 
     // The position of the Nyquist marker is calculated at the exact frequency and may not align with the center frequency of spectrum bar.
     const double Scale = ScaleFrequency(_Analysis->_NyquistFrequency, _State._ScalingFunction, _State._SkewFactor);
@@ -561,8 +561,8 @@ void spectrogram_t::InitializeFrequencyAxis() noexcept
     if (fb.empty())
         return;
 
-    _LoFrequency = fb.front().Mid;
-    _HiFrequency = fb.back().Mid;
+    _LoFrequency = fb.front().Center;
+    _HiFrequency = fb.back().Center;
 
     // Formats the text of a frequency label.
     static auto FormatLabel = [](double frequency) noexcept -> const WCHAR *
@@ -592,13 +592,13 @@ void spectrogram_t::InitializeFrequencyAxis() noexcept
             {
                 for (size_t i = 0; i < fb.size(); i += 10)
                 {
-                    freq_label_t lb = { FormatLabel(fb[i].Mid), fb[i].Mid };
+                    freq_label_t lb = { FormatLabel(fb[i].Center), fb[i].Center };
 
                     _FreqLabels.push_back(lb);
                 }
 
                 // Make sure the last label shows the highest frequency.
-                _FreqLabels.back() = { FormatLabel(fb.back().Mid), fb.back().Mid };
+                _FreqLabels.back() = { FormatLabel(fb.back().Center), fb.back().Center };
                 break;
             }
 
@@ -609,7 +609,7 @@ void spectrogram_t::InitializeFrequencyAxis() noexcept
                 int i = 1;
                 int j = 10;
 
-                while (Frequency < fb.back().Mid)
+                while (Frequency < fb.back().Center)
                 {
                     Frequency = j * i;
 
@@ -625,7 +625,7 @@ void spectrogram_t::InitializeFrequencyAxis() noexcept
                 }
 
                 // Make sure the last label shows the highest frequency.
-                _FreqLabels.back() = { FormatLabel(fb.back().Mid), fb.back().Mid };
+                _FreqLabels.back() = { FormatLabel(fb.back().Center), fb.back().Center };
                 break;
             }
 
@@ -634,7 +634,7 @@ void spectrogram_t::InitializeFrequencyAxis() noexcept
                 double Note      = -57.;                                            // Index of C0 (57 semi-tones lower than A4 at 440Hz)
                 double Frequency = _State._TuningPitch * std::exp2(Note / 12.);    // Frequency of C0
 
-                for (int i = 0; Frequency < fb.back().Mid; ++i)
+                for (int i = 0; Frequency < fb.back().Center; ++i)
                 {
                     ::StringCchPrintfW(Text, _countof(Text), L"C%d", i);
 
@@ -658,7 +658,7 @@ void spectrogram_t::InitializeFrequencyAxis() noexcept
 
                 int i = 0;
 
-                while (Frequency < fb.back().Mid)
+                while (Frequency < fb.back().Center)
                 {
                     int Octave = (int) ((Note + 57.) / 12.);
 
@@ -1257,7 +1257,7 @@ frequency_bands_t spectrogram_t::DecimateSpectrum(const frequency_bands_t & fb, 
             Weights[i1]   += Fraction;
         }
 
-        Dst[i0].Lo = fb[j].Lo;
+        Dst[i0].Low = fb[j].Low;
     }
 
     for (size_t i = 0; i < DstCount; ++i)
@@ -1309,7 +1309,7 @@ frequency_bands_t spectrogram_t::ResampleSpectrum(const frequency_bands_t & fb, 
         }
 
         Dst[i].Value = (Weight != 0.) ? std::clamp(Sum / Weight, 0., 1.) : 0.;
-        Dst[i].Lo    = fb[j0].Lo;
+        Dst[i].Low    = fb[j0].Low;
     }
 
     return Dst;

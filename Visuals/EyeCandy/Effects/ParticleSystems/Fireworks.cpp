@@ -554,7 +554,7 @@ namespace Fireworks
 
             RenderFlareTrail(renderTarget, Flare);
 
-            const auto Color = HSVToColor((float) Flare.Hue, 0.82f, 1.f); 
+            const auto Color = HSVToColor((float) Flare.Hue, 0.82f, 1.f);
 
             const float Intensity = (float)std::clamp(0.82 + (Flare.Energy * 0.28), 0., 1.25);
 

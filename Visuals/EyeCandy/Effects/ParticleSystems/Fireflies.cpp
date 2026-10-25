@@ -312,7 +312,7 @@ namespace Fireflies
                 BandPower += std::max(0., Previous2 * Previous2 + Previous * Previous - Coefficient * Previous * Previous2);
             }
 
-            const double Magnitude  = std::sqrt(BandPower / (double) _countof(Frequencies)) / (double) AnalysisCount; 
+            const double Magnitude  = std::sqrt(BandPower / (double) _countof(Frequencies)) / (double) AnalysisCount;
             const double Compressed = std::log1p(Magnitude * 80.) / std::log1p(80.);
 
             _BandEnergy[i] = (float) Clamp(Compressed * Lerp(0.85, 1.45, BandAmount));
