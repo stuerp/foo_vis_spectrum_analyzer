@@ -818,15 +818,15 @@ void analysis_t::GenerateDecadeAlignedFrequencyBands()
         assert(fb.Low <= fb.Center);
         assert(fb.Center <= fb.High);
 
-        if (fb.Center >= 1000.0)
+        if (fb.Center >= 1'000.0)
         {
-            const double CenterInKilohertz = fb.Center / 1000.0;
+            const double CenterInKilohertz = fb.Center / 1'000.0;
 
-            double IntegerPart = 0.0;
+            double IntegerPart = 0.;
 
             const double FractionalPart = std::modf(CenterInKilohertz, &IntegerPart);
 
-            if (FractionalPart == 0.0)
+            if (FractionalPart == 0.)
                 ::StringCchPrintfW(fb.Label, _countof(fb.Label), L"%.0fk", CenterInKilohertz);
             else
                 ::StringCchPrintfW(fb.Label, _countof(fb.Label), L"%.*fk", _GraphOptions->_XAxisDecimals, CenterInKilohertz);
@@ -1083,30 +1083,44 @@ inline double analysis_t::GetAcousticWeight(double f, WeightingType weightType, 
 #pragma region Normalization
 
 /// <summary>
-/// Normalizes the amplitude.
+/// Normalizes the raw amplitude for display without smoothing. Fully responsive but potentially flickery.
 /// </summary>
 void analysis_t::Normalize() noexcept
 {
     for (frequency_band_t & fb : _FrequencyBands)
-        fb.Value = std::clamp(_GraphOptions->ScaleAmplitude(fb.RawValue), 0., 1.);
+    {
+        assert(::isfinite(fb.RawValue));
+
+        const auto ScaledValue = _GraphOptions->ScaleAmplitude(fb.RawValue);
+
+        fb.Value = std::clamp(ScaledValue, 0., 1.);
+    }
 }
 
 /// <summary>
-/// Normalizes the amplitude and applies average smoothing.
+/// Normalizes the amplitude for display with average smoothing. Gradual attack and decay of the amplitude.
 /// </summary>
-void analysis_t::NormalizeWithAverageSmoothing(double factor) noexcept
+void analysis_t::NormalizeWithAverageSmoothing(double strength) noexcept
 {
     for (frequency_band_t & fb : _FrequencyBands)
-        fb.Value = std::clamp((fb.Value * factor) + (::isfinite(fb.RawValue) ? _GraphOptions->ScaleAmplitude(fb.RawValue) * (1.0 - factor) : 0.), 0., 1.);
+    {
+        const auto ScaledValue = ::isfinite(fb.RawValue) ? _GraphOptions->ScaleAmplitude(fb.RawValue) * (1.0 - strength) : 0.;
+
+        fb.Value = std::clamp((fb.Value * strength) + ScaledValue, 0., 1.);
+    }
 }
 
 /// <summary>
-/// Normalizes the amplitude and applies peak smoothing.
+/// Normalizes the amplitude for display with peak smoothing. Instant attack with exponential peak and gradual decay of the amplitude. Preserves peaks and transients.
 /// </summary>
-void analysis_t::NormalizeWithPeakSmoothing(double factor) noexcept
+void analysis_t::NormalizeWithPeakSmoothing(double strength) noexcept
 {
     for (frequency_band_t & fb : _FrequencyBands)
-        fb.Value = std::clamp(std::max(fb.Value * factor, std::isfinite(fb.RawValue) ? _GraphOptions->ScaleAmplitude(fb.RawValue) : 0.), 0., 1.);
+    {
+        const auto ScaledValue = std::isfinite(fb.RawValue) ? _GraphOptions->ScaleAmplitude(fb.RawValue) : 0.;
+
+        fb.Value = std::clamp(std::max(fb.Value * strength, ScaledValue), 0., 1.);
+    }
 }
 
 #pragma endregion

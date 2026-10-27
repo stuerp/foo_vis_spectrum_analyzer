@@ -870,8 +870,9 @@ This page contains settings that the visualizations have in common.
 
 Determines how the spectrum coefficients and the Peak / RMS values are smoothed.
 
-- Average: Calculates a weighted average between the old and the new value of the peak. Uses the smoothing factor as a weight.
-- Peak: Retains the maximum between the old and the new value of the peak.
+- None: Does not smooth the raw amplitude. It results in a fully responsive display but is potentially flickery.
+- Average: Calculates a weighted average between the old and the new value of the peak. It uses the smoothing factor as a weight and causes a gradual attack and decay of the amplitude.
+- Peak: Retains the maximum between the old and the new value of the peak. This allows for instant attack with exponential peak and gradual decay of the amplitude. It preserves peaks and transients.
 
 `Smoothing factor`
 
