@@ -22,15 +22,16 @@ void graph_t::Configure(graph_options_t * graphOptions, bool isFirst, bool isLas
 
     _Description = graphOptions->_Description;
 
-    // Configure the analysis.
-    _Analysis.Configure(graphOptions);
-
     // Configure the visualization.
     _Visualization.reset();
 
+    _Processor = audio_processor_t::Create(_State);
+
+    _Processor->Configure(graphOptions);
+
     _Visualization = visualization_t::Create(_State);
 
-    _Visualization->Configure(graphOptions, &_Analysis, _IsFirst, _IsLast, _RenderContext.D3DDevice, _RenderContext.D3DDeviceContext);
+    _Visualization->Configure(graphOptions, _Processor.get(), _IsFirst, _IsLast, _RenderContext.D3DDevice, _RenderContext.D3DDeviceContext);
 }
 
 /// <summary>
@@ -66,7 +67,7 @@ void graph_t::Reset() noexcept
 /// </summary>
 void graph_t::Process(const audio_chunk & chunk) noexcept
 {
-    _Analysis.Process(chunk); // Delegate it to the analysis.
+    _Processor->Process(chunk); // Delegate it to the audio processor.
 }
 
 /// <summary>
@@ -96,7 +97,7 @@ void graph_t::Render(artwork_t & artwork) noexcept
     RenderDescription();
 
     // Erase the copy of the chunk.
-    _Analysis._Chunk.reset();
+    _Processor->_Chunk.reset();
 }
 
 /// <summary>
@@ -104,7 +105,7 @@ void graph_t::Render(artwork_t & artwork) noexcept
 /// </summary>
 void graph_t::Initialize() noexcept
 {
-    _Analysis.Reset();
+    _Processor->Reset();
 }
 
 /// <summary>
@@ -126,14 +127,14 @@ bool graph_t::GetToolTipText(FLOAT x, FLOAT y, std::wstring & toolTip, size_t & 
     {
         const rect_t & cr = (const rect_t &) _Visualization->GetClientRect();
 
-        FLOAT t = cr.Width() / (FLOAT) _Analysis._FrequencyBands.size();
+        FLOAT t = cr.Width() / (FLOAT) _Processor->_FrequencyBands.size();
 
         // Allow non-integer bar widths?
         if (_GraphOptions->_HorizontalAlignment != HorizontalAlignment::Fit)
             t = ::floor(t);
 
         const FLOAT BarWidth = std::max(t, 2.f);
-        const FLOAT SpectrumWidth = (_State._VisualizationType == VisualizationType::Bars) ? BarWidth * (FLOAT) _Analysis._FrequencyBands.size() : cr.Width();
+        const FLOAT SpectrumWidth = (_State._VisualizationType == VisualizationType::Bars) ? BarWidth * (FLOAT) _Processor->_FrequencyBands.size() : cr.Width();
         const FLOAT HOffset = GetHOffset(_GraphOptions->_HorizontalAlignment, cr.Width() - SpectrumWidth);
 
         const FLOAT x1 = cr.x1 + HOffset;
@@ -145,7 +146,7 @@ bool graph_t::GetToolTipText(FLOAT x, FLOAT y, std::wstring & toolTip, size_t & 
         if (_GraphOptions->_FlipHorizontally)
             x = (x2 + x1) - x;
 
-        bandIndex = std::clamp((size_t) ::floor(msc::Map(x, x1, x2, 0., (double) _Analysis._FrequencyBands.size())), (size_t) 0, _Analysis._FrequencyBands.size() - (size_t) 1);
+        bandIndex = std::clamp((size_t) ::floor(msc::Map(x, x1, x2, 0., (double) _Processor->_FrequencyBands.size())), (size_t) 0, _Processor->_FrequencyBands.size() - (size_t) 1);
     }
     else
     if (_State._VisualizationType == VisualizationType::Spectrogram)
@@ -160,20 +161,20 @@ bool graph_t::GetToolTipText(FLOAT x, FLOAT y, std::wstring & toolTip, size_t & 
             if (!_GraphOptions->_FlipVertically)
                 y = (cr.bottom + cr.top) - y;
 
-            bandIndex = std::clamp((size_t) ::floor(msc::Map(y, cr.top, cr.bottom, 0., (double) _Analysis._FrequencyBands.size())), (size_t) 0, _Analysis._FrequencyBands.size() - (size_t) 1);
+            bandIndex = std::clamp((size_t) ::floor(msc::Map(y, cr.top, cr.bottom, 0., (double) _Processor->_FrequencyBands.size())), (size_t) 0, _Processor->_FrequencyBands.size() - (size_t) 1);
         }
         else
         {
             if (!msc::InRange(x, cr.left, cr.right))
                 return false;
 
-            bandIndex = std::clamp((size_t) ::floor(msc::Map(x, cr.left, cr.right, 0., (double) _Analysis._FrequencyBands.size())), (size_t) 0, _Analysis._FrequencyBands.size() - (size_t) 1);
+            bandIndex = std::clamp((size_t) ::floor(msc::Map(x, cr.left, cr.right, 0., (double) _Processor->_FrequencyBands.size())), (size_t) 0, _Processor->_FrequencyBands.size() - (size_t) 1);
         }
     }
     else
         return false; // No tooltip available.
 
-    toolTip = _Analysis._FrequencyBands[bandIndex].Label;
+    toolTip = _Processor->_FrequencyBands[bandIndex].Label;
 
     return true;
 }

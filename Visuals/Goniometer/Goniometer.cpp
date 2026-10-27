@@ -9,7 +9,7 @@
 
 #pragma hdrstop
 
-namespace goniometer
+namespace Goniometer
 {
 
 /// <summary>
@@ -23,10 +23,10 @@ goniometer_t::~goniometer_t()
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void goniometer_t::Configure(graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device *, ID3D11DeviceContext *) noexcept
+void goniometer_t::Configure(graph_options_t * options, audio_processor_t * processor, bool isFirst, bool isLast, ID3D11Device *, ID3D11DeviceContext *) noexcept
 {
-    _GraphOptions = graphOptions;
-    _Analysis     = analysis;
+    _GraphOptions = options;
+    _Processor    = processor;
 
     _LowBand  = _State._LowBand;
     _HighBand = _State._HighBand;
@@ -66,12 +66,12 @@ void goniometer_t::Render(ID2D1DeviceContext * deviceContext) noexcept
         return;
 
     // Process the chunk.
-    if (!_Analysis->_Chunk.is_empty())
+    if (!_Processor->_Chunk.is_empty())
     {
         const uint32_t ActiveChannelMask = _GraphOptions->_ActiveChannelMask;                               // Mask containing the channels selected by the user.
-        const uint32_t PairedChannelMask = analysis_t::ChannelPairs[(size_t) _GraphOptions->_ChannelPair];  // Mask containing the channels selected by the user as a channel pair.
+        const uint32_t PairedChannelMask = audio_processor_t::ChannelPairs[(size_t) _GraphOptions->_ChannelPair];  // Mask containing the channels selected by the user as a channel pair.
 
-        _AudioProcessor.Process(_Analysis->_Chunk, ActiveChannelMask, PairedChannelMask, _LowBand, _HighBand);
+        _AudioProcessor.Process(_Processor->_Chunk, ActiveChannelMask, PairedChannelMask, _LowBand, _HighBand);
     }
     else
         _AudioProcessor.Reset();

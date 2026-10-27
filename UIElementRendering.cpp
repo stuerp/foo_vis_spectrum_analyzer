@@ -144,7 +144,7 @@ void uielement_t::ProcessEvents() noexcept
         if (_RenderState._ResetPeaksOnTrackChange)
         {
             for (auto & Graph : _Grid)
-                Graph->_Analysis.ResetFFTPeaks();
+                Graph->_Processor->ResetFFTPeaks();
         }
 
         _RenderState._IsPaused = false;
@@ -299,7 +299,7 @@ void uielement_t::Animate(int64_t now) noexcept
     const bool IsStopped = (_RenderState._PlaybackTime == 0.);
 
     for (auto & Item : _Grid)
-        Item->_Analysis.UpdatePeakValues(IsStopped);
+        Item->_Processor->UpdatePeakValues(IsStopped);
 }
 
 /// <summary>

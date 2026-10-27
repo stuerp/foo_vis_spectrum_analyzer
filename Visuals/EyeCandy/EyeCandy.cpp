@@ -8,10 +8,10 @@
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void eye_candy_t::Configure(graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept
+void eye_candy_t::Configure(graph_options_t * graphOptions, audio_processor_t * processor, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept
 {
     _GraphOptions = graphOptions;
-    _Analysis = analysis;
+//  _Processor = processor;
 
     Reset();
 }
@@ -43,7 +43,7 @@ void eye_candy_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 
     double DeltaTime = _State._PlaybackTime - _PlaybackTime;
 
-    _Effect->Render(deviceContext, DeltaTime, _Analysis->_Chunk);
+    _Effect->Render(deviceContext, DeltaTime, _Processor->_Chunk);
 
     _PlaybackTime = _State._PlaybackTime;
 }

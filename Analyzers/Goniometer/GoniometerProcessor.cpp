@@ -8,7 +8,7 @@
 #include <cmath>
 #include <numbers>
 
-namespace goniometer
+namespace Goniometer
 {
 
 /// <summary>

@@ -18,10 +18,10 @@ level_meter_t::~level_meter_t() noexcept
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void level_meter_t::Configure(graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept
+void level_meter_t::Configure(graph_options_t * options, audio_processor_t * processor, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept
 {
-    _GraphOptions = graphOptions;
-    _Analysis = analysis;
+    _GraphOptions = options;
+    _Processor = processor;
 
     DeleteDeviceSpecificResources();
 }
@@ -96,7 +96,7 @@ void level_meter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
     {
         // Render the bars.
         {
-            auto x = (FLOAT) _Analysis->_Balance * w;
+            auto x = (FLOAT) _Processor->_Balance * w;
 
             D2D1_RECT_F Rect = { CenterX, 2.f, x, CenterY - 2.f };
 
@@ -110,7 +110,7 @@ void level_meter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
                 deviceContext->FillRectangle(Rect, _LeftRightIndicatorStyle._Brush.Get());
             }
 
-            x = (FLOAT) _Analysis->_Phase * w;
+            x = (FLOAT) _Processor->_Phase * w;
 
             Rect = { CenterX, CenterY + 2.f, x, h - 2.f };
 
@@ -165,7 +165,7 @@ void level_meter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
     {
         // Render the bars.
         {
-            auto y = (FLOAT) _Analysis->_Balance * h;
+            auto y = (FLOAT) _Processor->_Balance * h;
 
             D2D1_RECT_F Rect = { 2.f, CenterY, CenterX - 2.f, y };
 
@@ -179,7 +179,7 @@ void level_meter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
                 deviceContext->FillRectangle(Rect, _LeftRightIndicatorStyle._Brush.Get());
             }
 
-            y = (FLOAT) _Analysis->_Phase * h;
+            y = (FLOAT) _Processor->_Phase * h;
 
             Rect = { CenterX + 2.f, CenterY, w - 2.f, y };
 

@@ -16,7 +16,7 @@ static void TestWeighting()
     constexpr double DecibelTolerance = 1.e-6;
 
     state_t State;
-    analysis_t Analysis(State);
+    audio_processor_t Analysis(State);
 
     struct weighting_test_t
     {

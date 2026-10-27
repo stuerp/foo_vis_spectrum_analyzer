@@ -30,10 +30,10 @@ void oscilloscope_xy_t::Move(const D2D1_RECT_F & rect) noexcept
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void oscilloscope_xy_t::Configure(graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept
+void oscilloscope_xy_t::Configure(graph_options_t * options, audio_processor_t * processor, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept
 {
-    _GraphOptions = graphOptions;
-    _Analysis = analysis;
+    _GraphOptions = options;
+    _Processor    = processor;
 
     _SquareBitmaps = true;
 
@@ -57,7 +57,7 @@ void oscilloscope_xy_t::Render(ID2D1DeviceContext * deviceContext) noexcept
     // Create the signal.
     if (!_State._IsPaused || (_State._IsPaused && _State._VisualizeDuringPause))
     {
-        hr = CreateSignalGeometry(_Analysis->_Chunk, TransformedGeometry);
+        hr = CreateSignalGeometry(_Processor->_Chunk, TransformedGeometry);
 
         if (FAILED(hr))
             return;
@@ -368,7 +368,7 @@ HRESULT oscilloscope_xy_t::CreateSignalGeometry(const audio_chunk & chunk, ComPt
     const uint32_t ChannelCount         = chunk.get_channel_count();
     const uint32_t AvailableChannelMask = chunk.get_channel_config();                           // Mask containing the channels in the audio chunk.
     const uint32_t ActiveChannelMask    = _GraphOptions->_ActiveChannelMask;                                // Mask containing the channels selected by the user.
-    const uint32_t PairedChannelMask    = analysis_t::ChannelPairs[(size_t) _GraphOptions->_ChannelPair];   // Mask containing the channels selected by the user as a channel pair.
+    const uint32_t PairedChannelMask    = audio_processor_t::ChannelPairs[(size_t) _GraphOptions->_ChannelPair];   // Mask containing the channels selected by the user as a channel pair.
 
     const uint32_t ChannelMask = AvailableChannelMask & ActiveChannelMask & PairedChannelMask;
 

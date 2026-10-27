@@ -22,7 +22,7 @@
 class graph_t : public element_t
 {
 public:
-    graph_t(state_t & state, render_context_t & renderContext) : element_t(state), _Analysis(state), _RenderContext(renderContext) { }
+    graph_t(state_t & state, render_context_t & renderContext) : element_t(state), _RenderContext(renderContext) { }
 
     virtual ~graph_t() = default;
 
@@ -71,7 +71,7 @@ private:
     void RenderDescription() noexcept;
 
 public:
-    analysis_t _Analysis;
+    std::unique_ptr<audio_processor_t> _Processor;
 
 private:
     render_context_t & _RenderContext;

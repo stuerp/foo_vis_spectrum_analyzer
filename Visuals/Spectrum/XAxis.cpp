@@ -14,14 +14,14 @@
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void x_axis_t::Configure(graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept
+void x_axis_t::Configure(graph_options_t * options, audio_processor_t * processor, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept
 {
-    _GraphOptions = graphOptions;
-    _Analysis     = analysis;
+    _GraphOptions = options;
+    _Processor    = processor;
 
     _Labels.clear();
 
-    const frequency_bands_t & fb = _Analysis->_FrequencyBands;
+    const frequency_bands_t & fb = _Processor->_FrequencyBands;
 
     if (fb.empty())
         return;
@@ -35,7 +35,7 @@ void x_axis_t::Configure(graph_options_t * graphOptions, analysis_t * analysis, 
     {
         WCHAR Text[32] = { };
 
-        switch (graphOptions->_XAxisMode)
+        switch (_GraphOptions->_XAxisMode)
         {
             case XAxisMode::None:
                 break;
@@ -49,9 +49,9 @@ void x_axis_t::Configure(graph_options_t * graphOptions, analysis_t * analysis, 
                     const double Frequency = fb[i].Center;
 
                     if (Frequency < 1000.)
-                        ::StringCchPrintfW(Text, _countof(Text), L"%.*f", graphOptions->_XAxisDecimals, Frequency);
+                        ::StringCchPrintfW(Text, _countof(Text), L"%.*f", _GraphOptions->_XAxisDecimals, Frequency);
                     else
-                        ::StringCchPrintfW(Text, _countof(Text), L"%.*fk", graphOptions->_XAxisDecimals, Frequency / 1000.);
+                        ::StringCchPrintfW(Text, _countof(Text), L"%.*fk", _GraphOptions->_XAxisDecimals, Frequency / 1000.);
 
                     label_t lb = { Text, Frequency, i };
 
@@ -67,9 +67,9 @@ void x_axis_t::Configure(graph_options_t * graphOptions, analysis_t * analysis, 
                 const auto AddLabel = [&](double frequency)
                 {
                     if (frequency < 1'000.)
-                        ::StringCchPrintfW(Text, _countof(Text), L"%.*f", graphOptions->_XAxisDecimals, frequency);
+                        ::StringCchPrintfW(Text, _countof(Text), L"%.*f", _GraphOptions->_XAxisDecimals, frequency);
                     else
-                        ::StringCchPrintfW(Text, _countof(Text), L"%.*fk", graphOptions->_XAxisDecimals, frequency / 1000.);
+                        ::StringCchPrintfW(Text, _countof(Text), L"%.*fk", _GraphOptions->_XAxisDecimals, frequency / 1000.);
 
                     label_t lb = { Text, frequency, 0 };
 
@@ -150,7 +150,7 @@ void x_axis_t::Configure(graph_options_t * graphOptions, analysis_t * analysis, 
     }
 
     // Associate labels that represent arbitrary frequencies with the nearest actual band. This keeps the grid line and text centered on that band.
-    if (graphOptions->_XAxisMode != XAxisMode::Bands)
+    if (_GraphOptions->_XAxisMode != XAxisMode::Bands)
     {
         for (label_t & Label : _Labels)
         {
@@ -364,7 +364,7 @@ void x_axis_t::Initialize() noexcept
             dx = std::min(((FLOAT) Iter.BandIndex + .5f) * BarWidth, SpectrumWidth);
         else
         {
-            const double Frequency = _Analysis->_FrequencyBands[Iter.BandIndex].Center;
+            const double Frequency = _Processor->_FrequencyBands[Iter.BandIndex].Center;
 
             dx = msc::Map(ScaleFrequency(Frequency, _State._ScalingFunction, _State._SkewFactor), MinScale, MaxScale, 0.f, SpectrumWidth);
         }

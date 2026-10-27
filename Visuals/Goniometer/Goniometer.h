@@ -18,7 +18,7 @@
 #include "Visualization.h"
 #include "GoniometerProcessor.h"
 
-namespace goniometer
+namespace Goniometer
 {
 
 class goniometer_t final : public visualization_t
@@ -42,7 +42,7 @@ public:
     void OnConfigurationChanged(ConfigurationChanges configurationChanges) noexcept override final;
 
     // visualization_t
-    void Configure(graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice = nullptr, ID3D11DeviceContext * d3dDeviceContext = nullptr) noexcept override final;
+    void Configure(graph_options_t * options, audio_processor_t * processor, bool isFirst, bool isLast, ID3D11Device * d3dDevice = nullptr, ID3D11DeviceContext * d3dDeviceContext = nullptr) noexcept override final;
 
 private:
     HRESULT CreateDeviceIndependentResources() noexcept;
@@ -63,6 +63,9 @@ private:
     HRESULT CreateStaticContent() noexcept;
 
     void Initialize() noexcept { }
+
+private:
+    audio_processor_t * _Processor;
 
     double _LowBand  { 0. }; // Hz
     double _HighBand { 0. }; // Hz

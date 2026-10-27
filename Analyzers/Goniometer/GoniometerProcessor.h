@@ -11,7 +11,7 @@
 #include <d2d1.h>
 #include <sdk/audio_chunk.h>
 
-namespace goniometer
+namespace Goniometer
 {
 
 struct point_t
@@ -33,6 +33,20 @@ public:
 
     virtual ~processor_t() = default;
 
+public:
+    void Initialize(state_t * state) noexcept
+    {
+        _State = state;
+    }
+
+    void Process(const audio_chunk & chunk, uint32_t selectedChannels, uint32_t pairedChannels, double loFreq, double hiFreq) noexcept;
+
+    void Reset() noexcept
+    {
+        _PointCount = 0;
+    }
+
+public:
     HRESULT SetColorMode(goniometer::ColorMode mode) noexcept
     {
         _ColorMode = mode;
@@ -84,18 +98,6 @@ public:
         _HighColor.a = (FLOAT) _HighOpacity;
 
         return S_OK;
-    }
-
-    void Initialize(state_t * state) noexcept
-    {
-        _State = state;
-    }
-
-    void Process(const audio_chunk & chunk, uint32_t selectedChannels, uint32_t pairedChannels, double loFreq, double hiFreq) noexcept;
-
-    void Reset() noexcept
-    {
-        _PointCount = 0;
     }
 
     double GetCorrelation() const noexcept

@@ -49,10 +49,10 @@ std::unique_ptr<visualization_t> visualization_t::Create(state_t & state) noexce
             return std::make_unique<oscilloscope_xy_t>(state);
 
         case VisualizationType::BitMeter:
-            return std::make_unique<bit_meter_t>(state);
+            return std::make_unique<BitMeter::bit_meter_t>(state);
 
         case VisualizationType::Goniometer:
-            return std::make_unique<goniometer::goniometer_t>(state);
+            return std::make_unique<Goniometer::goniometer_t>(state);
 
         case VisualizationType::EyeCandy:
             return std::make_unique<eye_candy_t>(state);

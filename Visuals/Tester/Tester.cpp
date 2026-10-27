@@ -21,10 +21,10 @@ tester_t::~tester_t()
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void tester_t::Configure(graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept
+void tester_t::Configure(graph_options_t * options, audio_processor_t * processor, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept
 {
-    _GraphOptions = graphOptions;
-    _Analysis = analysis;
+    _GraphOptions = options;
+    _Processor    = processor;
 
     Reset();
 
@@ -69,10 +69,10 @@ void tester_t::Render(ID2D1DeviceContext * deviceContext) noexcept
     {
         deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
-        const audio_sample * Frames = _Analysis->_Chunk.get_data();
+        const audio_sample * Frames = _Processor->_Chunk.get_data();
 
-        const size_t FrameCount   = _Analysis->_Chunk.get_sample_count();     // get_sample_count() actually returns the number of frames.
-        const size_t ChannelCount = _Analysis->_Chunk.get_channel_count();
+        const size_t FrameCount   = _Processor->_Chunk.get_sample_count();     // get_sample_count() actually returns the number of frames.
+        const size_t ChannelCount = _Processor->_Chunk.get_channel_count();
 
         const auto dx = _Size.width / (FLOAT) FrameCount;
         const auto h2 = _Size.height / 2.f;

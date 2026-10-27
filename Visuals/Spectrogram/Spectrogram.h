@@ -40,7 +40,7 @@ public:
     void OnConfigurationChanged(ConfigurationChanges configurationChanges) noexcept;
 
     // visualization_t
-    void Configure(graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice = nullptr, ID3D11DeviceContext * d3dDeviceContext = nullptr) noexcept override final;
+    void Configure(graph_options_t * options, audio_processor_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice = nullptr, ID3D11DeviceContext * d3dDeviceContext = nullptr) noexcept override final;
 
     const D2D1_RECT_F & GetClientRect() const noexcept { return _BitmapRect; }
 
@@ -83,6 +83,8 @@ private:
     }
 
 private:
+    audio_processor_t * _Processor;
+
     D2D1_RECT_F _BitmapRect { };
     D2D1_SIZE_F _BitmapSize { };
 

@@ -579,14 +579,14 @@ void uielement_t::UpdateState(ConfigurationChanges configurationChanges) noexcep
 
                     size_t i = 0;
 
-                    for (auto & GraphOptions : _RenderState._GraphOptions)
+                    for (auto & Options : _RenderState._GraphOptions)
                     {
                         auto * Graph = new graph_t(_RenderState, _RenderContext);
 
                         const bool IsFirst = !OverlapGraphs || (OverlapGraphs && (i == 0));
                         const bool IsLast  = !OverlapGraphs || (OverlapGraphs && (i == _RenderState._GraphOptions.size() - 1));
 
-                        Graph->Configure(&GraphOptions, IsFirst, IsLast);
+                        Graph->Configure(&Options, IsFirst, IsLast);
 
                         _Grid.push_back(Graph);
                         ++i;

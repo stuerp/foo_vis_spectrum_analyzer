@@ -1,5 +1,5 @@
 
-/** $VER: BitMeter.h (2026.10.10) P. Stuer - Implements a bit meter visualization. **/
+/** $VER: BitMeter.h (2026.10.27) P. Stuer - Implements a bit meter visualization. **/
 
 #pragma once
 
@@ -16,6 +16,10 @@
 #include <d2d1_2.h>
 
 #include "Visualization.h"
+#include "BitmeterProcessor.h"
+
+namespace BitMeter
+{
 
 class bit_meter_t final : public visualization_t
 {
@@ -38,7 +42,7 @@ public:
     void OnConfigurationChanged(ConfigurationChanges configurationChanges) noexcept override final;
 
     // visualization_t
-    void Configure(graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice = nullptr, ID3D11DeviceContext * d3dDeviceContext = nullptr) noexcept override final;
+    void Configure(graph_options_t * options, audio_processor_t * processor, bool isFirst, bool isLast, ID3D11Device * d3dDevice = nullptr, ID3D11DeviceContext * d3dDeviceContext = nullptr) noexcept override final;
 
 private:
     HRESULT CreateDeviceSpecificResources(_In_ ID2D1DeviceContext * deviceContext) noexcept;
@@ -55,6 +59,8 @@ private:
     void Initialize() noexcept;
 
 private:
+    processor_t * _Processor;
+
     size_t _MeasurementCount { 0 };
     size_t _BitCount { 0 };
 
@@ -84,3 +90,5 @@ private:
     static constexpr size_t ExponentBits =  8;
     #endif
 };
+
+}

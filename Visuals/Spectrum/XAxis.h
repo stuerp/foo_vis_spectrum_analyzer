@@ -37,7 +37,7 @@ public:
     void Reset() noexcept override final { }
 
     // visualization_t
-    void Configure(graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice = nullptr, ID3D11DeviceContext * d3dDeviceContext = nullptr) noexcept override final;
+    void Configure(graph_options_t * options, audio_processor_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice = nullptr, ID3D11DeviceContext * d3dDeviceContext = nullptr) noexcept override final;
 
     HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext, style_manager_t & styleManager) noexcept;
     void DeleteDeviceSpecificResources() noexcept;
@@ -57,6 +57,8 @@ private:
     void Initialize() noexcept;
 
 private:
+    audio_processor_t * _Processor;
+
     size_t _BandCount { 0 };
     double _LoFrequency { 0. };
     double _HiFrequency { 0. };

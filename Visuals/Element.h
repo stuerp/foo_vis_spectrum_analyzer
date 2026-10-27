@@ -44,7 +44,7 @@ protected:
 protected:
     state_t & _State;
     graph_options_t * _GraphOptions { nullptr };
-    analysis_t * _Analysis { nullptr };
+    std::unique_ptr<audio_processor_t> _Processor;
 
     bool _IsFirst = false;
     bool _IsLast  = false;

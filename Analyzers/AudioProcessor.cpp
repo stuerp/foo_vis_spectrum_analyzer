@@ -13,6 +13,9 @@
 #include "SWIFTAnalyzer.h"
 #include "AnalogStyleAnalyzer.h"
 
+#include "BitmeterProcessor.h"
+#include "GoniometerProcessor.h"
+
 #include "Support.h"
 
 #include <algorithm>
@@ -23,11 +26,41 @@
 #pragma hdrstop
 
 /// <summary>
+/// Creates an instance of the specified processor.
+/// </summary>
+std::unique_ptr<audio_processor_t> audio_processor_t::Create(state_t & state) noexcept
+{
+    switch (state._VisualizationType)
+    {
+        default:
+
+        case VisualizationType::Bars:
+        case VisualizationType::Curve:
+        case VisualizationType::RadialBars:
+        case VisualizationType::RadialCurve:
+        case VisualizationType::Spectrogram:
+        case VisualizationType::PeakMeter:
+        case VisualizationType::LevelMeter:
+        case VisualizationType::Oscilloscope:
+        case VisualizationType::EyeCandy:
+        case VisualizationType::Tester:
+        case VisualizationType::D3DTester:
+            return std::make_unique<audio_processor_t>(state);
+
+        case VisualizationType::BitMeter:
+            return std::make_unique<BitMeter::processor_t>(state);
+
+        case VisualizationType::Goniometer:
+            return { };//std::make_unique<Goniometer::processor_t>(state);
+    }
+}
+
+/// <summary>
 /// Configures this instance.
 /// </summary>
-void analysis_t::Configure(const graph_options_t * graphOptions) noexcept
+void audio_processor_t::Configure(const graph_options_t * options) noexcept
 {
-    _GraphOptions = graphOptions;
+    _GraphOptions = options;
 
     switch (_State._FrequencyDistribution)
     {
@@ -60,7 +93,7 @@ void analysis_t::Configure(const graph_options_t * graphOptions) noexcept
 /// <summary>
 /// Resets this instance.
 /// </summary>
-void analysis_t::Reset() noexcept
+void audio_processor_t::Reset() noexcept
 {
     _SampleRate    = 0;
     _ChannelCount  = 0;
@@ -97,20 +130,13 @@ void analysis_t::Reset() noexcept
         _Phase   = 0.5;
     }
 
-    // Bit Meter
-    {
-        _BitActiveChannelMask = 0;
-
-        InitializeBitMeasurements((uint32_t) Channels::ConfigStereo);
-    }
-
     _Chrono.Reset();
 }
 
 /// <summary>
 /// Processes an audio chunk.
 /// </summary>
-void analysis_t::Process(const audio_chunk & chunk) noexcept
+void audio_processor_t::Process(const audio_chunk & chunk) noexcept
 {
     if ((_SampleRate != chunk.get_sample_rate()) || (_ChannelCount != chunk.get_channel_count()) || (_ChannelConfig != chunk.get_channel_config()))
         Reset();
@@ -153,12 +179,6 @@ void analysis_t::Process(const audio_chunk & chunk) noexcept
             break;
         }
 
-        case VisualizationType::BitMeter:
-        {
-            BitMeterProcessing(chunk);
-            break;
-        }
-
         case VisualizationType::EyeCandy:
         {
             _Chunk.copy(chunk, true);
@@ -182,7 +202,7 @@ void analysis_t::Process(const audio_chunk & chunk) noexcept
 /// <summary>
 /// Resets the FFT peaks.
 /// </summary>
-void analysis_t::ResetFFTPeaks() noexcept
+void audio_processor_t::ResetFFTPeaks() noexcept
 {
     for (auto & fb : _FrequencyBands)
     {
@@ -195,7 +215,7 @@ void analysis_t::ResetFFTPeaks() noexcept
 /// <summary>
 /// Resets the peak measurements.
 /// </summary>
-void analysis_t::ResetPeakMeasurements() noexcept
+void audio_processor_t::ResetPeakMeasurements() noexcept
 {
     for (peak_measurement_t & m : _PeakMeasurements)
     {
@@ -207,7 +227,7 @@ void analysis_t::ResetPeakMeasurements() noexcept
 /// <summary>
 /// Resets the RMS window dependent values.
 /// </summary>
-void analysis_t::ResetRMSDependentValues() noexcept
+void audio_processor_t::ResetRMSDependentValues() noexcept
 {
     _RMSTimeElapsed = 0.;
     _RMSFrameCount = 0;
@@ -222,7 +242,7 @@ void analysis_t::ResetRMSDependentValues() noexcept
 /// <summary>
 /// Updates the peak values.
 /// </summary>
-void analysis_t::UpdatePeakValues(bool isStopped) noexcept
+void audio_processor_t::UpdatePeakValues(bool isStopped) noexcept
 {
     assert(_GraphOptions);
 
@@ -467,7 +487,7 @@ void analysis_t::UpdatePeakValues(bool isStopped) noexcept
 /// <summary>
 /// Generates frequency bands using a linear distribution.
 /// </summary>
-void analysis_t::GenerateLinearFrequencyBands()
+void audio_processor_t::GenerateLinearFrequencyBands()
 {
     assert(_State._BandCount != 0);
 
@@ -529,7 +549,7 @@ static inline double NoteToFrequency(int note) noexcept
 /// <summary>
 /// Generates frequency bands based on the frequencies of musical notes.
 /// </summary>
-void analysis_t::GenerateOctaveFrequencyBands()
+void audio_processor_t::GenerateOctaveFrequencyBands()
 {
     assert(_State._TuningPitch > 0.); assert(_State._BandsPerOctave != 0);
 
@@ -609,7 +629,7 @@ static inline double CalcBlendedLogLinearFrequency(double minFreq, double maxFre
 /// <summary>
 /// Generates frequency bands like AveePlayer.
 /// </summary>
-void analysis_t::GenerateAveePlayerFrequencyBands()
+void audio_processor_t::GenerateAveePlayerFrequencyBands()
 {
     assert(_State._BandCount > 1); assert(0. <= _State._Bandwidth && _State._Bandwidth <= 64.);
 
@@ -660,7 +680,7 @@ static inline double MelToHz(const double mel) noexcept
 /// Generates triangular frequency bands spaced uniformly on the Mel scale.
 /// </summary>
 /// <ref>https://deepwiki.com/dspavankumar/compute-mfcc/2.4.2-mel-filterbank-construction</ref>
-void analysis_t::GenerateMelFrequencyBands()
+void audio_processor_t::GenerateMelFrequencyBands()
 {
     // Generate the frequencies for each of the Mel points.
     std::vector<double> Frequencies(_State._MelBandCount + 2);
@@ -708,7 +728,7 @@ void analysis_t::GenerateMelFrequencyBands()
 /// <summary>
 /// Generates frequency bands whose center frequencies are aligned to decade-dependent frequency intervals.
 /// </summary>
-void analysis_t::GenerateDecadeAlignedFrequencyBands()
+void audio_processor_t::GenerateDecadeAlignedFrequencyBands()
 {
     assert(_State._LoFrequency <= _State._HiFrequency);
 
@@ -842,7 +862,7 @@ void analysis_t::GenerateDecadeAlignedFrequencyBands()
 
 #pragma region Spectrum
 
-void analysis_t::SpectrumProcessing(const audio_chunk & chunk) noexcept
+void audio_processor_t::SpectrumProcessing(const audio_chunk & chunk) noexcept
 {
     if (chunk.is_empty())
         return;
@@ -897,7 +917,7 @@ void analysis_t::SpectrumProcessing(const audio_chunk & chunk) noexcept
 /// <summary>
 /// Creates and initializes the analyze.
 /// </summary>
-void analysis_t::CreateAnalyzer() noexcept
+void audio_processor_t::CreateAnalyzer() noexcept
 {
     if (!_WindowFunction)
         _WindowFunction = window_function_t::Create(_State._WindowFunction, _State._WindowParameter, _State._WindowSkew, _State._Truncate);
@@ -960,7 +980,7 @@ void analysis_t::CreateAnalyzer() noexcept
 /// <summary>
 /// Applies acoustic weighting to the frequencies of the spectrum.
 /// </summary>
-void analysis_t::ApplyAcousticWeighting() noexcept
+void audio_processor_t::ApplyAcousticWeighting() noexcept
 {
     assert((_SampleRate != 0) && (_State._BinCount != 0));
 
@@ -986,7 +1006,7 @@ void analysis_t::ApplyAcousticWeighting() noexcept
 /// <summary>
 /// Gets the weight that needs to be applied to the specified frequency.
 /// </summary>
-double analysis_t::GetWeight(double f) const noexcept
+double audio_processor_t::GetWeight(double f) const noexcept
 {
     const double a = GetFrequencyTilt (f, _State._FrequencyTilt, _State._FrequencyTiltPivot);
     const double b = Equalize         (f, _State._EqualizationAmount, _State._EqualizationDepth, _State._EqualizationFreqScale);
@@ -1001,7 +1021,7 @@ double analysis_t::GetWeight(double f) const noexcept
 /// <summary>
 /// Gets the frequency tilt.
 /// </summary>
-inline double analysis_t::GetFrequencyTilt(double f, double amount, double offset) noexcept
+inline double audio_processor_t::GetFrequencyTilt(double f, double amount, double offset) noexcept
 {
     assert((f > 0.) && (offset > 0.));
 
@@ -1011,7 +1031,7 @@ inline double analysis_t::GetFrequencyTilt(double f, double amount, double offse
 /// <summary>
 /// Equalizes the weight.
 /// </summary>
-inline double analysis_t::Equalize(double f, double amount, double depth, double offset) noexcept
+inline double audio_processor_t::Equalize(double f, double amount, double depth, double offset) noexcept
 {
     const double pos = f * depth / offset;
     const double bias = std::pow(1.0025, -pos) * 0.04;
@@ -1022,7 +1042,7 @@ inline double analysis_t::Equalize(double f, double amount, double depth, double
 /// <summary>
 /// Gets the weight for the specified frequency.
 /// </summary>
-inline double analysis_t::GetAcousticWeight(double f, WeightingType weightType, double weightAmount) noexcept
+inline double audio_processor_t::GetAcousticWeight(double f, WeightingType weightType, double weightAmount) noexcept
 {
     constexpr double F1 =     20.6;
     constexpr double F2 =    107.7;
@@ -1085,7 +1105,7 @@ inline double analysis_t::GetAcousticWeight(double f, WeightingType weightType, 
 /// <summary>
 /// Normalizes the raw amplitude for display without smoothing. Fully responsive but potentially flickery.
 /// </summary>
-void analysis_t::Normalize() noexcept
+void audio_processor_t::Normalize() noexcept
 {
     for (frequency_band_t & fb : _FrequencyBands)
     {
@@ -1100,7 +1120,7 @@ void analysis_t::Normalize() noexcept
 /// <summary>
 /// Normalizes the amplitude for display with average smoothing. Gradual attack and decay of the amplitude.
 /// </summary>
-void analysis_t::NormalizeWithAverageSmoothing(double strength) noexcept
+void audio_processor_t::NormalizeWithAverageSmoothing(double strength) noexcept
 {
     for (frequency_band_t & fb : _FrequencyBands)
     {
@@ -1113,7 +1133,7 @@ void analysis_t::NormalizeWithAverageSmoothing(double strength) noexcept
 /// <summary>
 /// Normalizes the amplitude for display with peak smoothing. Instant attack with exponential peak and gradual decay of the amplitude. Preserves peaks and transients.
 /// </summary>
-void analysis_t::NormalizeWithPeakSmoothing(double strength) noexcept
+void audio_processor_t::NormalizeWithPeakSmoothing(double strength) noexcept
 {
     for (frequency_band_t & fb : _FrequencyBands)
     {
@@ -1132,7 +1152,7 @@ void analysis_t::NormalizeWithPeakSmoothing(double strength) noexcept
 /// <summary>
 /// Process the chunk data for the peak and the level meter.
 /// </summary>
-void analysis_t::MeterProcessing(const audio_chunk & chunk) noexcept
+void audio_processor_t::MeterProcessing(const audio_chunk & chunk) noexcept
 {
     if (chunk.is_empty())
         return;
@@ -1303,7 +1323,7 @@ void analysis_t::MeterProcessing(const audio_chunk & chunk) noexcept
 /// <summary>
 /// Initializes the peak measurements before processing an audio chunk.
 /// </summary>
-void analysis_t::InitializePeakMeasurements(uint32_t activeChannelMask) noexcept
+void audio_processor_t::InitializePeakMeasurements(uint32_t activeChannelMask) noexcept
 {
     if (_PeakActiveChannelMask != activeChannelMask)
     {
@@ -1347,7 +1367,7 @@ void analysis_t::InitializePeakMeasurements(uint32_t activeChannelMask) noexcept
 /// <summary>
 /// Process the chunk data for the oscilloscope / goniometer.
 /// </summary>
-void analysis_t::OscilloscopeProcessing(const audio_chunk & chunk) noexcept
+void audio_processor_t::OscilloscopeProcessing(const audio_chunk & chunk) noexcept
 {
     if (_State._Downmix)
     {
@@ -1361,129 +1381,7 @@ void analysis_t::OscilloscopeProcessing(const audio_chunk & chunk) noexcept
 
 #pragma endregion
 
-#pragma region Bit Meter
-
-/// <summary>
-/// Process the chunk data for the bit meter.
-/// </summary>
-void analysis_t::BitMeterProcessing(const audio_chunk & chunk) noexcept
-{
-    if (chunk.is_empty())
-        return;
-
-    const audio_sample * Frames = chunk.get_data();
-    const size_t FrameCount = chunk.get_sample_count(); // get_sample_count() actually returns the number of frames.
-
-    InitializeBitMeasurements(_ChannelMask);
-
-    const auto MaxInteger = (audio_sample) (1LL << (_State._BitsPerInteger - 1));
-
-    const audio_sample * CurrentFrame = Frames;
-
-    for (size_t FrameIndex = 0; FrameIndex < FrameCount; ++FrameIndex)
-    {
-        const audio_sample * CurrentSample = CurrentFrame;
-
-        size_t i = 0;
-
-        uint32_t AvailableChannelMask = chunk.get_channel_config();         // Mask containing the channels in the audio chunk.
-        uint32_t ActiveChannelMask    = _GraphOptions->_ActiveChannelMask;  // Mask containing the channels selected by the user for processing.
-
-        while ((AvailableChannelMask & ActiveChannelMask) != 0)
-        {
-            if (AvailableChannelMask & 1)
-            {
-                if ((ActiveChannelMask & 1) && (i < _BitMeasurements.size()))
-                {
-                    uint64_t SampleBits;
-
-                    if (_State._BitMeterMode == BitMeterMode::FloatingPoint)
-                    {
-                        using sample_bits_t = std::conditional_t<sizeof(audio_sample) == 8, uint64_t, uint32_t>;
-
-                        // Test pattern: 64-bit: 0b1101010101011001111111111111111111111111111111111111111111111001 / 32-bit: 0b11010101010000000000000000000001
-                        SampleBits = std::bit_cast<sample_bits_t>(*CurrentSample);
-                    }
-                    else
-                        SampleBits = (uint64_t) std::abs(*CurrentSample * MaxInteger);
-
-                    for (auto & BitCount : _BitMeasurements[i].BitCounts)
-                    {
-                        if (SampleBits == 0)
-                            break;
-
-                        if (SampleBits & 1)
-                            ++BitCount;
-
-                        SampleBits >>= 1;
-                    }
-
-                    ++i;
-                }
-
-                ++CurrentSample;
-            }
-
-            AvailableChannelMask >>= 1;
-            ActiveChannelMask    >>= 1;
-        }
-
-        CurrentFrame += _ChannelCount;
-    }
-
-    // Scale the bit counters to range [0, 1].
-    for (auto & m : _BitMeasurements)
-    {
-        for (auto & BitCount : m.BitCounts)
-            BitCount /= (double) FrameCount;
-
-        // Reverse the array to get: Index 0 = Sign bit, Index 1 - 11 = Exponent bits, Index 12 - 63 = Mantissa bits
-        std::reverse(m.BitCounts.begin(), m.BitCounts.end());
-    }
-}
-
-/// <summary>
-/// Initializes the bit measurements before processing an audio chunk.
-/// </summary>
-void analysis_t::InitializeBitMeasurements(uint32_t activeChannelMask) noexcept
-{
-    if (_BitActiveChannelMask != activeChannelMask)
-    {
-        // The chunk configuration has changed. Recreate the measurements, one per selected channel.
-        static const WCHAR * ChannelNames[] =
-        {
-            L"FL", L"FR", L"FC",
-            L"LFE",
-            L"BL", L"BR", 
-            L"FCL", L"FCR",
-            L"BC", L"SL", L"SR", L"TC",
-            L"TFL", L"TFC", L"TFR", L"TBL", L"TBC", L"TBR",
-        };
-
-        const size_t n = (size_t) ((_State._BitMeterMode == BitMeterMode::FloatingPoint) ? audio_sample_size : _State._BitsPerInteger);
-
-        size_t i = 0;
-
-        _BitMeasurements.clear();
-
-        for (uint32_t SelectedChannels = activeChannelMask; (SelectedChannels != 0) && (i < _countof(ChannelNames)); SelectedChannels >>= 1, ++i)
-        {
-            if (SelectedChannels & 1)
-                _BitMeasurements.push_back({ (Channels) (1 << i), ChannelNames[i], n });
-        }
-
-        _BitActiveChannelMask = activeChannelMask;
-    }
-    else
-    {
-        for (auto & m : _BitMeasurements)
-            std::fill(m.BitCounts.begin(), m.BitCounts.end(), 0.);
-    }
-}
-
-#pragma endregion
-
-const uint32_t analysis_t::ChannelPairs[6] =
+const uint32_t audio_processor_t::ChannelPairs[6] =
 {
     (uint32_t) Channels::FrontLeft       | (uint32_t) Channels::FrontRight,
     (uint32_t) Channels::BackLeft        | (uint32_t) Channels::BackRight,

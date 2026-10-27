@@ -1,11 +1,14 @@
 
-/** $VER: BitMeter.cpp (2026.10.10) P. Stuer - Implements a bit meter visualization. **/
+/** $VER: BitMeter.cpp (2026.10.27) P. Stuer - Implements a bit meter visualization. **/
 
 #include <pch.h>
 
 #include "BitMeter.h"
 
 #pragma hdrstop
+
+namespace BitMeter
+{
 
 /// <summary>
 /// Destroys this instance.
@@ -18,10 +21,10 @@ bit_meter_t::~bit_meter_t() noexcept
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void bit_meter_t::Configure(graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept
+void bit_meter_t::Configure(graph_options_t * options, audio_processor_t * processor, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept
 {
-    _GraphOptions = graphOptions;
-    _Analysis = analysis;
+    _GraphOptions = options;
+    _Processor    = (processor_t *) processor;
 
     _MeasurementCount = 0;
 
@@ -77,58 +80,6 @@ void bit_meter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
     // Draw the measurements for each selected channel.
     deviceContext->SetAntialiasMode( D2D1_ANTIALIAS_MODE_ALIASED); // Required by FillOpacityMask() and results in crispier graphics.
 
-#ifdef v1
-    D2D1_RECT_F r = { .bottom = ChannelHeight };
-
-    for (const auto & Channel : _State._ChannelOrder)
-    {
-        auto it = std::find_if(_Analysis->_BitMeasurements.begin(), _Analysis->_BitMeasurements.end(), [Channel](const auto & m) { return m.Channel == Channel; });
-
-        if (it == _Analysis->_BitMeasurements.end())
-            continue;
-
-        const auto & m = *it;
-
-        {
-            const D2D1_MATRIX_3X2_F Translate = D2D1::Matrix3x2F::Translation(_Rect.left + YAxisWidth + XOffset, _Rect.top + YOffset);
-
-            deviceContext->SetTransform(Translate);
-
-            r.left = 0.f;
-
-            // Draw the bit bar counts for the current channel.
-            size_t BitNumber = 0;
-
-            for (const auto & BitCount : m.BitCounts)
-            {
-                r.right = r.left + BarWidth - 1.f;
-
-                if (!_State._IsPaused || (_State._IsPaused && _State._VisualizeDuringPause))
-                {
-                    style_t * Style = _Styles[BitNumber];
-
-                    if (Style->IsEnabled())
-                    {
-                        if (_State._OpacityMode)
-                            Style->_Brush->SetOpacity((FLOAT) BitCount);
-                        else
-                        {
-                            Style->_Brush->SetOpacity(Style->_Opacity); // Always set the opacity in case we're returning from opacity mode.
-                            r.top = ChannelHeight - ((FLOAT) BitCount * ChannelHeight);
-                        }
-
-                        deviceContext->FillRectangle(r, Style->_Brush.Get());
-                    }
-                }
-
-                r.left = r.right + 1.f;
-                ++BitNumber;
-            }
-
-            YOffset += ChannelHeight + XAxisHeight;
-        }
-    }
-#else
     const bool Visualize = !_State._IsPaused || _State._VisualizeDuringPause;
     const FLOAT TranslationX = _Rect.left + YAxisWidth + XOffset;
     const FLOAT ChannelOffset = ChannelHeight + XAxisHeight;
@@ -141,9 +92,9 @@ void bit_meter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 
     for (const auto & Channel : _State._ChannelOrder)
     {
-        const auto it = std::find_if(_Analysis->_BitMeasurements.begin(), _Analysis->_BitMeasurements.end(), [Channel](const auto & m){ return m.Channel == Channel; });
+        const auto it = std::find_if(_Processor->_BitMeasurements.begin(), _Processor->_BitMeasurements.end(), [Channel](const auto & m){ return m.Channel == Channel; });
 
-        if (it == _Analysis->_BitMeasurements.end())
+        if (it == _Processor->_BitMeasurements.end())
             continue;
 
         {
@@ -188,7 +139,6 @@ void bit_meter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
             YOffset += ChannelOffset;
         }
     }
-#endif
 
     deviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
 }
@@ -213,9 +163,9 @@ HRESULT bit_meter_t::CreateDeviceSpecificResources(_In_ ID2D1DeviceContext * dev
         (void) deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), _DebugBrush.GetAddressOf());
 #endif
 
-    if (_MeasurementCount != _Analysis->_BitMeasurements.size())
+    if (_MeasurementCount != _Processor->_BitMeasurements.size())
     {
-        _MeasurementCount = _Analysis->_BitMeasurements.size();
+        _MeasurementCount = _Processor->_BitMeasurements.size();
 
         _State._SizeHasChanged = true;
         _State._ColorsHaveChanged = true;
@@ -444,9 +394,9 @@ HRESULT bit_meter_t::CreateStaticContentCommandList() noexcept
 
     for (const auto & Channel : _State._ChannelOrder)
     {
-        const auto it = std::find_if(_Analysis->_BitMeasurements.begin(), _Analysis->_BitMeasurements.end(), [Channel](const auto & m){ return m.Channel == Channel; });
+        const auto it = std::find_if(_Processor->_BitMeasurements.begin(), _Processor->_BitMeasurements.end(), [Channel](const auto & m){ return m.Channel == Channel; });
 
-        if (it == _Analysis->_BitMeasurements.end())
+        if (it == _Processor->_BitMeasurements.end())
             continue;
 
         const auto & m = *it;
@@ -538,4 +488,6 @@ void bit_meter_t::OnConfigurationChanged(ConfigurationChanges configurationChang
         _StaticContentCommandList.Reset();
 
     _State._SizeHasChanged = true;
+}
+
 }

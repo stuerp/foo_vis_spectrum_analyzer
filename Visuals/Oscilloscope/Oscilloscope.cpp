@@ -34,10 +34,10 @@ void oscilloscope_t::Move(const D2D1_RECT_F & rect) noexcept
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void oscilloscope_t::Configure(graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept
+void oscilloscope_t::Configure(graph_options_t * options, audio_processor_t * processor, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept
 {
-    _GraphOptions = graphOptions;
-    _Analysis = analysis;
+    _GraphOptions = options;
+    _Processor = processor;
 
     _SquareBitmaps = false;
 
@@ -78,14 +78,14 @@ void oscilloscope_t::Configure(graph_options_t * graphOptions, analysis_t * anal
 void oscilloscope_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 {
     {
-        const size_t FrameCount     = _Analysis->_Chunk.get_sample_count();     // get_sample_count() actually returns the number of frames.
-        const uint32_t ChannelCount = _Analysis->_Chunk.get_channel_count();
+        const size_t FrameCount     = _Processor->_Chunk.get_sample_count();     // get_sample_count() actually returns the number of frames.
+        const uint32_t ChannelCount = _Processor->_Chunk.get_channel_count();
 
         // Bail out if no audio is playing. We need the channel count and configuration to draw the axes.
         if ((FrameCount == 0) || (ChannelCount == 0))
             return;
 
-        if (_GraphOptions->HasXAxis() && (_ChunkDuration != _Analysis->_Chunk.get_duration()))
+        if (_GraphOptions->HasXAxis() && (_ChunkDuration != _Processor->_Chunk.get_duration()))
         {
             _StaticContext.Reset();
             _AxesCount = 0;
@@ -123,9 +123,9 @@ void oscilloscope_t::Render(ID2D1DeviceContext * deviceContext) noexcept
         {
             audio_chunk_impl DstChunk;
 
-            const double Ratio = (double) _Analysis->_Chunk.get_sample_count() / (double) SignalSize.width;
+            const double Ratio = (double) _Processor->_Chunk.get_sample_count() / (double) SignalSize.width;
 
-            _Downsampler.Process(_Analysis->_Chunk, DstChunk, Ratio);
+            _Downsampler.Process(_Processor->_Chunk, DstChunk, Ratio);
 
             hr = CreateSignalGeometry(DstChunk, SignalSize, Geometry);
 
@@ -276,7 +276,7 @@ HRESULT oscilloscope_t::CreateDeviceSpecificResources(ID2D1DeviceContext * devic
             return hr;
     }
 
-    const uint32_t AxesCount = (size_t) _State._Downmix ? 1u : std::popcount(_Analysis->_Chunk.get_channel_config() & _GraphOptions->_ActiveChannelMask);
+    const uint32_t AxesCount = (size_t) _State._Downmix ? 1u : std::popcount(_Processor->_Chunk.get_channel_config() & _GraphOptions->_ActiveChannelMask);
 
     if ((_StaticContext == nullptr) || (_AxesCount != AxesCount))
         hr = CreateStaticContent(AxesCount);
@@ -530,7 +530,7 @@ HRESULT oscilloscope_t::CreateStaticContent(uint32_t axesCount) noexcept
 
         D2D1_RECT_F TextRect = { 0.f, 0.f, x2, 0.f };
 
-        _ChunkDuration = _Analysis->_Chunk.get_duration();
+        _ChunkDuration = _Processor->_Chunk.get_duration();
 
         const int dt = (int) (_ChunkDuration * 100.); // Convert to 10-milliseconds units
 

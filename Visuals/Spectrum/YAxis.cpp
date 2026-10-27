@@ -12,12 +12,12 @@
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void y_axis_t::Configure(graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept
+void y_axis_t::Configure(graph_options_t * options, audio_processor_t * processor, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept
 {
-    _GraphOptions = graphOptions;
-    _Analysis = analysis;
+    _GraphOptions = options;
+    _Processor = processor;
 
-    _FlipVertically = graphOptions->_FlipVertically;
+    _FlipVertically = _GraphOptions->_FlipVertically;
 
     _Labels.clear();
 

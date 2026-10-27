@@ -18,10 +18,10 @@ peak_meter_t::~peak_meter_t() noexcept
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void peak_meter_t::Configure(graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept
+void peak_meter_t::Configure(graph_options_t * options, audio_processor_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept
 {
-    _GraphOptions = graphOptions;
-    _Analysis = analysis;
+    _GraphOptions = options;
+    _Processor    = analysis;
 
     Reset();
 
@@ -74,7 +74,7 @@ HRESULT peak_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceC
         (void) deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), _DebugBrush.GetAddressOf());
 #endif
 
-    if (_BarCount != _Analysis->_PeakMeasurements.size())
+    if (_BarCount != _Processor->_PeakMeasurements.size())
         _State._SizeHasChanged = true;
 
     if (_State._ColorsHaveChanged || _State._SizeHasChanged)
@@ -130,7 +130,7 @@ HRESULT peak_meter_t::CreateSizeDependentResources(ID2D1DeviceContext * deviceCo
             return hr;
     }
 
-    if ((_BarCount != _Analysis->_PeakMeasurements.size()) || (_RenderedChannelMask != _Analysis->_PeakActiveChannelMask))
+    if ((_BarCount != _Processor->_PeakMeasurements.size()) || (_RenderedChannelMask != _Processor->_PeakActiveChannelMask))
     {
         DeleteParts();
 
@@ -138,7 +138,7 @@ HRESULT peak_meter_t::CreateSizeDependentResources(ID2D1DeviceContext * deviceCo
 
         MeasureParts(deviceContext);
 
-        _RenderedChannelMask = _Analysis->_PeakActiveChannelMask;
+        _RenderedChannelMask = _Processor->_PeakActiveChannelMask;
     }
 
     return S_OK;
@@ -337,12 +337,12 @@ void peak_meter_t::CreateParts() noexcept
 
         const auto AddMeter = [this, &IsFirstBar](const auto & channel)
         {
-            const auto Measurement = std::find_if(_Analysis->_PeakMeasurements.cbegin(), _Analysis->_PeakMeasurements.cend(), [channel](const peak_measurement_t & item)
+            const auto Measurement = std::find_if(_Processor->_PeakMeasurements.cbegin(), _Processor->_PeakMeasurements.cend(), [channel](const peak_measurement_t & item)
             {
                 return item.Channel == channel;
             });
 
-            if (Measurement != _Analysis->_PeakMeasurements.cend())
+            if (Measurement != _Processor->_PeakMeasurements.cend())
             {
                 if (_State._HasCenterScale && !IsFirstBar)
                     _Parts.push_back(std::make_unique<scale_t>(_State, _GraphOptions, DWRITE_TEXT_ALIGNMENT_CENTER, DWRITE_PARAGRAPH_ALIGNMENT_CENTER));
@@ -364,7 +364,7 @@ void peak_meter_t::CreateParts() noexcept
             std::for_each(ChannelOrder.cbegin(), ChannelOrder.cend(), AddMeter);
         }
 
-        _BarCount = _Analysis->_PeakMeasurements.size();
+        _BarCount = _Processor->_PeakMeasurements.size();
     }
 
     if (_GraphOptions->_YAxisRight)

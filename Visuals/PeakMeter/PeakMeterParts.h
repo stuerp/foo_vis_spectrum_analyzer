@@ -26,9 +26,9 @@
 class part_t
 {
 public:
-    part_t(const state_t & state, const graph_options_t * settings) noexcept : _State(state)
+    part_t(const state_t & state, const graph_options_t * options) noexcept : _State(state)
     {
-        _GraphOptions = settings;
+        _GraphOptions = options;
     }
 
     virtual ~part_t() = default;

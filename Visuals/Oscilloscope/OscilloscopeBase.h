@@ -40,6 +40,8 @@ protected:
     static size_t FindZeroCrossing(const audio_sample * frames, size_t frameCount, uint32_t channelCount) noexcept;
 
 protected:
+    audio_processor_t * _Processor;
+
     size_t _PrevBitmapIndex = 1; // Start drawing in bitmap 0.
 
     bool _SquareBitmaps = false;

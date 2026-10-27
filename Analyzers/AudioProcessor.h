@@ -65,38 +65,25 @@ struct peak_measurement_t : measurement_t
 };
 
 /// <summary>
-/// Represents a bit meter measurement of one channel.
-/// </summary>
-struct bit_measurement_t : measurement_t
-{
-    bit_measurement_t(Channels channel, const WCHAR * channelName, size_t bitCount) noexcept : measurement_t(channel, channelName)
-    {
-        BitCounts.resize(bitCount, 0.);
-    }
-
-    std::vector<double> BitCounts; // Occurrance count of each bit
-};
-
-/// <summary>
 /// Represents the analysis of the sample data.
 /// </summary>
-class analysis_t
+class audio_processor_t
 {
 public:
-    analysis_t(state_t & state) noexcept : _State(state), _SampleRate(), _ChannelCount(), _ChannelConfig(), _RMSTimeElapsed(), _RMSFrameCount(), _Left(), _Right(), _Mid(), _Side(), _Balance(0.5), _Phase(0.5) { };
+    audio_processor_t(state_t & state) noexcept : _State(state), _SampleRate(), _ChannelCount(), _ChannelConfig(), _RMSTimeElapsed(), _RMSFrameCount(), _Left(), _Right(), _Mid(), _Side(), _Balance(0.5), _Phase(0.5) { };
 
-    analysis_t(const analysis_t &) = delete;
-    analysis_t(analysis_t &&) = delete;
+    audio_processor_t(const audio_processor_t &) = delete;
+    audio_processor_t(audio_processor_t &&) = delete;
 
-    analysis_t & operator=(const analysis_t &) = delete;
-    analysis_t & operator=(analysis_t &&) = delete;
+    audio_processor_t & operator=(const audio_processor_t &) = delete;
+    audio_processor_t & operator=(audio_processor_t &&) = delete;
 
-    ~analysis_t() noexcept { Reset(); };
+    virtual ~audio_processor_t() noexcept { Reset(); };
 
-    void Configure(const graph_options_t * settings) noexcept;
-    void Process(const audio_chunk & chunk) noexcept;
+    virtual void Configure(const graph_options_t * options) noexcept;
+    virtual void Process(const audio_chunk & chunk) noexcept;
 
-    void Reset() noexcept;
+    virtual void Reset() noexcept;
 
     void ResetFFTPeaks() noexcept;
     void ResetPeakMeasurements() noexcept;
@@ -105,6 +92,8 @@ public:
     void UpdatePeakValues(bool isStopped) noexcept;
 
     static double GetAcousticWeight(double x, WeightingType weightingType, double weightAmount) noexcept;
+
+    static std::unique_ptr<audio_processor_t> Create(state_t & state) noexcept;
 
 private:
     void CreateAnalyzer() noexcept;
@@ -116,7 +105,6 @@ private:
     void GenerateOctaveFrequencyBands();
     void GenerateAveePlayerFrequencyBands();
     void GenerateMelFrequencyBands();
-    void GenerateLogFrequencyBands();
     void GenerateDecadeAlignedFrequencyBands();
 
     void ApplyAcousticWeighting() noexcept;
@@ -137,11 +125,6 @@ private:
 
     // Oscilloscope / Goniometer
     void OscilloscopeProcessing(const audio_chunk & chunk) noexcept;
-
-    // Bit Meter
-    void BitMeterProcessing(const audio_chunk & chunk) noexcept;
-
-    void InitializeBitMeasurements(uint32_t channelMask) noexcept;
 
     double NormalizeValue(double amplitude) const noexcept
     {
@@ -207,10 +190,6 @@ public:
 
     double _Balance;        // [0, 1], 0.5 = Center
     double _Phase;          // [0, 1], 0.5 = Center
-
-    // Bit Meter
-    uint32_t _BitActiveChannelMask;
-    std::vector<bit_measurement_t> _BitMeasurements;
 
     static const uint32_t ChannelPairs[6];
 

@@ -22,10 +22,10 @@ spectrogram_t::~spectrogram_t()
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void spectrogram_t::Configure(graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept
+void spectrogram_t::Configure(graph_options_t * options, audio_processor_t * processor, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept
 {
-    _GraphOptions = graphOptions;
-    _Analysis = analysis;
+    _GraphOptions = options;
+    _Processor = processor;
 
     Reset();
 
@@ -365,7 +365,7 @@ void spectrogram_t::RenderFreqAxis(ID2D1DeviceContext * deviceContext, bool left
 /// </summary>
 bool spectrogram_t::RenderSpectrum(ID2D1BitmapRenderTarget * renderTarget) noexcept
 {
-    if (_Analysis->_NyquistFrequency == 0.f)
+    if (_Processor->_NyquistFrequency == 0.f)
         return false;
 
     const bool IsHorizontalSpectrogram = _State._IsHorizontalSpectrogram;
@@ -376,7 +376,7 @@ bool spectrogram_t::RenderSpectrum(ID2D1BitmapRenderTarget * renderTarget) noexc
 
     const FLOAT SpectrumSize = IsHorizontalSpectrogram ? _BitmapSize.height : _BitmapSize.width;
 
-    const auto Bands = (SpectrumSize < (FLOAT) _Analysis->_FrequencyBands.size()) ? ResampleSpectrum(_Analysis->_FrequencyBands, (size_t) SpectrumSize) : _Analysis->_FrequencyBands;
+    const auto Bands = (SpectrumSize < (FLOAT) _Processor->_FrequencyBands.size()) ? ResampleSpectrum(_Processor->_FrequencyBands, (size_t) SpectrumSize) : _Processor->_FrequencyBands;
 
     if (Bands.empty())
         return false;
@@ -398,7 +398,7 @@ bool spectrogram_t::RenderSpectrum(ID2D1BitmapRenderTarget * renderTarget) noexc
 
             for (const auto & fb : Bands)
             {
-                if ((fb.Low >= _Analysis->_NyquistFrequency) && SuppressMirrorImage)
+                if ((fb.Low >= _Processor->_NyquistFrequency) && SuppressMirrorImage)
                     break;
 
                 _SpectrogramStyle.SetBrushColor(fb.Value);
@@ -422,7 +422,7 @@ bool spectrogram_t::RenderSpectrum(ID2D1BitmapRenderTarget * renderTarget) noexc
 
             for (const auto & fb : Bands)
             {
-                if ((fb.Low >= _Analysis->_NyquistFrequency) && SuppressMirrorImage)
+                if ((fb.Low >= _Processor->_NyquistFrequency) && SuppressMirrorImage)
                     break;
 
                 _SpectrogramStyle.SetBrushColor(fb.Value);
@@ -525,15 +525,15 @@ bool spectrogram_t::RenderSpectrum(ID2D1BitmapRenderTarget * renderTarget) noexc
 /// </summary>
 void spectrogram_t::RenderNyquistFrequencyMarker(ID2D1BitmapRenderTarget * renderTarget) const noexcept
 {
-    if (_Analysis->_NyquistFrequency < std::numeric_limits<double>::epsilon())
+    if (_Processor->_NyquistFrequency < std::numeric_limits<double>::epsilon())
         return;
 
     // Calculate the scale range.
-    const double MinScale = ScaleFrequency(_Analysis->_FrequencyBands.front().Center, _State._ScalingFunction, _State._SkewFactor);
-    const double MaxScale = ScaleFrequency(_Analysis->_FrequencyBands.back() .Center, _State._ScalingFunction, _State._SkewFactor);
+    const double MinScale = ScaleFrequency(_Processor->_FrequencyBands.front().Center, _State._ScalingFunction, _State._SkewFactor);
+    const double MaxScale = ScaleFrequency(_Processor->_FrequencyBands.back() .Center, _State._ScalingFunction, _State._SkewFactor);
 
     // The position of the Nyquist marker is calculated at the exact frequency and may not align with the center frequency of spectrum bar.
-    const double Scale = ScaleFrequency(_Analysis->_NyquistFrequency, _State._ScalingFunction, _State._SkewFactor);
+    const double Scale = ScaleFrequency(_Processor->_NyquistFrequency, _State._ScalingFunction, _State._SkewFactor);
 
     if (_State._IsHorizontalSpectrogram)
     {
@@ -556,7 +556,7 @@ void spectrogram_t::InitializeFrequencyAxis() noexcept
 {
     _FreqLabels.clear();
 
-    const frequency_bands_t & fb = _Analysis->_FrequencyBands;
+    const frequency_bands_t & fb = _Processor->_FrequencyBands;
 
     if (fb.empty())
         return;
@@ -1046,8 +1046,8 @@ void spectrogram_t::Initialize() noexcept
         _BitmapSize = { _BitmapRect.right - _BitmapRect.left, _BitmapRect.bottom - _BitmapRect.top };
     }
 
-    const FLOAT Bandwidth = std::max(std::floor(_BitmapSize.width / (FLOAT) _Analysis->_FrequencyBands.size()), 2.f); // In DIP
-    const FLOAT SpectrumWidth = Bandwidth * (FLOAT) _Analysis->_FrequencyBands.size();
+    const FLOAT Bandwidth = std::max(std::floor(_BitmapSize.width / (FLOAT) _Processor->_FrequencyBands.size()), 2.f); // In DIP
+    const FLOAT SpectrumWidth = Bandwidth * (FLOAT) _Processor->_FrequencyBands.size();
 
     // Resize the offscreen bitmap. Compensate for the spectrum bar rounding.
     {
