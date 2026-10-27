@@ -1,9 +1,9 @@
 
-/** $VER: AudioProcessor.cpp (2026.09.22) P. Stuer - Implements an audio processor for the goniometer. **/
+/** $VER: Processor.cpp (2026.10.27) P. Stuer - Implements an audio processor for the goniometer. **/
 
 #include <pch.h>
 
-#include "AudioProcessor.h"
+#include "Processor.h"
 
 #include <cmath>
 #include <numbers>

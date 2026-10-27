@@ -1,5 +1,5 @@
 
-/** $VER: Analysis.h (2026.10.25)P. Stuer **/
+/** $VER: AudioProcessor.h (2026.10.27)P. Stuer **/
 
 #pragma once
 

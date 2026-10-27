@@ -30,7 +30,7 @@ public:
 
     analog_style_analyzer_t(const state_t & state, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup, const window_function_t & windowFunction);
 
-    bool Initialize(const vector<frequency_band_t> & frequencyBands);
+    bool Initialize(const std::vector<frequency_band_t> & frequencyBands);
     bool AnalyzeAudio(const audio_sample * frames, size_t frameCount, uint32_t selectedChannels, frequency_bands_t & frequencyBands) noexcept override final;
 
 private:

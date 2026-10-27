@@ -19,7 +19,7 @@ analog_style_analyzer_t::analog_style_analyzer_t(const state_t & state, uint32_t
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-bool analog_style_analyzer_t::Initialize(const vector<frequency_band_t> & frequencyBands)
+bool analog_style_analyzer_t::Initialize(const std::vector<frequency_band_t> & frequencyBands)
 {
     assert(_SampleRate != 0);
 

@@ -4,6 +4,7 @@
 #include <pch.h>
 
 #include "Goniometer.h"
+
 #include "Direct2D.h"
 
 #pragma hdrstop

@@ -16,7 +16,7 @@
 #include <d2d1_2.h>
 
 #include "Visualization.h"
-#include "AudioProcessor.h"
+#include "Processor.h"
 
 class goniometer_t final : public visualization_t
 {

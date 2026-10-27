@@ -17,7 +17,7 @@
 
 #include <atlbase.h>
 
-#include "Analysis.h"
+#include "AudioProcessor.h"
 #include "Style.h"
 
 /// <summary>

@@ -1,13 +1,11 @@
 
-/** $VER: Analyzer.h (2026.10.24) P. Stuer - Base class for all analyzers **/
+/** $VER: Analyzer.h (2026.10.27) P. Stuer - Base class for all spectrum analyzers **/
 
 #pragma once
 
 #include <CppCoreCheck/Warnings.h>
 
 #pragma warning(disable: 4100 4625 4626 4710 4711 5045 ALL_CPPCORECHECK_WARNINGS)
-
-using namespace std;
 
 #include "State.h"
 #include "WindowFunctions.h"
@@ -76,7 +74,7 @@ protected:
     const window_function_t & _WindowFunction;
 
     uint32_t _SampleRate;
-    uint32_t _ChannelCount; // Number of channels per frame.
+    uint32_t _ChannelCount;  // Number of channels per frame.
     uint32_t _ChannelConfig; // Mask representing the channels present in the frame.
 
     double _NyquistFrequency;

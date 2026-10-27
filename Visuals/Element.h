@@ -1,5 +1,5 @@
 
-/** $VER: Element.h (2026.10.24) P. Stuer - Base class for all visual elements (both graph and visualizations). **/
+/** $VER: Element.h (2026.10.27) P. Stuer - Base class for all visual elements (both graph and visualizations). **/
 
 #pragma once
 
@@ -9,7 +9,7 @@
 
 #include "State.h"
 #include "Graphoptions.h"
-#include "Analysis.h"
+#include "AudioProcessor.h"
 #include "RenderContext.h"
 
 class element_t

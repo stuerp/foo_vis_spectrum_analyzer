@@ -220,7 +220,7 @@
     <ClInclude Include="3rdParty\ProjectNayuki\FftComplex.hpp" />
     <ClInclude Include="Analyzers\Aggregator.h" />
     <ClInclude Include="Analyzers\SpectrumAnalyzers\AnalogStyleAnalyzer.h" />
-    <ClInclude Include="Analyzers\Analysis.h" />
+    <ClInclude Include="Analyzers\AudioProcessor.h" />
     <ClInclude Include="Analyzers\SpectrumAnalyzers\CompositeFFTAnalyzer.h" />
     <ClInclude Include="Analyzers\CrossoverFilter.h" />
     <ClInclude Include="Analyzers\Downmixer.h" />
@@ -294,7 +294,7 @@
     <ClInclude Include="Visuals\PeakMeter\PeakMeterParts.h" />
     <ClInclude Include="Visuals\RenderContext.h" />
     <ClInclude Include="Visuals\Spectrogram\Spectrogram.h" />
-    <ClInclude Include="Visuals\Goniometer\AudioProcessor.h" />
+    <ClInclude Include="Visuals\Goniometer\Processor.h" />
     <ClInclude Include="Visuals\Goniometer\Goniometer.h" />
     <ClInclude Include="Visuals\Tester\Tester.h" />
     <ClInclude Include="Visuals\Visualization.h" />
@@ -349,7 +349,7 @@
   <ItemGroup>
     <ClCompile Include="3rdParty\ProjectNayuki\FftComplex.cpp" />
     <ClCompile Include="Analyzers\SpectrumAnalyzers\AnalogStyleAnalyzer.cpp" />
-    <ClCompile Include="Analyzers\Analysis.cpp" />
+    <ClCompile Include="Analyzers\AudioProcessor.cpp" />
     <ClCompile Include="Analyzers\SpectrumAnalyzers\CompositeFFTAnalyzer.cpp" />
     <ClCompile Include="Analyzers\SpectrumAnalyzers\CQTAnalyzer.cpp" />
     <ClCompile Include="Analyzers\CrossoverFilter.cpp" />
@@ -436,7 +436,7 @@
     <ClCompile Include="Visuals\PeakMeter\PeakMeter.cpp" />
     <ClCompile Include="Visuals\PeakMeter\PeakMeterParts.cpp" />
     <ClCompile Include="Visuals\Spectrogram\Spectrogram.cpp" />
-    <ClCompile Include="Visuals\Goniometer\AudioProcessor.cpp" />
+    <ClCompile Include="Visuals\Goniometer\Processor.cpp" />
     <ClCompile Include="Visuals\Goniometer\Goniometer.cpp" />
     <ClCompile Include="Visuals\Style.cpp" />
     <ClCompile Include="Visuals\StyleManager.cpp" />

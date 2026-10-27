@@ -1,9 +1,9 @@
 
-/** $VER: Analysis.cpp (2026.10.25) P. Stuer **/
+/** $VER: AudioProcessor.cpp (2026.10.27) P. Stuer **/
 
 #include "pch.h"
 
-#include "Analysis.h"
+#include "AudioProcessor.h"
 #include "Downmixer.h"
 #include "FrequencyScaler.h"
 

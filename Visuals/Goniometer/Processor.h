@@ -1,5 +1,5 @@
 
-/** $VER: AudioProcessor.h (2026.09.22) P. Stuer - Implements an audio processor for the goniometer. **/
+/** $VER: Processor.h (2026.10.27) P. Stuer - Implements an audio processor for the goniometer. **/
 
 #pragma once
 
