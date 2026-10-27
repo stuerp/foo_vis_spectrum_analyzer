@@ -80,7 +80,7 @@ struct bit_measurement_t : measurement_t
 /// <summary>
 /// Represents the analysis of the sample data.
 /// </summary>
-class analysis_t final
+class analysis_t
 {
 public:
     analysis_t(state_t & state) noexcept : _State(state), _SampleRate(), _ChannelCount(), _ChannelConfig(), _RMSTimeElapsed(), _RMSFrameCount(), _Left(), _Right(), _Mid(), _Side(), _Balance(0.5), _Phase(0.5) { };

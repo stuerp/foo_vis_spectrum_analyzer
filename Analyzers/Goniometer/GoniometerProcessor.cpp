@@ -1,17 +1,20 @@
 
-/** $VER: Processor.cpp (2026.10.27) P. Stuer - Implements an audio processor for the goniometer. **/
+/** $VER: GoniometerProcessor.cpp (2026.10.27) P. Stuer - Implements an audio processor for the goniometer. **/
 
 #include <pch.h>
 
-#include "Processor.h"
+#include "GoniometerProcessor.h"
 
 #include <cmath>
 #include <numbers>
 
+namespace goniometer
+{
+
 /// <summary>
 /// Configures the audio processor.
 /// </summary>
-HRESULT audio_processor_t::Configure(double lowBand, double highBand, double sampleRate) noexcept
+HRESULT processor_t::Configure(double lowBand, double highBand, double sampleRate) noexcept
 {
     if ((lowBand >= highBand) || (sampleRate <= 0.))
         return E_INVALIDARG;
@@ -46,7 +49,7 @@ HRESULT audio_processor_t::Configure(double lowBand, double highBand, double sam
 /// <summary>
 /// 
 /// </summary>
-HRESULT audio_processor_t::SetCrossoverMode(crossover::Mode mode) noexcept
+HRESULT processor_t::SetCrossoverMode(crossover::Mode mode) noexcept
 {
     if (mode == _CrossoverMode)
         return S_FALSE;
@@ -66,7 +69,7 @@ HRESULT audio_processor_t::SetCrossoverMode(crossover::Mode mode) noexcept
 /// <summary>
 /// Processes the audio frames.
 /// </summary>
-void audio_processor_t::Process(const audio_chunk & chunk, uint32_t activeChannelMask, uint32_t pairedChannelMask, double lowBand, double highBand) noexcept
+void processor_t::Process(const audio_chunk & chunk, uint32_t activeChannelMask, uint32_t pairedChannelMask, double lowBand, double highBand) noexcept
 {
     _PointCount = 0;
 
@@ -166,7 +169,7 @@ void audio_processor_t::Process(const audio_chunk & chunk, uint32_t activeChanne
 /// <summary>
 /// Adds a point.
 /// </summary>
-void audio_processor_t::AddPoint(double l, double r, const D2D1_COLOR_F color) noexcept
+void processor_t::AddPoint(double l, double r, const D2D1_COLOR_F color) noexcept
 {
     constexpr double InverseSqrt2 = 1. / std::numbers::sqrt2_v<double>; // = cos 45 = sin 45
 
@@ -178,4 +181,6 @@ void audio_processor_t::AddPoint(double l, double r, const D2D1_COLOR_F color) n
         x, y,
         color,
     };
+}
+
 }

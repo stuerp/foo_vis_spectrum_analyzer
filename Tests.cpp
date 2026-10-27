@@ -5,7 +5,7 @@
 
 #ifdef _DEBUG
 
-#include "Analyzers/Analysis.h"
+#include "Analyzers/AudioProcessor.h"
 #include "FrequencyScaler.h"
 #include "WindowFunctions.h"
 #include "Log.h"

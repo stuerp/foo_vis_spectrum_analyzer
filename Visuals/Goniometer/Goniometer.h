@@ -16,7 +16,10 @@
 #include <d2d1_2.h>
 
 #include "Visualization.h"
-#include "Processor.h"
+#include "GoniometerProcessor.h"
+
+namespace goniometer
+{
 
 class goniometer_t final : public visualization_t
 {
@@ -103,5 +106,7 @@ private:
     ComPtr<ID2D1Bitmap1> _Bitmaps[2];
     ComPtr<ID2D1CommandList> _StaticContent;
 
-    audio_processor_t _AudioProcessor;
+    processor_t _AudioProcessor;
 };
+
+}

@@ -9,6 +9,9 @@
 
 #pragma hdrstop
 
+namespace goniometer
+{
+
 /// <summary>
 /// Destroys this instance.
 /// </summary>
@@ -756,4 +759,6 @@ void goniometer_t::OnConfigurationChanged(ConfigurationChanges configurationChan
     _AudioProcessor.SetColorMode(_State._GoniometerColorMode);
     _AudioProcessor.SetCrossoverMode(_State._CrossoverMode);
     _AudioProcessor.SetVisualGain(_State._LowVisualGain, _State._MidVisualGain, _State._HighVisualGain);
+}
+
 }

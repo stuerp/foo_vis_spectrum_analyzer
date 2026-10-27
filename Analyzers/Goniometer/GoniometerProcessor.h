@@ -1,5 +1,5 @@
 
-/** $VER: Processor.h (2026.10.27) P. Stuer - Implements an audio processor for the goniometer. **/
+/** $VER: GoniometerProcessor.h (2026.10.27) P. Stuer - Implements an audio processor for the goniometer. **/
 
 #pragma once
 
@@ -11,6 +11,9 @@
 #include <d2d1.h>
 #include <sdk/audio_chunk.h>
 
+namespace goniometer
+{
+
 struct point_t
 {
     FLOAT x;
@@ -18,17 +21,17 @@ struct point_t
     D2D1_COLOR_F Color;
 };
 
-class audio_processor_t
+class processor_t
 {
 public:
-    audio_processor_t() = default;
+    processor_t() = default;
 
-    audio_processor_t(const audio_processor_t &) = delete;
-    audio_processor_t & operator=(const audio_processor_t &) = delete;
-    audio_processor_t(audio_processor_t &&) = delete;
-    audio_processor_t & operator=(audio_processor_t &&) = delete;
+    processor_t(const processor_t &) = delete;
+    processor_t & operator=(const processor_t &) = delete;
+    processor_t(processor_t &&) = delete;
+    processor_t & operator=(processor_t &&) = delete;
 
-    virtual ~audio_processor_t() = default;
+    virtual ~processor_t() = default;
 
     HRESULT SetColorMode(goniometer::ColorMode mode) noexcept
     {
@@ -138,3 +141,5 @@ private:
 
     double _Correlation = 0.f;
 };
+
+}
