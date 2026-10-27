@@ -51,7 +51,7 @@ std::unique_ptr<audio_processor_t> audio_processor_t::Create(state_t & state) no
             return std::make_unique<BitMeter::processor_t>(state);
 
         case VisualizationType::Goniometer:
-            return { };//std::make_unique<Goniometer::processor_t>(state);
+            return std::make_unique<Goniometer::processor_t>(state);
     }
 }
 

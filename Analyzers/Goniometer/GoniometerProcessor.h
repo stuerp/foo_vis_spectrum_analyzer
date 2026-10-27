@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include "AudioProcessor.h"
 #include "CrossoverFilter.h"
 #include "State.h"
 
@@ -21,30 +22,30 @@ struct point_t
     D2D1_COLOR_F Color;
 };
 
-class processor_t
+class processor_t final : public audio_processor_t
 {
 public:
-    processor_t() = default;
+    processor_t(state_t & state) : audio_processor_t(state) { }
 
     processor_t(const processor_t &) = delete;
-    processor_t & operator=(const processor_t &) = delete;
     processor_t(processor_t &&) = delete;
+
+    processor_t & operator=(const processor_t &) = delete;
     processor_t & operator=(processor_t &&) = delete;
 
     virtual ~processor_t() = default;
 
 public:
+    void Configure(const graph_options_t * options) noexcept override final;
+    void Reset() noexcept override final;
+    void Process(const audio_chunk & chunk) noexcept override final;
+
+public:
     void Initialize(state_t * state) noexcept
     {
-        _State = state;
     }
 
     void Process(const audio_chunk & chunk, uint32_t selectedChannels, uint32_t pairedChannels, double loFreq, double hiFreq) noexcept;
-
-    void Reset() noexcept
-    {
-        _PointCount = 0;
-    }
 
 public:
     HRESULT SetColorMode(goniometer::ColorMode mode) noexcept
@@ -115,8 +116,6 @@ public:
     size_t _PointCount = 0;
 
 private:
-    state_t * _State = nullptr;
-
     goniometer::ColorMode _ColorMode = goniometer::ColorMode::Triband;
     crossover::Mode _CrossoverMode = crossover::Mode::LinkwitzRiley4;
 

@@ -1,5 +1,5 @@
 
-/** $VER: Goniometer.cpp (2026.10.10) P. Stuer - Implements a goniometer. **/
+/** $VER: Goniometer.cpp (2026.10.27) P. Stuer - Implements a goniometer. **/
 
 #include <pch.h>
 
@@ -15,7 +15,7 @@ namespace Goniometer
 /// <summary>
 /// Destroys this instance.
 /// </summary>
-goniometer_t::~goniometer_t()
+goniometer_t::~goniometer_t() noexcept
 {
     Reset();
 }
@@ -26,16 +26,7 @@ goniometer_t::~goniometer_t()
 void goniometer_t::Configure(graph_options_t * options, audio_processor_t * processor, bool isFirst, bool isLast, ID3D11Device *, ID3D11DeviceContext *) noexcept
 {
     _GraphOptions = options;
-    _Processor    = processor;
-
-    _LowBand  = _State._LowBand;
-    _HighBand = _State._HighBand;
-
-    _AudioProcessor.Initialize(&_State);
-
-    _AudioProcessor.SetColorMode(_State._GoniometerColorMode);
-    _AudioProcessor.SetCrossoverMode(_State._CrossoverMode);
-    _AudioProcessor.SetVisualGain(_State._LowVisualGain, _State._MidVisualGain, _State._HighVisualGain);
+    _Processor    = (processor_t *) processor;
 
     _SpriteDestinations.resize(0);
     _SpriteSources     .resize(0);
@@ -65,19 +56,8 @@ void goniometer_t::Render(ID2D1DeviceContext * deviceContext) noexcept
     if (FAILED(hr))
         return;
 
-    // Process the chunk.
-    if (!_Processor->_Chunk.is_empty())
-    {
-        const uint32_t ActiveChannelMask = _GraphOptions->_ActiveChannelMask;                               // Mask containing the channels selected by the user.
-        const uint32_t PairedChannelMask = audio_processor_t::ChannelPairs[(size_t) _GraphOptions->_ChannelPair];  // Mask containing the channels selected by the user as a channel pair.
-
-        _AudioProcessor.Process(_Processor->_Chunk, ActiveChannelMask, PairedChannelMask, _LowBand, _HighBand);
-    }
-    else
-        _AudioProcessor.Reset();
-
     // Create the sprite batch from the audio points.
-    if (_AudioProcessor._PointCount != 0)
+    if (_Processor->_PointCount != 0)
         CreateSprites();
     else
         _SpriteBatch->Clear();
@@ -122,7 +102,7 @@ void goniometer_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 
             hr = _DeviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::White), WhiteBrush.GetAddressOf());
 
-            const FLOAT x = 4.f + ((_Side - 8.f) / 2.f * (1.f + (FLOAT) _AudioProcessor.GetCorrelation()));
+            const FLOAT x = 4.f + ((_Side - 8.f) / 2.f * (1.f + (FLOAT) _Processor->GetCorrelation()));
             const FLOAT y = _Side - 4.f;
 
             const auto Circle = D2D1::Ellipse(D2D1::Point2F(x, y), 4.f, 4.f);
@@ -328,14 +308,14 @@ HRESULT goniometer_t::CreateSizeDependentResources(ID2D1DeviceContext * deviceCo
         if (FAILED(hr))
             return hr;
 
-        if (_AudioProcessor.GetColorMode() == goniometer::ColorMode::Mono)
+        if (_Processor->GetColorMode() == goniometer::ColorMode::Mono)
         {
             _SignalStyle._CurrentColor = _SignalStyle._CustomColor;
 
-            _AudioProcessor.SetMonoColor(_SignalStyle._CurrentColor);
+            _Processor->SetMonoColor(_SignalStyle._CurrentColor);
         }
         else
-        if (_AudioProcessor.GetColorMode() == goniometer::ColorMode::Triband)
+        if (_Processor->GetColorMode() == goniometer::ColorMode::Triband)
         {
             auto cl = _SignalStyle._CurrentGradientStops.front().color;
             auto ch = _SignalStyle._CurrentGradientStops.back().color;
@@ -351,7 +331,7 @@ HRESULT goniometer_t::CreateSizeDependentResources(ID2D1DeviceContext * deviceCo
                     break;
             }
 
-            _AudioProcessor.SetTriBandColors(cl, cm, ch);
+            _Processor->SetTriBandColors(cl, cm, ch);
         }
     }
 
@@ -497,20 +477,20 @@ HRESULT goniometer_t::CreateSprites() noexcept
 {
     HRESULT hr = S_OK;
 
-    if (_SpriteDestinations.size() != _AudioProcessor._PointCount)
+    if (_SpriteDestinations.size() != _Processor->_PointCount)
     {
-        _SpriteDestinations.resize(_AudioProcessor._PointCount);
-        _SpriteSources     .resize(_AudioProcessor._PointCount);
-        _SpriteColors      .resize(_AudioProcessor._PointCount);
-        _SpriteTransforms  .resize(_AudioProcessor._PointCount);
+        _SpriteDestinations.resize(_Processor->_PointCount);
+        _SpriteSources     .resize(_Processor->_PointCount);
+        _SpriteColors      .resize(_Processor->_PointCount);
+        _SpriteTransforms  .resize(_Processor->_PointCount);
 
         std::fill(_SpriteSources.begin(),    _SpriteSources.end(),    SpriteRectangle);
         std::fill(_SpriteTransforms.begin(), _SpriteTransforms.end(), D2D1::Matrix3x2F::Identity());
     }
 
-    for (size_t i = 0; i < _AudioProcessor._PointCount; ++i)
+    for (size_t i = 0; i < _Processor->_PointCount; ++i)
     {
-        const auto & Point = _AudioProcessor._Points[i];
+        const auto & Point = _Processor->_Points[i];
 
         const FLOAT CenterX = _HalfSide + (Point.x * _HalfSide * _Radius);
         const FLOAT CenterY = _HalfSide + (Point.y * _HalfSide * _Radius);
@@ -521,7 +501,7 @@ HRESULT goniometer_t::CreateSprites() noexcept
 
     const auto SpriteCount = _SpriteBatch->GetSpriteCount();
 
-    if (SpriteCount != _AudioProcessor._PointCount)
+    if (SpriteCount != _Processor->_PointCount)
     {
         _SpriteBatch->Clear();
 
@@ -756,9 +736,9 @@ void goniometer_t::OnConfigurationChanged(ConfigurationChanges configurationChan
     if (!IsSet(configurationChanges, ConfigurationChanges::Goniometer))
         return;
 
-    _AudioProcessor.SetColorMode(_State._GoniometerColorMode);
-    _AudioProcessor.SetCrossoverMode(_State._CrossoverMode);
-    _AudioProcessor.SetVisualGain(_State._LowVisualGain, _State._MidVisualGain, _State._HighVisualGain);
+    _Processor->SetColorMode(_State._GoniometerColorMode);
+    _Processor->SetCrossoverMode(_State._CrossoverMode);
+    _Processor->SetVisualGain(_State._LowVisualGain, _State._MidVisualGain, _State._HighVisualGain);
 }
 
 }

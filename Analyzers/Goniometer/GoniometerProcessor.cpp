@@ -12,74 +12,54 @@ namespace Goniometer
 {
 
 /// <summary>
-/// Configures the audio processor.
+/// Configures this instance.
 /// </summary>
-HRESULT processor_t::Configure(double lowBand, double highBand, double sampleRate) noexcept
+void processor_t::Configure(const graph_options_t * options) noexcept
 {
-    if ((lowBand >= highBand) || (sampleRate <= 0.))
-        return E_INVALIDARG;
+    __super::Configure(options);
 
-    if ((lowBand == _LowBand) && (highBand == _HighBand) && (sampleRate == _SampleRate))
-        return S_FALSE;
+    _LowBand  = _State._LowBand;
+    _HighBand = _State._HighBand;
 
-    _LowBand    = lowBand;
-    _HighBand   = highBand;
-    _SampleRate = sampleRate;
-
-    HRESULT hr = _CrossoverL.Configure(_LowBand, _HighBand, sampleRate);
-
-    if (FAILED(hr))
-        return hr;
-
-    hr = _CrossoverR.Configure(_LowBand, _HighBand, sampleRate);
-
-    if (FAILED(hr))
-        return hr;
-
-    hr = _CrossoverL.SetCrossoverMode(_CrossoverMode);
-
-    if (FAILED(hr))
-        return hr;
-
-    hr = _CrossoverR.SetCrossoverMode(_CrossoverMode);
-
-    return hr;
+    SetColorMode(_State._GoniometerColorMode);
+    SetCrossoverMode(_State._CrossoverMode);
+    SetVisualGain(_State._LowVisualGain, _State._MidVisualGain, _State._HighVisualGain);
 }
 
 /// <summary>
-/// 
+/// Resets this instance.
 /// </summary>
-HRESULT processor_t::SetCrossoverMode(crossover::Mode mode) noexcept
+void processor_t::Reset() noexcept
 {
-    if (mode == _CrossoverMode)
-        return S_FALSE;
+    __super::Reset();
 
-    _CrossoverMode = mode;
-
-    HRESULT hr = _CrossoverL.SetCrossoverMode(_CrossoverMode);
-
-    if (FAILED(hr))
-        return hr;
-
-    hr = _CrossoverR.SetCrossoverMode(_CrossoverMode);
-
-    return hr;
+    _PointCount = 0;
 }
 
 /// <summary>
-/// Processes the audio frames.
+/// Processes an audio chunk.
 /// </summary>
-void processor_t::Process(const audio_chunk & chunk, uint32_t activeChannelMask, uint32_t pairedChannelMask, double lowBand, double highBand) noexcept
+void processor_t::Process(const audio_chunk & chunk) noexcept
 {
     _PointCount = 0;
 
-    Configure(lowBand, highBand, (double) chunk.get_sample_rate());
+    if (chunk.is_empty())
+    {
+        Reset();
+
+        return;
+    }
+
+    Configure(_LowBand, _HighBand, (double) chunk.get_sample_rate());
 
     const size_t FrameCount             = chunk.get_sample_count();    // get_sample_count() actually returns the number of frames.
     const uint32_t ChannelCount         = chunk.get_channel_count();
     const uint32_t AvailableChannelMask = chunk.get_channel_config();  // Mask containing the channels in the audio chunk.
 
-    const uint32_t ChannelMask = AvailableChannelMask & activeChannelMask & ((ChannelCount > 1) ? pairedChannelMask : ~0u);
+    const uint32_t ActiveChannelMask = _GraphOptions->_ActiveChannelMask;                                       // Mask containing the channels selected by the user.
+    const uint32_t PairedChannelMask = audio_processor_t::ChannelPairs[(size_t) _GraphOptions->_ChannelPair];   // Mask containing the channels selected by the user as a channel pair.
+
+    const uint32_t ChannelMask = AvailableChannelMask & ActiveChannelMask & ((ChannelCount > 1) ? PairedChannelMask : ~0u);
 
     if ((FrameCount == 0) || (ChannelCount < 1) || (ChannelMask == 0))
         return;
@@ -173,14 +153,69 @@ void processor_t::AddPoint(double l, double r, const D2D1_COLOR_F color) noexcep
 {
     constexpr double InverseSqrt2 = 1. / std::numbers::sqrt2_v<double>; // = cos 45 = sin 45
 
-    const auto x = (FLOAT) std::clamp((l - r) * InverseSqrt2 * _State->_XInputGain, -1., 1.); // Side component
-    const auto y = (FLOAT) std::clamp((l + r) * InverseSqrt2 * _State->_YInputGain, -1., 1.); // Mid component
+    const auto x = (FLOAT) std::clamp((l - r) * InverseSqrt2 * _State._XInputGain, -1., 1.); // Side component
+    const auto y = (FLOAT) std::clamp((l + r) * InverseSqrt2 * _State._YInputGain, -1., 1.); // Mid component
 
     _Points[_PointCount++] =
     {
         x, y,
         color,
     };
+}
+
+/// <summary>
+/// Configures the audio processor.
+/// </summary>
+HRESULT processor_t::Configure(double lowBand, double highBand, double sampleRate) noexcept
+{
+    if ((lowBand >= highBand) || (sampleRate <= 0.))
+        return E_INVALIDARG;
+
+    if ((lowBand == _LowBand) && (highBand == _HighBand) && (sampleRate == _SampleRate))
+        return S_FALSE;
+
+    _LowBand    = lowBand;
+    _HighBand   = highBand;
+    _SampleRate = sampleRate;
+
+    HRESULT hr = _CrossoverL.Configure(_LowBand, _HighBand, sampleRate);
+
+    if (FAILED(hr))
+        return hr;
+
+    hr = _CrossoverR.Configure(_LowBand, _HighBand, sampleRate);
+
+    if (FAILED(hr))
+        return hr;
+
+    hr = _CrossoverL.SetCrossoverMode(_CrossoverMode);
+
+    if (FAILED(hr))
+        return hr;
+
+    hr = _CrossoverR.SetCrossoverMode(_CrossoverMode);
+
+    return hr;
+}
+
+/// <summary>
+/// 
+/// </summary>
+HRESULT processor_t::SetCrossoverMode(crossover::Mode mode) noexcept
+{
+    if (mode == _CrossoverMode)
+        return S_FALSE;
+
+    _CrossoverMode = mode;
+
+    HRESULT hr = _CrossoverL.SetCrossoverMode(_CrossoverMode);
+
+    if (FAILED(hr))
+        return hr;
+
+    hr = _CrossoverR.SetCrossoverMode(_CrossoverMode);
+
+    return hr;
 }
 
 }

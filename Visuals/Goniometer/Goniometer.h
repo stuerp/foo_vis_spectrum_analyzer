@@ -1,5 +1,5 @@
 
-/** $VER: Goniometer.h (2026.10.10) P. Stuer - Implements a goniometer. **/
+/** $VER: Goniometer.h (2026.10.27) P. Stuer - Implements a goniometer visualization. **/
 
 #pragma once
 
@@ -32,7 +32,7 @@ public:
     goniometer_t & operator=(const goniometer_t &) = delete;
     goniometer_t & operator=(goniometer_t &&) = delete;
 
-    virtual ~goniometer_t();
+    virtual ~goniometer_t() noexcept;
 
     // element_t
     void Move(const D2D1_RECT_F & rect) noexcept override final;
@@ -65,7 +65,7 @@ private:
     void Initialize() noexcept { }
 
 private:
-    audio_processor_t * _Processor;
+    processor_t * _Processor;
 
     double _LowBand  { 0. }; // Hz
     double _HighBand { 0. }; // Hz
@@ -108,8 +108,6 @@ private:
     // Device dependent resources (Size dependent)
     ComPtr<ID2D1Bitmap1> _Bitmaps[2];
     ComPtr<ID2D1CommandList> _StaticContent;
-
-    processor_t _AudioProcessor;
 };
 
 }
