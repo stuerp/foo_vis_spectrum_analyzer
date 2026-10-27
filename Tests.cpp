@@ -6,8 +6,8 @@
 #ifdef _DEBUG
 
 #include "Analyzers/Analysis.h"
-#include "Analyzers/FrequencyScaler.h"
-#include "Analyzers/WindowFunctions.h"
+#include "FrequencyScaler.h"
+#include "WindowFunctions.h"
 #include "Log.h"
 
 static void TestWeighting()
