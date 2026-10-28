@@ -245,7 +245,7 @@ void graph_t::RenderDescription() noexcept
 /// </summary>
 HRESULT graph_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept
 {
-    if (_State._SizeHasChanged)
+    if (_State._DiscardResources)
         DeleteDeviceSpecificResources();
 
     HRESULT hr = S_OK;

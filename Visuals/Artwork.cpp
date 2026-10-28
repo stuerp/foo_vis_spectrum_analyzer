@@ -135,7 +135,12 @@ HRESULT artwork_t::GetColors(uint32_t colorCount, FLOAT lightnessThreshold, FLOA
     {
         const auto SetErrorColor = [&colors]()
         {
-            colors.assign(1, D2D1::ColorF(D2D1::ColorF::Red)); // Makes an error easier to detect.
+            auto GradientStops = gradient_t::GetBuiltIn(ColorScheme::Artwork);
+
+            colors.clear();
+
+            for (const auto & gs : GradientStops)
+                colors.push_back(gs.color);
         };
 
         if (_FormatConverter == nullptr)

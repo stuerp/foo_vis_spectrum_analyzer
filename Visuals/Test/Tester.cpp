@@ -167,7 +167,7 @@ HRESULT tester_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceConte
         (void) deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), _Brush.GetAddressOf());
 #endif
 
-    if (_State._ColorsHaveChanged || _State._SizeHasChanged)
+    if (_State._DiscardResources)
     {
         DeleteColorDependentResources();
 
@@ -179,7 +179,7 @@ HRESULT tester_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceConte
             return hr;
     }
 
-    if (_State._SizeHasChanged)
+    if (_State._DiscardResources)
     {
         DeleteSizeDependentResources();
 
@@ -252,7 +252,7 @@ void tester_t::OnConfigurationChanged(ConfigurationChanges configurationChanges)
     if (!IsSet(configurationChanges, ConfigurationChanges::Layout))
         return;
 
-    _State._SizeHasChanged = true;
+    _State._DiscardResources = true;
 }
 
 }

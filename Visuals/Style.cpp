@@ -167,7 +167,7 @@ void style_t::SetColor(const state_t * state) noexcept
         {
             if (state->_UserInterfaceColors.empty())
             {
-                _CurrentColor = D2D1_COLOR_F(D2D1::ColorF::Red);
+                _CurrentColor = D2D1_COLOR_F(D2D1::ColorF::Red); // Error
 
                 return;
             }

@@ -103,6 +103,7 @@ v0.14.0.0-alpha3, 2026-xx-xx
 - New: Hop size support for the spectrum analyzers.
   - The `Hop size fraction` parameter specifies a hop size relative to the FFT size. Smaller hops (larger fraction) produce more frequent analysis updates.
   - The default value is 0% which results in the old behavior.
+- Fixed: Styles that use the artwork colors were not correctly initialized at startup. (Regression)
 
 You can read the full history [here](docs/History.md).
 

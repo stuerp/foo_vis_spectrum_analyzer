@@ -721,7 +721,7 @@ HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCon
         (void) deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), _DebugBrush.GetAddressOf());
 #endif
 
-    if (_State._ColorsHaveChanged || _State._SizeHasChanged)
+    if (_State._DiscardResources)
     {
         DeleteColorDependentResources();
 
@@ -733,7 +733,7 @@ HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCon
             return hr;
     }
 
-    if (_State._SizeHasChanged)
+    if (_State._DiscardResources)
     {
         DeleteSizeDependentResources();
 
@@ -1384,7 +1384,7 @@ void spectrum_t::OnConfigurationChanged(ConfigurationChanges configurationChange
     if (!IsSet(configurationChanges, ConfigurationChanges::Layout))
         return;
 
-    _State._SizeHasChanged = true;
+    _State._DiscardResources = true;
 
     _XAxis.Configure(_GraphOptions, _Processor, _IsFirst, _IsLast);
 }

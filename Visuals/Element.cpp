@@ -21,7 +21,7 @@ void element_t::InitializeMetrics(const D2D1_RECT_F & rect) noexcept
     _CenterX  = _Size.width  / 2.f;
     _CenterY  = _Size.height / 2.f;
 
-    _State._SizeHasChanged = true;
+    _State._DiscardResources = true;
 }
 
 /// <summary>

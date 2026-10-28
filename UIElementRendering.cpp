@@ -157,7 +157,7 @@ void uielement_t::ProcessEvents() noexcept
             _RenderState._ArtworkDominantColor = D2D1::ColorF(D2D1::ColorF::Black);
             _RenderState._ArtworkGradientStops = gradient_t::GetBuiltIn(ColorScheme::Artwork);
 
-            _RenderState._ColorsHaveChanged = true;
+            _RenderState._DiscardResources = true;
         }
 
         _IsConfigurationChanged = true;
@@ -185,10 +185,10 @@ void uielement_t::ProcessEvents() noexcept
     }
 
     if (event_t::IsRaised(Flags, event_t::ArtworkColorsChanged))
-        _RenderState._ColorsHaveChanged = true;
+        _RenderState._DiscardResources = true;
 
     if (event_t::IsRaised(Flags, event_t::UserInterfaceColorsChanged))
-        _RenderState._ColorsHaveChanged = true;
+        _RenderState._DiscardResources = true;
 }
 
 /// <summary>
@@ -456,9 +456,8 @@ void uielement_t::Render() noexcept
     if (hr == D2DERR_RECREATE_TARGET || hr == DXGI_ERROR_DEVICE_REMOVED)
         DeleteDeviceSpecificResources();
 
-    // Reset the flags for the next loop.
-    _RenderState._SizeHasChanged    = false;
-    _RenderState._ColorsHaveChanged = false;
+    // Reset the flag for the next loop.
+    _RenderState._DiscardResources  = false;
 }
 
 /// <summary>
@@ -787,7 +786,7 @@ HRESULT uielement_t::CreateDeviceSpecificResources() noexcept
             _Grid.Resize(SizeF.width, SizeF.height);
             _FrameCounter.Resize(SizeF.width, SizeF.height);
 
-            _RenderState._SizeHasChanged = true;
+            _RenderState._DiscardResources = true;
         }
     }
 

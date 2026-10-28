@@ -78,9 +78,9 @@ HRESULT peak_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceC
 #endif
 
     if (_BarCount != _Processor->_PeakMeasurements.size())
-        _State._SizeHasChanged = true;
+        _State._DiscardResources = true;
 
-    if (_State._ColorsHaveChanged || _State._SizeHasChanged)
+    if (_State._DiscardResources)
     {
         DeleteColorDependentResources();
 
@@ -92,7 +92,7 @@ HRESULT peak_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceC
             return hr;
     }
 
-    if (_State._SizeHasChanged)
+    if (_State._DiscardResources)
     {
         DeleteSizeDependentResources();
 
@@ -265,25 +265,25 @@ void peak_meter_t::DeleteColorDependentResources() noexcept
 /// </summary>
 HRESULT peak_meter_t::CreateOpacityMask(ID2D1DeviceContext * deviceContext) noexcept
 {
-    ComPtr<ID2D1BitmapRenderTarget> rt;
+    ComPtr<ID2D1BitmapRenderTarget> RenderTarget;
 
-    HRESULT hr = deviceContext->CreateCompatibleRenderTarget(D2D1::SizeF(_Size.width, _Size.height), rt.GetAddressOf());
+    HRESULT hr = deviceContext->CreateCompatibleRenderTarget(D2D1::SizeF(_Size.width, _Size.height), RenderTarget.GetAddressOf());
 
     if (FAILED(hr))
         return hr;
 
-    rt->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
+    RenderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
 
     ComPtr<ID2D1SolidColorBrush> Brush;
 
-    hr = rt->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Black), Brush.GetAddressOf()); // Black parts will be masked out.
+    hr = RenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Black), Brush.GetAddressOf()); // Black parts will be masked out.
 
     if (FAILED(hr))
         return hr;
 
-    rt->BeginDraw();
+    RenderTarget->BeginDraw();
 
-    rt->Clear(); // Transparent
+    RenderTarget->Clear(); // Transparent
 
     const FLOAT LEDSize = _State._LEDLight + _State._LEDGap;
 
@@ -292,21 +292,21 @@ HRESULT peak_meter_t::CreateOpacityMask(ID2D1DeviceContext * deviceContext) noex
         if (_State._IsHorizontalPeakMeter)
         {
             for (FLOAT x = 0.f; x < _Size.width; x += LEDSize)
-                rt->FillRectangle(D2D1::RectF(x, 0.f, x + _State._LEDLight, _Size.height), Brush.Get());
+                RenderTarget->FillRectangle(D2D1::RectF(x, 0.f, x + _State._LEDLight, _Size.height), Brush.Get());
         }
         else
         {
             for (FLOAT y = 0.f; y < _Size.height; y += LEDSize)
-                rt->FillRectangle(D2D1::RectF(0.f, y, _Size.width, y + _State._LEDLight), Brush.Get());
+                RenderTarget->FillRectangle(D2D1::RectF(0.f, y, _Size.width, y + _State._LEDLight), Brush.Get());
         }
     }
 
-    hr = rt->EndDraw();
+    hr = RenderTarget->EndDraw();
 
     if (FAILED(hr))
         return hr;
 
-    hr = rt->GetBitmap(_OpacityMask.GetAddressOf());
+    hr = RenderTarget->GetBitmap(_OpacityMask.GetAddressOf());
 
     return hr;
 }
@@ -548,7 +548,7 @@ void peak_meter_t::OnConfigurationChanged(ConfigurationChanges configurationChan
     if (!IsSet(configurationChanges, ConfigurationChanges::Layout))
         return;
 
-    _State._SizeHasChanged = true;
+    _State._DiscardResources = true;
 }
 
 }

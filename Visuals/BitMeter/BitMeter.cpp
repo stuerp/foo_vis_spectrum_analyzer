@@ -167,11 +167,10 @@ HRESULT bit_meter_t::CreateDeviceSpecificResources(_In_ ID2D1DeviceContext * dev
     {
         _MeasurementCount = _Processor->_BitMeasurements.size();
 
-        _State._SizeHasChanged = true;
-        _State._ColorsHaveChanged = true;
+        _State._DiscardResources = true;
     }
 
-    if (_State._ColorsHaveChanged || _State._SizeHasChanged)
+    if (_State._DiscardResources)
     {
         DeleteColorDependentResources();
 
@@ -183,7 +182,7 @@ HRESULT bit_meter_t::CreateDeviceSpecificResources(_In_ ID2D1DeviceContext * dev
             return hr;
     }
 
-    if (_State._SizeHasChanged)
+    if (_State._DiscardResources)
     {
         DeleteSizeDependentResources();
 
@@ -487,7 +486,7 @@ void bit_meter_t::OnConfigurationChanged(ConfigurationChanges configurationChang
     if (!IsSet(configurationChanges, ConfigurationChanges::Layout))
         _StaticContentCommandList.Reset();
 
-    _State._SizeHasChanged = true;
+    _State._DiscardResources = true;
 }
 
 }

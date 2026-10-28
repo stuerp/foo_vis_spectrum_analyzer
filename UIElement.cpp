@@ -275,8 +275,7 @@ void uielement_t::OnContextMenu(CWindow wnd, CPoint position) noexcept
 
                     _UIState = NewState;
 
-                    _UIState._SizeHasChanged    = true;
-                    _UIState._ColorsHaveChanged = true;
+                    _UIState._DiscardResources = true;
 
                     UpdateState(ConfigurationChanges::All);
 
@@ -365,7 +364,7 @@ void uielement_t::Resize()
 
             _Grid.Resize(SizeF.width, SizeF.height);
 
-            _RenderState._SizeHasChanged = true;
+            _RenderState._DiscardResources = true;
         }
 
         AddTools();
@@ -531,12 +530,9 @@ HRESULT uielement_t::GetArtworkColors() noexcept
 
     // Create the gradient stops.
     _RenderState._ArtworkGradientStops = gradient_t::CreateGradientStops(_RenderState._ArtworkColors);
-//  _RenderState._ColorsHaveChanged = true;
 
     // Notify the render thread.
     _Event.Raise(event_t::ArtworkColorsChanged);
-
-//  _IsConfigurationChanged = true;
 
     return S_OK;
 }
@@ -563,10 +559,8 @@ void uielement_t::UpdateState(ConfigurationChanges configurationChanges) noexcep
         {
             case ConfigurationChanges::All:
             {
-                _RenderState._SampleRate = 0;
-
-                _RenderState._SizeHasChanged    = true;
-                _RenderState._ColorsHaveChanged = true;
+                _RenderState._SampleRate       = 0;
+                _RenderState._DiscardResources = true;
 
                 // Get the artwork colors.
                 GetArtworkColors();
@@ -606,8 +600,7 @@ void uielement_t::UpdateState(ConfigurationChanges configurationChanges) noexcep
             case ConfigurationChanges::UserInterfaceColors:
             {
                 _RenderState._UserInterfaceColors = _UIState._UserInterfaceColors;
-
-                _RenderState._ColorsHaveChanged = true;
+                _RenderState._DiscardResources    = true;
                 break;
             }
 

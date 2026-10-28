@@ -72,7 +72,7 @@ void goniometer_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 
         _DeviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
 
-        _DeviceContext->Clear();
+        _DeviceContext->Clear(); // Transparent
 
         // Draw a faded and blurred version of the previous bitmap.
         if (_State._HasPhosphorDecay)
@@ -242,7 +242,7 @@ HRESULT goniometer_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceC
             return hr;
     }
 
-    if (_State._ColorsHaveChanged || _State._SizeHasChanged)
+    if (_State._DiscardResources)
     {
         DeleteColorDependentResources();
 
@@ -254,7 +254,7 @@ HRESULT goniometer_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceC
             return hr;
     }
 
-    if (_State._SizeHasChanged)
+    if (_State._DiscardResources)
     {
         DeleteSizeDependentResources();
 

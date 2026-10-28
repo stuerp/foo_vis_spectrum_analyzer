@@ -74,7 +74,7 @@ void oscilloscope_base_t::DeleteDeviceIndependentResources() noexcept
 /// </summary>
 HRESULT oscilloscope_base_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept
 {
-    if (_State._SizeHasChanged)
+    if (_State._DiscardResources)
         DeleteDeviceSpecificResources();
 
     HRESULT hr = S_OK;

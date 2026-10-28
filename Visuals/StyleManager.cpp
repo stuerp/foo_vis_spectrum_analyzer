@@ -1,5 +1,5 @@
 
-/** $VER: StyleManager.cpp (2026.09.30) P. Stuer - Creates and manages the DirectX resources of the styles. **/
+/** $VER: StyleManager.cpp (2026.10.28) P. Stuer - Creates and manages the DirectX resources of the styles. **/
 
 #include "pch.h"
 
@@ -895,7 +895,15 @@ std::unordered_map<VisualElement, style_t> style_manager_t::_DefaultStyles
             /* Name                */ L"Peak Level (> 0dB)",
             /* UsedBy              */ VisualizationTypes::PeakMeter,
             style_t::Features::SupportsOpacity,
-            ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::Red), 0, ColorScheme::Prism1, gradient_t::GetBuiltIn(ColorScheme::Custom), 1.f, 0.f, L"", 0.f
+            ColorSource::Solid,
+            D2D1::ColorF(D2D1::ColorF::Red),
+            0,
+            ColorScheme::Prism1,
+            gradient_t::GetBuiltIn(ColorScheme::Custom),
+            1.f,
+            0.f,
+            L"",
+            0.f
         )
     },
 
@@ -906,7 +914,15 @@ std::unordered_map<VisualElement, style_t> style_manager_t::_DefaultStyles
             /* Name                */ L"Peak Level (Max)",
             /* UsedBy              */ VisualizationTypes::PeakMeter,
             style_t::Features::SupportsOpacity | style_t::Features::SupportsThickness,
-            ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Solid, gradient_t::GetBuiltIn(ColorScheme::Custom), 1.f, 1.f, L"", 0.f
+            ColorSource::Solid,
+            D2D1::ColorF(D2D1::ColorF::White),
+            0,
+            ColorScheme::Solid,
+            gradient_t::GetBuiltIn(ColorScheme::Custom),
+            1.f,
+            1.f,
+            L"",
+            0.f
         )
     },
 
@@ -917,7 +933,15 @@ std::unordered_map<VisualElement, style_t> style_manager_t::_DefaultStyles
             /* Name                */ L"Peak Level Read Out",
             /* UsedBy              */ VisualizationTypes::PeakMeter,
             style_t::Features::SupportsOpacity | style_t::Features::SupportsFont,
-            ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Solid, gradient_t::GetBuiltIn(ColorScheme::Custom), 1.f, 0.f, L"Segoe UI", 10.f
+            ColorSource::Solid,
+            D2D1::ColorF(D2D1::ColorF::White),
+            0,
+            ColorScheme::Solid,
+            gradient_t::GetBuiltIn(ColorScheme::Custom),
+            1.f,
+            0.f,
+            L"Segoe UI",
+            10.f
         )
     },
 
@@ -929,7 +953,15 @@ std::unordered_map<VisualElement, style_t> style_manager_t::_DefaultStyles
             /* Name                */ L"RMS Level",
             /* UsedBy              */ VisualizationTypes::PeakMeter,
             style_t::Features::SupportsOpacity,
-            ColorSource::Gradient, D2D1::ColorF(D2D1::ColorF::Black), 0, ColorScheme::Prism1, gradient_t::GetBuiltIn(ColorScheme::Custom), 1.f, 0.f, L"", 0.f
+            ColorSource::Gradient,
+            D2D1::ColorF(D2D1::ColorF::Black),
+            0,
+            ColorScheme::Prism1,
+            gradient_t::GetBuiltIn(ColorScheme::Custom),
+            1.f,
+            0.f,
+            L"",
+            0.f
         )
     },
 

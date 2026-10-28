@@ -257,7 +257,7 @@ HRESULT balance_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * devi
         (void) deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), _DebugBrush.GetAddressOf());
 #endif
 
-    if (_State._ColorsHaveChanged || _State._SizeHasChanged)
+    if (_State._DiscardResources)
     {
         DeleteColorDependentResources();
 
@@ -269,7 +269,7 @@ HRESULT balance_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * devi
             return hr;
     }
 
-    if (_State._SizeHasChanged)
+    if (_State._DiscardResources)
     {
         DeleteSizeDependentResources();
 
@@ -385,25 +385,25 @@ HRESULT balance_meter_t::CreateOpacityMask(ID2D1DeviceContext * deviceContext) n
 {
     D2D1_SIZE_F Size = deviceContext->GetSize();
 
-    ComPtr<ID2D1BitmapRenderTarget> rt;
+    ComPtr<ID2D1BitmapRenderTarget> RenderTarget;
 
-    HRESULT hr = deviceContext->CreateCompatibleRenderTarget(Size, rt.GetAddressOf());
+    HRESULT hr = deviceContext->CreateCompatibleRenderTarget(Size, RenderTarget.GetAddressOf());
 
     if (FAILED(hr))
         return hr;
 
-    rt->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
+    RenderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
 
     ComPtr<ID2D1SolidColorBrush> Brush;
 
-    hr = rt->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Black), Brush.GetAddressOf()); // Black parts will be masked out.
+    hr = RenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Black), Brush.GetAddressOf()); // Black parts will be masked out.
 
     if (FAILED(hr))
         return hr;
 
-    rt->BeginDraw();
+    RenderTarget->BeginDraw();
 
-    rt->Clear(); // Transparent
+    RenderTarget->Clear(); // Transparent
 
     const FLOAT LEDSize = _State._LEDLight + _State._LEDGap;
 
@@ -417,7 +417,7 @@ HRESULT balance_meter_t::CreateOpacityMask(ID2D1DeviceContext * deviceContext) n
                 w = std::ceil(w / LEDSize) * LEDSize;
 
             for (FLOAT x = ((Size.width - w) / 2.f) + _State._LEDGap; x < w; x += LEDSize)
-                rt->FillRectangle(D2D1::RectF(x, 0.f, x + _State._LEDLight, Size.height), Brush.Get());
+                RenderTarget->FillRectangle(D2D1::RectF(x, 0.f, x + _State._LEDLight, Size.height), Brush.Get());
         }
         else
         {
@@ -427,16 +427,16 @@ HRESULT balance_meter_t::CreateOpacityMask(ID2D1DeviceContext * deviceContext) n
                 h = std::ceil(h / LEDSize) * LEDSize;
 
             for (FLOAT y = ((Size.height - h) / 2.f) + _State._LEDGap; y < h; y += LEDSize)
-                rt->FillRectangle(D2D1::RectF(0.f, y, Size.width, y + _State._LEDLight), Brush.Get());
+                RenderTarget->FillRectangle(D2D1::RectF(0.f, y, Size.width, y + _State._LEDLight), Brush.Get());
         }
     }
 
-    hr = rt->EndDraw();
+    hr = RenderTarget->EndDraw();
 
     if (FAILED(hr))
         return hr;
 
-    hr = rt->GetBitmap(_OpacityMask.GetAddressOf());
+    hr = RenderTarget->GetBitmap(_OpacityMask.GetAddressOf());
 
     return hr;
 }
@@ -449,7 +449,7 @@ void balance_meter_t::OnConfigurationChanged(ConfigurationChanges configurationC
     if (!IsSet(configurationChanges, ConfigurationChanges::Layout))
         return;
 
-    _State._SizeHasChanged = true;
+    _State._DiscardResources = true;
 }
 
 }
