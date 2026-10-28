@@ -1,5 +1,5 @@
 
-/** $VER: AudioProcessor.h (2026.10.27)P. Stuer **/
+/** $VER: AudioProcessor.h (2026.10.28)P. Stuer **/
 
 #pragma once
 
@@ -70,7 +70,7 @@ struct peak_measurement_t : measurement_t
 class audio_processor_t
 {
 public:
-    audio_processor_t(state_t & state) noexcept : _State(state), _SampleRate(), _ChannelCount(), _ChannelConfig(), _RMSTimeElapsed(), _RMSFrameCount(), _Left(), _Right(), _Mid(), _Side(), _Balance(0.5), _Phase(0.5) { };
+    audio_processor_t(state_t & state) noexcept : _State(state), _SampleRate(), _ChannelCount(), _ChannelConfig() { };
 
     audio_processor_t(const audio_processor_t &) = delete;
     audio_processor_t(audio_processor_t &&) = delete;
@@ -83,12 +83,9 @@ public:
     virtual void Configure(const graph_options_t * options) noexcept;
     virtual void Process(const audio_chunk & chunk) noexcept;
     virtual void Reset() noexcept;
+    virtual void UpdatePeaks(bool isStopped) noexcept;
 
     void ResetFFTPeaks() noexcept;
-    void ResetPeakMeasurements() noexcept;
-    void ResetRMSDependentValues() noexcept;
-
-    void UpdatePeakValues(bool isStopped) noexcept;
 
     static double GetAcousticWeight(double x, WeightingType weightingType, double weightAmount) noexcept;
 
@@ -117,42 +114,6 @@ private:
     void NormalizeWithAverageSmoothing(double factor) noexcept;
     void NormalizeWithPeakSmoothing(double factor) noexcept;
 
-    // Peak Meter / Level Meter
-    void MeterProcessing(const audio_chunk & chunk) noexcept;
-
-    void InitializePeakMeasurements(uint32_t channelMask) noexcept;
-
-    // Oscilloscope / Goniometer
-    void OscilloscopeProcessing(const audio_chunk & chunk) noexcept;
-
-    double NormalizeValue(double amplitude) const noexcept
-    {
-        return std::clamp(msc::Map(amplitude, _Options->_AmplitudeLo, _Options->_AmplitudeHi, 0., 1.), 0., 1.);
-    }
-
-    // Level Meter
-    double NormalizeLLevelValue(double level) const noexcept
-    {
-        return msc::Map(level, -1., 1., 0., 1.);
-    }
-
-    double SmoothValue(double value, double smoothedValue) const noexcept
-    {
-        switch (_State._SmoothingMethod)
-        {
-            default:
-
-            case SmoothingMethod::None:
-                return value;
-
-            case SmoothingMethod::Average:
-                return std::clamp((smoothedValue * _State._SmoothingFactor) + (value * (1. - _State._SmoothingFactor)), 0., 1.);
-
-            case SmoothingMethod::Peak:
-                return std::clamp(std::max(smoothedValue * _State._SmoothingFactor, value), 0., 1.);
-        }
-    }
-
 public:
     const state_t & _State;
     const graph_options_t * _Options;
@@ -173,30 +134,10 @@ public:
 
     frequency_bands_t _FrequencyBands;
 
-    // Peak meter
-    uint32_t _PeakActiveChannelMask;
-    std::vector<peak_measurement_t> _PeakMeasurements;
-
-    double _RMSTimeElapsed; // Elapsed time in the current RMS window (in seconds).
-    size_t _RMSFrameCount;  // Number of frames used in the current RMS window.
-
-    // Balance Meter
-    double _Left;           // [-1, 1]
-    double _Right;          // [-1, 1]
-
-    double _Mid;            // [-1, 1]
-    double _Side;           // [-1, 1]
-
-    double _Balance;        // [0, 1], 0.5 = Center
-    double _Phase;          // [0, 1], 0.5 = Center
+    std::wstring _DebugText;
 
     static const uint32_t ChannelPairs[6];
 
-    std::wstring _DebugText;
-
-private:
-    static constexpr double Amax = M_SQRT1_2;
-    const double dBCorrection = -20. * std::log10(Amax); // 3.01 dB;
-
+protected:
     msc::chrono_t _Chrono;
 };

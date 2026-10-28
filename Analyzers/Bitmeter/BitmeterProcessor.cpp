@@ -119,6 +119,15 @@ void processor_t::Process(const audio_chunk & chunk) noexcept
 }
 
 /// <summary>
+/// 
+/// </summary>
+void processor_t::UpdatePeaks(bool isStopped) noexcept
+{
+    if (isStopped)
+        _Chunk.reset();
+}
+
+/// <summary>
 /// Initializes the bit measurements before processing an audio chunk.
 /// </summary>
 void processor_t::Initialize(uint32_t activeChannelMask) noexcept

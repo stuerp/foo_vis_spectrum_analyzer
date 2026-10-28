@@ -1,5 +1,5 @@
 
-/** $VER: GoniometerProcessor.cpp (2026.10.27) P. Stuer - Implements an audio processor for the goniometer. **/
+/** $VER: GoniometerProcessor.cpp (2026.10.28) P. Stuer - Implements an audio processor for the goniometer. **/
 
 #include <pch.h>
 
@@ -144,6 +144,15 @@ void processor_t::Process(const audio_chunk & chunk) noexcept
 
         _Correlation += (InstantCorrelation - _Correlation) * .16; // Avoid jitter by smoothing the value.
     }
+}
+
+/// <summary>
+/// 
+/// </summary>
+void processor_t::UpdatePeaks(bool isStopped) noexcept
+{
+    if (isStopped)
+        _Chunk.reset();
 }
 
 /// <summary>

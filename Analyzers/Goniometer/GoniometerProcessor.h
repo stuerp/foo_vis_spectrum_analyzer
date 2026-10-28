@@ -39,6 +39,7 @@ public:
     void Configure(const graph_options_t * options) noexcept override final;
     void Reset() noexcept override final;
     void Process(const audio_chunk & chunk) noexcept override final;
+    void UpdatePeaks(bool isStopped) noexcept override final;
 
 public:
     HRESULT SetColorMode(goniometer::ColorMode mode) noexcept

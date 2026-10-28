@@ -4,7 +4,6 @@
 #include "pch.h"
 
 #include "AudioProcessor.h"
-#include "Downmixer.h"
 #include "FrequencyScaler.h"
 
 #include "FFTAnalyzer.h"
@@ -15,6 +14,8 @@
 
 #include "BitmeterProcessor.h"
 #include "GoniometerProcessor.h"
+#include "MeteringProcessor.h"
+#include "OscilloscopeProcessor.h"
 #include "TestProcessor.h"
 
 #include "Support.h"
@@ -40,11 +41,15 @@ std::unique_ptr<audio_processor_t> audio_processor_t::Create(state_t & state) no
         case VisualizationType::RadialBars:
         case VisualizationType::RadialCurve:
         case VisualizationType::Spectrogram:
-        case VisualizationType::PeakMeter:
-        case VisualizationType::LevelMeter:
-        case VisualizationType::Oscilloscope:
         case VisualizationType::EyeCandy:
             return std::make_unique<audio_processor_t>(state);
+
+        case VisualizationType::PeakMeter:
+        case VisualizationType::LevelMeter:
+            return std::make_unique<Metering::processor_t>(state);
+
+        case VisualizationType::Oscilloscope:
+            return std::make_unique<Oscilloscope::processor_t>(state);
 
         case VisualizationType::BitMeter:
             return std::make_unique<BitMeter::processor_t>(state);
@@ -119,20 +124,6 @@ void audio_processor_t::Reset() noexcept
         ResetFFTPeaks();
     }
 
-    // Peak/RMS Meter
-    {
-        ResetPeakMeasurements();
-        ResetRMSDependentValues();
-
-        InitializePeakMeasurements((uint32_t) Channels::ConfigStereo);
-    }
-
-    // Balance/Correlation Meter
-    {
-        _Balance = 0.5;
-        _Phase   = 0.5;
-    }
-
     _Chrono.Reset();
 }
 
@@ -168,19 +159,6 @@ void audio_processor_t::Process(const audio_chunk & chunk) noexcept
             break;
         }
   
-        case VisualizationType::PeakMeter:
-        case VisualizationType::LevelMeter:
-        {
-            MeterProcessing(chunk);
-            break;
-        }
-
-        case VisualizationType::Oscilloscope:
-        {
-            OscilloscopeProcessing(chunk);
-            break;
-        }
-
         case VisualizationType::EyeCandy:
         {
             _Chunk.copy(chunk, true);
@@ -203,36 +181,9 @@ void audio_processor_t::ResetFFTPeaks() noexcept
 }
 
 /// <summary>
-/// Resets the peak measurements.
-/// </summary>
-void audio_processor_t::ResetPeakMeasurements() noexcept
-{
-    for (peak_measurement_t & m : _PeakMeasurements)
-    {
-        m.Peak = m.RMS = -std::numeric_limits<double>::infinity();
-        m.NormalizedPeak = m.NormalizedRMS = 0.;
-    }
-}
-
-/// <summary>
-/// Resets the RMS window dependent values.
-/// </summary>
-void audio_processor_t::ResetRMSDependentValues() noexcept
-{
-    _RMSTimeElapsed = 0.;
-    _RMSFrameCount = 0;
-
-    _Left  = 0.;
-    _Right = 0.;
-
-    _Mid   = 0.;
-    _Side  = 0.;
-}
-
-/// <summary>
 /// Updates the peak values.
 /// </summary>
-void audio_processor_t::UpdatePeakValues(bool isStopped) noexcept
+void audio_processor_t::UpdatePeaks(bool isStopped) noexcept
 {
     assert(_Options);
 
@@ -341,130 +292,6 @@ void audio_processor_t::UpdatePeakValues(bool isStopped) noexcept
                     fb.PeakValue = std::clamp(fb.PeakValue, fb.Value, 1.);
                 }
             }
-            break;
-        }
-
-        case VisualizationType::PeakMeter:
-        {
-            // Animate the smoothed peak and RMS values.
-            for (auto & m : _PeakMeasurements)
-            {
-                if (m.NormalizedPeak >= m.MaxNormalizedPeak)
-                {
-                    if (IsAIMP)
-                        m.HoldTime += (m.NormalizedPeak - m.MaxNormalizedPeak) * HoldTime;
-                    else
-                        m.HoldTime = HoldTime;
-
-                    m.MaxNormalizedPeak = m.NormalizedPeak;
-                    m.FallRate          = 0.;
-                    m.Opacity           = 1.;
-                }
-                else
-                {
-                    if (m.HoldTime > 0.)
-                    {
-                        if (IsAIMP)
-                            m.MaxNormalizedPeak += (m.HoldTime - std::max(m.HoldTime - 1., 0.)) / HoldTime;
-
-                        m.HoldTime--;
-
-                        if (IsAIMP)
-                            m.HoldTime = std::min(m.HoldTime, HoldTime);
-                    }
-                    else
-                    {
-                        switch (_State._PeakMode)
-                        {
-                            default:
-
-                            case PeakMode::None:
-                                break;
-
-                            case PeakMode::Classic:
-                            {
-                                m.FallRate           = FallRate;
-                                m.MaxNormalizedPeak -= m.FallRate;
-                                break;
-                            }
-
-                            case PeakMode::Gravity:
-                            {
-                                m.FallRate          += FallRate;
-                                m.MaxNormalizedPeak -= m.FallRate;
-                                break;
-                            }
-
-                            case PeakMode::FadeOut:
-                            {
-                                m.FallRate += FallRate;
-
-                                m.Opacity -= m.FallRate;
-
-                                if (m.Opacity <= 0.)
-                                    m.MaxNormalizedPeak = m.NormalizedPeak;
-                                break;
-                            }
-
-                            case PeakMode::AIMP:
-                            {
-                                m.FallRate           = FallRate * (1. + (int) (m.MaxNormalizedPeak < 0.5));
-                                m.MaxNormalizedPeak -= m.FallRate;
-                                break;
-                            }
-
-                            case PeakMode::FadingAIMP:
-                            {
-                                m.FallRate           = FallRate * (1. + (int) (m.MaxNormalizedPeak < 0.5));
-                                m.MaxNormalizedPeak -= m.FallRate;
-
-                                m.Opacity -= m.FallRate;
-
-                                if (m.Opacity <= 0.)
-                                    m.MaxNormalizedPeak = m.NormalizedPeak;
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-            break;
-        }
-
-        case VisualizationType::LevelMeter:
-        {
-            if (isStopped)
-            {
-                const double Delta = 0.005;
-
-                if (_Balance > 0.5)
-                    _Balance = std::clamp(_Balance - Delta, 0.5, 1.0);
-                else
-                if (_Balance < 0.5)
-                    _Balance = std::clamp(_Balance + Delta, 0.0, 0.5);
-
-                if (_Phase > 0.5)
-                    _Phase = std::clamp(_Phase - Delta, 0.5, 1.0);
-                else
-                if (_Phase < 0.5)
-                    _Phase = std::clamp(_Phase + Delta, 0.0, 0.5);
-            }
-            break;
-        }
-
-        case VisualizationType::Oscilloscope:
-        case VisualizationType::BitMeter:
-        case VisualizationType::Goniometer:
-        {
-            if (isStopped)
-                _Chunk.reset();
-            break;
-        }
-
-        case VisualizationType::EyeCandy:
-        case VisualizationType::Tester:
-        case VisualizationType::D3DTester:
-        {
             break;
         }
     }
@@ -1134,240 +961,6 @@ void audio_processor_t::NormalizeWithPeakSmoothing(double strength) noexcept
 }
 
 #pragma endregion
-
-#pragma endregion
-
-#pragma region Peak/RMS Meter / Balance/Correlation Meter
-
-/// <summary>
-/// Process the chunk data for the peak and the level meter.
-/// </summary>
-void audio_processor_t::MeterProcessing(const audio_chunk & chunk) noexcept
-{
-    if (chunk.is_empty())
-        return;
-
-    const audio_sample * const Frames   = chunk.get_data();
-    const size_t FrameCount             = chunk.get_sample_count();
-    const uint32_t ChannelCount         = chunk.get_channel_count();
-    const uint32_t AvailableChannelMask = chunk.get_channel_config(); // Mask containing the channels in the audio chunk.
-
-    InitializePeakMeasurements(_ChannelMask);
-
-    constexpr size_t MaximumChannelCount = 32;
-    constexpr size_t BalanceChannelCount = 2;
-
-    struct meter_channel_t
-    {
-        uint32_t SampleOffset {};
-        size_t MeasurementIndex {};
-    };
-
-    std::array<meter_channel_t, MaximumChannelCount> MeterChannels {};
-
-    size_t MeterChannelCount = 0;
-
-    std::array<uint32_t, BalanceChannelCount> BalanceOffsets {};
-
-    size_t BalanceOffsetCount = 0;
-
-    const uint32_t ActiveChannelMask    = _Options->_ActiveChannelMask;
-    const size_t ChannelPairIndex = (size_t) _Options->_ChannelPair;
-
-    const uint32_t PairedChannelMask = ChannelPairs[ChannelPairIndex];
-
-    // Build the channel-to-sample-offset mappings once per chunk.
-    {
-        uint32_t ChannelMask  = AvailableChannelMask;
-        uint32_t ChannelBit   = 1;
-        uint32_t SampleOffset = 0;
-
-        size_t MeasurementIndex = 0;
-
-        while ((ChannelMask != 0) && (ChannelBit != 0))
-        {
-            if ((ChannelMask & ChannelBit) != 0)
-            {
-                const bool IsActive = (ActiveChannelMask & ChannelBit) != 0;
-
-                if (IsActive && (MeasurementIndex < _PeakMeasurements.size()))
-                {
-                    MeterChannels[MeterChannelCount++] =
-                    {
-                        SampleOffset,
-                        MeasurementIndex
-                    };
-
-                    if (((PairedChannelMask & ChannelBit) != 0) && (BalanceOffsetCount < BalanceOffsets.size()))
-                        BalanceOffsets[BalanceOffsetCount++] = SampleOffset;
-
-                    ++MeasurementIndex;
-                }
-
-                ++SampleOffset;
-                ChannelMask &= ~ChannelBit;
-            }
-
-            ChannelBit <<= 1;
-        }
-    }
-
-    for (size_t FrameIndex = 0; FrameIndex < FrameCount; ++FrameIndex)
-    {
-        const audio_sample * const Frame = Frames + (FrameIndex * (size_t) ChannelCount);
-
-        for (size_t ChannelIndex = 0; ChannelIndex < MeterChannelCount; ++ChannelIndex)
-        {
-            const meter_channel_t & Channel = MeterChannels[ChannelIndex];
-
-            const double Sample    = (double) Frame[Channel.SampleOffset];
-            const double Magnitude = std::abs(Sample);
-
-            auto & Measurement = _PeakMeasurements[Channel.MeasurementIndex];
-
-            Measurement.Peak      = std::max(Measurement.Peak, Magnitude);
-            Measurement.RMSTotal += Sample * Sample;
-        }
-
-        // Reset the balance samples for every frame. This prevents a sample from an earlier frame being reused when fewer than two paired channels are available.
-        std::array<double, BalanceChannelCount> BalanceSamples {};
-
-        for (size_t ChannelIndex = 0; ChannelIndex < BalanceOffsetCount; ++ChannelIndex)
-            BalanceSamples[ChannelIndex] = (double) Frame[BalanceOffsets[ChannelIndex]];
-
-        const double Left  = BalanceSamples[0];
-        const double Right = BalanceSamples[1];
-
-        _Left  += Left  * Left;
-        _Right += Right * Right;
-
-        const double Mid  = (Left + Right) * 0.5;
-        const double Side = (Left - Right) * 0.5;
-
-        _Mid  += Mid  * Mid;
-        _Side += Side * Side;
-    }
-
-    _RMSFrameCount  += FrameCount;
-    _RMSTimeElapsed += chunk.get_duration();
-
-    // Normalize and smooth the peak values. https://skippystudio.nl/2021/07/sound-intensity-and-decibels/
-    for (auto & Measurement : _PeakMeasurements)
-    {
-        Measurement.Peak           = ToDecibel(Measurement.Peak);
-        Measurement.NormalizedPeak = SmoothValue(NormalizeValue(Measurement.Peak), Measurement.NormalizedPeak);
-    }
-
-    // Keep accumulating until the configured RMS window has elapsed.
-    if (_RMSTimeElapsed < _State._RMSWindow)
-        return;
-
-    const double RMSFrameCount = (double) _RMSFrameCount;
-
-    for (auto & Measurement : _PeakMeasurements)
-    {
-        const double MeanSquare = Measurement.RMSTotal / RMSFrameCount;
-
-        // https://skippystudio.nl/2021/07/sound-intensity-and-decibels/
-        Measurement.RMS           = ToDecibel(std::sqrt(MeanSquare)) + (_State._HasRMSPlus3 ? dBCorrection : 0.0);
-        Measurement.NormalizedRMS = SmoothValue(NormalizeValue(Measurement.RMS), Measurement.NormalizedRMS);
-
-        Measurement.RMSTotal = 0.0;
-    }
-
-    const double LeftRMS  = std::sqrt(_Left  / RMSFrameCount);
-    const double RightRMS = std::sqrt(_Right / RMSFrameCount);
-
-    // Converts a signed level difference into the normalized meter range. Silence, denormalized input, and non-finite values produce the centered normalized value instead of NaN.
-    const auto CalculateNormalizedDifference = [&](double Positive, double Negative) noexcept -> double
-    {
-            const double Denominator = std::max(Positive, Negative);
-
-            if (!(Denominator > 0.0) || !std::isfinite(Denominator))
-                return NormalizeLLevelValue(0.0);
-
-            const double Difference = (Positive - Negative) / Denominator;
-
-            if (!std::isfinite(Difference))
-                return NormalizeLLevelValue(0.0);
-
-            return NormalizeLLevelValue(Difference);
-    };
-
-    if (!std::isfinite(_Balance))
-        _Balance = 0.5;
-
-    _Balance = SmoothValue(CalculateNormalizedDifference(RightRMS, LeftRMS), _Balance);
-
-    const double MidRMS  = std::sqrt(_Mid  / RMSFrameCount);
-    const double SideRMS = std::sqrt(_Side / RMSFrameCount);
-
-    if (!std::isfinite(_Phase))
-        _Phase = 0.5;
-
-    _Phase = SmoothValue(CalculateNormalizedDifference(MidRMS, SideRMS), _Phase);
-
-    ResetRMSDependentValues();
-}
-
-/// <summary>
-/// Initializes the peak measurements before processing an audio chunk.
-/// </summary>
-void audio_processor_t::InitializePeakMeasurements(uint32_t activeChannelMask) noexcept
-{
-    if (_PeakActiveChannelMask != activeChannelMask)
-    {
-        // The chunk configuration has changed. Recreate the measurements.
-        static constexpr const WCHAR * const ChannelNames[] =
-        {
-            L"FL", L"FR", L"FC",
-            L"LFE",
-            L"BL", L"BR", 
-            L"FCL", L"FCR",
-            L"BC", L"SL", L"SR", L"TC",
-            L"TFL", L"TFC", L"TFR", L"TBL", L"TBC", L"TBR",
-        };
-
-        size_t i = 0;
-
-        _PeakMeasurements.clear();
-
-        for (uint32_t ActiveChannelMask = activeChannelMask; (ActiveChannelMask != 0) && (i < _countof(ChannelNames)); ActiveChannelMask >>= 1, ++i)
-        {
-            if (ActiveChannelMask & 1)
-                _PeakMeasurements.push_back({ (Channels)(1 << i), ChannelNames[i] });
-        }
-
-        _PeakActiveChannelMask = activeChannelMask;
-
-        ResetRMSDependentValues();
-    }
-    else
-    {
-        // Reset only the peak level of each bar to -∞.
-        for (auto & m : _PeakMeasurements)
-            m.Peak = -std::numeric_limits<double>::infinity();
-    }
-}
-
-#pragma endregion
-
-#pragma region Oscilloscope
-
-/// <summary>
-/// Process the chunk data for the oscilloscope / goniometer.
-/// </summary>
-void audio_processor_t::OscilloscopeProcessing(const audio_chunk & chunk) noexcept
-{
-    if (_State._Downmix)
-    {
-        downmixer_t Downmixer;
-
-        Downmixer(chunk, _Options->_ActiveChannelMask, _Chunk);
-    }
-    else
-        _Chunk.copy(chunk, true);
-}
 
 #pragma endregion
 

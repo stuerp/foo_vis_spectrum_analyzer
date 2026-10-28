@@ -1,5 +1,5 @@
 
-/** $VER: PeakMeterParts.cpp (2026.10.24) P. Stuer - Implements the parts of a peak meter. **/
+/** $VER: PeakMeterParts.cpp (2026.10.28) P. Stuer - Implements the parts of a peak meter. **/
 
 #include "pch.h"
 
@@ -11,6 +11,9 @@
 #include "libmsc.h"
 
 #pragma hdrstop
+
+namespace Metering
+{
 
 /// <summary>
 /// Initializes the boundaries of this instance.
@@ -898,4 +901,6 @@ HRESULT scale_t::CreateStaticContent() noexcept
         hr = _StaticContent->Close();
 
     return hr;
+}
+
 }

@@ -7,6 +7,9 @@
 
 #include "OscilloscopeBase.h"
 
+namespace Oscilloscope
+{
+
 class oscilloscope_xy_t final : public oscilloscope_base_t
 {
 public:
@@ -47,3 +50,5 @@ private:
 
     ComPtr<ID2D1CommandList> _StaticContent;
 };
+
+}

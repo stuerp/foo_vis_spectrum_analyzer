@@ -1,5 +1,5 @@
 
-/** $VER: LevelMeter.h (2026.10.10) P. Stuer - Implements a left/right/mid/side level meter. **/
+/** $VER: PeakMeter.h (2026.10.28) P. Stuer - Represents a peak meter. **/
 
 #pragma once
 
@@ -16,19 +16,24 @@
 #include <d2d1_2.h>
 
 #include "Visualization.h"
+#include "MeteringProcessor.h"
+#include "PeakMeterParts.h"
 
-class level_meter_t final : public visualization_t
+namespace Metering
+{
+
+class peak_meter_t final : public visualization_t
 {
 public:
-    level_meter_t(state_t & state) : visualization_t(state) { }
+    peak_meter_t(state_t & state) : visualization_t(state) { }
 
-    level_meter_t(const level_meter_t &) = delete;
-    level_meter_t(level_meter_t &&) = delete;
+    peak_meter_t(const peak_meter_t &) = delete;
+    peak_meter_t(peak_meter_t &&) = delete;
 
-    level_meter_t & operator=(const level_meter_t &) = delete;
-    level_meter_t & operator=(level_meter_t &&) = delete;
+    peak_meter_t & operator=(const peak_meter_t &) = delete;
+    peak_meter_t & operator=(peak_meter_t &&) = delete;
 
-    virtual ~level_meter_t() noexcept;
+    virtual ~peak_meter_t() noexcept;
 
     // element_t
     void Move(const D2D1_RECT_F & rect) noexcept override final;
@@ -52,21 +57,43 @@ private:
 
     HRESULT CreateOpacityMask(ID2D1DeviceContext * deviceContext) noexcept;
 
-    void Initialize() noexcept { }
+    void CreateParts() noexcept;
+    void DeleteParts() noexcept;
+
+    void MeasureParts(ID2D1DeviceContext * deviceContext) noexcept;
+
+    void Initialize() noexcept;
 
 private:
-    audio_processor_t * _Processor;
+    processor_t * _Processor;
+
+    uint32_t _RenderedChannels { 0 };
+
+    static constexpr FLOAT _TickSize = 4.f;
+
+    style_t _BarBackgroundStyle;
+
+    style_t _PeakStyle;
+    style_t _Peak0dBStyle;
+    style_t _MaxPeakStyle;
+    style_t _PeakTextStyle;
+
+    style_t _RMSStyle;
+    style_t _RMS0dBStyle;
+    style_t _RMSTextStyle;
+
+    style_t _NameStyle;
+
+    style_t _ScaleTextStyle;
+    style_t _ScaleLineStyle;
+
+    std::vector<std::unique_ptr<part_t>> _Parts;
+
+    size_t _BarCount { 0 }; // Number bars in the part list.
 
 private:
     ComPtr<ID2D1Bitmap> _OpacityMask;
-
-    style_t _LeftRightStyle;
-    style_t _LeftRightIndicatorStyle;
-    style_t _MidSideStyle;
-    style_t _MidSideIndicatorStyle;
-    style_t _AxisStyle;
-
-#ifdef _DEBUG
     ComPtr<ID2D1SolidColorBrush> _DebugBrush;
-#endif
 };
+
+}

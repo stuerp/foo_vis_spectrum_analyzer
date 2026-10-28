@@ -299,7 +299,7 @@ void uielement_t::Animate(int64_t now) noexcept
     const bool IsStopped = (_RenderState._PlaybackTime == 0.);
 
     for (auto & Item : _Grid)
-        Item->_Processor->UpdatePeakValues(IsStopped);
+        Item->_Processor->UpdatePeaks(IsStopped);
 }
 
 /// <summary>

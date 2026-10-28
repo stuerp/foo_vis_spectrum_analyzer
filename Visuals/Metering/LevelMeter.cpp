@@ -1,11 +1,14 @@
 
-/** $VER: LevelMeter.cpp (2026.10.24) P. Stuer - Implements a left/right/mid/side level meter. **/
+/** $VER: LevelMeter.cpp (2026.10.28) P. Stuer - Implements a left/right/mid/side level meter. **/
 
 #include "pch.h"
 
 #include "LevelMeter.h"
 
 #pragma hdrstop
+
+namespace Metering
+{
 
 /// <summary>
 /// Destroys this instance.
@@ -21,7 +24,7 @@ level_meter_t::~level_meter_t() noexcept
 void level_meter_t::Configure(graph_options_t * options, audio_processor_t * processor, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept
 {
     _GraphOptions = options;
-    _Processor = processor;
+    _Processor = (processor_t *) processor;
 
     DeleteDeviceSpecificResources();
 }
@@ -447,4 +450,6 @@ void level_meter_t::OnConfigurationChanged(ConfigurationChanges configurationCha
         return;
 
     _State._SizeHasChanged = true;
+}
+
 }

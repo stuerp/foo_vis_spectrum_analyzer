@@ -1,17 +1,17 @@
 
-/** $VER: Oscilloscope.cpp (2026.10.10) P. Stuer - Implements an oscilloscope. **/
+/** $VER: Oscilloscope.cpp (2026.10.28) P. Stuer - Implements an oscilloscope. **/
 
 #include <pch.h>
 
 #include "Oscilloscope.h"
-
-#include <Analyzers/AmplitudeScaler.h>
-
+#include "AmplitudeScaler.h"
 #include "Support.h"
-
 #include "Direct2D.h"
 
 #pragma hdrstop
+
+namespace Oscilloscope
+{
 
 /// <summary>
 /// Destroys this instance.
@@ -37,7 +37,7 @@ void oscilloscope_t::Move(const D2D1_RECT_F & rect) noexcept
 void oscilloscope_t::Configure(graph_options_t * options, audio_processor_t * processor, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept
 {
     _GraphOptions = options;
-    _Processor = processor;
+    _Processor = (processor_t *) processor;
 
     _SquareBitmaps = false;
 
@@ -576,4 +576,6 @@ HRESULT oscilloscope_t::CreateStaticContent(uint32_t axesCount) noexcept
     _AxesCount = axesCount;
 
     return hr;
+}
+
 }

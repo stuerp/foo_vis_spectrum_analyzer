@@ -37,16 +37,16 @@ std::unique_ptr<visualization_t> visualization_t::Create(state_t & state) noexce
             return std::make_unique<spectrogram_t>(state);
 
         case VisualizationType::PeakMeter:
-            return std::make_unique<peak_meter_t>(state);
+            return std::make_unique<Metering::peak_meter_t>(state);
 
         case VisualizationType::LevelMeter:
-            return std::make_unique<level_meter_t>(state);
+            return std::make_unique<Metering::level_meter_t>(state);
 
         case VisualizationType::Oscilloscope:
             if (!state._XYMode)
-                return std::make_unique<oscilloscope_t>(state);
+                return std::make_unique<Oscilloscope::oscilloscope_t>(state);
 
-            return std::make_unique<oscilloscope_xy_t>(state);
+            return std::make_unique<Oscilloscope::oscilloscope_xy_t>(state);
 
         case VisualizationType::BitMeter:
             return std::make_unique<BitMeter::bit_meter_t>(state);

@@ -9,6 +9,9 @@
 
 #pragma hdrstop
 
+namespace Oscilloscope
+{
+
 /// <summary>
 /// Destroys this instance.
 /// </summary>
@@ -311,4 +314,6 @@ size_t oscilloscope_base_t::FindZeroCrossing(const audio_sample * frames, size_t
     }
 
     return CrossIndex;
+}
+
 }

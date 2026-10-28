@@ -20,6 +20,9 @@
 #include "AudioProcessor.h"
 #include "Style.h"
 
+namespace Metering
+{
+
 /// <summary>
 /// Implements a base class for the peak meter parts.
 /// </summary>
@@ -171,3 +174,5 @@ private:
 private:
     ComPtr<ID2D1CommandList> _StaticContent;
 };
+
+}

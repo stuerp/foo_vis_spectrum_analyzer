@@ -1,13 +1,15 @@
 
-/** $VER: Oscilloscope.h (2026.10.24) P. Stuer - Implements an oscilloscope. **/
+/** $VER: Oscilloscope.h (2026.10.28) P. Stuer - Implements an oscilloscope. **/
 
 #pragma once
 
 #include <pch.h>
 
 #include "OscilloscopeBase.h"
+#include "Downsampler.h"
 
-#include <Analyzers/Downsampler.h>
+namespace Oscilloscope
+{
 
 class oscilloscope_t final : public oscilloscope_base_t
 {
@@ -62,3 +64,5 @@ private:
     ComPtr<ID2D1CommandList> _StaticContext;
     size_t _AxesCount { 0 };
 };
+
+}

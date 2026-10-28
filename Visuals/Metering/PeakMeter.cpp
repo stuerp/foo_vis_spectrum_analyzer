@@ -1,11 +1,14 @@
 
-/** $VER: PeakMeter.cpp (2026.10.11) P. Stuer - Represents a peak meter. **/
+/** $VER: PeakMeter.cpp (2026.10.28) P. Stuer - Represents a peak meter. **/
 
 #include "pch.h"
 
 #include "PeakMeter.h"
 
 #pragma hdrstop
+
+namespace Metering
+{
 
 /// <summary>
 /// Destroys this instance.
@@ -18,14 +21,14 @@ peak_meter_t::~peak_meter_t() noexcept
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void peak_meter_t::Configure(graph_options_t * options, audio_processor_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept
+void peak_meter_t::Configure(graph_options_t * options, audio_processor_t * processor, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept
 {
     _GraphOptions = options;
-    _Processor    = analysis;
+    _Processor    = (processor_t *) processor;
 
     Reset();
 
-    _RenderedChannelMask = 0;
+    _RenderedChannels = 0;
 }
 
 /// <summary>
@@ -130,7 +133,7 @@ HRESULT peak_meter_t::CreateSizeDependentResources(ID2D1DeviceContext * deviceCo
             return hr;
     }
 
-    if ((_BarCount != _Processor->_PeakMeasurements.size()) || (_RenderedChannelMask != _Processor->_PeakActiveChannelMask))
+    if ((_BarCount != _Processor->_PeakMeasurements.size()) || (_RenderedChannels != _Processor->_SelectedChannels))
     {
         DeleteParts();
 
@@ -138,7 +141,7 @@ HRESULT peak_meter_t::CreateSizeDependentResources(ID2D1DeviceContext * deviceCo
 
         MeasureParts(deviceContext);
 
-        _RenderedChannelMask = _Processor->_PeakActiveChannelMask;
+        _RenderedChannels = _Processor->_SelectedChannels;
     }
 
     return S_OK;
@@ -546,4 +549,6 @@ void peak_meter_t::OnConfigurationChanged(ConfigurationChanges configurationChan
         return;
 
     _State._SizeHasChanged = true;
+}
+
 }
