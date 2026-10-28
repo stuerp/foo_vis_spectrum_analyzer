@@ -1,5 +1,5 @@
 
-/** $VER: D3DTester.cpp (2026.10.07) P. Stuer - Implements a minimal Direct3D visualization for testing purposes. **/
+/** $VER: D3DTester.cpp (2026.10.28) P. Stuer - Implements a minimal Direct3D visualization for testing purposes. **/
 
 #pragma once
 
@@ -8,6 +8,10 @@
 #include <Windows.h>
 
 #include "Visualization.h"
+#include "TestProcessor.h"
+
+namespace Test
+{
 
 // Render() draws a D3D11 triangle into a DirectComposition surface, then uses the caller's Direct2D device context on that same DXGI surface.
 class d3d_tester_t final : public visualization_t
@@ -32,15 +36,16 @@ public:
     void Configure(graph_options_t * options, audio_processor_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept override final;
 
 private:
-    audio_processor_t * _Processor;
+    HRESULT CreatePipeline() noexcept;
+
+private:
+    processor_t * _Processor;
 
     struct vertex_t
     {
         float Position[2];
         float Color[4];
     };
-
-    HRESULT CreatePipeline() noexcept;
 
 private:
     ComPtr<ID3D11Device> _D3DDevice;
@@ -51,3 +56,5 @@ private:
     ComPtr<ID3D11InputLayout> _InputLayout;
     ComPtr<ID3D11Buffer> _VertexBuffer;
 };
+
+}

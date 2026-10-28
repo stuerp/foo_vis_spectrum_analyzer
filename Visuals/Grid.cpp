@@ -50,8 +50,8 @@ void grid_t::Resize(FLOAT width, FLOAT height) noexcept
                 {
                     const auto & Graph = _Items[(i * _ColCount) + j];
 
-                    w = width  * Graph->_Processor->_GraphOptions->_HRatio;
-                    h = height * Graph->_Processor->_GraphOptions->_VRatio;
+                    w = width  * Graph->_Processor->_Options->_HRatio;
+                    h = height * Graph->_Processor->_Options->_VRatio;
 
                     if (!_VerticalLayout)
                         Rect.right += w;

@@ -1,11 +1,15 @@
 
-/** $VER: Tester.h (2026.10.10) P. Stuer - Implements a minimal visualization for testing purposes. **/
+/** $VER: Tester.h (2026.10.28) P. Stuer - Implements a minimal visualization for testing purposes. **/
 
 #pragma once
 
 #include <pch.h>
 
 #include "Visualization.h"
+#include "TestProcessor.h"
+
+namespace Test
+{
 
 class tester_t final : public visualization_t
 {
@@ -46,8 +50,10 @@ private:
     void Initialize() noexcept;
 
 private:
-    audio_processor_t * _Processor;
+    processor_t * _Processor;
 
 private:
     ComPtr<ID2D1SolidColorBrush> _Brush;
 };
+
+}

@@ -82,7 +82,6 @@ public:
 
     virtual void Configure(const graph_options_t * options) noexcept;
     virtual void Process(const audio_chunk & chunk) noexcept;
-
     virtual void Reset() noexcept;
 
     void ResetFFTPeaks() noexcept;
@@ -128,7 +127,7 @@ private:
 
     double NormalizeValue(double amplitude) const noexcept
     {
-        return std::clamp(msc::Map(amplitude, _GraphOptions->_AmplitudeLo, _GraphOptions->_AmplitudeHi, 0., 1.), 0., 1.);
+        return std::clamp(msc::Map(amplitude, _Options->_AmplitudeLo, _Options->_AmplitudeHi, 0., 1.), 0., 1.);
     }
 
     // Level Meter
@@ -156,7 +155,7 @@ private:
 
 public:
     const state_t & _State;
-    const graph_options_t * _GraphOptions;
+    const graph_options_t * _Options;
 
     audio_chunk_impl _Chunk;
 

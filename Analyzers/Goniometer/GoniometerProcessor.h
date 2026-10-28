@@ -41,13 +41,6 @@ public:
     void Process(const audio_chunk & chunk) noexcept override final;
 
 public:
-    void Initialize(state_t * state) noexcept
-    {
-    }
-
-    void Process(const audio_chunk & chunk, uint32_t selectedChannels, uint32_t pairedChannels, double loFreq, double hiFreq) noexcept;
-
-public:
     HRESULT SetColorMode(goniometer::ColorMode mode) noexcept
     {
         _ColorMode = mode;

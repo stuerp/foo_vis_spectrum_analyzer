@@ -1,5 +1,5 @@
 
-/** $VER: D3DTester.cpp (2026.10.07) P. Stuer - Implements a minimal Direct3D visualization for testing purposes. **/
+/** $VER: D3DTester.cpp (2026.10.28) P. Stuer - Implements a minimal Direct3D visualization for testing purposes. **/
 
 #include "pch.h"
 
@@ -8,6 +8,44 @@
 #include <Direct3D.h>
 
 #include "Resources.h"
+
+namespace Test
+{
+
+/// <summary>
+/// Destroys this instance.
+/// </summary>
+d3d_tester_t::~d3d_tester_t() noexcept
+{
+    Reset();
+}
+
+/// <summary>
+/// Moves this instance on the canvas.
+/// </summary>
+void d3d_tester_t::Move(const D2D1_RECT_F & rect) noexcept
+{
+    InitializeMetrics(rect);
+}
+
+/// <summary>
+/// Initializes this instance.
+/// </summary>
+void d3d_tester_t::Configure(graph_options_t * options, audio_processor_t * processor, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept
+{
+    _GraphOptions = options;
+    _Processor    = (processor_t *) processor;
+
+    Reset();
+
+    _D3DDevice        = d3dDevice;
+    _D3DDeviceContext = d3dDeviceContext;
+
+    HRESULT hr = CreatePipeline();
+
+    if (FAILED(hr))
+        Reset();
+}
 
 namespace
 {
@@ -39,41 +77,6 @@ float4 PSMain(PSInput input) : SV_TARGET
     return input.Color;
 }
 )";
-}
-
-/// <summary>
-/// Destroys this instance.
-/// </summary>
-d3d_tester_t::~d3d_tester_t() noexcept
-{
-    Reset();
-}
-
-/// <summary>
-/// Moves this instance on the canvas.
-/// </summary>
-void d3d_tester_t::Move(const D2D1_RECT_F & rect) noexcept
-{
-    InitializeMetrics(rect);
-}
-
-/// <summary>
-/// Initializes this instance.
-/// </summary>
-void d3d_tester_t::Configure(graph_options_t * options, audio_processor_t * processor, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept
-{
-    _GraphOptions = options;
-    _Processor    = processor;
-
-    Reset();
-
-    _D3DDevice        = d3dDevice;
-    _D3DDeviceContext = d3dDeviceContext;
-
-    HRESULT hr = CreatePipeline();
-
-    if (FAILED(hr))
-        Reset();
 }
 
 /// <summary>
@@ -250,4 +253,6 @@ void d3d_tester_t::Reset() noexcept
 
     _D3DDeviceContext.Reset();
     _D3DDevice.Reset();
+}
+
 }

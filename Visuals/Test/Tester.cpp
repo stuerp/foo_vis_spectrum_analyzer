@@ -1,14 +1,14 @@
 
-/** $VER: Tester.cpp (2026.10.05) P. Stuer - Implements a minimal visualization for testing purposes. **/
+/** $VER: Tester.cpp (2026.10.28) P. Stuer - Implements a minimal visualization for testing purposes. **/
 
 #include <pch.h>
 
 #include "Tester.h"
 
-#include <cmath>
-#include <random>
-
 #pragma hdrstop
+
+namespace Test
+{
 
 /// <summary>
 /// Destroys this instance.
@@ -24,7 +24,7 @@ tester_t::~tester_t()
 void tester_t::Configure(graph_options_t * options, audio_processor_t * processor, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept
 {
     _GraphOptions = options;
-    _Processor    = processor;
+    _Processor    = (processor_t *) processor;
 
     Reset();
 
@@ -69,53 +69,64 @@ void tester_t::Render(ID2D1DeviceContext * deviceContext) noexcept
     {
         deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
-        const audio_sample * Frames = _Processor->_Chunk.get_data();
-
         const size_t FrameCount   = _Processor->_Chunk.get_sample_count();     // get_sample_count() actually returns the number of frames.
         const size_t ChannelCount = _Processor->_Chunk.get_channel_count();
 
         const auto dx = _Size.width / (FLOAT) FrameCount;
         const auto h2 = _Size.height / 2.f;
-        const auto Scale = (h2 * 0.85) * (0.5 + Gain);
+        const auto Scale = h2 * (0.5 * Gain);
 
         D2D1_POINT_2F p1 = { };
         D2D1_POINT_2F p2 = { };
 
-        _Brush->SetColor(D2D1::ColorF(RGB(134, 171, 241), .5f));
-
-        for (size_t i = 0; i < FrameCount * ChannelCount; i += ChannelCount)
         {
-            const auto x = (FLOAT) ((FLOAT) i * dx);
-            const auto y = (FLOAT) h2 - (FLOAT) (Frames[i] * Scale); // FIX ME: Only the first channel is used.
+            _Brush->SetColor(D2D1::ColorF(RGB(134, 171, 241), .5f));
 
-            if (i == 0)
-                p1 = { x, y };
-            else
+            const audio_sample * const Frames   = _Processor->_Chunk.get_data();
+            const audio_sample * const FrameEnd = Frames + (FrameCount * ChannelCount);
+
+            float x = 0.f;
+
+            for (const auto * Frame = Frames; Frame < FrameEnd; Frame += ChannelCount, x += dx)
             {
-                p2 = { x, y };
+                const auto y = h2 - (float) (Frame[0] * Scale);
 
-                deviceContext->DrawLine(p1, p2, _Brush.Get(), 3.f);
+                if (Frame == Frames)
+                    p1 = { x, y };
+                else
+                {
+                    p2 = { x, y };
 
-                p1 = p2;
+                    deviceContext->DrawLine(p1, p2, _Brush.Get(), 3.f);
+
+                    p1 = p2;
+                }
             }
         }
 
-        _Brush->SetColor(D2D1::ColorF(RGB(213, 238, 251), 1.f));
-
-        for (size_t i = 0; i < FrameCount * ChannelCount; i += ChannelCount)
+        if (ChannelCount > 1)
         {
-            const auto x = (FLOAT) ((FLOAT) i * dx);
-            const auto y = (FLOAT) h2 - (FLOAT) (Frames[i] * Scale); // FIX ME: Only the first channel is used.
+            _Brush->SetColor(D2D1::ColorF(RGB(213, 238, 251), 1.f));
 
-            if (i == 0)
-                p1 = { x, y };
-            else
+            const audio_sample * const Frames   = _Processor->_Chunk.get_data();
+            const audio_sample * const FrameEnd = Frames + (FrameCount * ChannelCount);
+
+            float x = 0.f;
+
+            for (const auto * Frame = Frames; Frame < FrameEnd; Frame += ChannelCount, x += dx)
             {
-                p2 = { x, y };
+                const auto y = h2 - (float) (Frame[1] * Scale);
 
-                deviceContext->DrawLine(p1, p2, _Brush.Get(), 1.f);
+                if (Frame == Frames)
+                    p1 = { x, y };
+                else
+                {
+                    p2 = { x, y };
 
-                p1 = p2;
+                    deviceContext->DrawLine(p1, p2, _Brush.Get(), 3.f);
+
+                    p1 = p2;
+                }
             }
         }
     }
@@ -242,4 +253,6 @@ void tester_t::OnConfigurationChanged(ConfigurationChanges configurationChanges)
         return;
 
     _State._SizeHasChanged = true;
+}
+
 }

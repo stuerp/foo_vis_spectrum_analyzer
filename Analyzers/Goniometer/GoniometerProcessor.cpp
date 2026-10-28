@@ -56,8 +56,8 @@ void processor_t::Process(const audio_chunk & chunk) noexcept
     const uint32_t ChannelCount         = chunk.get_channel_count();
     const uint32_t AvailableChannelMask = chunk.get_channel_config();  // Mask containing the channels in the audio chunk.
 
-    const uint32_t ActiveChannelMask = _GraphOptions->_ActiveChannelMask;                                       // Mask containing the channels selected by the user.
-    const uint32_t PairedChannelMask = audio_processor_t::ChannelPairs[(size_t) _GraphOptions->_ChannelPair];   // Mask containing the channels selected by the user as a channel pair.
+    const uint32_t ActiveChannelMask = _Options->_ActiveChannelMask;                                       // Mask containing the channels selected by the user.
+    const uint32_t PairedChannelMask = audio_processor_t::ChannelPairs[(size_t) _Options->_ChannelPair];   // Mask containing the channels selected by the user as a channel pair.
 
     const uint32_t ChannelMask = AvailableChannelMask & ActiveChannelMask & ((ChannelCount > 1) ? PairedChannelMask : ~0u);
 

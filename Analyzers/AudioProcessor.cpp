@@ -1,5 +1,5 @@
 
-/** $VER: AudioProcessor.cpp (2026.10.27) P. Stuer **/
+/** $VER: AudioProcessor.cpp (2026.10.28) P. Stuer **/
 
 #include "pch.h"
 
@@ -15,6 +15,7 @@
 
 #include "BitmeterProcessor.h"
 #include "GoniometerProcessor.h"
+#include "TestProcessor.h"
 
 #include "Support.h"
 
@@ -43,8 +44,6 @@ std::unique_ptr<audio_processor_t> audio_processor_t::Create(state_t & state) no
         case VisualizationType::LevelMeter:
         case VisualizationType::Oscilloscope:
         case VisualizationType::EyeCandy:
-        case VisualizationType::Tester:
-        case VisualizationType::D3DTester:
             return std::make_unique<audio_processor_t>(state);
 
         case VisualizationType::BitMeter:
@@ -52,6 +51,10 @@ std::unique_ptr<audio_processor_t> audio_processor_t::Create(state_t & state) no
 
         case VisualizationType::Goniometer:
             return std::make_unique<Goniometer::processor_t>(state);
+
+        case VisualizationType::Tester:
+        case VisualizationType::D3DTester:
+            return std::make_unique<Test::processor_t>(state);
     }
 }
 
@@ -60,7 +63,7 @@ std::unique_ptr<audio_processor_t> audio_processor_t::Create(state_t & state) no
 /// </summary>
 void audio_processor_t::Configure(const graph_options_t * options) noexcept
 {
-    _GraphOptions = options;
+    _Options = options;
 
     switch (_State._FrequencyDistribution)
     {
@@ -146,7 +149,7 @@ void audio_processor_t::Process(const audio_chunk & chunk) noexcept
     _ChannelConfig    = chunk.get_channel_config();
 
     _NyquistFrequency = (double) _SampleRate / 2.;
-    _ChannelMask      = _ChannelConfig & _GraphOptions->_ActiveChannelMask;
+    _ChannelMask      = _ChannelConfig & _Options->_ActiveChannelMask;
 
     if (_ChannelMask == 0)
         return; // None of the selected channels are present in this chunk.
@@ -173,7 +176,6 @@ void audio_processor_t::Process(const audio_chunk & chunk) noexcept
         }
 
         case VisualizationType::Oscilloscope:
-        case VisualizationType::Goniometer:
         {
             OscilloscopeProcessing(chunk);
             break;
@@ -182,18 +184,6 @@ void audio_processor_t::Process(const audio_chunk & chunk) noexcept
         case VisualizationType::EyeCandy:
         {
             _Chunk.copy(chunk, true);
-            break;
-        }
-
-        case VisualizationType::Tester:
-        {
-            SpectrumProcessing(chunk);
-            _Chunk.copy(chunk, true);
-            break;
-        }
-
-        case VisualizationType::D3DTester:
-        {
             break;
         }
     }
@@ -244,10 +234,10 @@ void audio_processor_t::ResetRMSDependentValues() noexcept
 /// </summary>
 void audio_processor_t::UpdatePeakValues(bool isStopped) noexcept
 {
-    assert(_GraphOptions);
+    assert(_Options);
 
     const double Elapsed = _Chrono.Elapsed();
-    const double AmplitudeRange = _GraphOptions->_AmplitudeHi - _GraphOptions->_AmplitudeLo;
+    const double AmplitudeRange = _Options->_AmplitudeHi - _Options->_AmplitudeLo;
 
     const double HoldTime = _State._HoldTime * (double) _State._TargetRefreshRate;
     const double FallRate = (_State._FallRate != 0) ? msc::Map(Elapsed, 0., AmplitudeRange / _State._FallRate, 0., 1.) : 0.;
@@ -518,7 +508,7 @@ void audio_processor_t::GenerateLinearFrequencyBands()
 
         assert(fb.Low <= fb.Center && fb.Center <= fb.High);
 
-        ::StringCchPrintfW(fb.Label, _countof(fb.Label), L"%.*f Hz", _GraphOptions->_XAxisDecimals, fb.Center);
+        ::StringCchPrintfW(fb.Label, _countof(fb.Label), L"%.*f Hz", _Options->_XAxisDecimals, fb.Center);
 
         fb.HasDarkBackground = true;
 
@@ -594,9 +584,9 @@ void audio_processor_t::GenerateOctaveFrequencyBands()
             const uint32_t Octave = Note / (uint32_t) _countof(NoteNames);
 
             if (msc::InRange(f, fb.Low, fb.High))
-                ::StringCchPrintfW(fb.Label, _countof(fb.Label), L"%s%d\n%.*f Hz", NoteNames[n], Octave, _GraphOptions->_XAxisDecimals, fb.Center);
+                ::StringCchPrintfW(fb.Label, _countof(fb.Label), L"%s%d\n%.*f Hz", NoteNames[n], Octave, _Options->_XAxisDecimals, fb.Center);
             else
-                ::StringCchPrintfW(fb.Label, _countof(fb.Label), L"%.*f Hz", _GraphOptions->_XAxisDecimals, fb.Center);
+                ::StringCchPrintfW(fb.Label, _countof(fb.Label), L"%.*f Hz", _Options->_XAxisDecimals, fb.Center);
 
             fb.HasDarkBackground = (n == 1 || n == 3 || n == 6 || n == 8 || n == 10);
         }
@@ -652,7 +642,7 @@ void audio_processor_t::GenerateAveePlayerFrequencyBands()
 
         assert(fb.Low <= fb.Center && fb.Center <= fb.High);
 
-        ::StringCchPrintfW(fb.Label, _countof(fb.Label), L"%.*f Hz", _GraphOptions->_XAxisDecimals, fb.Center);
+        ::StringCchPrintfW(fb.Label, _countof(fb.Label), L"%.*f Hz", _Options->_XAxisDecimals, fb.Center);
 
         fb.HasDarkBackground = true;
 
@@ -717,7 +707,7 @@ void audio_processor_t::GenerateMelFrequencyBands()
         if (fb.High <= fb.Center)
             fb.High = fb.Center + 1.;
 
-        ::StringCchPrintfW(fb.Label, _countof(fb.Label), L"%d mel\n%.*f Hz", (int) HzToMel(fb.Center), _GraphOptions->_XAxisDecimals, fb.Center);
+        ::StringCchPrintfW(fb.Label, _countof(fb.Label), L"%d mel\n%.*f Hz", (int) HzToMel(fb.Center), _Options->_XAxisDecimals, fb.Center);
 
         fb.HasDarkBackground = true;
 
@@ -849,10 +839,10 @@ void audio_processor_t::GenerateDecadeAlignedFrequencyBands()
             if (FractionalPart == 0.)
                 ::StringCchPrintfW(fb.Label, _countof(fb.Label), L"%.0fk", CenterInKilohertz);
             else
-                ::StringCchPrintfW(fb.Label, _countof(fb.Label), L"%.*fk", _GraphOptions->_XAxisDecimals, CenterInKilohertz);
+                ::StringCchPrintfW(fb.Label, _countof(fb.Label), L"%.*fk", _Options->_XAxisDecimals, CenterInKilohertz);
         }
         else
-            ::StringCchPrintfW(fb.Label, _countof(fb.Label), L"%.*f", _GraphOptions->_XAxisDecimals, fb.Center);
+            ::StringCchPrintfW(fb.Label, _countof(fb.Label), L"%.*f", _Options->_XAxisDecimals, fb.Center);
 
         fb.HasDarkBackground = true;
     }
@@ -872,7 +862,7 @@ void audio_processor_t::SpectrumProcessing(const audio_chunk & chunk) noexcept
 
     CreateAnalyzer();
 
-    _Analyzer->AnalyzeAudio(Frames, FrameCount, _GraphOptions->_ActiveChannelMask, _FrequencyBands);
+    _Analyzer->AnalyzeAudio(Frames, FrameCount, _Options->_ActiveChannelMask, _FrequencyBands);
 
     // Filter the spectrum.
     if (_State._WeightingType != WeightingType::None)
@@ -1111,7 +1101,7 @@ void audio_processor_t::Normalize() noexcept
     {
         assert(::isfinite(fb.RawValue));
 
-        const auto ScaledValue = _GraphOptions->ScaleAmplitude(fb.RawValue);
+        const auto ScaledValue = _Options->ScaleAmplitude(fb.RawValue);
 
         fb.Value = std::clamp(ScaledValue, 0., 1.);
     }
@@ -1124,7 +1114,7 @@ void audio_processor_t::NormalizeWithAverageSmoothing(double strength) noexcept
 {
     for (frequency_band_t & fb : _FrequencyBands)
     {
-        const auto ScaledValue = ::isfinite(fb.RawValue) ? _GraphOptions->ScaleAmplitude(fb.RawValue) * (1.0 - strength) : 0.;
+        const auto ScaledValue = ::isfinite(fb.RawValue) ? _Options->ScaleAmplitude(fb.RawValue) * (1.0 - strength) : 0.;
 
         fb.Value = std::clamp((fb.Value * strength) + ScaledValue, 0., 1.);
     }
@@ -1137,7 +1127,7 @@ void audio_processor_t::NormalizeWithPeakSmoothing(double strength) noexcept
 {
     for (frequency_band_t & fb : _FrequencyBands)
     {
-        const auto ScaledValue = std::isfinite(fb.RawValue) ? _GraphOptions->ScaleAmplitude(fb.RawValue) : 0.;
+        const auto ScaledValue = std::isfinite(fb.RawValue) ? _Options->ScaleAmplitude(fb.RawValue) : 0.;
 
         fb.Value = std::clamp(std::max(fb.Value * strength, ScaledValue), 0., 1.);
     }
@@ -1181,8 +1171,8 @@ void audio_processor_t::MeterProcessing(const audio_chunk & chunk) noexcept
 
     size_t BalanceOffsetCount = 0;
 
-    const uint32_t ActiveChannelMask    = _GraphOptions->_ActiveChannelMask;
-    const size_t ChannelPairIndex = (size_t) _GraphOptions->_ChannelPair;
+    const uint32_t ActiveChannelMask    = _Options->_ActiveChannelMask;
+    const size_t ChannelPairIndex = (size_t) _Options->_ChannelPair;
 
     const uint32_t PairedChannelMask = ChannelPairs[ChannelPairIndex];
 
@@ -1373,7 +1363,7 @@ void audio_processor_t::OscilloscopeProcessing(const audio_chunk & chunk) noexce
     {
         downmixer_t Downmixer;
 
-        Downmixer(chunk, _GraphOptions->_ActiveChannelMask, _Chunk);
+        Downmixer(chunk, _Options->_ActiveChannelMask, _Chunk);
     }
     else
         _Chunk.copy(chunk, true);

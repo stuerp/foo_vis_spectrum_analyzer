@@ -1,5 +1,5 @@
 
-/** $VER: Visualization.cpp (2026.10.24) P. Stuer - Base class for all visualization elements. **/
+/** $VER: Visualization.cpp (2026.10.28) P. Stuer - Base class for all visualization elements. **/
 
 #include "pch.h"
 
@@ -58,9 +58,9 @@ std::unique_ptr<visualization_t> visualization_t::Create(state_t & state) noexce
             return std::make_unique<eye_candy_t>(state);
 
         case VisualizationType::Tester:
-            return std::make_unique<tester_t>(state);
+            return std::make_unique<Test::tester_t>(state);
 
         case VisualizationType::D3DTester:
-            return std::make_unique<d3d_tester_t>(state);
+            return std::make_unique<Test::d3d_tester_t>(state);
     }
 }

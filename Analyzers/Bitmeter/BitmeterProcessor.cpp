@@ -42,7 +42,7 @@ void processor_t::Process(const audio_chunk & chunk) noexcept
     _ChannelCount  = chunk.get_channel_count();
     _ChannelConfig = chunk.get_channel_config();
 
-    _ChannelMask   = _ChannelConfig & _GraphOptions->_ActiveChannelMask;
+    _ChannelMask   = _ChannelConfig & _Options->_ActiveChannelMask;
 
     if (_ChannelMask == 0)
         return; // None of the selected channels are present in this chunk.
@@ -63,7 +63,7 @@ void processor_t::Process(const audio_chunk & chunk) noexcept
         size_t i = 0;
 
         uint32_t AvailableChannelMask = chunk.get_channel_config();         // Mask containing the channels in the audio chunk.
-        uint32_t ActiveChannelMask    = _GraphOptions->_ActiveChannelMask;  // Mask containing the channels selected by the user for processing.
+        uint32_t ActiveChannelMask    = _Options->_ActiveChannelMask;  // Mask containing the channels selected by the user for processing.
 
         while ((AvailableChannelMask & ActiveChannelMask) != 0)
         {
