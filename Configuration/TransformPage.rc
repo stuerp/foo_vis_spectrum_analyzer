@@ -43,7 +43,7 @@ style DS_SETFONT | DS_CONTROL | WS_CHILD | WS_CLIPCHILDREN
         rtext           "Coeff. aggregation:"       IDC_STATIC,                     X_A15, Y_A15 + 2, W_A15, H_A15
         combobox                                    IDC_AGGREGATION_METHOD,           X_A16, Y_A16,     W_A16, H_A16, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
 
-        rtext           "Mapping:",                 IDC_STATIC,                     X_A65, Y_A65 + 2, W_A65, H_A65
+        rtext           "Coeff. mapping:"           IDC_STATIC,                     X_A65, Y_A65 + 2, W_A65, H_A65
         combobox                                    IDC_MAPPING_METHOD,             X_A66, Y_A66,     W_A66, H_A66, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
 
         control         "Smooth lower frequencies", IDC_SMOOTH_LOWER_FREQUENCIES, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_A43, Y_A43, W_A43, H_A43

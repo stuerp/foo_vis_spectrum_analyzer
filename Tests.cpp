@@ -1,11 +1,11 @@
 
-/** $VER: Tests.cpp (2026.10.24) P. Stuer - Various unit tests **/
+/** $VER: Tests.cpp (2026.10.28) P. Stuer - Various unit tests **/
 
 #include "pch.h"
 
 #ifdef _DEBUG
 
-#include "Analyzers/AudioProcessor.h"
+#include "Analyzers/Spectrum/SpectrumProcessor.h"
 #include "FrequencyScaler.h"
 #include "WindowFunctions.h"
 #include "Log.h"
@@ -16,7 +16,7 @@ static void TestWeighting()
     constexpr double DecibelTolerance = 1.e-6;
 
     state_t State;
-    audio_processor_t Analysis(State);
+    Spectrum::processor_t Processor(State);
 
     struct weighting_test_t
     {
@@ -41,7 +41,7 @@ static void TestWeighting()
 
     for (auto & Test : AWeightingTests)
     {
-        const double Weight = Analysis.GetAcousticWeight(Test.Frequency, WeightingType::AWeighting, 1.);
+        const double Weight = Processor.GetAcousticWeight(Test.Frequency, WeightingType::AWeighting, 1.);
 
         const double Decibels = 20. * std::log10(Weight);
 
@@ -65,7 +65,7 @@ static void TestWeighting()
 
     for (auto & Test : BWeightingTests)
     {
-        const double Weight = Analysis.GetAcousticWeight(Test.Frequency, WeightingType::BWeighting, 1.);
+        const double Weight = Processor.GetAcousticWeight(Test.Frequency, WeightingType::BWeighting, 1.);
 
         const double Decibels = 20. * std::log10(Weight);
 
@@ -89,7 +89,7 @@ static void TestWeighting()
 
     for (auto & Test : CWeightingTests)
     {
-        const double Weight = Analysis.GetAcousticWeight(Test.Frequency, WeightingType::CWeighting, 1.);
+        const double Weight = Processor.GetAcousticWeight(Test.Frequency, WeightingType::CWeighting, 1.);
 
         const double Decibels = 20. * std::log10(Weight);
 
@@ -113,7 +113,7 @@ static void TestWeighting()
 
     for (auto & Test : DWeightingTests)
     {
-        const double Weight = Analysis.GetAcousticWeight(Test.Frequency, WeightingType::DWeighting, 1.);
+        const double Weight = Processor.GetAcousticWeight(Test.Frequency, WeightingType::DWeighting, 1.);
 
         const double Decibels = 20. * std::log10(Weight);
 
@@ -137,7 +137,7 @@ static void TestWeighting()
 
     for (auto & Test : MWeightingTests)
     {
-        const double Weight = Analysis.GetAcousticWeight(Test.Frequency, WeightingType::MWeighting, 1.);
+        const double Weight = Processor.GetAcousticWeight(Test.Frequency, WeightingType::MWeighting, 1.);
 
         const double Decibels = 20. * std::log10(Weight);
 

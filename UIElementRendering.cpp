@@ -144,7 +144,7 @@ void uielement_t::ProcessEvents() noexcept
         if (_RenderState._ResetPeaksOnTrackChange)
         {
             for (auto & Graph : _Grid)
-                Graph->_Processor->ResetFFTPeaks();
+                Graph->_Processor->ResetPeaks();
         }
 
         _RenderState._IsPaused = false;

@@ -962,7 +962,7 @@ std::unordered_map<VisualElement, style_t> style_manager_t::_DefaultStyles
         style_t
         (
             /* Name                */ L"Left/Right Level",
-            /* UsedBy              */ VisualizationTypes::LevelMeter,
+            /* UsedBy              */ VisualizationTypes::BalanceMeter,
             style_t::Features::SupportsOpacity | style_t::Features::SupportsThickness,
             ColorSource::Gradient, D2D1::ColorF(D2D1::ColorF::Black), 0, ColorScheme::Prism1, gradient_t::GetBuiltIn(ColorScheme::Custom), 1.f, 1.f, L"", 0.f
         )
@@ -973,7 +973,7 @@ std::unordered_map<VisualElement, style_t> style_manager_t::_DefaultStyles
         style_t
         (
             /* Name                */ L"Left/Right Level Indicator",
-            /* UsedBy              */ VisualizationTypes::LevelMeter,
+            /* UsedBy              */ VisualizationTypes::BalanceMeter,
             style_t::Features::SupportsOpacity | style_t::Features::SupportsThickness,
             ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Prism1, gradient_t::GetBuiltIn(ColorScheme::Custom), 1.f, 1.f, L"", 0.f
         )
@@ -984,7 +984,7 @@ std::unordered_map<VisualElement, style_t> style_manager_t::_DefaultStyles
         style_t
         (
             /* Name                */ L"Mid/Side Level",
-            /* UsedBy              */ VisualizationTypes::LevelMeter,
+            /* UsedBy              */ VisualizationTypes::BalanceMeter,
             style_t::Features::SupportsOpacity | style_t::Features::SupportsThickness,
             ColorSource::Gradient, D2D1::ColorF(D2D1::ColorF::Black), 0, ColorScheme::Prism1, gradient_t::GetBuiltIn(ColorScheme::Custom), 1.f, 1.f, L"", 0.f
         )
@@ -995,7 +995,7 @@ std::unordered_map<VisualElement, style_t> style_manager_t::_DefaultStyles
         style_t
         (
             /* Name                */ L"Mid/Side Level Indicator",
-            /* UsedBy              */ VisualizationTypes::LevelMeter,
+            /* UsedBy              */ VisualizationTypes::BalanceMeter,
             style_t::Features::SupportsOpacity | style_t::Features::SupportsThickness,
             ColorSource::Solid, D2D1::ColorF(D2D1::ColorF::White), 0, ColorScheme::Prism1, gradient_t::GetBuiltIn(ColorScheme::Custom), 1.f, 1.f, L"", 0.f
         )
@@ -1006,7 +1006,7 @@ std::unordered_map<VisualElement, style_t> style_manager_t::_DefaultStyles
         style_t
         (
             /* Name                */ L"Left/Side Axis",
-            /* UsedBy              */ VisualizationTypes::LevelMeter,
+            /* UsedBy              */ VisualizationTypes::BalanceMeter,
             /* Flags               */ style_t::Features::SupportsOpacity | style_t::Features::SupportsThickness | style_t::Features::SupportsFont,
             /* ColorSource         */ ColorSource::Solid,
             /* CustomColor         */ D2D1::ColorF(D2D1::ColorF::White),

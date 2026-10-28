@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.h (2026.10.24) P. Stuer -  Implements a spectrum analyzer visualization **/
+/** $VER: Spectrum.h (2026.10.28) P. Stuer -  Implements a spectrum analyzer visualization **/
 
 #pragma once
 
@@ -8,11 +8,15 @@
 #include <Windows.h>
 
 #include "Visualization.h"
+#include "SpectrumProcessor.h"
 
 #include "XAxis.h"
 #include "YAxis.h"
 
 #include <vector>
+
+namespace Spectrum
+{
 
 /// <summary>
 /// Implements the visualisation of the spectrum.
@@ -92,8 +96,7 @@ private:
     HRESULT CreateRadialCurve(const geometry_points_t & gp, FLOAT innerRadius, bool isFilled, ID2D1PathGeometry ** curve) const noexcept;
 
 private:
-private:
-    audio_processor_t * _Processor;
+    processor_t * _Processor;
 
     static constexpr FLOAT PaddingX = 0.f;
     static constexpr FLOAT PaddingY = 0.f;
@@ -133,3 +136,5 @@ private:
     static constexpr double TwoPi = 2. * Pi;
     static constexpr double Pi2   = Pi * 0.5;
 };
+
+}

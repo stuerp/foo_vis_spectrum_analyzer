@@ -1,5 +1,5 @@
 
-/** $VER: PeakMeterParts.h (2026.10.11) P. Stuer - Defines the various parts of a peak meter. **/
+/** $VER: PeakMeterParts.h (2026.10.28) P. Stuer - Defines the various parts of a peak meter. **/
 
 #pragma once
 
@@ -17,7 +17,7 @@
 
 #include <atlbase.h>
 
-#include "AudioProcessor.h"
+#include "MeteringProcessor.h"
 #include "Style.h"
 
 namespace Metering

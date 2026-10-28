@@ -57,7 +57,7 @@ void state_t::Reset() noexcept
     // Transform
     _TransformMethod = TransformMethod::FFT;
 
-    _WindowFunction = WindowFunction::Hann;
+    WindowFunction = WindowFunctionType::Hann;
     _WindowParameter = 1.;
     _WindowSkew = 0.;
     _Truncate = true;
@@ -84,7 +84,7 @@ void state_t::Reset() noexcept
     _BandwidthAmount = 6.;
     _UseGranularBandwidth = true;
 
-    _KernelShape = WindowFunction::Nuttall;
+    _KernelShape = WindowFunctionType::Nuttall;
     _KernelShapeParameter = 1.;
     _KernelAsymmetry = 0.;
 
@@ -368,7 +368,7 @@ state_t & state_t::operator=(const state_t & other) noexcept
 
         _TransformMethod   = other._TransformMethod;
 
-        _WindowFunction    = other._WindowFunction;
+        WindowFunction    = other.WindowFunction;
         _WindowParameter   = other._WindowParameter;
         _WindowSkew        = other._WindowSkew;
         _Truncate          = other._Truncate;
@@ -792,7 +792,7 @@ void state_t::Read(stream_reader * stream, size_t size, abort_callback & abortHa
         stream->read(&_Channels_Deprecated, sizeof(_Channels_Deprecated), abortHandler);
         stream->read(&_ShowToolTipsAlways, sizeof(_ShowToolTipsAlways), abortHandler);
 
-        stream->read(&_WindowFunction, sizeof(_WindowFunction), abortHandler);
+        stream->read(&WindowFunction, sizeof(WindowFunction), abortHandler);
         stream->read(&_WindowParameter, sizeof(_WindowParameter), abortHandler);
         stream->read(&_WindowSkew, sizeof(_WindowSkew), abortHandler);
 
@@ -1199,7 +1199,7 @@ void state_t::Write(stream_writer * stream, abort_callback & abortHandler, bool 
         stream->write(&_Channels_Deprecated, sizeof(_Channels_Deprecated), abortHandler);
         stream->write(&_ShowToolTipsAlways, sizeof(_ShowToolTipsAlways), abortHandler);
 
-        stream->write(&_WindowFunction, sizeof(_WindowFunction), abortHandler);
+        stream->write(&WindowFunction, sizeof(WindowFunction), abortHandler);
         stream->write(&_WindowParameter, sizeof(_WindowParameter), abortHandler);
         stream->write(&_WindowSkew, sizeof(_WindowSkew), abortHandler);
 
@@ -1519,9 +1519,9 @@ void state_t::FromJSON(const char * data, size_t size, bool isPreset)
         _MaxBarSize            = std::clamp(PeakMeter.value("maxBarSize", _MaxBarSize), MinBarSize, MinBarSize);
     }
 
-    const auto & LevelMeter = Object.value("levelMeter", json::object());
+    const auto & BalanceMeter = Object.value("levelMeter", json::object());
     {
-        _IsHorizontalLevelMeter = LevelMeter.value("horizontally", _IsHorizontalLevelMeter);
+        _IsHorizontalLevelMeter = BalanceMeter.value("horizontally", _IsHorizontalLevelMeter);
     }
 
     const auto & Oscilloscope = Object.value("oscilloscope", json::object());
@@ -1584,7 +1584,7 @@ void state_t::FromJSON(const char * data, size_t size, bool isPreset)
         _TransformMethod        = std::clamp(Transform.value("method",            _TransformMethod),        TransformMethod::Min,       TransformMethod::Max);
 
         // FFT
-        _WindowFunction         = std::clamp(Transform.value("windowFunction",    _WindowFunction),         WindowFunction::Min,        WindowFunction::Max);
+        WindowFunction         = std::clamp(Transform.value("windowFunction",    WindowFunction),         WindowFunctionType::Min,        WindowFunctionType::Max);
         _WindowParameter        = std::clamp(Transform.value("windowParameter",   _WindowParameter),        MinWindowParameter,         MaxWindowParameter);
         _WindowSkew             = std::clamp(Transform.value("windowSkew",        _WindowSkew),             MinWindowSkew,              MaxWindowSkew);
         _ReactionAlignment      = std::clamp(Transform.value("reactionAlignment", _ReactionAlignment),      MinReactionAlignment,       MaxReactionAlignment);
@@ -1609,7 +1609,7 @@ void state_t::FromJSON(const char * data, size_t size, bool isPreset)
         _BandwidthAmount        = std::clamp(CQT.value("bandwidthAmount",       _BandwidthAmount),          MinBandwidthAmount,         MaxBandwidthAmount);
         _UseGranularBandwidth   = CQT.value("useGranularBandwidth",             _UseGranularBandwidth);
 
-        _KernelShape            = std::clamp(CQT.value("kernelShape",           _KernelShape),              WindowFunction::Min,        WindowFunction::Max);
+        _KernelShape            = std::clamp(CQT.value("kernelShape",           _KernelShape),              WindowFunctionType::Min,        WindowFunctionType::Max);
         _KernelShapeParameter   = std::clamp(CQT.value("kernelShapeParameter",  _KernelShapeParameter),     MinWindowParameter,         MaxWindowParameter);
         _KernelAsymmetry        = std::clamp(CQT.value("kernelAsymmetry",       _KernelAsymmetry),          MinWindowSkew,              MaxWindowSkew);
     }
@@ -1915,7 +1915,7 @@ json state_t::ToJSON(bool isPreset) const
             ({
                 { "method", _TransformMethod },
 
-                { "windowFunction", _WindowFunction },
+                { "windowFunction", WindowFunction },
                 { "windowParameter", _WindowParameter },
                 { "windowSkew", _WindowSkew },
                 { "reactionAlignment", _ReactionAlignment },

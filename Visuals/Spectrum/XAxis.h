@@ -1,5 +1,5 @@
 
-/** $VER: XAxis.h (2026.10.10) P. Stuer - Implements the X axis of a graph. **/
+/** $VER: XAxis.h (2026.10.28) P. Stuer - Implements the X axis of a graph. **/
 
 #pragma once
 
@@ -12,10 +12,14 @@
 #include <Windows.h>
 
 #include "Visualization.h"
+#include "SpectrumProcessor.h"
 #include "State.h"
 
 #include <vector>
 #include <string>
+
+namespace Spectrum
+{
 
 /// <summary>
 /// Implements the X axis of a graph.
@@ -57,7 +61,7 @@ private:
     void Initialize() noexcept;
 
 private:
-    audio_processor_t * _Processor;
+    processor_t * _Processor;
 
     size_t _BandCount { 0 };
     double _LoFrequency { 0. };
@@ -83,3 +87,5 @@ private:
     style_t _LineStyle;
     style_t _TextStyle;
 };
+
+}

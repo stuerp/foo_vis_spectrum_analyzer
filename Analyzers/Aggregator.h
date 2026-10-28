@@ -1,5 +1,5 @@
 
-/** $VER: Aggregator.h (2026.10.24) P. Stuer **/
+/** $VER: Aggregator.h (2026.10.28) P. Stuer **/
 
 #pragma once
 
@@ -14,6 +14,8 @@
 
 #include <libmsc.h>
 
+#include "Constants.h"
+
 /// <summary>
 /// Declares a base class for the FFT coefficient aggregators.
 /// </summary>
@@ -23,6 +25,8 @@ public:
     virtual ~aggregator_t() = default;
 
     virtual inline double operator()(const std::vector<std::complex<double>> & data, size_t size, size_t binIndex, size_t maxBins) noexcept = 0;
+
+    static std::unique_ptr<aggregator_t> Create(AggregationMethod aggregationMethod, size_t BinCount, bool SmoothGainTransition) noexcept;
 };
 
 /// <summary>
@@ -257,3 +261,36 @@ public:
         return Value;
     }
 };
+
+/// <summary>
+/// Creates a coefficient aggregator.
+/// </summary>
+std::unique_ptr<aggregator_t> aggregator_t::Create(AggregationMethod aggregationMethod, size_t binCount, bool smoothGainTransition) noexcept
+{
+    switch (aggregationMethod)
+    {
+        case AggregationMethod::Minimum:
+            return std::make_unique<min_aggregator_t>();
+
+        case AggregationMethod::Maximum:
+            return std::make_unique<max_aggregator_t>();
+
+        case AggregationMethod::Sum:
+            return std::make_unique<sum_aggregator_t>(smoothGainTransition);
+
+        case AggregationMethod::Average:
+            return std::make_unique<avg_aggregator_t>();
+
+        case AggregationMethod::RMS:
+            return std::make_unique<rms_aggregator_t>();
+
+        case AggregationMethod::RMSSum:
+            return std::make_unique<rms_sum_aggregator_t>(smoothGainTransition);
+
+        case AggregationMethod::Median:
+            return std::make_unique<median_aggregator_t>(binCount);
+
+        default:
+            return std::make_unique<default_aggregator_t>();
+    }
+}

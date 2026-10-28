@@ -34,6 +34,8 @@ void processor_t::Reset() noexcept
     __super::Reset();
 
     _PointCount = 0;
+
+    _Chunk.reset();
 }
 
 /// <summary>

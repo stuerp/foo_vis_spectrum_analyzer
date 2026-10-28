@@ -149,7 +149,7 @@ public:
 
         TransformMethod _TransformMethod;                               // FFT, CQT, SWIFT, Analog Style
 
-        WindowFunction _WindowFunction;
+        WindowFunctionType WindowFunction;
         double _WindowParameter;                                        // [0, 10], Parameter used for certain window functions like Gaussian and Kaiser windows. Defaults to 1.
         double _WindowSkew;                                             // [-1, 1], Adjusts how the window function reacts to samples. Positive values makes it skew towards latest samples while negative values skews towards earliest samples. Defaults to 0 (None).
         bool _Truncate;
@@ -179,7 +179,7 @@ public:
         double _BandwidthAmount;                                        // [0, 256], Brown-Puckette kernel size
         bool _UseGranularBandwidth;                                     // True: Don't constrain bandwidth to powers of 2.
 
-        WindowFunction _KernelShape;
+        WindowFunctionType _KernelShape;
         double _KernelShapeParameter;                                   // [0, 10], Used for certain window functions like Gaussian and Kaiser windows. Defaults to 1.
         double _KernelAsymmetry;                                        // [-1, 1], Adjusts how the window function reacts to samples. Positive values makes it skew towards latest samples while negative values skews towards earliest samples. Defaults to 0 (None).
 

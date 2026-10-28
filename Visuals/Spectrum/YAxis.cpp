@@ -1,5 +1,5 @@
 
-/** $VER: YAXis.cpp (2026.10.10) P. Stuer - Implements the Y axis of a graph. **/
+/** $VER: YAXis.cpp (2026.10.28) P. Stuer - Implements the Y axis of a graph. **/
 
 #include "pch.h"
 #include "YAxis.h"
@@ -9,13 +9,16 @@
 
 #pragma hdrstop
 
+namespace Spectrum
+{
+
 /// <summary>
 /// Initializes this instance.
 /// </summary>
 void y_axis_t::Configure(graph_options_t * options, audio_processor_t * processor, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept
 {
     _GraphOptions = options;
-    _Processor = processor;
+    _Processor    = (processor_t *) processor;
 
     _FlipVertically = _GraphOptions->_FlipVertically;
 
@@ -224,4 +227,6 @@ void y_axis_t::Initialize() noexcept
         if (!Iter.IsHidden)
             OldRect = Iter.RectL;
     }
+}
+
 }

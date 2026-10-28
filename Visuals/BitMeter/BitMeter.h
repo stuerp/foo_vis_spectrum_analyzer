@@ -1,5 +1,5 @@
 
-/** $VER: BitMeter.h (2026.10.27) P. Stuer - Implements a bit meter visualization. **/
+/** $VER: BitMeter.h (2026.10.28) P. Stuer - Implements a bit meter visualization. **/
 
 #pragma once
 
@@ -61,8 +61,8 @@ private:
 private:
     processor_t * _Processor;
 
-    size_t _MeasurementCount { 0 };
-    size_t _BitCount { 0 };
+    size_t _MeasurementCount = 0;
+    size_t _BitCount         = 0;
 
     std::vector<std::wstring> _Labels;
 

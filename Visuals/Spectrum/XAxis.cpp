@@ -1,5 +1,5 @@
 
-/** $VER: XAXis.cpp (2026.10.25) P. Stuer - Implements the X axis of a graph. **/
+/** $VER: XAXis.cpp (2026.10.28) P. Stuer - Implements the X axis of a graph. **/
 
 #include "pch.h"
 
@@ -11,17 +11,20 @@
 
 #pragma hdrstop
 
+namespace Spectrum
+{
+
 /// <summary>
 /// Initializes this instance.
 /// </summary>
 void x_axis_t::Configure(graph_options_t * options, audio_processor_t * processor, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept
 {
     _GraphOptions = options;
-    _Processor    = processor;
+    _Processor    = (processor_t *) processor;
 
     _Labels.clear();
 
-    const frequency_bands_t & fb = _Processor->_FrequencyBands;
+    const frequency_bands_t & fb = _Processor->FrequencyBands;
 
     if (fb.empty())
         return;
@@ -364,7 +367,7 @@ void x_axis_t::Initialize() noexcept
             dx = std::min(((FLOAT) Iter.BandIndex + .5f) * BarWidth, SpectrumWidth);
         else
         {
-            const double Frequency = _Processor->_FrequencyBands[Iter.BandIndex].Center;
+            const double Frequency = _Processor->FrequencyBands[Iter.BandIndex].Center;
 
             dx = msc::Map(ScaleFrequency(Frequency, _State._ScalingFunction, _State._SkewFactor), MinScale, MaxScale, 0.f, SpectrumWidth);
         }
@@ -446,3 +449,5 @@ void x_axis_t::Initialize() noexcept
 }
 
 #pragma endregion
+
+}

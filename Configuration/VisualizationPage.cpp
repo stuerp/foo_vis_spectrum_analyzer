@@ -264,7 +264,7 @@ void visualization_page_t::UpdateControls() noexcept
 
     const bool IsSpectrogram  = (_State->_VisualizationType == VisualizationType::Spectrogram);
     const bool IsPeakMeter    = (_State->_VisualizationType == VisualizationType::PeakMeter);
-    const bool IsLevelMeter   = (_State->_VisualizationType == VisualizationType::LevelMeter);
+    const bool IsBalanceMeter   = (_State->_VisualizationType == VisualizationType::BalanceMeter);
     const bool IsOscilloscope = (_State->_VisualizationType == VisualizationType::Oscilloscope);
     const bool IsBitMeter     = (_State->_VisualizationType == VisualizationType::BitMeter);
     const bool IsGoniometer   = (_State->_VisualizationType == VisualizationType::Goniometer);
@@ -272,7 +272,7 @@ void visualization_page_t::UpdateControls() noexcept
 //  const bool IsTester       = (_State->_VisualizationType == VisualizationType::Tester);
 
     const bool HasPeaks = IsBars || IsCurve || IsRadialBars || IsRadialCurve || IsPeakMeter;
-    const bool HasLEDs  = IsBars || IsPeakMeter || IsLevelMeter;
+    const bool HasLEDs  = IsBars || IsPeakMeter || IsBalanceMeter;
 
     const bool IsRadial = IsRadialBars || IsRadialCurve;
 
@@ -318,7 +318,7 @@ void visualization_page_t::UpdateControls() noexcept
     GetDlgItem(IDC_MAX_BAR_SIZE)            .EnableWindow(IsPeakMeter);
 
     // Balance/Correlation Meter
-    GetDlgItem(IDC_HORIZONTAL_LEVEL_METER)  .EnableWindow(IsLevelMeter);
+    GetDlgItem(IDC_HORIZONTAL_LEVEL_METER)  .EnableWindow(IsBalanceMeter);
 
     // Oscilloscope / Goniometer
     GetDlgItem(IDC_XY_MODE)             .EnableWindow(IsOscilloscope);

@@ -23,6 +23,8 @@ namespace Oscilloscope
     void processor_t::Reset() noexcept
     {
         __super::Reset();
+
+        _Chunk.reset();
     }
 
     /// <summary>

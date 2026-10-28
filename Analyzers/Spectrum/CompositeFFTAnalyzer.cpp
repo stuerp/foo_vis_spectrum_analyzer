@@ -145,7 +145,7 @@ void composite_fft_analyzer_t::CopyBandGeometry(const frequency_bands_t & source
         destination[i].Low    = source[i].Low;
         destination[i].Center = source[i].Center;
         destination[i].High   = source[i].High;
-        destination[i].RawValue = 0.;
+        destination[i].Magnitude = 0.;
     }
 }
 
@@ -159,7 +159,7 @@ void composite_fft_analyzer_t::MaskTierBands(fft_tier_t & tier, bool isLastTier)
         const bool IsInTier = (Band.Center >= tier.MinFrequency) && (isLastTier ? (Band.Center <= tier.MaxFrequency) : (Band.Center < tier.MaxFrequency));
 
         if (!IsInTier)
-            Band.RawValue = 0.;
+            Band.Magnitude = 0.;
     }
 }
 
@@ -183,6 +183,6 @@ void composite_fft_analyzer_t::MergeTiers(frequency_bands_t & frequencyBands) co
         const bool IsLastTier = TierIndex + 1 == _Tiers.size();
         const bool IsInTier   = (Band.Center >= Tier.MinFrequency) && (IsLastTier ? (Band.Center <= Tier.MaxFrequency) : (Band.Center < Tier.MaxFrequency));
 
-        Band.RawValue = IsInTier && (i < Tier.Bands.size()) ? Tier.Bands[i].RawValue : 0.;
+        Band.Magnitude = IsInTier && (i < Tier.Bands.size()) ? Tier.Bands[i].Magnitude : 0.;
     }
 }

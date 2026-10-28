@@ -1,5 +1,5 @@
 
-/** $VER: WindowFunctions.h (2026.09.07) P. Stuer **/
+/** $VER: WindowFunctions.h (2026.10.28) P. Stuer **/
 
 #pragma once
 
@@ -9,7 +9,7 @@
 #include <optional>
 #include <stdexcept>
 
-enum class WindowFunction
+enum class WindowFunctionType
 {
     BoxCar = 0,         // Rectangular
 
@@ -72,7 +72,7 @@ public:
     virtual double operator()(double x) const noexcept { return 0.; };
 
     [[nodiscard]]
-    static std::unique_ptr<window_function_t> Create(WindowFunction windowFunction, double windowParameter, double windowSkew, bool truncate);
+    static std::unique_ptr<window_function_t> Create(WindowFunctionType windowFunction, double windowParameter, double windowSkew, bool truncate);
 
 protected:
     /// <summary>
@@ -685,84 +685,84 @@ public:
 /// <summary>
 /// Creates the specified window function.
 /// </summary>
-inline std::unique_ptr<window_function_t> window_function_t::Create(WindowFunction windowFunction, double windowParameter, double windowSkew, bool truncate)
+inline std::unique_ptr<window_function_t> window_function_t::Create(WindowFunctionType windowFunction, double windowParameter, double windowSkew, bool truncate)
 {
     switch (windowFunction)
     {
-        case WindowFunction::BoxCar:
+        case WindowFunctionType::BoxCar:
             return std::make_unique<BoxCar>(windowSkew, truncate);
 
-        case WindowFunction::Hann:
+        case WindowFunctionType::Hann:
             return std::make_unique<Hann>(windowSkew, truncate);
 
-        case WindowFunction::Hamming:
+        case WindowFunctionType::Hamming:
             return std::make_unique<Hamming>(windowSkew, truncate);
 
-        case WindowFunction::Blackman:
+        case WindowFunctionType::Blackman:
             return std::make_unique<Blackman>(windowSkew, truncate);
 
-        case WindowFunction::Nuttall:
+        case WindowFunctionType::Nuttall:
             return std::make_unique<Nuttall>(windowSkew, truncate);
 
-        case WindowFunction::FlatTop:
+        case WindowFunctionType::FlatTop:
             return std::make_unique<FlatTop>(windowSkew, truncate);
 
-        case WindowFunction::Lanczos:
+        case WindowFunctionType::Lanczos:
             return std::make_unique<Lanczos>(windowSkew, truncate);
 
-        case WindowFunction::BlackmanHarris4:
+        case WindowFunctionType::BlackmanHarris4:
             return std::make_unique<BlackmanHarris4>(windowSkew, truncate);
 
         /** B-spline windows **/
 
-        case WindowFunction::Bartlett:
+        case WindowFunctionType::Bartlett:
             return std::make_unique<Bartlett>(windowSkew, truncate);
 
-        case WindowFunction::Parzen:
+        case WindowFunctionType::Parzen:
             return std::make_unique<Parzen>(windowSkew, truncate);
 
         /** Polynomial windows **/
 
-        case WindowFunction::Welch:
+        case WindowFunctionType::Welch:
             return std::make_unique<Welch>(windowSkew, truncate, windowParameter);
 
-        case WindowFunction::PowerOfSine:
+        case WindowFunctionType::PowerOfSine:
             return std::make_unique<PowerOfSine>(windowSkew, truncate, windowParameter);
 
-        case WindowFunction::PowerOfCircle:
+        case WindowFunctionType::PowerOfCircle:
             return std::make_unique<PowerOfCircle>(windowSkew, truncate, windowParameter);
 
         /** Adjustable windows **/
 
-        case WindowFunction::Gaussian:
+        case WindowFunctionType::Gaussian:
             return std::make_unique<Gaussian>(windowSkew, truncate, windowParameter);
 
-        case WindowFunction::Tukey:
+        case WindowFunctionType::Tukey:
             return std::make_unique<Tukey>(windowSkew, truncate, windowParameter);
 
-        case WindowFunction::Kaiser:
+        case WindowFunctionType::Kaiser:
             return std::make_unique<Kaiser>(windowSkew, truncate, windowParameter);
 
-        case WindowFunction::Poisson:
+        case WindowFunctionType::Poisson:
             return std::make_unique<Poisson>(windowSkew, truncate, windowParameter);
 
         // Other windows
-        case WindowFunction::HyperbolicSecant:
+        case WindowFunctionType::HyperbolicSecant:
             return std::make_unique<HyperbolicSecant>(windowSkew, truncate, windowParameter);
 
-        case WindowFunction::QuadraticSpline:
+        case WindowFunctionType::QuadraticSpline:
             return std::make_unique<QuadraticSpline>(windowSkew, truncate);
 
-        case WindowFunction::OggVorbis:
+        case WindowFunctionType::OggVorbis:
             return std::make_unique<OggVorbis>(windowSkew, truncate);
 
-        case WindowFunction::CascadedSine:
+        case WindowFunctionType::CascadedSine:
             return std::make_unique<CascadedSine>(windowSkew, truncate);
 
-        case WindowFunction::Galss:
+        case WindowFunctionType::Galss:
             return std::make_unique<Galss>(windowSkew, truncate);
 
-        case WindowFunction::Count:
+        case WindowFunctionType::Count:
         default:
             throw std::invalid_argument("Unknown window function");
     }

@@ -248,7 +248,7 @@ void graphs_page_t::UpdateControls() noexcept
     const bool IsSpectrogram  = (_State->_VisualizationType == VisualizationType::Spectrogram);
 
     const bool IsPeakMeter    = (_State->_VisualizationType == VisualizationType::PeakMeter);
-    const bool IsLevelMeter   = (_State->_VisualizationType == VisualizationType::LevelMeter);
+    const bool IsBalanceMeter   = (_State->_VisualizationType == VisualizationType::BalanceMeter);
 
     const bool IsOscilloscope = (_State->_VisualizationType == VisualizationType::Oscilloscope);
     const bool IsGoniometer   = (_State->_VisualizationType == VisualizationType::Goniometer);
@@ -303,7 +303,7 @@ void graphs_page_t::UpdateControls() noexcept
 
     /* Overlap graphs **/
 
-    const bool SupportsOverlapGraphs = (_State->_GraphOptions.size() > 1) && !(IsPeakMeter || IsLevelMeter || IsOscilloscope || IsGoniometer || IsBitMeter);
+    const bool SupportsOverlapGraphs = (_State->_GraphOptions.size() > 1) && !(IsPeakMeter || IsBalanceMeter || IsOscilloscope || IsGoniometer || IsBitMeter);
 
     GetDlgItem(IDC_OVERLAP_GRAPHS).EnableWindow(SupportsOverlapGraphs);
 
@@ -345,11 +345,11 @@ void graphs_page_t::UpdateControls() noexcept
         CheckDlgButton(IDC_X_AXIS_TOP,    Options._XAxisTop);
         CheckDlgButton(IDC_X_AXIS_BOTTOM, Options._XAxisBottom);
 
-        GetDlgItem(IDC_Y_AXIS_LEFT)  .EnableWindow(IsSpectrogram || (Options.HasYAxis() && !(IsLevelMeter || IsOscilloscopeXY)));
-        GetDlgItem(IDC_Y_AXIS_RIGHT) .EnableWindow(IsSpectrogram || (Options.HasYAxis() && !(IsLevelMeter || IsOscilloscopeXY || IsBitMeter)));
+        GetDlgItem(IDC_Y_AXIS_LEFT)  .EnableWindow(IsSpectrogram || (Options.HasYAxis() && !(IsBalanceMeter || IsOscilloscopeXY)));
+        GetDlgItem(IDC_Y_AXIS_RIGHT) .EnableWindow(IsSpectrogram || (Options.HasYAxis() && !(IsBalanceMeter || IsOscilloscopeXY || IsBitMeter)));
 
-        GetDlgItem(IDC_X_AXIS_TOP)   .EnableWindow(IsSpectrogram || (Options.HasXAxis() && !(IsLevelMeter || IsOscilloscope || IsBitMeter)));
-        GetDlgItem(IDC_X_AXIS_BOTTOM).EnableWindow(IsSpectrogram || (Options.HasXAxis() && !(IsLevelMeter || IsOscilloscope)));
+        GetDlgItem(IDC_X_AXIS_TOP)   .EnableWindow(IsSpectrogram || (Options.HasXAxis() && !(IsBalanceMeter || IsOscilloscope || IsBitMeter)));
+        GetDlgItem(IDC_X_AXIS_BOTTOM).EnableWindow(IsSpectrogram || (Options.HasXAxis() && !(IsBalanceMeter || IsOscilloscope)));
     }
 
     // X axis
@@ -410,7 +410,7 @@ void graphs_page_t::UpdateControls() noexcept
     }
 
     // Channel Pairs
-    const bool SupportsChannelPairs = IsLevelMeter || IsOscilloscopeXY || IsGoniometer;
+    const bool SupportsChannelPairs = IsBalanceMeter || IsOscilloscopeXY || IsGoniometer;
 
     {
         CComboBox w(GetDlgItem(IDC_CHANNEL_PAIRS));

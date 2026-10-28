@@ -1,5 +1,5 @@
 
-/** $VER: Graph.cpp (2026.10.24) P. Stuer - Implements a graph on which the visualizations are rendered. **/
+/** $VER: Graph.cpp (2026.10.28) P. Stuer - Implements a graph on which the visualizations are rendered. **/
 
 #include "pch.h"
 
@@ -8,6 +8,8 @@
 
 #include "Direct2D.h"
 #include "DirectWrite.h"
+
+#include "SpectrumProcessor.h"
 
 #pragma hdrstop
 
@@ -95,9 +97,6 @@ void graph_t::Render(artwork_t & artwork) noexcept
     _Visualization->Render(_RenderContext.D2DDeviceContext);
 
     RenderDescription();
-
-    // Erase the copy of the chunk.
-    _Processor->_Chunk.reset();
 }
 
 /// <summary>
@@ -123,18 +122,20 @@ void graph_t::InitToolInfo(HWND hWnd, TTTOOLINFOW & ti) const noexcept
 /// </summary>
 bool graph_t::GetToolTipText(FLOAT x, FLOAT y, std::wstring & toolTip, size_t & bandIndex) const noexcept
 {
+    auto * Processor = (Spectrum::processor_t *) _Processor.get();
+
     if ((_State._VisualizationType == VisualizationType::Bars) || (_State._VisualizationType == VisualizationType::Curve))
     {
         const rect_t & cr = (const rect_t &) _Visualization->GetClientRect();
 
-        FLOAT t = cr.Width() / (FLOAT) _Processor->_FrequencyBands.size();
+        FLOAT t = cr.Width() / (FLOAT) Processor->FrequencyBands.size();
 
         // Allow non-integer bar widths?
         if (_GraphOptions->_HorizontalAlignment != HorizontalAlignment::Fit)
             t = ::floor(t);
 
         const FLOAT BarWidth = std::max(t, 2.f);
-        const FLOAT SpectrumWidth = (_State._VisualizationType == VisualizationType::Bars) ? BarWidth * (FLOAT) _Processor->_FrequencyBands.size() : cr.Width();
+        const FLOAT SpectrumWidth = (_State._VisualizationType == VisualizationType::Bars) ? BarWidth * (FLOAT) Processor->FrequencyBands.size() : cr.Width();
         const FLOAT HOffset = GetHOffset(_GraphOptions->_HorizontalAlignment, cr.Width() - SpectrumWidth);
 
         const FLOAT x1 = cr.x1 + HOffset;
@@ -146,7 +147,7 @@ bool graph_t::GetToolTipText(FLOAT x, FLOAT y, std::wstring & toolTip, size_t & 
         if (_GraphOptions->_FlipHorizontally)
             x = (x2 + x1) - x;
 
-        bandIndex = std::clamp((size_t) ::floor(msc::Map(x, x1, x2, 0., (double) _Processor->_FrequencyBands.size())), (size_t) 0, _Processor->_FrequencyBands.size() - (size_t) 1);
+        bandIndex = std::clamp((size_t) ::floor(msc::Map(x, x1, x2, 0., (double) Processor->FrequencyBands.size())), (size_t) 0, Processor->FrequencyBands.size() - (size_t) 1);
     }
     else
     if (_State._VisualizationType == VisualizationType::Spectrogram)
@@ -161,20 +162,20 @@ bool graph_t::GetToolTipText(FLOAT x, FLOAT y, std::wstring & toolTip, size_t & 
             if (!_GraphOptions->_FlipVertically)
                 y = (cr.bottom + cr.top) - y;
 
-            bandIndex = std::clamp((size_t) ::floor(msc::Map(y, cr.top, cr.bottom, 0., (double) _Processor->_FrequencyBands.size())), (size_t) 0, _Processor->_FrequencyBands.size() - (size_t) 1);
+            bandIndex = std::clamp((size_t) ::floor(msc::Map(y, cr.top, cr.bottom, 0., (double) Processor->FrequencyBands.size())), (size_t) 0, Processor->FrequencyBands.size() - (size_t) 1);
         }
         else
         {
             if (!msc::InRange(x, cr.left, cr.right))
                 return false;
 
-            bandIndex = std::clamp((size_t) ::floor(msc::Map(x, cr.left, cr.right, 0., (double) _Processor->_FrequencyBands.size())), (size_t) 0, _Processor->_FrequencyBands.size() - (size_t) 1);
+            bandIndex = std::clamp((size_t) ::floor(msc::Map(x, cr.left, cr.right, 0., (double) Processor->FrequencyBands.size())), (size_t) 0, Processor->FrequencyBands.size() - (size_t) 1);
         }
     }
     else
         return false; // No tooltip available.
 
-    toolTip = _Processor->_FrequencyBands[bandIndex].Label;
+    toolTip = Processor->FrequencyBands[bandIndex].Label;
 
     return true;
 }
@@ -190,7 +191,7 @@ void graph_t::RenderBackground(artwork_t & artwork) noexcept
     if (!_State._ShowArtworkOnBackground)
         return;
 
-    if ((_State._VisualizationType == VisualizationType::PeakMeter) || (_State._VisualizationType == VisualizationType::LevelMeter) || (_State._VisualizationType == VisualizationType::Oscilloscope))
+    if ((_State._VisualizationType == VisualizationType::PeakMeter) || (_State._VisualizationType == VisualizationType::BalanceMeter) || (_State._VisualizationType == VisualizationType::Oscilloscope))
         return;
 
     artwork.Render(_RenderContext, _State._FitWindow ? _Visualization->GetRect() : _Visualization->GetClientRect(), &_State);
@@ -201,7 +202,7 @@ void graph_t::RenderBackground(artwork_t & artwork) noexcept
 /// </summary>
 void graph_t::RenderDescription() noexcept
 {
-    if ((_State._VisualizationType == VisualizationType::PeakMeter) || (_State._VisualizationType == VisualizationType::LevelMeter))
+    if ((_State._VisualizationType == VisualizationType::PeakMeter) || (_State._VisualizationType == VisualizationType::BalanceMeter))
         return;
 
     if (_Description.empty())

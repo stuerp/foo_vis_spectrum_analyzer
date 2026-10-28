@@ -1,5 +1,5 @@
 
-/** $VER: TransformPage.cpp (2026.10.25) P. Stuer - Implements a configuration dialog page. **/
+/** $VER: TransformPage.cpp (2026.10.28) P. Stuer - Implements a configuration dialog page. **/
 
 #include "pch.h"
 
@@ -43,8 +43,8 @@ BOOL transform_page_t::OnInitDialog(CWindow w, LPARAM lParam) noexcept
         { IDC_NUM_BINS, "Sets the number of bins used by the Fourier transforms" },
         { IDC_NUM_BINS_PARAMETER, "Sets the parameter used to calculate the number of Fourier transform bins. Set the number of bins explicitly (Custom) or expressed as a number of ms taking the sample rate into account (Duration)" },
 
-        { IDC_MAPPING_METHOD, "Determines how the FFT coefficients are mapped to the frequency bins." },
-        { IDC_AGGREGATION_METHOD, "Selects the method used to aggregate FFT coefficients." },
+        { IDC_AGGREGATION_METHOD, "Selects the method used to aggregate FFT coefficients before mapping them onto the frequency bands." },
+        { IDC_MAPPING_METHOD, "Determines how the FFT coefficients are mapped to the frequency bands." },
 
         { IDC_SMOOTH_LOWER_FREQUENCIES, "When enabled, the bandpower part only gets used when number of FFT bins to sum for each band is at least two or more." },
         { IDC_SMOOTH_GAIN_TRANSITION, "Smooths the frequency slope of the aggregation modes." },
@@ -160,12 +160,12 @@ void transform_page_t::InitializeControls() noexcept
 
         w.ResetContent();
 
-        static_assert(((size_t) WindowFunction::Count == _countof(WindowFunctionNames)));
+        static_assert(((size_t) WindowFunctionType::Count == _countof(WindowFunctionNames)));
 
         for (size_t i = 0; i < _countof(WindowFunctionNames); ++i)
             w.AddString(WindowFunctionNames[i]);
 
-        w.SetCurSel((int) _State->_WindowFunction);
+        w.SetCurSel((int) _State->WindowFunction);
     }
     {
         auto ne = std::make_shared<numeric_edit_t>(); ne->Initialize(GetDlgItem(IDC_WINDOW_PARAMETER)); _NumericEdits.push_back(ne); SetDouble(IDC_WINDOW_PARAMETER, _State->_WindowParameter);
@@ -196,7 +196,7 @@ void transform_page_t::InitializeControls() noexcept
 
         w.ResetContent();
 
-        static_assert(((size_t) WindowFunction::Count == _countof(WindowFunctionNames)));
+        static_assert(((size_t) WindowFunctionType::Count == _countof(WindowFunctionNames)));
 
         for (size_t i = 0; i < _countof(WindowFunctionNames); ++i)
             w.AddString(WindowFunctionNames[i]);
@@ -237,12 +237,12 @@ void transform_page_t::InitializeControls() noexcept
 void transform_page_t::UpdateControls() noexcept
 {
     const bool IsPeakMeter    = (_State->_VisualizationType == VisualizationType::PeakMeter);
-    const bool IsLevelMeter   = (_State->_VisualizationType == VisualizationType::LevelMeter);
+    const bool IsBalanceMeter = (_State->_VisualizationType == VisualizationType::BalanceMeter);
     const bool IsOscilloscope = (_State->_VisualizationType == VisualizationType::Oscilloscope);
     const bool IsBitMeter     = (_State->_VisualizationType == VisualizationType::BitMeter);
     const bool IsTester       = (_State->_VisualizationType == VisualizationType::Tester);
 
-    const bool SupportsTransform = !(IsPeakMeter || IsLevelMeter || IsOscilloscope || IsBitMeter || IsTester);
+    const bool SupportsTransform = !(IsPeakMeter || IsBalanceMeter || IsOscilloscope || IsBitMeter || IsTester);
 
     const bool IsFFT = (_State->_TransformMethod == TransformMethod::FFT)   || (_State->_TransformMethod == TransformMethod::CompositeFFT);
     const bool IsIIR = (_State->_TransformMethod == TransformMethod::SWIFT) || (_State->_TransformMethod == TransformMethod::AnalogStyle);
@@ -250,13 +250,13 @@ void transform_page_t::UpdateControls() noexcept
     if (SupportsTransform)
     {
         // Transform
-        bool HasParameter = (_State->_WindowFunction == WindowFunction::PowerOfSine)
-                         || (_State->_WindowFunction == WindowFunction::PowerOfCircle)
-                         || (_State->_WindowFunction == WindowFunction::Gaussian)
-                         || (_State->_WindowFunction == WindowFunction::Tukey)
-                         || (_State->_WindowFunction == WindowFunction::Kaiser)
-                         || (_State->_WindowFunction == WindowFunction::Poisson)
-                         || (_State->_WindowFunction == WindowFunction::HyperbolicSecant);
+        bool HasParameter = (_State->WindowFunction == WindowFunctionType::PowerOfSine)
+                         || (_State->WindowFunction == WindowFunctionType::PowerOfCircle)
+                         || (_State->WindowFunction == WindowFunctionType::Gaussian)
+                         || (_State->WindowFunction == WindowFunctionType::Tukey)
+                         || (_State->WindowFunction == WindowFunctionType::Kaiser)
+                         || (_State->WindowFunction == WindowFunctionType::Poisson)
+                         || (_State->WindowFunction == WindowFunctionType::HyperbolicSecant);
 
         GetDlgItem(IDC_WINDOW_FUNCTION).EnableWindow(!IsIIR);
         GetDlgItem(IDC_WINDOW_PARAMETER).EnableWindow(HasParameter && !IsIIR);
@@ -371,7 +371,7 @@ void transform_page_t::OnSelectionChanged(UINT notificationCode, int id, CWindow
 
         case IDC_WINDOW_FUNCTION:
         {
-            _State->_WindowFunction = (WindowFunction) SelectedIndex;
+            _State->WindowFunction = (WindowFunctionType) SelectedIndex;
 
             UpdateControls();
             break;

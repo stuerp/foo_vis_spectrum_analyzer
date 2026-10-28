@@ -1,17 +1,20 @@
 
-/** $VER: EyeCandy.cpp (2026.10.23) P. Stuer - Implements a visualizer focusing on eye candy. **/
+/** $VER: EyeCandy.cpp (2026.10.28) P. Stuer - Implements a visualizer focusing on eye candy. **/
 
 #include <pch.h>
 
 #include "EyeCandy.h"
 
+namespace EyeCandy
+{
+
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void eye_candy_t::Configure(graph_options_t * graphOptions, audio_processor_t * processor, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept
+void eye_candy_t::Configure(graph_options_t * options, audio_processor_t * processor, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept
 {
-    _GraphOptions = graphOptions;
-//  _Processor = processor;
+    _GraphOptions = options;
+    _Processor    = (processor_t *) processor;
 
     Reset();
 }
@@ -72,4 +75,6 @@ void eye_candy_t::OnConfigurationChanged(ConfigurationChanges configurationChang
         return;
 
     _State._SizeHasChanged = true;
+}
+
 }

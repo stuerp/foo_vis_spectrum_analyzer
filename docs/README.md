@@ -617,7 +617,7 @@ Specifies the number of bins used by the transforms as a number between 64 and 3
 
 `Coefficient aggregation`
 
-Determines which method is used to aggregate the coefficients of the FFT into frequency bins.
+Determines which method is used to aggregate the coefficients of the FFT before they get mapped to a frequency band.
 
 - Minimum
 - Maximum
@@ -627,13 +627,14 @@ Determines which method is used to aggregate the coefficients of the FFT into fr
 - Average
 - Median
 
-`Mapping`
+`Coefficient mapping`
 
-Determines how the FFT power coefficients are mapped to the frequency bins.
+Determines how the FFT coefficients are mapped to the frequency bands.
 
 - Standard
 - Triangular Filter Bank
 - Brown-Puckette CQT
+- Gaussian
 
 > [!Note]
 > The `Triangular Filter Bank` mapping always uses frequencies generated from the [Mel scale](https://en.wikipedia.org/wiki/Mel_scale).

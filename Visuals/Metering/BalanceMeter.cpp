@@ -1,9 +1,9 @@
 
-/** $VER: LevelMeter.cpp (2026.10.28) P. Stuer - Implements a left/right/mid/side level meter. **/
+/** $VER: BalanceMeter.cpp (2026.10.28) P. Stuer - Implements a left/right/mid/side level meter. **/
 
 #include "pch.h"
 
-#include "LevelMeter.h"
+#include "BalanceMeter.h"
 
 #pragma hdrstop
 
@@ -13,7 +13,7 @@ namespace Metering
 /// <summary>
 /// Destroys this instance.
 /// </summary>
-level_meter_t::~level_meter_t() noexcept
+balance_meter_t::~balance_meter_t() noexcept
 {
     DeleteDeviceSpecificResources();
 }
@@ -21,7 +21,7 @@ level_meter_t::~level_meter_t() noexcept
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void level_meter_t::Configure(graph_options_t * options, audio_processor_t * processor, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept
+void balance_meter_t::Configure(graph_options_t * options, audio_processor_t * processor, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept
 {
     _GraphOptions = options;
     _Processor = (processor_t *) processor;
@@ -32,7 +32,7 @@ void level_meter_t::Configure(graph_options_t * options, audio_processor_t * pro
 /// <summary>
 /// Moves this instance on the canvas.
 /// </summary>
-void level_meter_t::Move(const D2D1_RECT_F & rect) noexcept
+void balance_meter_t::Move(const D2D1_RECT_F & rect) noexcept
 {
     InitializeMetrics(rect);
 }
@@ -40,7 +40,7 @@ void level_meter_t::Move(const D2D1_RECT_F & rect) noexcept
 /// <summary>
 /// Renders this instance.
 /// </summary>
-void level_meter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
+void balance_meter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 {
     HRESULT hr = CreateDeviceSpecificResources(deviceContext);
 
@@ -240,7 +240,7 @@ void level_meter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 /// <summary>
 /// Resets this instance.
 /// </summary>
-void level_meter_t::Reset() noexcept
+void balance_meter_t::Reset() noexcept
 {
     DeleteDeviceSpecificResources();
 }
@@ -248,7 +248,7 @@ void level_meter_t::Reset() noexcept
 /// <summary>
 /// Creates resources which are bound to a particular D3D device.
 /// </summary>
-HRESULT level_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept
+HRESULT balance_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept
 {
     HRESULT hr = S_OK;
 
@@ -287,7 +287,7 @@ HRESULT level_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * device
 /// <summary>
 /// Releases the device specific resources.
 /// </summary>
-void level_meter_t::DeleteDeviceSpecificResources() noexcept
+void balance_meter_t::DeleteDeviceSpecificResources() noexcept
 {
     DeleteColorDependentResources();
     DeleteSizeDependentResources();
@@ -300,7 +300,7 @@ void level_meter_t::DeleteDeviceSpecificResources() noexcept
 /// <summary>
 /// Creates the resources that depend on the size of the render target.
 /// </summary>
-HRESULT level_meter_t::CreateSizeDependentResources(ID2D1DeviceContext * deviceContext) noexcept
+HRESULT balance_meter_t::CreateSizeDependentResources(ID2D1DeviceContext * deviceContext) noexcept
 {
     if (_OpacityMask == nullptr)
     {
@@ -316,7 +316,7 @@ HRESULT level_meter_t::CreateSizeDependentResources(ID2D1DeviceContext * deviceC
 /// <summary>
 /// Deletes the resources that depend on the size of the render target.
 /// </summary>
-void level_meter_t::DeleteSizeDependentResources() noexcept
+void balance_meter_t::DeleteSizeDependentResources() noexcept
 {
     _OpacityMask.Reset();
 }
@@ -324,7 +324,7 @@ void level_meter_t::DeleteSizeDependentResources() noexcept
 /// <summary>
 /// Creates the resources that depend on the color palette.
 /// </summary>
-HRESULT level_meter_t::CreateColorDependentResources(ID2D1DeviceContext * deviceContext) noexcept
+HRESULT balance_meter_t::CreateColorDependentResources(ID2D1DeviceContext * deviceContext) noexcept
 {
     const auto InitializeStyle = [this, deviceContext](auto & style, VisualElement visualElement, const wchar_t * text) noexcept -> HRESULT
     {
@@ -369,7 +369,7 @@ HRESULT level_meter_t::CreateColorDependentResources(ID2D1DeviceContext * device
 /// <summary>
 /// Deletes the resources that depend on the color palette.
 /// </summary>
-void level_meter_t::DeleteColorDependentResources() noexcept
+void balance_meter_t::DeleteColorDependentResources() noexcept
 {
     _AxisStyle.DeleteDeviceSpecificResources();
     _MidSideIndicatorStyle.DeleteDeviceSpecificResources();
@@ -381,7 +381,7 @@ void level_meter_t::DeleteColorDependentResources() noexcept
 /// <summary>
 /// Creates an opacity mask to render the LEDs.
 /// </summary>
-HRESULT level_meter_t::CreateOpacityMask(ID2D1DeviceContext * deviceContext) noexcept
+HRESULT balance_meter_t::CreateOpacityMask(ID2D1DeviceContext * deviceContext) noexcept
 {
     D2D1_SIZE_F Size = deviceContext->GetSize();
 
@@ -444,7 +444,7 @@ HRESULT level_meter_t::CreateOpacityMask(ID2D1DeviceContext * deviceContext) noe
 /// <summary>
 /// Handles a configuration change.
 /// </summary>
-void level_meter_t::OnConfigurationChanged(ConfigurationChanges configurationChanges) noexcept
+void balance_meter_t::OnConfigurationChanged(ConfigurationChanges configurationChanges) noexcept
 {
     if (!IsSet(configurationChanges, ConfigurationChanges::Layout))
         return;

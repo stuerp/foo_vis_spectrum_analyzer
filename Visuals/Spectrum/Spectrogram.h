@@ -1,5 +1,5 @@
 
-/** $VER: Spectrogram.h (2026.10.10) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
+/** $VER: Spectrogram.h (2026.10.28) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
 
 #pragma once
 
@@ -16,8 +16,12 @@
 #include <d2d1_2.h>
 
 #include "Visualization.h"
+#include "SpectrumProcessor.h"
 
 #include <deque>
+
+namespace Spectrum
+{
 
 class spectrogram_t final : public visualization_t
 {
@@ -83,7 +87,7 @@ private:
     }
 
 private:
-    audio_processor_t * _Processor;
+    processor_t * _Processor;
 
     D2D1_RECT_F _BitmapRect { };
     D2D1_SIZE_F _BitmapSize { };
@@ -167,3 +171,5 @@ private:
     static constexpr double TwoPi = 2. * Pi;
     static constexpr double Pi2   = Pi * 0.5;
 };
+
+}

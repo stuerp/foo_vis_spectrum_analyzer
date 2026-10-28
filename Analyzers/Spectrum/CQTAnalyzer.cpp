@@ -47,7 +47,7 @@ bool cqt_analyzer_t::AnalyzeAudio(const audio_sample * frames, size_t frameCount
 
         if (Bandwidth <= 0.)
         {
-            fb.RawValue = 0.;
+            fb.Magnitude = 0.;
             continue;
         }
 
@@ -56,7 +56,7 @@ bool cqt_analyzer_t::AnalyzeAudio(const audio_sample * frames, size_t frameCount
 
         if (FrameDuration <= 0.)
         {
-            fb.RawValue = 0.;
+            fb.Magnitude = 0.;
             continue;
         }
 
@@ -93,7 +93,7 @@ bool cqt_analyzer_t::AnalyzeAudio(const audio_sample * frames, size_t frameCount
 
         if (HiSample <= LoSample || HiSample >= frameCount)
         {
-            fb.RawValue = 0.;
+            fb.Magnitude = 0.;
             continue;
         }
 
@@ -107,7 +107,7 @@ bool cqt_analyzer_t::AnalyzeAudio(const audio_sample * frames, size_t frameCount
             const double Position = (double)(SampleIndex - LoSample) / (double)(HiSample - LoSample);
 
             const double x = Position * 2. - 1.;
-            const double w = _WindowFunction(x);
+            const double w = WindowFunction(x);
 
             const auto Sample = (audio_sample) _MonoSamples[SampleIndex] * w;
 
@@ -124,7 +124,7 @@ bool cqt_analyzer_t::AnalyzeAudio(const audio_sample * frames, size_t frameCount
 
         if (WindowSum <= 0.)
         {
-            fb.RawValue = 0.;
+            fb.Magnitude = 0.;
             continue;
         }
 
@@ -133,7 +133,7 @@ bool cqt_analyzer_t::AnalyzeAudio(const audio_sample * frames, size_t frameCount
 
         const double Magnitude = std::hypot(Real, Imag);
 
-        fb.RawValue = Magnitude / WindowSum;
+        fb.Magnitude = Magnitude / WindowSum;
     }
 
     return true;

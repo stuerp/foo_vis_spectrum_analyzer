@@ -1,5 +1,5 @@
 
-/** $VER: FFTAnalyzer.h (2026.10.25) P. Stuer **/
+/** $VER: FFTAnalyzer.h (2026.10.28) P. Stuer **/
 
 #pragma once
 
@@ -50,7 +50,7 @@ private:
     /// </summary>
     size_t GetFFTIndex(double frequency) const noexcept
     {
-        return (size_t) (frequency / _NyquistFrequency * ((double) _FFTSize * 0.5));
+        return (size_t) (frequency / NyquistFrequency * ((double) _FFTSize * 0.5));
     }
 
     /// <summary>
@@ -58,23 +58,23 @@ private:
     /// </summary>
     double GetFrequency(int index) const noexcept
     {
-        return ((double) index * _NyquistFrequency) / ((double) _FFTSize * 0.5);
+        return ((double) index * NyquistFrequency) / ((double) _FFTSize * 0.5);
     }
 
     /// <summary>
-    /// Gets the index of the coefficient corresponding to the specified frequency.
+    /// Gets the bin index of the coefficient corresponding to the specified frequency.
     /// </summary>
-    double HzToBinIndex(double frequency, size_t bufferSize) const noexcept
+    double HzToBinIndex(double frequency) const noexcept
     {
-        return frequency * (double) bufferSize / _SampleRate;
+        return frequency * (double) _FFTSize / _SampleRate;
     }
 
     /// <summary>
-    /// Gets the frequency corresponding to the specified coefficient index.
+    /// Gets the frequency corresponding to the specified coefficient bin index.
     /// </summary>
-    double BinIndexToHz(size_t index, size_t bufferSize) const noexcept
+    double BinIndexToHz(size_t index) const noexcept
     {
-        return (double) ((size_t) (index * _SampleRate) / bufferSize);
+        return (double) ((size_t) (index * _SampleRate) / _FFTSize);
     }
 
 private:
@@ -85,8 +85,8 @@ private:
     std::vector<audio_sample> _InputRing;
     size_t _Next;   // Index of the next input sample
 
-    std::vector<std::complex<double>> _TimeData;
-    std::vector<std::complex<double>> _FreqData;
+    std::vector<std::complex<double>> _Samples;
+    std::vector<std::complex<double>> _Coefficients;
 
     const window_function_t & _BrownPucketteKernel;
 

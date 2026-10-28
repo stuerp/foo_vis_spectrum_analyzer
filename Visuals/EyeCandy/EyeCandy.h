@@ -1,13 +1,17 @@
 
-/** $VER: EyeCandy.h (2026.10.21) P. Stuer - Implements a visualizer focusing on eye candy. **/
+/** $VER: EyeCandy.h (2026.10.28) P. Stuer - Implements a visualizer focusing on eye candy. **/
 
 #pragma once
 
 #include <pch.h>
 
 #include "Visualization.h"
+#include "EyeCandyProcessor.h"
 
 #include "Effect.h"
+
+namespace EyeCandy
+{
 
 class eye_candy_t final : public visualization_t
 {
@@ -32,6 +36,8 @@ public:
     void Configure(graph_options_t * options, audio_processor_t * processor, bool isFirst, bool isLast, ID3D11Device * d3dDevice = nullptr, ID3D11DeviceContext * d3dDeviceContext = nullptr) noexcept override final;
 
 private:
+    processor_t * _Processor;
+
     std::unique_ptr<EyeCandy::effect_t> _Effect;
 
     EyeCandy::Effect _EffectId = EyeCandy::Effect::Plasma;
@@ -40,3 +46,5 @@ private:
 private:
     ComPtr<ID2D1SolidColorBrush> _Brush;
 };
+
+}

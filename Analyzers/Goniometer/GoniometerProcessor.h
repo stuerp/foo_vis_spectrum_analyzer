@@ -110,6 +110,8 @@ public:
     size_t _PointCount = 0;
 
 private:
+    audio_chunk_impl _Chunk;
+
     goniometer::ColorMode _ColorMode = goniometer::ColorMode::Triband;
     crossover::Mode _CrossoverMode = crossover::Mode::LinkwitzRiley4;
 

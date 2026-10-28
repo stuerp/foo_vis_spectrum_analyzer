@@ -16,13 +16,13 @@
 #pragma warning(disable: 4820)
 struct frequency_band_t
 {
-    frequency_band_t() noexcept : RawValue(), Value(), PeakValue(), Low(), Center(), High(), HoldTime(), FallRate(), Opacity(1.) { }
+    frequency_band_t() noexcept : Magnitude(), Value(), PeakValue(), Low(), Center(), High(), HoldTime(), FallRate(), Opacity(1.) { }
 
-    frequency_band_t(double l, double c, double h) noexcept : RawValue(), Value(), PeakValue(), Low(l), Center(c), High(h), HoldTime(), FallRate(), Opacity(1.) { }
+    frequency_band_t(double l, double c, double h) noexcept : Magnitude(), Value(), PeakValue(), Low(l), Center(c), High(h), HoldTime(), FallRate(), Opacity(1.) { }
 
     frequency_band_t(const frequency_band_t & other) noexcept
     {
-        RawValue  = other.RawValue;
+        Magnitude  = other.Magnitude;
         Value     = other.Value;
         PeakValue = other.PeakValue;
 
@@ -43,7 +43,8 @@ struct frequency_band_t
 
     virtual ~frequency_band_t() noexcept { }
 
-    double RawValue;    // Magnitude / Power
+    double Magnitude;   // The aggregated magnitude (Power) for this frequency band.
+
     double Value;       // [0, 1], Normalized magnitude / power
     double PeakValue;   // [0, 1], Peak normalized magnitude / power
 

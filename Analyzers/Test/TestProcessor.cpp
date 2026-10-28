@@ -21,6 +21,8 @@ namespace Test
     void processor_t::Reset() noexcept
     {
         __super::Reset();
+
+        _Chunk.reset();
     }
 
     /// <summary>
@@ -36,5 +38,7 @@ namespace Test
     /// </summary>
     void processor_t::UpdatePeaks(bool isStopped) noexcept
     {
+        if (isStopped)
+            _Chunk.reset();
     }
 }

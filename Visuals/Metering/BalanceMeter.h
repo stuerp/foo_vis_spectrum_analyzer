@@ -1,5 +1,5 @@
 
-/** $VER: LevelMeter.h (2026.10.28) P. Stuer - Implements a left/right/mid/side level meter. **/
+/** $VER: BalanceMeter.h (2026.10.28) P. Stuer - Implements a left/right/mid/side level meter. **/
 
 #pragma once
 
@@ -21,18 +21,18 @@
 namespace Metering
 {
 
-class level_meter_t final : public visualization_t
+class balance_meter_t final : public visualization_t
 {
 public:
-    level_meter_t(state_t & state) : visualization_t(state) { }
+    balance_meter_t(state_t & state) : visualization_t(state) { }
 
-    level_meter_t(const level_meter_t &) = delete;
-    level_meter_t(level_meter_t &&) = delete;
+    balance_meter_t(const balance_meter_t &) = delete;
+    balance_meter_t(balance_meter_t &&) = delete;
 
-    level_meter_t & operator=(const level_meter_t &) = delete;
-    level_meter_t & operator=(level_meter_t &&) = delete;
+    balance_meter_t & operator=(const balance_meter_t &) = delete;
+    balance_meter_t & operator=(balance_meter_t &&) = delete;
 
-    virtual ~level_meter_t() noexcept;
+    virtual ~balance_meter_t() noexcept;
 
     // element_t
     void Move(const D2D1_RECT_F & rect) noexcept override final;

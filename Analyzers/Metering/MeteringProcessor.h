@@ -13,6 +13,43 @@
 namespace Metering
 {
 
+/// <summary>
+/// Represents a peak meter measurement.
+/// </summary>
+struct peak_measurement_t : ::measurement_t
+{
+    peak_measurement_t(Channels channel, const WCHAR * channelName) noexcept : ::measurement_t(channel, channelName)
+    {
+        HoldTime = 0.;
+        FallRate = 0.;
+        Opacity  = 1.;
+
+        RMSTotal = 0.;
+
+        Peak = -std::numeric_limits<double>::infinity();
+        NormalizedPeak = 0.;
+        MaxNormalizedPeak = 0.;
+
+        RMS = 0.;
+        NormalizedRMS = 0.;
+    }
+
+    // User settings
+    double HoldTime;            // Peak hold time, in seconds [0, 2]
+    double FallRate;            // Peak fall rate, in dB/s [0, 240]
+    double Opacity;             // [0, 1]
+
+    // Measurements
+    double RMSTotal;            // RMS value for the current RMS window.
+
+    double Peak;                // in dBFS
+    double NormalizedPeak;      // [0, 1], Normalized and smoothed value used for rendering
+    double MaxNormalizedPeak;   // [0, 1], Normalized and smoothed value used for rendering
+
+    double RMS;                 // in dBFS
+    double NormalizedRMS;       // [0, 1], Normalized and smoothed value used for rendering
+};
+
 class processor_t final : public audio_processor_t
 {
 public:

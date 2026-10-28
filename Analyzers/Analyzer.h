@@ -27,9 +27,9 @@ public:
     /// <summary>
     /// Initializes a new instance.
     /// </summary>
-    analyzer_t(const state_t & state, uint32_t sampleRate, uint32_t channelCount, uint32_t channelConfig, const window_function_t & windowFunction) : _State(state), _WindowFunction(windowFunction), _SampleRate(sampleRate), _ChannelCount(channelCount), _ChannelConfig(channelConfig)
+    analyzer_t(const state_t & state, uint32_t sampleRate, uint32_t channelCount, uint32_t channelConfig, const window_function_t & windowFunction) : _State(state), WindowFunction(windowFunction), _SampleRate(sampleRate), _ChannelCount(channelCount), _ChannelConfig(channelConfig)
     {
-        _NyquistFrequency = (double) _SampleRate / 2.;
+        NyquistFrequency = (double) _SampleRate / 2.;
     }
 
     virtual bool AnalyzeAudio(const audio_sample * frames, size_t frameCount, uint32_t selectedChannels, frequency_bands_t & frequencyBands) noexcept = 0;
@@ -71,11 +71,11 @@ public:
 
 protected:
     const state_t & _State;
-    const window_function_t & _WindowFunction;
+    const window_function_t & WindowFunction;
 
     uint32_t _SampleRate;
     uint32_t _ChannelCount;  // Number of channels per frame.
     uint32_t _ChannelConfig; // Mask representing the channels present in the frame.
 
-    double _NyquistFrequency;
+    double NyquistFrequency;
 };

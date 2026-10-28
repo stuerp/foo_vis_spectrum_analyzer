@@ -1,5 +1,5 @@
 
-/** $VER: BitmeterProcessor.cpp (2026.10.27) P. Stuer **/
+/** $VER: BitmeterProcessor.cpp (2026.10.28) P. Stuer **/
 
 #include <pch.h>
 
@@ -26,6 +26,8 @@ void processor_t::Reset() noexcept
     _BitActiveChannelMask = 0;
 
     Initialize((uint32_t) Channels::ConfigStereo);
+
+    _Chunk.reset();
 }
 
 /// <summary>

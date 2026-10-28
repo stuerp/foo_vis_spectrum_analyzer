@@ -44,6 +44,8 @@ private:
     void Initialize(uint32_t channelMask) noexcept;
 
 public:
+    audio_chunk_impl _Chunk;
+
     std::vector<bit_measurement_t> _BitMeasurements;
     uint32_t _BitActiveChannelMask;
 };

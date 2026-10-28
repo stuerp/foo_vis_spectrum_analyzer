@@ -1,5 +1,5 @@
 
-/** $VER: YAxis.h (2026.10.10) P. Stuer - Implements the Y axis of a graph. **/
+/** $VER: YAxis.h (2026.10.28) P. Stuer - Implements the Y axis of a graph. **/
 
 #pragma once
 
@@ -12,10 +12,14 @@
 #include <Windows.h>
 
 #include "Visualization.h"
+#include "SpectrumProcessor.h"
 #include "State.h"
 
 #include <vector>
 #include <string>
+
+namespace Spectrum
+{
 
 /// <summary>
 /// Implements the Y axis of a graph.
@@ -57,7 +61,7 @@ private:
     void Initialize() noexcept;
 
 private:
-    audio_processor_t * _Processor;
+    processor_t * _Processor;
     bool _FlipVertically;
 
     struct label_t
@@ -78,3 +82,5 @@ private:
     style_t _LineStyle;
     style_t _TextStyle;
 };
+
+}

@@ -315,7 +315,7 @@ namespace Metering
             }
         }
         else
-        if (_State._VisualizationType == VisualizationType::LevelMeter)
+        if (_State._VisualizationType == VisualizationType::BalanceMeter)
         {
             if (isStopped)
             {

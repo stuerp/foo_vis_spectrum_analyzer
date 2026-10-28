@@ -74,7 +74,7 @@ namespace Plasma
 
         // Update the pixel matrix.
         {
-            _Audio = _Analyzer.Analyze(chunk, deltaTime);// : (_Analyzer.Decay(DeltaTime), _Analyzer.GetAudioFeatures());
+            _Audio = _Analyzer.Analyze(chunk, deltaTime);
 
             {
                 const double SpeedFactor = [&]() noexcept
