@@ -23,13 +23,13 @@ style DS_SETFONT | DS_CONTROL | WS_CHILD | WS_CLIPCHILDREN
         combobox                                    IDC_WINDOW_FUNCTION,            X_C02, Y_C02,     W_C02, H_C02, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
 
         rtext           "Window parameter:"         IDC_STATIC,                     X_C03, Y_C03 + 2, W_C03, H_C03
-        edittext                                    IDC_WINDOW_PARAMETER,           X_C04, Y_C04, W_C04, H_C04, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+        edittext                                    IDC_WINDOW_PARAMETER,           X_C04, Y_C04,     W_C04, H_C04, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
 
         rtext           "Window skew:"              IDC_STATIC,                     X_C05, Y_C05 + 2, W_C05, H_C05
-        edittext                                    IDC_WINDOW_SKEW,                X_C06, Y_C06, W_C06, H_C06, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+        edittext                                    IDC_WINDOW_SKEW,                X_C06, Y_C06,     W_C06, H_C06, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
 
         rtext           "Reaction alignment:"       IDC_STATIC,                     X_C07, Y_C07 + 2, W_C07, H_C07
-        edittext                                    IDC_REACTION_ALIGNMENT          X_C08, Y_C08, W_C08, H_C08, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+        edittext                                    IDC_REACTION_ALIGNMENT          X_C08, Y_C08,     W_C08, H_C08, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
 
     groupbox "Fourier Transform", IDC_FFT_GROUP, X_B00, Y_B00, W_B00, H_B00, BS_GROUPBOX, WS_EX_TRANSPARENT
 
@@ -37,20 +37,23 @@ style DS_SETFONT | DS_CONTROL | WS_CHILD | WS_CLIPCHILDREN
         combobox                                    IDC_NUM_BINS,                   X_A04, Y_A04,     W_A04, H_A04, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
 
         rtext           ""                          IDC_NUM_BINS_PARAMETER_NAME,    X_A61, Y_A61 + 2, W_A61, H_A61
-        edittext                                    IDC_NUM_BINS_PARAMETER,         X_A59, Y_A59, W_A59, H_A59, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+        edittext                                    IDC_NUM_BINS_PARAMETER,         X_A59, Y_A59,     W_A59, H_A59, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
         ltext           "samples",                  IDC_NUM_BINS_PARAMETER_UNIT,    X_A60, Y_A60 + 2, W_A60, H_A60
 
-        rtext           "Coeff. aggregation:"       IDC_STATIC,                     X_A15, Y_A15 + 2, W_A15, H_A15
-        combobox                                    IDC_AGGREGATION_METHOD,           X_A16, Y_A16,     W_A16, H_A16, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+        rtext           "Hop size fraction:"        IDC_STATIC,                     X_A80, Y_A80 + 2, W_A80, H_A80
+        edittext                                    IDC_HOP_SIZE_FRACTION,          X_A81, Y_A81,     W_A81, H_A81, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
 
         rtext           "Coeff. mapping:"           IDC_STATIC,                     X_A65, Y_A65 + 2, W_A65, H_A65
         combobox                                    IDC_MAPPING_METHOD,             X_A66, Y_A66,     W_A66, H_A66, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+
+        rtext           "Coeff. aggregation:"       IDC_STATIC,                     X_A15, Y_A15 + 2, W_A15, H_A15
+        combobox                                    IDC_AGGREGATION_METHOD,         X_A16, Y_A16,     W_A16, H_A16, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
 
         control         "Smooth lower frequencies", IDC_SMOOTH_LOWER_FREQUENCIES, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_A43, Y_A43, W_A43, H_A43
         control         "Smooth gain transition",   IDC_SMOOTH_GAIN_TRANSITION,   "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_A44, Y_A44, W_A44, H_A44
 
         rtext           "Lanczos kernel:"           IDC_STATIC,                     X_A39, Y_A39 + 2, W_A39, H_A39
-        edittext                                    IDC_KERNEL_SIZE,                X_A40, Y_A40, W_A40, H_A40, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+        edittext                                    IDC_KERNEL_SIZE,                X_A40, Y_A40,     W_A40, H_A40, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
         control         "",                         IDC_KERNEL_SIZE_SPIN,           "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_NOTHOUSANDS | UDS_SETBUDDYINT, 0, 0, 0, 0
 
     groupbox "Brown-Puckette CQT Mapping", IDC_BP_GROUP, X_B10, Y_B10, W_B10, H_B10, BS_GROUPBOX, WS_EX_TRANSPARENT

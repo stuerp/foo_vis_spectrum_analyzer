@@ -1,5 +1,5 @@
 
-/** $VER: State.cpp (2026.10.23) P. Stuer **/
+/** $VER: State.cpp (2026.10.28) P. Stuer **/
 
 #include "pch.h"
 #include "State.h"
@@ -57,7 +57,7 @@ void state_t::Reset() noexcept
     // Transform
     _TransformMethod = TransformMethod::FFT;
 
-    WindowFunction = WindowFunctionType::Hann;
+    _WindowFunction = WindowFunctionType::Hann;
     _WindowParameter = 1.;
     _WindowSkew = 0.;
     _Truncate = true;
@@ -70,6 +70,7 @@ void state_t::Reset() noexcept
     _FFTMode = FFTMode::FFT4096;
     _FFTCustom = 4096;
     _FFTDuration = 100.;
+    _HopSizeFraction = 0.;
 
     _MappingMethod = CoefficientMapping::Standard;
 
@@ -368,7 +369,7 @@ state_t & state_t::operator=(const state_t & other) noexcept
 
         _TransformMethod   = other._TransformMethod;
 
-        WindowFunction    = other.WindowFunction;
+        _WindowFunction    = other._WindowFunction;
         _WindowParameter   = other._WindowParameter;
         _WindowSkew        = other._WindowSkew;
         _Truncate          = other._Truncate;
@@ -381,9 +382,10 @@ state_t & state_t::operator=(const state_t & other) noexcept
 
     #pragma region FFT
 
-        _FFTMode     = other._FFTMode;
-        _FFTCustom   = other._FFTCustom;
-        _FFTDuration = other._FFTDuration;
+        _FFTMode         = other._FFTMode;
+        _FFTCustom       = other._FFTCustom;
+        _FFTDuration     = other._FFTDuration;
+        _HopSizeFraction = other._HopSizeFraction;
 
         _KernelSize             = other._KernelSize;
         _AggregationMethod      = other._AggregationMethod;
@@ -653,7 +655,7 @@ state_t & state_t::operator=(const state_t & other) noexcept
     // Not serialized
     _UserInterfaceColors  = other._UserInterfaceColors; // Keep this: It makes sure the render thread has color information at startup.
 
-    _BinCount             = other._BinCount;
+    _FFTSize             = other._FFTSize;
     _ActivePresetName     = other._ActivePresetName;
 
     return *this;
@@ -792,7 +794,7 @@ void state_t::Read(stream_reader * stream, size_t size, abort_callback & abortHa
         stream->read(&_Channels_Deprecated, sizeof(_Channels_Deprecated), abortHandler);
         stream->read(&_ShowToolTipsAlways, sizeof(_ShowToolTipsAlways), abortHandler);
 
-        stream->read(&WindowFunction, sizeof(WindowFunction), abortHandler);
+        stream->read(&_WindowFunction, sizeof(_WindowFunction), abortHandler);
         stream->read(&_WindowParameter, sizeof(_WindowParameter), abortHandler);
         stream->read(&_WindowSkew, sizeof(_WindowSkew), abortHandler);
 
@@ -1199,7 +1201,7 @@ void state_t::Write(stream_writer * stream, abort_callback & abortHandler, bool 
         stream->write(&_Channels_Deprecated, sizeof(_Channels_Deprecated), abortHandler);
         stream->write(&_ShowToolTipsAlways, sizeof(_ShowToolTipsAlways), abortHandler);
 
-        stream->write(&WindowFunction, sizeof(WindowFunction), abortHandler);
+        stream->write(&_WindowFunction, sizeof(_WindowFunction), abortHandler);
         stream->write(&_WindowParameter, sizeof(_WindowParameter), abortHandler);
         stream->write(&_WindowSkew, sizeof(_WindowSkew), abortHandler);
 
@@ -1584,7 +1586,7 @@ void state_t::FromJSON(const char * data, size_t size, bool isPreset)
         _TransformMethod        = std::clamp(Transform.value("method",            _TransformMethod),        TransformMethod::Min,       TransformMethod::Max);
 
         // FFT
-        WindowFunction         = std::clamp(Transform.value("windowFunction",    WindowFunction),         WindowFunctionType::Min,        WindowFunctionType::Max);
+        _WindowFunction         = std::clamp(Transform.value("windowFunction",    _WindowFunction),         WindowFunctionType::Min,    WindowFunctionType::Max);
         _WindowParameter        = std::clamp(Transform.value("windowParameter",   _WindowParameter),        MinWindowParameter,         MaxWindowParameter);
         _WindowSkew             = std::clamp(Transform.value("windowSkew",        _WindowSkew),             MinWindowSkew,              MaxWindowSkew);
         _ReactionAlignment      = std::clamp(Transform.value("reactionAlignment", _ReactionAlignment),      MinReactionAlignment,       MaxReactionAlignment);
@@ -1592,6 +1594,7 @@ void state_t::FromJSON(const char * data, size_t size, bool isPreset)
         _FFTMode                = std::clamp(Transform.value("mode",              _FFTMode),                FFTMode::Min,               FFTMode::Max);
         _FFTCustom              = std::clamp(Transform.value("custom",            _FFTCustom),              (size_t) MinFFTSize,        (size_t) MaxFFTSize);
         _FFTDuration            = std::clamp(Transform.value("duration",          _FFTDuration),            MinFFTDuration,             MaxFFTDuration);
+        _HopSizeFraction        = std::clamp(Transform.value("hopSizeFraction",   _HopSizeFraction),        MinHopSizeFraction,         MaxHopSizeFraction);
 
         _AggregationMethod      = std::clamp(Transform.value("aggregationMethod", _AggregationMethod),      AggregationMethod::Min,     AggregationMethod::Max);
         _MappingMethod          = std::clamp(Transform.value("mapping",           _MappingMethod),          CoefficientMapping::Min,    CoefficientMapping::Max);
@@ -1915,7 +1918,7 @@ json state_t::ToJSON(bool isPreset) const
             ({
                 { "method", _TransformMethod },
 
-                { "windowFunction", WindowFunction },
+                { "windowFunction", _WindowFunction },
                 { "windowParameter", _WindowParameter },
                 { "windowSkew", _WindowSkew },
                 { "reactionAlignment", _ReactionAlignment },
@@ -1923,6 +1926,7 @@ json state_t::ToJSON(bool isPreset) const
                 { "mode", _FFTMode },
                 { "custom", _FFTCustom },
                 { "duration", _FFTDuration },
+                { "hopSizeFraction", _HopSizeFraction },
 
                 { "aggregationMethod", _AggregationMethod },
                 { "mapping", _MappingMethod },
@@ -2324,5 +2328,26 @@ const std::vector<D2D1_GRADIENT_STOP> state_t::SelectGradientStops_Deprecated(Co
 
     return gradient_t::GetBuiltIn(colorScheme);
 }
+
+/// <summary>
+/// Returns true if the current visualization is a spectrum analyzer.
+/// </summary>
+bool state_t::IsSpectrumAnalyzer() const noexcept
+{
+    return (_VisualizationType == VisualizationType::Bars) ||
+           (_VisualizationType == VisualizationType::Curve) ||
+           (_VisualizationType == VisualizationType::Spectrogram) ||
+           (_VisualizationType == VisualizationType::RadialBars) ||
+           (_VisualizationType == VisualizationType::RadialCurve);
+}
+
+/// <summary>
+/// Returns true if the transform uses a sliding window.
+/// </summary>
+bool state_t::IsSlidingWindowTransform() const noexcept
+{
+    return (_TransformMethod == TransformMethod::SWIFT || _TransformMethod == TransformMethod::AnalogStyle);
+}
+
 
 cfg_int CfgLogLevel({ 0xf06c6211, 0x1617, 0x41ac, { 0xaf, 0xbe, 0x7f, 0xb3, 0xda, 0xef, 0x6, 0x69 } }, DefaultCfgLogLevel);

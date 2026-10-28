@@ -1,5 +1,5 @@
 
-/** $VER: TransformPageLayout.h (2026.08.30) P. Stuer - Defines the layout of a configuration dialog page. **/
+/** $VER: TransformPageLayout.h (2026.10.28) P. Stuer - Defines the layout of a configuration dialog page. **/
 
 #pragma once
 
@@ -87,7 +87,8 @@
 #define X_B00   X_B05
 #define Y_B00   Y_B05 + H_B05 + IY
 
-    #pragma region Size
+/** FFT Size **/
+
     // Label
     #define W_A03   64
     #define H_A03   H_LBL
@@ -99,9 +100,9 @@
     #define H_A04   H_CBX
     #define X_A04   X_A03 + W_A03 + IX
     #define Y_A04   Y_A03
-    #pragma endregion
 
-    #pragma region Size Parameter
+/** FFT Size Parameter **/
+
     // Label
     #define W_A61   64
     #define H_A61   H_LBL
@@ -119,23 +120,37 @@
     #define H_A60   H_LBL
     #define X_A60   X_A59 + W_A59 + IX
     #define Y_A60   Y_A59
-    #pragma endregion
 
-    #pragma region Mapping
+/** Overlap **/
+
+    // Label
+    #define W_A80   64
+    #define H_A80   H_LBL
+    #define X_A80   X_A03
+    #define Y_A80   Y_A59 + H_A59 + IY
+
+    // Textbox
+    #define W_A81    30
+    #define H_A81    H_TBX
+    #define X_A81    X_A80 + W_A80 + IY
+    #define Y_A81    Y_A80
+
+/** Coefficient mapping **/
+
     // Label
     #define W_A65    64
     #define H_A65    H_LBL
-    #define X_A65    X_A03
-    #define Y_A65    Y_A59 + H_A59 + IY
+    #define X_A65    X_A80
+    #define Y_A65    Y_A81 + H_A81 + IY
 
     // Combobox
     #define W_A66    100
     #define H_A66    H_CBX
     #define X_A66    X_A65 + W_A65 + IX
     #define Y_A66    Y_A65
-    #pragma endregion
 
-    #pragma region Aggregation Method
+/** Coefficient aggregation **/
+
     // Label
     #define W_A15    64
     #define H_A15    H_LBL
@@ -147,9 +162,9 @@
     #define H_A16    H_CBX
     #define X_A16    X_A15 + W_A15 + IX
     #define Y_A16    Y_A15
-    #pragma endregion
 
-    #pragma region Smooth lower frequencies
+/** Smooth lower frequencies **/
+
     // Checkbox
     #define W_A43    100
     #define H_A43    H_CHB
@@ -180,7 +195,7 @@
     #pragma endregion
 
 #define W_B00   W_B05
-#define H_B00   11 + H_A04 + IY + H_A59 + IY + H_A16 + IY + H_A43 + IY + H_A66 + IY + H_A44 + IY + H_A40 + 7
+#define H_B00   11 + H_A04 + IY + H_A59 + IY + H_A81 + IY + H_A16 + IY + H_A43 + IY + H_A66 + IY + H_A44 + IY + H_A40 + 7
 #pragma endregion
 
 #pragma region Brown-Puckette CQT

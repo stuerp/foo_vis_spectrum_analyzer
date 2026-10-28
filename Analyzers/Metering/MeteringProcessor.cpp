@@ -221,11 +221,12 @@ namespace Metering
     {
         assert(_Options);
 
-        const double Elapsed = _Chrono.Elapsed();
+        const double DeltaTime = _Chrono.Elapsed();
+
         const double AmplitudeRange = _Options->_AmplitudeHi - _Options->_AmplitudeLo;
 
         const double HoldTime = _State._HoldTime * (double) _State._TargetRefreshRate;
-        const double FallRate = (_State._FallRate != 0) ? msc::Map(Elapsed, 0., AmplitudeRange / _State._FallRate, 0., 1.) : 0.;
+        const double FallRate = (_State._FallRate != 0) ? msc::Map(DeltaTime, 0., AmplitudeRange / _State._FallRate, 0., 1.) : 0.;
 
         const bool IsAIMP = (_State._PeakMode == PeakMode::AIMP) || (_State._PeakMode == PeakMode::FadingAIMP);
 

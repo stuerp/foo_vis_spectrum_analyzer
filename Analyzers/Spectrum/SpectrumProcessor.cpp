@@ -146,12 +146,12 @@ namespace Spectrum
     {
         assert(_Options);
 
-        const double Elapsed = _Chrono.Elapsed();
+        const double DeltaTime = _Chrono.Elapsed();
 
         const double AmplitudeRange = _Options->_AmplitudeHi - _Options->_AmplitudeLo;
 
         const double HoldTime = _State._HoldTime * (double) _State._TargetRefreshRate;
-        const double FallRate = (_State._FallRate != 0) ? msc::Map(Elapsed, 0., AmplitudeRange / _State._FallRate, 0., 1.) : 0.;
+        const double FallRate = (_State._FallRate != 0) ? msc::Map(DeltaTime, 0., AmplitudeRange / _State._FallRate, 0., 1.) : 0.;
 
         const bool IsAIMP = (_State._PeakMode == PeakMode::AIMP) || (_State._PeakMode == PeakMode::FadingAIMP);
 
@@ -638,7 +638,7 @@ namespace Spectrum
     void processor_t::CreateAnalyzer() noexcept
     {
         if (!WindowFunction)
-            WindowFunction = window_function_t::Create(_State.WindowFunction, _State._WindowParameter, _State._WindowSkew, _State._Truncate);
+            WindowFunction = window_function_t::Create(_State._WindowFunction, _State._WindowParameter, _State._WindowSkew, _State._Truncate);
 
         if (!_Analyzer)
         {
@@ -650,7 +650,7 @@ namespace Spectrum
                     if (!_BrownPucketteKernel)
                         _BrownPucketteKernel = window_function_t::Create(_State._KernelShape, _State._KernelShapeParameter, _State._KernelAsymmetry, _State._Truncate);
 
-                    _Analyzer = std::make_unique<fft_analyzer_t>(_State, _State._BinCount, _SampleRate, _ChannelCount, _ChannelConfig, *WindowFunction, *_BrownPucketteKernel);
+                    _Analyzer = std::make_unique<fft_analyzer_t>(_State, _State._FFTSize, _SampleRate, _ChannelCount, _ChannelConfig, *WindowFunction, *_BrownPucketteKernel);
                     break;
                 }
 
@@ -698,9 +698,9 @@ namespace Spectrum
     /// </summary>
     void processor_t::ApplyAcousticWeighting() noexcept
     {
-        assert((_SampleRate != 0) && (_State._BinCount != 0));
+        assert((_SampleRate != 0) && (_State._FFTSize != 0));
 
-        const double BinWidth = (double) _SampleRate / (double) _State._BinCount;
+        const double BinWidth = (double) _SampleRate / (double) _State._FFTSize;
         const double Offset   = _State._FrequencyShift * BinWidth;
 
         for (frequency_band_t & fb : FrequencyBands)

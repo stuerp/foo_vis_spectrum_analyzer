@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2026.10.25) P. Stuer **/
+/** $VER: Resources.h (2026.10.28) P. Stuer **/
 
 #pragma once
 
@@ -111,14 +111,16 @@
 #define IDC_NUM_BINS_PARAMETER          2056
 #define IDC_NUM_BINS_PARAMETER_UNIT     2058
 
-#define IDC_MAPPING_METHOD              2060
-#define IDC_AGGREGATION_METHOD          2062
+#define IDC_HOP_SIZE_FRACTION                     2060
 
-#define IDC_SMOOTH_LOWER_FREQUENCIES    2070
-#define IDC_SMOOTH_GAIN_TRANSITION      2072
+#define IDC_MAPPING_METHOD              2070
+#define IDC_AGGREGATION_METHOD          2072
 
-#define IDC_KERNEL_SIZE                 2080
-#define IDC_KERNEL_SIZE_SPIN            2084
+#define IDC_SMOOTH_LOWER_FREQUENCIES    2080
+#define IDC_SMOOTH_GAIN_TRANSITION      2082
+
+#define IDC_KERNEL_SIZE                 2090
+#define IDC_KERNEL_SIZE_SPIN            2094
 
 #pragma endregion
 

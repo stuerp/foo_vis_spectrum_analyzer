@@ -40,7 +40,7 @@ void spectrum_t::Configure(graph_options_t * options, audio_processor_t * proces
     _XAxis.Configure(options, processor, isFirst, isLast);
     _YAxis.Configure(options, processor, isFirst, isLast);
 
-    _Chrono.Reset();
+    _AnimationTimer.Reset();
 }
 
 /// <summary>
@@ -358,7 +358,7 @@ void spectrum_t::RenderRadialBars(ID2D1DeviceContext * deviceContext) noexcept
 
     const FLOAT MaxSegmentHeight = OuterRadius - InnerRadius;
 
-    FLOAT a = (FLOAT) ::fmod(Pi2 + (_Chrono.Elapsed() * -DegreesToRadians(_State._AngularVelocity)), TwoPi);
+    FLOAT a = (FLOAT) ::fmod(Pi2 + (_AnimationTimer.Elapsed() * -DegreesToRadians(_State._AngularVelocity)), TwoPi);
 //  FLOAT a = (FLOAT) ::fmod(Pi2 + ::cos(_Chrono.Elapsed() * -_State._AngularVelocity), TwoPi);
 
     const FLOAT da = (FLOAT) TwoPi / (FLOAT) _Processor->FrequencyBands.size();
@@ -646,7 +646,7 @@ void spectrum_t::RenderDiagnostics(ID2D1DeviceContext * deviceContext) const noe
     // Render the weighing function.
     if (_State._ShowWeighingFunction && (_State._WeightingType != WeightingType::None))
     {
-        const double BinWidth = (double) _State._SampleRate / (double) _State._BinCount;
+        const double BinWidth = (double) _State._SampleRate / (double) _State._FFTSize;
         const double Offset   = _State._FrequencyShift * BinWidth;
 
         deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
@@ -1154,7 +1154,7 @@ HRESULT spectrum_t::CreateRadialGeometryPointsFromAmplitude(geometry_points_t & 
 
     const FLOAT MaxHeight = OuterRadius - InnerRadius;
 
-    FLOAT a = (FLOAT) ::fmod(Pi2 + (_Chrono.Elapsed() * -DegreesToRadians(_State._AngularVelocity)), TwoPi);
+    FLOAT a = (FLOAT) ::fmod(Pi2 + (_AnimationTimer.Elapsed() * -DegreesToRadians(_State._AngularVelocity)), TwoPi);
 
     const FLOAT da = (FLOAT) TwoPi / (FLOAT) _Processor->FrequencyBands.size();
 

@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.h (2026.09.25) P. Stuer **/
+/** $VER: UIElement.h (2026.10.28) P. Stuer **/
 
 #pragma once
 
@@ -161,6 +161,8 @@ private:
 
     void InitializeSampleRateDependentParameters(const audio_chunk & chunk) noexcept;
 
+    bool UseOverlap() const noexcept;
+
     HRESULT CreateDeviceIndependentResources() noexcept;
     void DeleteDeviceIndependentResources() noexcept;
 
@@ -249,6 +251,12 @@ private:
     static constexpr int64_t RefreshRates[] = { 20, 30, 60, 100, 200 };
 #endif
 
+    double _NextAnalysisTime = 0.;
+    bool _IsAnalysisTimeInitialized = false;
+
+    size_t _HopSize = 512;
+
+private:
     // Device-independent resources.
     ComPtr<IDWriteTextFormat> _TextFormat;
 

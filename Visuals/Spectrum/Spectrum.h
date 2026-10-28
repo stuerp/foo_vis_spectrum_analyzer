@@ -109,7 +109,7 @@ private:
 
     FLOAT _LEDSize;
 
-    msc::chrono_t _Chrono;
+    msc::chrono_t _AnimationTimer;
 
     // Device-dependent resources
     ComPtr<ID2D1SolidColorBrush> _DebugBrush;

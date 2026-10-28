@@ -43,6 +43,8 @@ BOOL transform_page_t::OnInitDialog(CWindow w, LPARAM lParam) noexcept
         { IDC_NUM_BINS, "Sets the number of bins used by the Fourier transforms" },
         { IDC_NUM_BINS_PARAMETER, "Sets the parameter used to calculate the number of Fourier transform bins. Set the number of bins explicitly (Custom) or expressed as a number of ms taking the sample rate into account (Duration)" },
 
+        { IDC_HOP_SIZE_FRACTION, "Specifies a hop size relative to the FFT size. Smaller hops (larger fraction) produce more frequent analysis updates." },
+
         { IDC_AGGREGATION_METHOD, "Selects the method used to aggregate FFT coefficients before mapping them onto the frequency bands." },
         { IDC_MAPPING_METHOD, "Determines how the FFT coefficients are mapped to the frequency bands." },
 
@@ -118,14 +120,13 @@ void transform_page_t::InitializeControls() noexcept
     }
 
     {
-        auto w = (CComboBox) GetDlgItem(IDC_AGGREGATION_METHOD);
+        auto ne = std::make_shared<numeric_edit_t>();
 
-        w.ResetContent();
+        ne->Initialize(GetDlgItem(IDC_HOP_SIZE_FRACTION));
 
-        for (const auto & x : { L"Minimum", L"Maximum", L"Sum", L"RMS (Residual Mean Square)", L"RMS Sum", L"Average", L"Median" })
-            w.AddString(x);
+        _NumericEdits.push_back(ne);
 
-        w.SetCurSel((int) _State->_AggregationMethod);
+        SetInteger(IDC_HOP_SIZE_FRACTION, (int64_t) (_State->_HopSizeFraction * 100.));
     }
 
     {
@@ -140,19 +141,35 @@ void transform_page_t::InitializeControls() noexcept
     }
 
     {
+        auto w = (CComboBox) GetDlgItem(IDC_AGGREGATION_METHOD);
+
+        w.ResetContent();
+
+        for (const auto & x : { L"Minimum", L"Maximum", L"Sum", L"RMS (Residual Mean Square)", L"RMS Sum", L"Average", L"Median" })
+            w.AddString(x);
+
+        w.SetCurSel((int) _State->_AggregationMethod);
+    }
+
+    {
         SendDlgItemMessageW(IDC_SMOOTH_LOWER_FREQUENCIES, BM_SETCHECK, _State->_SmoothLowerFrequencies);
         SendDlgItemMessageW(IDC_SMOOTH_GAIN_TRANSITION, BM_SETCHECK, _State->_SmoothGainTransition);
     }
 
     {
-        auto ne = std::make_shared<numeric_edit_t>(); ne->Initialize(GetDlgItem(IDC_KERNEL_SIZE)); _NumericEdits.push_back(ne); SetInteger(IDC_KERNEL_SIZE, (int64_t) _State->_KernelSize);
+        auto ne = std::make_shared<numeric_edit_t>();
+
+        ne->Initialize(GetDlgItem(IDC_KERNEL_SIZE));
+
+        _NumericEdits.push_back(ne);
+
+        SetInteger(IDC_KERNEL_SIZE, (int64_t) _State->_KernelSize);
 
         auto w = CUpDownCtrl(GetDlgItem(IDC_KERNEL_SIZE_SPIN));
 
         w.SetRange32(MinKernelSize, MaxKernelSize);
         w.SetPos32(_State->_KernelSize);
     }
-
 
     // Window Function
     {
@@ -165,7 +182,7 @@ void transform_page_t::InitializeControls() noexcept
         for (size_t i = 0; i < _countof(WindowFunctionNames); ++i)
             w.AddString(WindowFunctionNames[i]);
 
-        w.SetCurSel((int) _State->WindowFunction);
+        w.SetCurSel((int) _State->_WindowFunction);
     }
     {
         auto ne = std::make_shared<numeric_edit_t>(); ne->Initialize(GetDlgItem(IDC_WINDOW_PARAMETER)); _NumericEdits.push_back(ne); SetDouble(IDC_WINDOW_PARAMETER, _State->_WindowParameter);
@@ -224,9 +241,9 @@ void transform_page_t::InitializeControls() noexcept
         auto ne = std::make_shared<numeric_edit_t>(); ne->Initialize(GetDlgItem(IDC_IIR_BW)); _NumericEdits.push_back(ne); SetDouble(IDC_IIR_BW, _State->_IIRBandwidth);
     }
 
-    SendDlgItemMessageW(IDC_CONSTANT_Q, BM_SETCHECK, _State->_ConstantQ);
+    SendDlgItemMessageW(IDC_CONSTANT_Q,    BM_SETCHECK, _State->_ConstantQ);
     SendDlgItemMessageW(IDC_COMPENSATE_BW, BM_SETCHECK, _State->_CompensateBandwidth);
-    SendDlgItemMessageW(IDC_PREWARPED_Q, BM_SETCHECK, _State->_UsePreWarpedQ);
+    SendDlgItemMessageW(IDC_PREWARPED_Q,   BM_SETCHECK, _State->_UsePreWarpedQ);
 
     UpdateControls();
 }
@@ -245,22 +262,22 @@ void transform_page_t::UpdateControls() noexcept
     const bool SupportsTransform = !(IsPeakMeter || IsBalanceMeter || IsOscilloscope || IsBitMeter || IsTester);
 
     const bool IsFFT = (_State->_TransformMethod == TransformMethod::FFT)   || (_State->_TransformMethod == TransformMethod::CompositeFFT);
-    const bool IsIIR = (_State->_TransformMethod == TransformMethod::SWIFT) || (_State->_TransformMethod == TransformMethod::AnalogStyle);
+    const bool IsIIR = _State->IsSlidingWindowTransform();
 
     if (SupportsTransform)
     {
         // Transform
-        bool HasParameter = (_State->WindowFunction == WindowFunctionType::PowerOfSine)
-                         || (_State->WindowFunction == WindowFunctionType::PowerOfCircle)
-                         || (_State->WindowFunction == WindowFunctionType::Gaussian)
-                         || (_State->WindowFunction == WindowFunctionType::Tukey)
-                         || (_State->WindowFunction == WindowFunctionType::Kaiser)
-                         || (_State->WindowFunction == WindowFunctionType::Poisson)
-                         || (_State->WindowFunction == WindowFunctionType::HyperbolicSecant);
+        bool HasParameter = (_State->_WindowFunction == WindowFunctionType::PowerOfSine)
+                         || (_State->_WindowFunction == WindowFunctionType::PowerOfCircle)
+                         || (_State->_WindowFunction == WindowFunctionType::Gaussian)
+                         || (_State->_WindowFunction == WindowFunctionType::Tukey)
+                         || (_State->_WindowFunction == WindowFunctionType::Kaiser)
+                         || (_State->_WindowFunction == WindowFunctionType::Poisson)
+                         || (_State->_WindowFunction == WindowFunctionType::HyperbolicSecant);
 
-        GetDlgItem(IDC_WINDOW_FUNCTION).EnableWindow(!IsIIR);
+        GetDlgItem(IDC_WINDOW_FUNCTION) .EnableWindow(!IsIIR);
         GetDlgItem(IDC_WINDOW_PARAMETER).EnableWindow(HasParameter && !IsIIR);
-        GetDlgItem(IDC_WINDOW_SKEW).EnableWindow(!IsIIR);
+        GetDlgItem(IDC_WINDOW_SKEW)     .EnableWindow(!IsIIR);
 
         GetDlgItem(IDC_MAPPING_METHOD).EnableWindow(IsFFT);
 
@@ -268,7 +285,7 @@ void transform_page_t::UpdateControls() noexcept
         {
             const bool IsStandard = IsFFT && ((_State->_MappingMethod == CoefficientMapping::Standard) || (_State->_MappingMethod == CoefficientMapping::GaussianFilter));
 
-            for (const auto & Iter : { IDC_NUM_BINS, IDC_AGGREGATION_METHOD, IDC_SMOOTH_LOWER_FREQUENCIES, IDC_SMOOTH_GAIN_TRANSITION, IDC_KERNEL_SIZE })
+            for (const auto & Iter : { IDC_NUM_BINS, IDC_HOP_SIZE_FRACTION, IDC_AGGREGATION_METHOD, IDC_SMOOTH_LOWER_FREQUENCIES, IDC_SMOOTH_GAIN_TRANSITION, IDC_KERNEL_SIZE })
                 GetDlgItem(Iter).EnableWindow(IsStandard);
         }
 
@@ -296,7 +313,8 @@ void transform_page_t::UpdateControls() noexcept
         {
             IDC_METHOD,
             IDC_WINDOW_FUNCTION, IDC_WINDOW_PARAMETER, IDC_WINDOW_SKEW, IDC_REACTION_ALIGNMENT,
-            IDC_AGGREGATION_METHOD, IDC_MAPPING_METHOD,
+            IDC_HOP_SIZE_FRACTION,
+            IDC_MAPPING_METHOD, IDC_AGGREGATION_METHOD,
             IDC_SMOOTH_LOWER_FREQUENCIES, IDC_SMOOTH_GAIN_TRANSITION,
             IDC_KERNEL_SIZE, IDC_KERNEL_SIZE_SPIN,
             IDC_BW_OFFSET, IDC_BW_CAP, IDC_BW_AMOUNT, IDC_GRANULAR_BW,
@@ -371,7 +389,7 @@ void transform_page_t::OnSelectionChanged(UINT notificationCode, int id, CWindow
 
         case IDC_WINDOW_FUNCTION:
         {
-            _State->WindowFunction = (WindowFunctionType) SelectedIndex;
+            _State->_WindowFunction = (WindowFunctionType) SelectedIndex;
 
             UpdateControls();
             break;
@@ -451,6 +469,13 @@ void transform_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
             }
             #pragma warning (default: 4061)
             break;
+        }
+
+        case IDC_HOP_SIZE_FRACTION:
+        {
+            _State->_HopSizeFraction = std::clamp(::_wtoi(Text) / 100., MinHopSizeFraction, MaxHopSizeFraction);
+
+            return;
         }
 
         case IDC_KERNEL_SIZE:
@@ -567,6 +592,11 @@ void transform_page_t::OnEditLostFocus(UINT code, int id, CWindow) noexcept
             }
             #pragma warning (default: 4061)
             break;
+        }
+
+        case IDC_HOP_SIZE_FRACTION:
+        {
+            SetInteger(id, (int64_t) (_State->_HopSizeFraction * 100.)); break;
         }
 
         case IDC_KERNEL_SIZE:

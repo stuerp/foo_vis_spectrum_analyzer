@@ -32,7 +32,7 @@ namespace
 /// </summary>
 composite_fft_analyzer_t::composite_fft_analyzer_t(const state_t & state, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup, const window_function_t & windowFunction, const window_function_t & brownPucketteKernel) noexcept : analyzer_t(state, sampleRate, channelCount, channelSetup, windowFunction)
 {
-    const size_t BaseFFTSize = GetBaseFFTSize(state._BinCount);
+    const size_t BaseFFTSize = GetBaseFFTSize(state._FFTSize);
 
     const std::array<size_t, 3> TierFFTSize =
     {

@@ -7,10 +7,6 @@
 
 #pragma warning(disable: 4100 4625 4626 4710 4711 4820 5045 ALL_CPPCORECHECK_WARNINGS)
 
-#include <SDKDDKVer.h>
-#include <WinSock2.h>
-#include <Windows.h>
-
 #include "State.h"
 
 /// <summary>

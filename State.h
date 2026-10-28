@@ -1,5 +1,5 @@
 
-/** $VER: State.h (2026.10.24) P. Stuer **/
+/** $VER: State.h (2026.10.28) P. Stuer **/
 
 #pragma once
 
@@ -37,6 +37,9 @@ public:
 
     void FromJSON(const char * data, size_t size, bool isPreset = false);
     json ToJSON(bool isPreset = false) const;
+
+    bool IsSpectrumAnalyzer() const noexcept;
+    bool IsSlidingWindowTransform() const noexcept;
 
 public:
     // Configuration Dialog
@@ -149,7 +152,7 @@ public:
 
         TransformMethod _TransformMethod;                               // FFT, CQT, SWIFT, Analog Style
 
-        WindowFunctionType WindowFunction;
+        WindowFunctionType _WindowFunction;
         double _WindowParameter;                                        // [0, 10], Parameter used for certain window functions like Gaussian and Kaiser windows. Defaults to 1.
         double _WindowSkew;                                             // [-1, 1], Adjusts how the window function reacts to samples. Positive values makes it skew towards latest samples while negative values skews towards earliest samples. Defaults to 0 (None).
         bool _Truncate;
@@ -165,6 +168,7 @@ public:
         FFTMode _FFTMode;                                               // bins
         size_t _FFTCustom;                                              // bins, Custom FFT size
         double _FFTDuration;                                            // ms, FFT size calculated based on the sample rate
+        double _HopSizeFraction;                                        // [0, 1]
 
         int _KernelSize = 32;                                           // Lanczos interpolation kernel size, [1, 64]
         AggregationMethod _AggregationMethod;
@@ -346,7 +350,7 @@ public:
     std::vector<D2D1_COLOR_F> _ArtworkColors;                           // The colors extracted from the artwork bitmap.
     bool _ColorsHaveChanged;                                            // True if the colors have changed.
 
-    size_t _BinCount;                                                   // The number of bins used by the spectrum analyzer.
+    size_t _FFTSize;                                                    // The number of bins used by the spectrum analyzer.
 
     double _PlaybackTime;                                               // Spectrogram: Timestamp of the last rendered audio chunk.
     double _TrackTime;                                                  // Spectrogram

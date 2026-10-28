@@ -1,5 +1,5 @@
 
-/** $VER: UIElementRendering.cpp (2026.10.11) P. Stuer - UIElement methods that run on the render thread. **/
+/** $VER: UIElementRendering.cpp (2026.10.28) P. Stuer - UIElement methods that run on the render thread. **/
 
 #include "pch.h"
 
@@ -37,7 +37,7 @@ void uielement_t::RenderThreadProc() noexcept
 
     int64_t Now = Chrono.Now();
 
-    int64_t MaxFrameTime = Chrono.SecondsToTicks(1.0 / (double) _RenderState._TargetRefreshRate);
+    int64_t MaxFrameTime  = Chrono.SecondsToTicks(1. / (double) _RenderState._TargetRefreshRate);
     int64_t NextFrameTime = Now + MaxFrameTime;
 
     Log.AtDebug().Write("Render thread started: Target %d fps / Max. frame time %d ticks",  _RenderState._TargetRefreshRate, MaxFrameTime);
@@ -139,7 +139,9 @@ void uielement_t::ProcessEvents() noexcept
     if (event_t::IsRaised(Flags, event_t::PlaybackNewTrack))
     {
         _RenderState._PlaybackTime = 0.;
-        _RenderState._TrackTime = 0.;
+        _RenderState._TrackTime    = 0.;
+
+        _IsAnalysisTimeInitialized = false;
 
         if (_RenderState._ResetPeaksOnTrackChange)
         {
@@ -192,6 +194,7 @@ void uielement_t::ProcessEvents() noexcept
 /// <summary>
 /// Processes an audio chunk.
 /// </summary>
+#ifdef v1
 void uielement_t::ProcessAudio() noexcept
 {
     assert(!fb2k::is_main_thread());
@@ -203,6 +206,9 @@ void uielement_t::ProcessAudio() noexcept
 
     if (!(_VisualisationStream->get_absolute_time(PlaybackTime) && (PlaybackTime != _RenderState._PlaybackTime)))
         return; // Playback is paused.
+
+    if (!_VisualisationStream->get_absolute_time(PlaybackTime) || !std::isfinite(PlaybackTime))
+        return;
 
     double WindowSize;   // in seconds
     double WindowOffset; // in seconds
@@ -240,6 +246,176 @@ void uielement_t::ProcessAudio() noexcept
 
         for (auto & Item : _Grid)
             Item->Process(Chunk);
+    }
+
+    _RenderState._PlaybackTime = PlaybackTime;
+}
+#endif
+void uielement_t::ProcessAudio() noexcept
+{
+    assert(!fb2k::is_main_thread());
+
+    if (!_VisualisationStream.is_valid())
+        return;
+
+    double PlaybackTime = 0.;
+
+    if (!_VisualisationStream->get_absolute_time(PlaybackTime) || !std::isfinite(PlaybackTime))
+        return;
+
+    // The sample rate is initially unknown. Request a small chunk so the stream format and sample-rate-dependent parameters can be initialized.
+    if (_RenderState._SampleRate == 0)
+    {
+        constexpr double InitializationWindow = 0.0005; // 500 μs
+
+        audio_chunk_impl Chunk;
+
+        if (_VisualisationStream->get_chunk_absolute(Chunk, PlaybackTime, InitializationWindow))
+        {
+            InitializeSampleRateDependentParameters(Chunk);
+
+            for (auto& Item : _Grid)
+                Item->Process(Chunk);
+        }
+
+        _RenderState._PlaybackTime = PlaybackTime;
+
+        _NextAnalysisTime = PlaybackTime;
+        _IsAnalysisTimeInitialized = true;
+
+        return;
+    }
+
+    const double SampleRate = (double) _RenderState._SampleRate;
+
+    if ((SampleRate <= 0.) || !std::isfinite(SampleRate))
+        return;
+
+    double WindowOffset = 0.;
+    double WindowSize   = 0.;
+
+    if (UseOverlap())
+    {
+        // Helper
+        auto GetHopSize = [](size_t fftSize, double hopSizeFraction) noexcept -> size_t
+        {
+            if (fftSize == 0)
+                return 0;
+
+            if (std::isfinite(hopSizeFraction))
+                hopSizeFraction = std::clamp(hopSizeFraction, 0., 1.);
+            else
+                hopSizeFraction = 0.;
+
+            const double HopSize = (double) fftSize * hopSizeFraction;
+
+            return std::max<size_t>(1, (size_t) std::llround(HopSize));
+        };
+
+        // Each analysis requests a complete fixed-size window. Adjacent requests overlap according to the configured overlap percentage.
+        const size_t HopSize = GetHopSize(_RenderState._FFTSize, _RenderState._HopSizeFraction);
+
+        if (HopSize == 0)
+        {
+            _RenderState._PlaybackTime = PlaybackTime;
+
+            return;
+        }
+
+        const double HopDuration = (double) HopSize / SampleRate;
+
+        if (!(HopDuration > 0.) || !std::isfinite(HopDuration))
+        {
+            _RenderState._PlaybackTime = PlaybackTime;
+
+            return;
+        }
+
+        // Initialize the hop clock or reset it when playback moves backward, such as after a backward seek or track restart.
+        if (!_IsAnalysisTimeInitialized || PlaybackTime < _RenderState._PlaybackTime)
+        {
+            _NextAnalysisTime = PlaybackTime;
+            _IsAnalysisTimeInitialized = true;
+        }
+
+        // Playback has not reached the next hop. This also handles paused playback because the playback timestamp stops advancing.
+        if (PlaybackTime < _NextAnalysisTime)
+        {
+            _RenderState._PlaybackTime = PlaybackTime;
+
+            return;
+        }
+
+        // Skip obsolete hops after a stall or slow render update. Process the latest hop that is not later than the playback position.
+        const double MissedHopCount = std::floor((PlaybackTime - _NextAnalysisTime) / HopDuration);
+
+        const double AnalysisTime = _NextAnalysisTime + (MissedHopCount * HopDuration);
+
+        _NextAnalysisTime = AnalysisTime + HopDuration;
+
+        // Anchor the fixed-size window to the hop-controlled timestamp. ReactionAlignment preserves the existing positioning behavior.
+        WindowSize   = (double) _RenderState._FFTSize / SampleRate;
+        WindowOffset = AnalysisTime - WindowSize * (0.5 + _RenderState._ReactionAlignment);
+
+        // A complete fixed-size window is not yet available at the beginning of playback. Waiting avoids changing the FFT size.
+        if (WindowOffset < 0.)
+        {
+            _RenderState._PlaybackTime = PlaybackTime;
+
+            return;
+        }
+    }
+    else
+    {
+        if (!_IsAnalysisTimeInitialized)
+        {
+            _RenderState._PlaybackTime = PlaybackTime;
+            _IsAnalysisTimeInitialized = true;
+
+            return;
+        }
+
+        // Do nothing whem playback is paused.
+        if (PlaybackTime == _RenderState._PlaybackTime)
+            return;
+
+        if (PlaybackTime < _RenderState._PlaybackTime)
+        {
+            _RenderState._PlaybackTime = PlaybackTime;
+
+            _NextAnalysisTime = PlaybackTime;
+
+            return;
+        }
+
+        WindowOffset = _RenderState._PlaybackTime;
+        WindowSize   = PlaybackTime - _RenderState._PlaybackTime;
+    }
+
+    if (!(WindowSize > 0.) || !std::isfinite(WindowSize) || !std::isfinite(WindowOffset))
+    {
+        _RenderState._PlaybackTime = PlaybackTime;
+
+        return;
+    }
+
+    audio_chunk_impl Chunk;
+
+    if (_VisualisationStream->get_chunk_absolute(Chunk, WindowOffset, WindowSize))
+    {
+        const uint32_t PreviousSampleRate = _RenderState._SampleRate;
+
+        InitializeSampleRateDependentParameters(Chunk);
+
+        for (auto& Item : _Grid)
+            Item->Process(Chunk);
+
+        // Reinitialize the hop clock if the latest retrieved chunk has a different sample rate.
+        if (_RenderState._SampleRate != PreviousSampleRate)
+        {
+            _NextAnalysisTime = PlaybackTime;
+            _IsAnalysisTimeInitialized = true;
+        }
     }
 
     _RenderState._PlaybackTime = PlaybackTime;
@@ -303,6 +479,23 @@ void uielement_t::Animate(int64_t now) noexcept
 }
 
 /// <summary>
+/// Returns true if we should use overlap.
+/// </summary>
+bool uielement_t::UseOverlap() const noexcept
+{
+    if (_RenderState._HopSizeFraction == 0.)
+        return false;
+
+    if (!_RenderState.IsSpectrumAnalyzer())
+        return false;
+
+    if (_RenderState.IsSlidingWindowTransform())
+        return false;
+
+    return true;
+}
+
+/// <summary>
 /// Initializes the parameters that depend on the sample rate of the chunk.
 /// </summary>
 void uielement_t::InitializeSampleRateDependentParameters(const audio_chunk & chunk) noexcept
@@ -314,26 +507,31 @@ void uielement_t::InitializeSampleRateDependentParameters(const audio_chunk & ch
 
     _RenderState._SampleRate = chunk.get_sample_rate();
 
-    Log.AtDebug().Write(STR_COMPONENT_BASENAME " chunk parameters: %dHz, %d channels (0x%04X), %d frames, %.1fms", _RenderState._SampleRate, chunk.get_channel_count(), chunk.get_channel_config(), chunk.get_sample_count(), chunk.get_duration() * 1000.);
-
     #pragma warning(disable: 4061)
 
     switch (_RenderState._FFTMode)
     {
         default:
-            _UIState._BinCount = _RenderState._BinCount = (size_t) (64. * ::exp2((long) _RenderState._FFTMode));
+            _UIState._FFTSize = _RenderState._FFTSize = (size_t) (64. * ::exp2((long) _RenderState._FFTMode));
             break;
 
         case FFTMode::FFTCustom:
-            _UIState._BinCount = _RenderState._BinCount = (_RenderState._FFTCustom > 0) ? (size_t) _RenderState._FFTCustom : 64;
+            _UIState._FFTSize = _RenderState._FFTSize = (_RenderState._FFTCustom > 0) ? (size_t) _RenderState._FFTCustom : 64;
             break;
 
         case FFTMode::FFTDuration:
-            _UIState._BinCount = _RenderState._BinCount = (_RenderState._FFTDuration > 0.) ? (size_t) (((double) _RenderState._SampleRate * _RenderState._FFTDuration) / 1000.) : 64;
+            _UIState._FFTSize = _RenderState._FFTSize = (_RenderState._FFTDuration > 0.) ? (size_t) (((double) _RenderState._SampleRate * _RenderState._FFTDuration) / 1000.) : 64;
             break;
     }
 
     #pragma warning(default: 4061)
+
+    Log.AtDebug().Write
+    (
+        STR_COMPONENT_BASENAME " %dHz, %d channels (0x%04X), %d frames, %.1fms, FFT %d, Hop size fraction %d%%",
+        _RenderState._SampleRate, chunk.get_channel_count(), chunk.get_channel_config(), chunk.get_sample_count(), chunk.get_duration() * 1000.,
+        _RenderState._FFTSize, (int) (_RenderState._HopSizeFraction * 100.)
+    );
 }
 
 /// <summary>
@@ -742,7 +940,7 @@ bool GetAudioChunk(audio_chunk & chunk, uint32_t sampleRate, uint32_t frameCount
     /** Bartlett
         Samples[i] = 1. - (double) i / (double) (frameCount - 1);
      **/
-        constexpr double Frequency = 2'300.0;
+        constexpr double Frequency = 2'300.;
 
         constexpr double Pi    = std::numbers::pi;
         constexpr double TwoPi = 2. * Pi;

@@ -98,7 +98,11 @@ To create the component first build the x86 configuration and next the x64 confi
 
 v0.14.0.0-alpha3, 2026-xx-xx
 
-- 
+- Changed: Refactored the whole audio processor hierarchy to facility maintenance, improve performance and make future expansion easier. Things may have gotten broken. Report any issues, please.
+- Improved: Granularity of the Decades frequency settings.
+- New: Hop size support for the spectrum analyzers.
+  - The `Hop size fraction` parameter specifies a hop size relative to the FFT size. Smaller hops (larger fraction) produce more frequent analysis updates.
+  - The default value is 0% which results in the old behavior.
 
 You can read the full history [here](docs/History.md).
 

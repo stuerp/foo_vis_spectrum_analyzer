@@ -1,5 +1,5 @@
 
-/** $VER: Constants.h (2026.10.25) P. Stuer **/
+/** $VER: Constants.h (2026.10.28) P. Stuer **/
 
 #pragma once
 
@@ -158,6 +158,9 @@ inline constexpr int MaxFFTSize = 32768;
 
 inline constexpr double MinFFTDuration =    1.; // ms
 inline constexpr double MaxFFTDuration = 2000.; // ms
+
+inline constexpr double MinHopSizeFraction = 0.; // %
+inline constexpr double MaxHopSizeFraction = 1.; // %
 
 inline constexpr int MinKernelSize =  1;
 inline constexpr int MaxKernelSize = 64;

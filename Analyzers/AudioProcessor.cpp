@@ -13,11 +13,6 @@
 #include "SpectrumProcessor.h"
 #include "TestProcessor.h"
 
-#include "Support.h"
-
-#include <algorithm>
-#include <array>
-#include <cmath>
 #include <cstdint>
 
 #pragma hdrstop
