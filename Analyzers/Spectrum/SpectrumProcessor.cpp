@@ -13,6 +13,8 @@
 #include "SWIFTAnalyzer.h"
 #include "AnalogStyleAnalyzer.h"
 
+#include <numeric>
+
 namespace Spectrum
 {
     /// <summary>
@@ -506,7 +508,7 @@ namespace Spectrum
     {
         assert(_State._LoFrequency <= _State._HiFrequency);
 
-        const size_t RequestedBandCount = (size_t) _State._BandCount;
+        size_t RequestedBandCount = _State._BandCount;
 
         FrequencyBands.clear();
 
@@ -517,47 +519,48 @@ namespace Spectrum
 
         CenterFrequencies.reserve(RequestedBandCount);
 
-        const auto AddCenterFrequencies = [&](double minFrequency, double maxFrequency, double interval)
+        // Create a list of decade-aligned frequencies.
         {
-            const double LoFrequency = std::max(_State._LoFrequency, minFrequency);
-            const double HiFrequency = std::min(_State._HiFrequency, maxFrequency);
-
-            if (LoFrequency > HiFrequency)
-                return;
-
-            double Frequency = std::ceil(LoFrequency / interval) * interval;
-
-            while (Frequency <= HiFrequency)
+            const auto AddCenterFrequencies = [&](double minFrequency, double maxFrequency, double interval)
             {
-                CenterFrequencies.push_back(Frequency);
+                const double LoFrequency = std::max(_State._LoFrequency, minFrequency);
+                const double HiFrequency = std::min(_State._HiFrequency, maxFrequency);
 
-                Frequency += interval;
-            }
-        };
+                if (LoFrequency > HiFrequency)
+                    return;
 
-        AddCenterFrequencies(   1.0,   10.0 - std::numeric_limits<double>::epsilon(),   1.0);
-        AddCenterFrequencies(  10.0,  100.0 - std::numeric_limits<double>::epsilon(),  10.0);
-        AddCenterFrequencies( 100.0, 1000.0 - std::numeric_limits<double>::epsilon(), 100.0);
-        AddCenterFrequencies(1000.0, _State._HiFrequency, 1000.0);
+                double Frequency = std::ceil(LoFrequency / interval) * interval;
 
-        // Every decade-aligned center is mandatory. Therefore, the requested band count may not be smaller than the number of mandatory anchors.
-        if (CenterFrequencies.size() > RequestedBandCount)
-            throw std::invalid_argument("Requested number of bands is too small");
+                while (Frequency <= HiFrequency)
+                {
+                    CenterFrequencies.push_back(Frequency);
 
-        // If the range contains no decade-aligned frequency, create one initial center at the midpoint of the configured frequency range.
+                    Frequency += interval;
+                }
+            };
+
+            AddCenterFrequencies(   1.,   10. - std::numeric_limits<double>::epsilon(),   1.);
+            AddCenterFrequencies(  10.,  100. - std::numeric_limits<double>::epsilon(),  10.);
+            AddCenterFrequencies( 100., 1000. - std::numeric_limits<double>::epsilon(), 100.);
+            AddCenterFrequencies(1000., _State._HiFrequency, 1000.);
+        }
+
+        RequestedBandCount = std::max(CenterFrequencies.size(), RequestedBandCount);
+
+        // If list is empty, create one initial center at the midpoint of the configured frequency range.
         if (CenterFrequencies.empty())
             CenterFrequencies.push_back(std::midpoint(_State._LoFrequency, _State._HiFrequency));
 
-        // Add centers until the requested number of bands is reached. Each additional center splits the widest available interval. Existing decade-aligned centers are never removed or moved.
+        // Add centers until the requested number of bands is reached.
         while (CenterFrequencies.size() < RequestedBandCount)
         {
             size_t InsertIndex = 0;
 
-            double WidestInterval = -1.0;
+            double WidestInterval = -1.;
 
             for (size_t i = 0; i <= CenterFrequencies.size(); ++i)
             {
-                const double Low  = (i == 0) ? _State._LoFrequency : CenterFrequencies[i - 1];
+                const double Low  = (i == 0)                        ? _State._LoFrequency : CenterFrequencies[i - 1];
                 const double High = (i == CenterFrequencies.size()) ? _State._HiFrequency : CenterFrequencies[i];
 
                 const double Interval = High - Low;
@@ -574,9 +577,9 @@ namespace Spectrum
 
             const double NewCenter = std::midpoint(Low, High);
 
-            // Ensure the new center is distinct from both interval endpoints. Failure is only expected when no further distinct double can be represented inside the selected interval.
+            // Ensure the new center is distinct from both interval endpoints.
             if (!(Low < NewCenter && NewCenter < High))
-                throw std::overflow_error("Unable to generate the requested number of distinct frequency-band centers");
+                break;
 
             CenterFrequencies.insert(CenterFrequencies.begin() + static_cast<std::ptrdiff_t>(InsertIndex), NewCenter);
         }
@@ -584,6 +587,7 @@ namespace Spectrum
         assert(CenterFrequencies.size() == RequestedBandCount);
         assert(std::is_sorted(CenterFrequencies.begin(), CenterFrequencies.end()));
 
+        // Generate the frequency bands.
         FrequencyBands.resize(CenterFrequencies.size());
 
         for (size_t i = 0; i < CenterFrequencies.size(); ++i)
@@ -612,18 +616,18 @@ namespace Spectrum
             assert(fb.Low <= fb.Center);
             assert(fb.Center <= fb.High);
 
-            if (fb.Center >= 1'000.0)
+            if (fb.Center >= 1'000.)
             {
-                const double CenterInKilohertz = fb.Center / 1'000.0;
+                const double kHz = fb.Center / 1'000.;
 
                 double IntegerPart = 0.;
 
-                const double FractionalPart = std::modf(CenterInKilohertz, &IntegerPart);
+                const double FractionalPart = std::modf(kHz, &IntegerPart);
 
                 if (FractionalPart == 0.)
-                    ::StringCchPrintfW(fb.Label, _countof(fb.Label), L"%.0fk", CenterInKilohertz);
+                    ::StringCchPrintfW(fb.Label, _countof(fb.Label), L"%.0fk", kHz);
                 else
-                    ::StringCchPrintfW(fb.Label, _countof(fb.Label), L"%.*fk", _Options->_XAxisDecimals, CenterInKilohertz);
+                    ::StringCchPrintfW(fb.Label, _countof(fb.Label), L"%.*fk", _Options->_XAxisDecimals, kHz);
             }
             else
                 ::StringCchPrintfW(fb.Label, _countof(fb.Label), L"%.*f", _Options->_XAxisDecimals, fb.Center);
@@ -782,7 +786,7 @@ namespace Spectrum
 
             case WeightingType::AWeighting:
             {
-                constexpr double Normalization = 1.2588966; // std::pow(10., 2.0 / 20.);
+                constexpr double Normalization = 1.2588966; // std::pow(10., 2. / 20.);
 
                 return std::pow(Normalization * (F4 * F4) * f4 / ((f2 + (F1 * F1)) * std::sqrt((f2 + (F2 * F2)) * (f2 + (F3 * F3))) * (f2 + (F4 * F4))), weightAmount);
             }
@@ -836,7 +840,7 @@ namespace Spectrum
     {
         for (frequency_band_t & fb : FrequencyBands)
         {
-            const auto ScaledValue = ::isfinite(fb.Magnitude) ? _Options->ScaleAmplitude(fb.Magnitude) * (1.0 - strength) : 0.;
+            const auto ScaledValue = ::isfinite(fb.Magnitude) ? _Options->ScaleAmplitude(fb.Magnitude) * (1. - strength) : 0.;
 
             fb.Value = std::clamp((fb.Value * strength) + ScaledValue, 0., 1.);
         }

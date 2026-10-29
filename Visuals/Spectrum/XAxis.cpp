@@ -1,5 +1,5 @@
 
-/** $VER: XAXis.cpp (2026.10.28) P. Stuer - Implements the X axis of a graph. **/
+/** $VER: XAXis.cpp (2026.10.29) P. Stuer - Implements the X axis of a graph. **/
 
 #include "pch.h"
 
@@ -239,7 +239,7 @@ HRESULT x_axis_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceConte
 {
     HRESULT hr = S_OK;
 
-    if (_State._DiscardResources)
+    if (_State._ColorsHaveChanged || _State._SizeHasChanged)
     {
         DeleteColorDependentResources();
 
@@ -251,7 +251,7 @@ HRESULT x_axis_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceConte
             return hr;
     }
 
-    if (_State._DiscardResources)
+    if (_State._SizeHasChanged)
     {
         DeleteSizeDependentResources();
 

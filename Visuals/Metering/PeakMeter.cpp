@@ -1,5 +1,5 @@
 
-/** $VER: PeakMeter.cpp (2026.10.28) P. Stuer - Represents a peak meter. **/
+/** $VER: PeakMeter.cpp (2026.10.29) P. Stuer - Represents a peak meter. **/
 
 #include "pch.h"
 
@@ -78,9 +78,9 @@ HRESULT peak_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceC
 #endif
 
     if (_BarCount != _Processor->_PeakMeasurements.size())
-        _State._DiscardResources = true;
+        _State._SizeHasChanged = true;
 
-    if (_State._DiscardResources)
+    if (_State._ColorsHaveChanged || _State._SizeHasChanged)
     {
         DeleteColorDependentResources();
 
@@ -92,7 +92,7 @@ HRESULT peak_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceC
             return hr;
     }
 
-    if (_State._DiscardResources)
+    if (_State._SizeHasChanged)
     {
         DeleteSizeDependentResources();
 
@@ -548,7 +548,7 @@ void peak_meter_t::OnConfigurationChanged(ConfigurationChanges configurationChan
     if (!IsSet(configurationChanges, ConfigurationChanges::Layout))
         return;
 
-    _State._DiscardResources = true;
+    _State._SizeHasChanged = true;
 }
 
 }

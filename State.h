@@ -331,7 +331,8 @@ public:
 
     std::vector<D2D1_COLOR_F> _UserInterfaceColors;
 
-    bool _DiscardResources;                                             // True if the DirectX resources need to be recreated, e.g. because the artwork colors changed or the size of the back buffer changed.
+    bool _SizeHasChanged;                                               // True if the DirectX resources need to be recreated, e.g. because the artwork colors changed or the size of the back buffer changed.
+    bool _ColorsHaveChanged;                                            // True if the colors have changed.
 
     #pragma endregion
 
@@ -348,7 +349,6 @@ public:
     #pragma region Render thread only
 
     std::vector<D2D1_COLOR_F> _ArtworkColors;                           // The colors extracted from the artwork bitmap.
-//  bool _ColorsHaveChanged;                                            // True if the colors have changed.
 
     size_t _FFTSize;                                                    // The number of bins used by the spectrum analyzer.
 

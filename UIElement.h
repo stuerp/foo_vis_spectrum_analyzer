@@ -161,7 +161,7 @@ private:
 
     void InitializeSampleRateDependentParameters(const audio_chunk & chunk) noexcept;
 
-    bool UseOverlap() const noexcept;
+    bool UseHops() const noexcept;
 
     HRESULT CreateDeviceIndependentResources() noexcept;
     void DeleteDeviceIndependentResources() noexcept;

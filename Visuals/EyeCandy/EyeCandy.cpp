@@ -74,7 +74,7 @@ void eye_candy_t::OnConfigurationChanged(ConfigurationChanges configurationChang
     if (!IsSet(configurationChanges, ConfigurationChanges::Layout))
         return;
 
-    _State._DiscardResources = true;
+    _State._SizeHasChanged = true;
 }
 
 }

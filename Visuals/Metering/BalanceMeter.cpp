@@ -1,5 +1,5 @@
 
-/** $VER: BalanceMeter.cpp (2026.10.28) P. Stuer - Implements a left/right/mid/side level meter. **/
+/** $VER: BalanceMeter.cpp (2026.10.29) P. Stuer - Implements a left/right/mid/side level meter. **/
 
 #include "pch.h"
 
@@ -257,7 +257,7 @@ HRESULT balance_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * devi
         (void) deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), _DebugBrush.GetAddressOf());
 #endif
 
-    if (_State._DiscardResources)
+    if (_State._ColorsHaveChanged || _State._SizeHasChanged)
     {
         DeleteColorDependentResources();
 
@@ -269,7 +269,7 @@ HRESULT balance_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * devi
             return hr;
     }
 
-    if (_State._DiscardResources)
+    if (_State._SizeHasChanged)
     {
         DeleteSizeDependentResources();
 
@@ -449,7 +449,7 @@ void balance_meter_t::OnConfigurationChanged(ConfigurationChanges configurationC
     if (!IsSet(configurationChanges, ConfigurationChanges::Layout))
         return;
 
-    _State._DiscardResources = true;
+    _State._SizeHasChanged = true;
 }
 
 }

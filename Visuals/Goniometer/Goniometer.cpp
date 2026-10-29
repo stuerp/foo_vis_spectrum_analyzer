@@ -1,5 +1,5 @@
 
-/** $VER: Goniometer.cpp (2026.10.27) P. Stuer - Implements a goniometer. **/
+/** $VER: Goniometer.cpp (2026.10.29) P. Stuer - Implements a goniometer. **/
 
 #include <pch.h>
 
@@ -242,7 +242,7 @@ HRESULT goniometer_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceC
             return hr;
     }
 
-    if (_State._DiscardResources)
+    if (_State._ColorsHaveChanged || _State._SizeHasChanged)
     {
         DeleteColorDependentResources();
 
@@ -254,7 +254,7 @@ HRESULT goniometer_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceC
             return hr;
     }
 
-    if (_State._DiscardResources)
+    if (_State._SizeHasChanged)
     {
         DeleteSizeDependentResources();
 

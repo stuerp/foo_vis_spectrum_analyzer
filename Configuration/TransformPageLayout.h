@@ -121,7 +121,7 @@
     #define X_A60   X_A59 + W_A59 + IX
     #define Y_A60   Y_A59
 
-/** Overlap **/
+/** Hop size fraction **/
 
     // Label
     #define W_A80   64
@@ -134,6 +134,12 @@
     #define H_A81    H_TBX
     #define X_A81    X_A80 + W_A80 + IY
     #define Y_A81    Y_A80
+
+    // Label
+    #define W_A82   4
+    #define H_A82   H_LBL
+    #define X_A82   X_A81 + W_A81 + IX
+    #define Y_A82   Y_A81
 
 /** Coefficient mapping **/
 

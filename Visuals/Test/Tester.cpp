@@ -1,5 +1,5 @@
 
-/** $VER: Tester.cpp (2026.10.28) P. Stuer - Implements a minimal visualization for testing purposes. **/
+/** $VER: Tester.cpp (2026.10.29) P. Stuer - Implements a minimal visualization for testing purposes. **/
 
 #include <pch.h>
 
@@ -167,7 +167,7 @@ HRESULT tester_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceConte
         (void) deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), _Brush.GetAddressOf());
 #endif
 
-    if (_State._DiscardResources)
+    if (_State._ColorsHaveChanged || _State._SizeHasChanged)
     {
         DeleteColorDependentResources();
 
@@ -179,7 +179,7 @@ HRESULT tester_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceConte
             return hr;
     }
 
-    if (_State._DiscardResources)
+    if (_State._SizeHasChanged)
     {
         DeleteSizeDependentResources();
 
@@ -252,7 +252,7 @@ void tester_t::OnConfigurationChanged(ConfigurationChanges configurationChanges)
     if (!IsSet(configurationChanges, ConfigurationChanges::Layout))
         return;
 
-    _State._DiscardResources = true;
+    _State._SizeHasChanged = true;
 }
 
 }

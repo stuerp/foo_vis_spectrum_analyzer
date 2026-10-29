@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.cpp (2026.10.10) P. Stuer - Implements a spectrum analyzer visualization **/
+/** $VER: Spectrum.cpp (2026.10.29) P. Stuer - Implements a spectrum analyzer visualization **/
 
 #include "pch.h"
 
@@ -721,7 +721,7 @@ HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCon
         (void) deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), _DebugBrush.GetAddressOf());
 #endif
 
-    if (_State._DiscardResources)
+    if (_State._ColorsHaveChanged || _State._SizeHasChanged)
     {
         DeleteColorDependentResources();
 
@@ -733,7 +733,7 @@ HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCon
             return hr;
     }
 
-    if (_State._DiscardResources)
+    if (_State._SizeHasChanged)
     {
         DeleteSizeDependentResources();
 
@@ -1384,7 +1384,7 @@ void spectrum_t::OnConfigurationChanged(ConfigurationChanges configurationChange
     if (!IsSet(configurationChanges, ConfigurationChanges::Layout))
         return;
 
-    _State._DiscardResources = true;
+    _State._SizeHasChanged = true;
 
     _XAxis.Configure(_GraphOptions, _Processor, _IsFirst, _IsLast);
 }

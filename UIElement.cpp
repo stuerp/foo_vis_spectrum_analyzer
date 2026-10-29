@@ -275,7 +275,8 @@ void uielement_t::OnContextMenu(CWindow wnd, CPoint position) noexcept
 
                     _UIState = NewState;
 
-                    _UIState._DiscardResources = true;
+                    _UIState._SizeHasChanged    = true;
+                    _UIState._ColorsHaveChanged = true;
 
                     UpdateState(ConfigurationChanges::All);
 
@@ -364,7 +365,7 @@ void uielement_t::Resize()
 
             _Grid.Resize(SizeF.width, SizeF.height);
 
-            _RenderState._DiscardResources = true;
+            _RenderState._SizeHasChanged = true;
         }
 
         AddTools();
@@ -559,8 +560,10 @@ void uielement_t::UpdateState(ConfigurationChanges configurationChanges) noexcep
         {
             case ConfigurationChanges::All:
             {
-                _RenderState._SampleRate       = 0;
-                _RenderState._DiscardResources = true;
+                _RenderState._SampleRate        = 0;
+
+                _RenderState._SizeHasChanged    = true;
+                _RenderState._ColorsHaveChanged = true;
 
                 // Get the artwork colors.
                 GetArtworkColors();
@@ -600,7 +603,7 @@ void uielement_t::UpdateState(ConfigurationChanges configurationChanges) noexcep
             case ConfigurationChanges::UserInterfaceColors:
             {
                 _RenderState._UserInterfaceColors = _UIState._UserInterfaceColors;
-                _RenderState._DiscardResources    = true;
+                _RenderState._ColorsHaveChanged   = true;
                 break;
             }
 

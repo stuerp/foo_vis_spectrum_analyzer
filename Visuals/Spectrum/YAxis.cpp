@@ -1,5 +1,5 @@
 
-/** $VER: YAXis.cpp (2026.10.28) P. Stuer - Implements the Y axis of a graph. **/
+/** $VER: YAXis.cpp (2026.10.29) P. Stuer - Implements the Y axis of a graph. **/
 
 #include "pch.h"
 #include "YAxis.h"
@@ -91,7 +91,7 @@ HRESULT y_axis_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceConte
 {
     HRESULT hr = S_OK;
 
-    if (_State._DiscardResources)
+    if (_State._ColorsHaveChanged || _State._SizeHasChanged)
     {
         DeleteColorDependentResources();
 
@@ -103,7 +103,7 @@ HRESULT y_axis_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceConte
             return hr;
     }
 
-    if (_State._DiscardResources)
+    if (_State._SizeHasChanged)
     {
         DeleteSizeDependentResources();
 

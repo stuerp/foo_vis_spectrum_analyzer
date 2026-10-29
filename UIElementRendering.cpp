@@ -157,7 +157,7 @@ void uielement_t::ProcessEvents() noexcept
             _RenderState._ArtworkDominantColor = D2D1::ColorF(D2D1::ColorF::Black);
             _RenderState._ArtworkGradientStops = gradient_t::GetBuiltIn(ColorScheme::Artwork);
 
-            _RenderState._DiscardResources = true;
+            _RenderState._ColorsHaveChanged = true;
         }
 
         _IsConfigurationChanged = true;
@@ -185,16 +185,15 @@ void uielement_t::ProcessEvents() noexcept
     }
 
     if (event_t::IsRaised(Flags, event_t::ArtworkColorsChanged))
-        _RenderState._DiscardResources = true;
+        _RenderState._ColorsHaveChanged = true;
 
     if (event_t::IsRaised(Flags, event_t::UserInterfaceColorsChanged))
-        _RenderState._DiscardResources = true;
+        _RenderState._ColorsHaveChanged = true;
 }
 
 /// <summary>
 /// Processes an audio chunk.
 /// </summary>
-#ifdef v1
 void uielement_t::ProcessAudio() noexcept
 {
     assert(!fb2k::is_main_thread());
@@ -202,63 +201,7 @@ void uielement_t::ProcessAudio() noexcept
     if (!_VisualisationStream.is_valid())
         return;
 
-    double PlaybackTime; // in seconds
-
-    if (!(_VisualisationStream->get_absolute_time(PlaybackTime) && (PlaybackTime != _RenderState._PlaybackTime)))
-        return; // Playback is paused.
-
-    if (!_VisualisationStream->get_absolute_time(PlaybackTime) || !std::isfinite(PlaybackTime))
-        return;
-
-    double WindowSize;   // in seconds
-    double WindowOffset; // in seconds
-
-    const bool IsSlidingWindow = (_RenderState._TransformMethod == TransformMethod::SWIFT) || (_RenderState._TransformMethod == TransformMethod::AnalogStyle);
-
-    if (!IsSlidingWindow)
-    {
-        if (_RenderState._SampleRate != 0)
-        {
-            const size_t FrameCount = (_RenderState._VisualizationType != VisualizationType::Oscilloscope) ? _RenderState._BinCount: _RenderState._FrameCount;
-
-            WindowSize   = (double) FrameCount / (double) _RenderState._SampleRate;
-            WindowOffset = PlaybackTime - (WindowSize * (0.5 + _RenderState._ReactionAlignment));
-        }
-        else
-        {
-            // Get a very small chunk from the visualisation stream to initialize the sample rate dependent parameters. Test with DSF files.
-            WindowSize   = 0.0005; // 500 μs
-            WindowOffset = PlaybackTime;
-        }
-    }
-    else
-    {
-        WindowSize   = PlaybackTime - _RenderState._PlaybackTime;
-        WindowOffset = _RenderState._PlaybackTime;
-    }
-
-    audio_chunk_impl Chunk;
-
-    if (_VisualisationStream->get_chunk_absolute(Chunk, WindowOffset, WindowSize))
-//  if (GetAudioChunk(Chunk, 44'100, (uint32_t) _RenderState._BinCount))
-    {
-        InitializeSampleRateDependentParameters(Chunk);
-
-        for (auto & Item : _Grid)
-            Item->Process(Chunk);
-    }
-
-    _RenderState._PlaybackTime = PlaybackTime;
-}
-#endif
-void uielement_t::ProcessAudio() noexcept
-{
-    assert(!fb2k::is_main_thread());
-
-    if (!_VisualisationStream.is_valid())
-        return;
-
-    double PlaybackTime = 0.;
+    double PlaybackTime = 0.; // In seconds
 
     if (!_VisualisationStream->get_absolute_time(PlaybackTime) || !std::isfinite(PlaybackTime))
         return;
@@ -288,13 +231,10 @@ void uielement_t::ProcessAudio() noexcept
 
     const double SampleRate = (double) _RenderState._SampleRate;
 
-    if ((SampleRate <= 0.) || !std::isfinite(SampleRate))
-        return;
+    double WindowSize   = 0.; // In seconds
+    double WindowOffset = 0.; // In seoncds
 
-    double WindowOffset = 0.;
-    double WindowSize   = 0.;
-
-    if (UseOverlap())
+    if (UseHops())
     {
         // Helper
         auto GetHopSize = [](size_t fftSize, double hopSizeFraction) noexcept -> size_t
@@ -324,15 +264,8 @@ void uielement_t::ProcessAudio() noexcept
 
         const double HopDuration = (double) HopSize / SampleRate;
 
-        if (!(HopDuration > 0.) || !std::isfinite(HopDuration))
-        {
-            _RenderState._PlaybackTime = PlaybackTime;
-
-            return;
-        }
-
         // Initialize the hop clock or reset it when playback moves backward, such as after a backward seek or track restart.
-        if (!_IsAnalysisTimeInitialized || PlaybackTime < _RenderState._PlaybackTime)
+        if (!_IsAnalysisTimeInitialized || (PlaybackTime < _RenderState._PlaybackTime))
         {
             _NextAnalysisTime = PlaybackTime;
             _IsAnalysisTimeInitialized = true;
@@ -357,7 +290,7 @@ void uielement_t::ProcessAudio() noexcept
         WindowSize   = (double) _RenderState._FFTSize / SampleRate;
         WindowOffset = AnalysisTime - WindowSize * (0.5 + _RenderState._ReactionAlignment);
 
-        // A complete fixed-size window is not yet available at the beginning of playback. Waiting avoids changing the FFT size.
+        // A complete fixed-size window is not yet available.
         if (WindowOffset < 0.)
         {
             _RenderState._PlaybackTime = PlaybackTime;
@@ -375,14 +308,13 @@ void uielement_t::ProcessAudio() noexcept
             return;
         }
 
-        // Do nothing whem playback is paused.
+        // Do nothing when playback is paused.
         if (PlaybackTime == _RenderState._PlaybackTime)
             return;
 
         if (PlaybackTime < _RenderState._PlaybackTime)
         {
             _RenderState._PlaybackTime = PlaybackTime;
-
             _NextAnalysisTime = PlaybackTime;
 
             return;
@@ -390,13 +322,6 @@ void uielement_t::ProcessAudio() noexcept
 
         WindowOffset = _RenderState._PlaybackTime;
         WindowSize   = PlaybackTime - _RenderState._PlaybackTime;
-    }
-
-    if (!(WindowSize > 0.) || !std::isfinite(WindowSize) || !std::isfinite(WindowOffset))
-    {
-        _RenderState._PlaybackTime = PlaybackTime;
-
-        return;
     }
 
     audio_chunk_impl Chunk;
@@ -456,8 +381,9 @@ void uielement_t::Render() noexcept
     if (hr == D2DERR_RECREATE_TARGET || hr == DXGI_ERROR_DEVICE_REMOVED)
         DeleteDeviceSpecificResources();
 
-    // Reset the flag for the next loop.
-    _RenderState._DiscardResources  = false;
+    // Reset the flags for the next loop.
+    _RenderState._SizeHasChanged  = false;
+    _RenderState._ColorsHaveChanged = false;
 }
 
 /// <summary>
@@ -478,9 +404,9 @@ void uielement_t::Animate(int64_t now) noexcept
 }
 
 /// <summary>
-/// Returns true if we should use overlap.
+/// Returns true if we should use hops.
 /// </summary>
-bool uielement_t::UseOverlap() const noexcept
+bool uielement_t::UseHops() const noexcept
 {
     if (_RenderState._HopSizeFraction == 0.)
         return false;
@@ -786,7 +712,7 @@ HRESULT uielement_t::CreateDeviceSpecificResources() noexcept
             _Grid.Resize(SizeF.width, SizeF.height);
             _FrameCounter.Resize(SizeF.width, SizeF.height);
 
-            _RenderState._DiscardResources = true;
+            _RenderState._SizeHasChanged = true;
         }
     }
 

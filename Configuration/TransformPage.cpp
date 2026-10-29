@@ -1,5 +1,5 @@
 
-/** $VER: TransformPage.cpp (2026.10.28) P. Stuer - Implements a configuration dialog page. **/
+/** $VER: TransformPage.cpp (2026.10.29) P. Stuer - Implements a configuration dialog page. **/
 
 #include "pch.h"
 
@@ -43,7 +43,7 @@ BOOL transform_page_t::OnInitDialog(CWindow w, LPARAM lParam) noexcept
         { IDC_NUM_BINS, "Sets the number of bins used by the Fourier transforms" },
         { IDC_NUM_BINS_PARAMETER, "Sets the parameter used to calculate the number of Fourier transform bins. Set the number of bins explicitly (Custom) or expressed as a number of ms taking the sample rate into account (Duration)" },
 
-        { IDC_HOP_SIZE_FRACTION, "Specifies a hop size relative to the FFT size. Smaller hops (larger fraction) produce more frequent analysis updates." },
+        { IDC_HOP_SIZE_FRACTION, "Specifies a hop size relative to the FFT size. Larger fractions (smaller hops) produce more frequent analysis updates but require progressively more CPU power." },
 
         { IDC_AGGREGATION_METHOD, "Selects the method used to aggregate FFT coefficients before mapping them onto the frequency bands." },
         { IDC_MAPPING_METHOD, "Determines how the FFT coefficients are mapped to the frequency bands." },

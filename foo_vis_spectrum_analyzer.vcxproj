@@ -218,7 +218,7 @@
     <ClInclude Include="3rdParty\json\single_include\nlohmann\json.hpp" />
     <ClInclude Include="3rdParty\pocketfft\pocketfft_hdronly.h" />
     <ClInclude Include="3rdParty\ProjectNayuki\FftComplex.hpp" />
-    <ClInclude Include="Analyzers\Aggregator.h" />
+    <ClInclude Include="Analyzers\Spectrum\Aggregator.h" />
     <ClInclude Include="Analyzers\Bitmeter\BitmeterProcessor.h" />
     <ClInclude Include="Analyzers\EyeCandy\EyeCandyProcessor.h" />
     <ClInclude Include="Analyzers\Metering\MeteringProcessor.h" />
@@ -226,8 +226,8 @@
     <ClInclude Include="Analyzers\Spectrum\AnalogStyleAnalyzer.h" />
     <ClInclude Include="Analyzers\AudioProcessor.h" />
     <ClInclude Include="Analyzers\Spectrum\CompositeFFTAnalyzer.h" />
-    <ClInclude Include="Analyzers\CrossoverFilter.h" />
-    <ClInclude Include="Analyzers\Downmixer.h" />
+    <ClInclude Include="Analyzers\Goniometer\CrossoverFilter.h" />
+    <ClInclude Include="Analyzers\Oscilloscope\Downmixer.h" />
     <ClInclude Include="Analyzers\Oscilloscope\Downsampler.h" />
     <ClInclude Include="Analyzers\Spectrum\FrequencyScaler.h" />
     <ClInclude Include="Analyzers\Spectrum\SpectrumProcessor.h" />
@@ -345,7 +345,7 @@
     <ClInclude Include="DUIElement.h" />
     <ClInclude Include="UIElement.h" />
     <ClInclude Include="Support.h" />
-    <ClInclude Include="Analyzers\Analyzer.h" />
+    <ClInclude Include="Analyzers\Spectrum\Analyzer.h" />
     <ClInclude Include="Analyzers\Spectrum\WindowFunctions.h" />
     <ClInclude Include="Visuals\Spectrum\XAxis.h" />
     <ClInclude Include="Visuals\Spectrum\YAxis.h" />
@@ -362,9 +362,9 @@
     <ClCompile Include="Analyzers\AudioProcessor.cpp" />
     <ClCompile Include="Analyzers\Spectrum\CompositeFFTAnalyzer.cpp" />
     <ClCompile Include="Analyzers\Spectrum\CQTAnalyzer.cpp" />
-    <ClCompile Include="Analyzers\CrossoverFilter.cpp" />
+    <ClCompile Include="Analyzers\Goniometer\CrossoverFilter.cpp" />
     <ClCompile Include="Analyzers\Decimator.cpp" />
-    <ClCompile Include="Analyzers\Downmixer.cpp" />
+    <ClCompile Include="Analyzers\Oscilloscope\Downmixer.cpp" />
     <ClCompile Include="Analyzers\Oscilloscope\Downsampler.cpp" />
     <ClCompile Include="Analyzers\Spectrum\SpectrumProcessor.cpp" />
     <ClCompile Include="Analyzers\Spectrum\SWIFTAnalyzer.cpp" />

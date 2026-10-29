@@ -1,5 +1,5 @@
 
-/** $VER: Graph.cpp (2026.10.28) P. Stuer - Implements a graph on which the visualizations are rendered. **/
+/** $VER: Graph.cpp (2026.10.29) P. Stuer - Implements a graph on which the visualizations are rendered. **/
 
 #include "pch.h"
 
@@ -245,7 +245,7 @@ void graph_t::RenderDescription() noexcept
 /// </summary>
 HRESULT graph_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept
 {
-    if (_State._DiscardResources)
+    if (_State._ColorsHaveChanged || _State._SizeHasChanged)
         DeleteDeviceSpecificResources();
 
     HRESULT hr = S_OK;

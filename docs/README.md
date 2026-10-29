@@ -615,6 +615,17 @@ Specifies the number of bins used by the transforms as a number between 64 and 3
 - Select ''Custom'' to specify a number that is not a power of 2. This will consume a lot more CPU power.
 - Select ''Sample rate based'' to specify the size as a duration. F.e. 100ms of a track sampled at 44.1kHz will result in an FFT window of 4410 samples.
 
+`Hop size fraction`
+
+Specifies a hop size relative to the FFT size. A larger fraction (smaller hops) produce more frequent analysis updates.
+
+The hop size is the number of samples the analysis window shifts forward between consecutive FFT computations.
+
+- The default is 0% meaning no overlap. This is fast and has a lower computational load.
+- 50% is a standard, balanced default for general-use spectrum analysis and spectrograms.
+
+A large fraction has a high CPU impact.
+
 `Coefficient aggregation`
 
 Determines which method is used to aggregate the coefficients of the FFT before they get mapped to a frequency band.

@@ -1,5 +1,5 @@
 
-/** $VER: BitMeter.cpp (2026.10.27) P. Stuer - Implements a bit meter visualization. **/
+/** $VER: BitMeter.cpp (2026.10.29) P. Stuer - Implements a bit meter visualization. **/
 
 #include <pch.h>
 
@@ -167,10 +167,11 @@ HRESULT bit_meter_t::CreateDeviceSpecificResources(_In_ ID2D1DeviceContext * dev
     {
         _MeasurementCount = _Processor->_BitMeasurements.size();
 
-        _State._DiscardResources = true;
+        _State._SizeHasChanged    = true;
+        _State._ColorsHaveChanged = true;
     }
 
-    if (_State._DiscardResources)
+    if (_State._ColorsHaveChanged || _State._SizeHasChanged)
     {
         DeleteColorDependentResources();
 
@@ -182,7 +183,7 @@ HRESULT bit_meter_t::CreateDeviceSpecificResources(_In_ ID2D1DeviceContext * dev
             return hr;
     }
 
-    if (_State._DiscardResources)
+    if (_State._SizeHasChanged)
     {
         DeleteSizeDependentResources();
 
@@ -486,7 +487,7 @@ void bit_meter_t::OnConfigurationChanged(ConfigurationChanges configurationChang
     if (!IsSet(configurationChanges, ConfigurationChanges::Layout))
         _StaticContentCommandList.Reset();
 
-    _State._DiscardResources = true;
+    _State._SizeHasChanged = true;
 }
 
 }
