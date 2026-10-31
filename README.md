@@ -96,7 +96,7 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.14.0.0-alpha3, 2026-10-31
+v0.14.0.0-alpha3, 2026-10-31, Halloween edition.
 
 - Changed: Refactored the whole audio processor hierarchy to facilitate maintenance, improve performance and make future expansion easier. Things may have gotten broken. Report any issues, please.
 - Improved: Decades frequency setting generates at least the requested number of frequency bands.
