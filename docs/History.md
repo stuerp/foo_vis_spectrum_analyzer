@@ -1,6 +1,18 @@
 
 # foo_vis_spectrum_analyzer History
 
+v0.14.0.0-alpha3, 2026-10-31, Halloween edition.
+
+- Changed: Refactored the whole audio processor hierarchy to facilitate maintenance, improve performance and make future expansion easier. Things may have gotten broken. Report any issues, please.
+- Improved: Decades frequency setting generates at least the requested number of frequency bands.
+- New: Hop size support for the spectrum analyzers.
+  - The `Hop size fraction` parameter specifies a hop size relative to the FFT size. Smaller hops (larger fraction) produce more frequent analysis updates.
+  - The default value is 0% which results in the old behavior.
+- Fixed: Styles that use the artwork colors were not correctly initialized at startup. (Regression)
+- Fixed: Peak Meter render bug when multiple graphs are used in the layout. It was caused by unfinished code for this use case.
+- Fixed: Spectrogram showed spectrum residue to the left and top when scrolling in high-DPI scenarios.
+- Fixed: Cosmetic error. The label of the top tick of a Y-axis of the spectrogram was cut off when the tick aligned with the top of the viewport.
+
 v0.14.0.0-alpha2, 2026-10-25
 
 - New: Composite three-tier FFT

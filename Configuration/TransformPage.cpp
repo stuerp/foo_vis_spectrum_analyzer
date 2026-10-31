@@ -1,5 +1,5 @@
 
-/** $VER: TransformPage.cpp (2026.10.29) P. Stuer - Implements a configuration dialog page. **/
+/** $VER: TransformPage.cpp (2026.10.31) P. Stuer - Implements a configuration dialog page. **/
 
 #include "pch.h"
 
@@ -90,7 +90,7 @@ void transform_page_t::InitializeControls() noexcept
 
         w.ResetContent();
 
-        for (const auto & x : { L"FFT", L"CQT", L"SWIFT", L"Analog-style", L"Composite FFT" })
+        for (const auto & x : { L"FFT", L"CQT", L"SWIFT", L"Analog-style", L"Composite Three-Tier FFT" })
             w.AddString(x);
 
         w.SetCurSel((int) _State->_TransformMethod);

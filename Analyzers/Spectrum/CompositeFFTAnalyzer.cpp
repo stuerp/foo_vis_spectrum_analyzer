@@ -1,5 +1,5 @@
 
-/** $VER: CompositeFFTAnalyzer.cpp (2026.10.25) P. Stuer **/
+/** $VER: CompositeFFTAnalyzer.cpp (2026.10.31) P. Stuer */
 
 #include "pch.h"
 
@@ -25,6 +25,50 @@ namespace
 
         return std::bit_ceil(ClampedSize);
     }
+
+    /// <summary>
+    /// Copies only the geometry required by the FFT band mapping.
+    /// </summary>
+    void CopyBands(const frequency_bands_t & src, frequency_bands_t & dst) noexcept
+    {
+        if (dst.size() != src.size())
+            dst.resize(src.size());
+
+        for (size_t i = 0; i < src.size(); ++i)
+        {
+            dst[i].Low    = src[i].Low;
+            dst[i].Center = src[i].Center;
+            dst[i].High   = src[i].High;
+            dst[i].Magnitude = 0.;
+        }
+    }
+
+    /// <summary>
+    /// Turns a linear ramp into a smooth S-shaped curve.
+    /// </summary>
+    inline double Smoothstep(double t) noexcept
+    {
+        t = std::clamp(t, 0., 1.);
+
+        return (t * t) * (3. - (2. * t));
+    }
+
+    /// <summary>
+    /// Calculates how strongly a tier should contribute based on the number of its FFT bins covered by an output band.
+    /// </summary>
+    inline double GetResolutionWeight(double bandWidth, double binWidth) noexcept
+    {
+        constexpr double MinimumBinCount = 1.;
+        constexpr double FullBinCount    = 2.;
+
+        if ((bandWidth <= 0.) || (binWidth <= 0.))
+            return 0.;
+
+        const double BinCount = bandWidth / binWidth;
+        const double t = (BinCount - MinimumBinCount) / (FullBinCount - MinimumBinCount);
+
+        return Smoothstep(t);
+    }
 }
 
 /// <summary>
@@ -34,155 +78,134 @@ composite_fft_analyzer_t::composite_fft_analyzer_t(const state_t & state, uint32
 {
     const size_t BaseFFTSize = GetBaseFFTSize(state._FFTSize);
 
-    const std::array<size_t, 3> TierFFTSize =
-    {
-        BaseFFTSize << 2,   // Low frequencies
-        BaseFFTSize << 1,   // Middle frequencies
-        BaseFFTSize         // High frequencies
-    };
-
     // Split the selected span into equal logarithmic ranges. These boundaries only select output bands; every FFT analyzes the same unfiltered input.
-    const double TierRatio = std::cbrt(state._HiFrequency / state._LoFrequency);
-
-    const double LowCrossover  = state._LoFrequency  * TierRatio;
-    const double HighCrossover = LowCrossover        * TierRatio;
-
-    _Tiers.reserve(3);
-
-    fft_tier_t LowTier;
-
-    LowTier.Analyzer     = std::make_unique<fft_analyzer_t>(state, TierFFTSize[0], sampleRate, channelCount, channelSetup, windowFunction, brownPucketteKernel);
-    LowTier.FFTSize      = TierFFTSize[0];
-    LowTier.MinFrequency = state._LoFrequency;
-    LowTier.MaxFrequency = LowCrossover;
-
-    _Tiers.emplace_back(std::move(LowTier));
-
-    fft_tier_t MidTier;
-
-    MidTier.Analyzer     = std::make_unique<fft_analyzer_t>(state, TierFFTSize[1], sampleRate, channelCount, channelSetup, windowFunction, brownPucketteKernel);
-    MidTier.FFTSize      = TierFFTSize[1];
-    MidTier.MinFrequency = LowCrossover;
-    MidTier.MaxFrequency = HighCrossover;
-
-    _Tiers.emplace_back(std::move(MidTier));
-
-    fft_tier_t HighTier;
-
-    HighTier.Analyzer     = std::make_unique<fft_analyzer_t>(state, TierFFTSize[2], sampleRate, channelCount, channelSetup, windowFunction, brownPucketteKernel);
-    HighTier.FFTSize      = TierFFTSize[2];
-    HighTier.MinFrequency = HighCrossover;
-    HighTier.MaxFrequency = state._HiFrequency;
-
-    _Tiers.emplace_back(std::move(HighTier));
-
-    // Temporal align the FFT windows. Align the center of every FFT window with the center of the longest FFT.
-    const size_t LongestFFTSize = TierFFTSize[0];
-
-    for (auto & Tier : _Tiers)
-    {
-        const size_t DelayFrameCount = (LongestFFTSize - Tier.FFTSize) / 2;
-
-        Tier.DelayLine.assign(DelayFrameCount * channelCount, 0.);
-    }
+    _LowTier.Analyzer  = std::make_unique<fft_analyzer_t>(state, BaseFFTSize << 2, sampleRate, channelCount, channelSetup, windowFunction, brownPucketteKernel);
+    _MidTier.Analyzer  = std::make_unique<fft_analyzer_t>(state, BaseFFTSize << 1, sampleRate, channelCount, channelSetup, windowFunction, brownPucketteKernel);
+    _HighTier.Analyzer = std::make_unique<fft_analyzer_t>(state, BaseFFTSize,      sampleRate, channelCount, channelSetup, windowFunction, brownPucketteKernel);
 }
 
 /// <summary>
-/// Analyzes the audio and returns the composited frequency bands.
+/// Analyzes the audio and returns the composited frequency bands. Fixed cross-fade regions.
 /// </summary>
-bool composite_fft_analyzer_t::AnalyzeAudio(const audio_sample * frames, size_t frameCount, uint32_t channels, frequency_bands_t & frequencyBands) noexcept
+#ifdef v1
+bool composite_fft_analyzer_t::AnalyzeAudio(const audio_sample * frames, size_t frameCount, uint32_t selectedChannels, frequency_bands_t & frequencyBands) noexcept
 {
-    for (size_t TierIndex = 0; TierIndex < _Tiers.size(); ++TierIndex)
+    auto ProcessTier = [&](fft_tier_t & tier) noexcept -> bool
     {
-        auto & Tier = _Tiers[TierIndex];
+        CopyBands(frequencyBands, tier.Bands);
 
-        CopyBandGeometry(frequencyBands, Tier.Bands);
+        return tier.Analyzer->AnalyzeAudio(frames, frameCount, selectedChannels, tier.Bands);
+    };
 
-        if (!AnalyzeTier(Tier, frames, frameCount, channels))
-            return false;
+    if (!ProcessTier(_LowTier))
+        return false;
 
-        MaskTierBands(Tier, TierIndex + 1 == _Tiers.size());
+    if (!ProcessTier(_MidTier))
+        return false;
+
+    if (!ProcessTier(_HighTier))
+        return false;
+
+    const double LogMin  = std::log(_State._LoFrequency);
+    const double LogMax  = std::log(_State._HiFrequency);
+
+    const double LogSpan = LogMax - LogMin;
+
+    const double CrossFade1Begin = std::exp(LogMin + 0.18 * LogSpan);
+    const double CrossFade1End   = std::exp(LogMin + 0.28 * LogSpan);
+
+    const double CrossFade2Begin = std::exp(LogMin + 0.55 * LogSpan);
+    const double CrossFade2End   = std::exp(LogMin + 0.70 * LogSpan);
+
+    const double CrossFade1Span = CrossFade1End - CrossFade1Begin;
+    const double CrossFade2Span = CrossFade2End - CrossFade2Begin;
+
+    // Merge the magnitudes.
+    for (size_t i = 0; i < frequencyBands.size(); ++i)
+    {
+        const double Frequency = frequencyBands[i].Center;
+
+        const double MagnitudeLow  = _LowTier .Bands[i].Magnitude;
+        const double MagnitudeMid  = _MidTier .Bands[i].Magnitude;
+        const double MagnitudeHigh = _HighTier.Bands[i].Magnitude;
+
+        if (Frequency <= CrossFade1Begin)
+        {
+            frequencyBands[i].Magnitude = MagnitudeLow;
+        }
+        else
+        if (Frequency < CrossFade1End)
+        {
+            // Low to Mid cross-fade.
+            const double t = Smoothstep((Frequency - CrossFade1Begin) / CrossFade1Span);
+
+            frequencyBands[i].Magnitude = std::lerp(MagnitudeLow, MagnitudeMid, t);
+        }
+        else
+        if (Frequency <= CrossFade2Begin)
+        {
+            frequencyBands[i].Magnitude = MagnitudeMid;
+        }
+        else
+        if (Frequency < CrossFade2End)
+        {
+            // Mid to High cross-fade.
+            const double t = Smoothstep((Frequency - CrossFade2Begin) / CrossFade2Span);
+
+            frequencyBands[i].Magnitude = std::lerp(MagnitudeMid, MagnitudeHigh, t);
+        }
+        else
+        {
+            frequencyBands[i].Magnitude = MagnitudeHigh;
+        }
     }
-
-    MergeTiers(frequencyBands);
 
     return true;
 }
-
+#endif
 /// <summary>
-/// Analyzes a tier after applying its temporal-alignment delay.
+/// Analyzes the audio and returns the composited frequency bands. Cross-fade regions are derived from the FFT bin width. 
 /// </summary>
-bool composite_fft_analyzer_t::AnalyzeTier(fft_tier_t & tier, const audio_sample * frames, size_t frameCount, uint32_t channels) noexcept
+bool composite_fft_analyzer_t::AnalyzeAudio(const audio_sample * frames, size_t frameCount, uint32_t selectedChannels, frequency_bands_t & frequencyBands) noexcept
 {
-    if (tier.DelayLine.empty())
-        return tier.Analyzer->AnalyzeAudio(frames, frameCount, channels, tier.Bands);
-
-    const size_t SampleCount = frameCount * _ChannelCount;
-
-    tier.DelayedFrames.resize(SampleCount);
-
-    for (size_t i = 0; i < SampleCount; ++i)
+    auto ProcessTier = [&](fft_tier_t & tier) noexcept -> bool
     {
-        tier.DelayedFrames[i] = tier.DelayLine[tier.DelayPosition];
-        tier.DelayLine[tier.DelayPosition] = frames[i];
+        CopyBands(frequencyBands, tier.Bands);
 
-        if (++tier.DelayPosition == tier.DelayLine.size())
-            tier.DelayPosition = 0;
-    }
+        return tier.Analyzer->AnalyzeAudio(frames, frameCount, selectedChannels, tier.Bands);
+    };
 
-    return tier.Analyzer->AnalyzeAudio(tier.DelayedFrames.data(), frameCount, channels, tier.Bands);
-}
+    if (!ProcessTier(_LowTier))
+        return false;
 
-/// <summary>
-/// Copies only the geometry required by the FFT band mapping.
-/// </summary>
-void composite_fft_analyzer_t::CopyBandGeometry(const frequency_bands_t & source, frequency_bands_t & destination) noexcept
-{
-    destination.resize(source.size());
+    if (!ProcessTier(_MidTier))
+        return false;
 
-    for (size_t i = 0; i < source.size(); ++i)
-    {
-        destination[i].Low    = source[i].Low;
-        destination[i].Center = source[i].Center;
-        destination[i].High   = source[i].High;
-        destination[i].Magnitude = 0.;
-    }
-}
+    if (!ProcessTier(_HighTier))
+        return false;
 
-/// <summary>
-/// Removes all mapped output bands that do not belong to this tier. Tier ranges are half-open, except for the final tier, so no band is duplicated.
-/// </summary>
-void composite_fft_analyzer_t::MaskTierBands(fft_tier_t & tier, bool isLastTier) noexcept
-{
-    for (auto & Band : tier.Bands)
-    {
-        const bool IsInTier = (Band.Center >= tier.MinFrequency) && (isLastTier ? (Band.Center <= tier.MaxFrequency) : (Band.Center < tier.MaxFrequency));
+    const double MidBinWidth  = (double) (_SampleRate) / (double) (_MidTier .Analyzer->GetFFTSize());
+    const double HighBinWidth = (double) (_SampleRate) / (double) (_HighTier.Analyzer->GetFFTSize());
 
-        if (!IsInTier)
-            Band.Magnitude = 0.;
-    }
-}
-
-/// <summary>
-/// Copies the already-masked result from the single tier assigned to each band.
-/// No magnitudes from different FFT sizes are blended or summed.
-/// </summary>
-void composite_fft_analyzer_t::MergeTiers(frequency_bands_t & frequencyBands) const noexcept
-{
-    size_t TierIndex = 0;
-
+    // Merge the magnitudes according to the FFT resolution available for each output band.
     for (size_t i = 0; i < frequencyBands.size(); ++i)
     {
-        auto & Band = frequencyBands[i];
+        const double BandWidth = std::max(0., frequencyBands[i].High - frequencyBands[i].Low);
 
-        while ((TierIndex + 1 < _Tiers.size()) && (Band.Center >= _Tiers[TierIndex].MaxFrequency))
-            ++TierIndex;
+        // Derived the tier’s resolution from its FFT bin width. A shorter tier starts taking over when the output band covers one of its bins and is fully active at two bins.
+        const double MidWeight  = GetResolutionWeight(BandWidth, MidBinWidth);
+        const double HighWeight = GetResolutionWeight(BandWidth, HighBinWidth);
 
-        const auto & Tier = _Tiers[TierIndex];
+        const double WeightLow  = 1. - MidWeight;
+        const double WeightMid  = MidWeight * (1. - HighWeight);
+        const double WeightHigh = HighWeight;
 
-        const bool IsLastTier = TierIndex + 1 == _Tiers.size();
-        const bool IsInTier   = (Band.Center >= Tier.MinFrequency) && (IsLastTier ? (Band.Center <= Tier.MaxFrequency) : (Band.Center < Tier.MaxFrequency));
+        const double MagnitudeLow  = _LowTier .Bands[i].Magnitude;
+        const double MagnitudeMid  = _MidTier .Bands[i].Magnitude;
+        const double MagnitudeHigh = _HighTier.Bands[i].Magnitude;
 
-        Band.Magnitude = IsInTier && (i < Tier.Bands.size()) ? Tier.Bands[i].Magnitude : 0.;
+        frequencyBands[i].Magnitude = (WeightLow  * MagnitudeLow) + (WeightMid  * MagnitudeMid) + (WeightHigh * MagnitudeHigh);
     }
+
+    return true;
 }

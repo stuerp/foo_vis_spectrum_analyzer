@@ -1,5 +1,5 @@
 
-/** $VER: Analyzer.h (2026.10.27) P. Stuer - Base class for all spectrum analyzers **/
+/** $VER: Analyzer.h (2026.10.31) P. Stuer - Base class for all spectrum analyzers **/
 
 #pragma once
 

@@ -1,5 +1,5 @@
 
-/** $VER: FFTAnalyzer.h (2026.10.28) P. Stuer **/
+/** $VER: FFTAnalyzer.h (2026.10.31) P. Stuer **/
 
 #pragma once
 
@@ -32,7 +32,18 @@ public:
 
     fft_analyzer_t(const state_t & state, size_t fftSize, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup, const window_function_t & windowFunction, const window_function_t & brownPucketteKernel) noexcept;
 
-    bool AnalyzeAudio(const audio_sample * frames, size_t frameCount, uint32_t channels, frequency_bands_t & frequencyBands) noexcept override final;
+    bool AnalyzeAudio(const audio_sample * frames, size_t frameCount, uint32_t selectedChannels, frequency_bands_t & frequencyBands) noexcept override final;
+    bool AnalyzeAudio(const audio_sample * frames, size_t frameCount, uint32_t selectedChannels) noexcept;
+
+    const std::vector<std::complex<double>> & GetCoefficients() const noexcept
+    {
+        return _Coefficients;
+    }
+
+    size_t GetFFTSize() const noexcept
+    {
+        return _FFTSize;
+    }
 
 private:
     void Add(const audio_sample * samples, size_t count, uint32_t channels) noexcept;

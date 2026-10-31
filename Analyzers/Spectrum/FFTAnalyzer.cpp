@@ -74,6 +74,18 @@ bool fft_analyzer_t::AnalyzeAudio(const audio_sample * frameData, size_t frameCo
 }
 
 /// <summary>
+/// Calculates the transform without calculating the magnitudes.
+/// </summary>
+bool fft_analyzer_t::AnalyzeAudio(const audio_sample * frameData, size_t frameCount, uint32_t selectedChannels) noexcept
+{
+    Add(frameData, frameCount, selectedChannels);
+
+    Transform();
+
+    return true;
+}
+
+/// <summary>
 /// Adds multiple samples to the input buffer.
 /// </summary>
 void fft_analyzer_t::Add(const audio_sample * samples, size_t frameCount, uint32_t selectedChannels) noexcept

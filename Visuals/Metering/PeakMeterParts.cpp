@@ -190,6 +190,7 @@ void part_t::Unbind() noexcept
     _DebugBrush.Reset();
 
     _OpacityMask.Reset();
+    _StaticContent.Reset();
 }
 
 /// <summary>
@@ -415,17 +416,6 @@ void part_t::CreateAxis() noexcept
 }
 
 /// <summary>
-/// Unbinds the Direct2D resources from this instance.
-/// </summary>
-void bar_t::Unbind() noexcept
-{
-    _StaticContent.Reset();
-    _NameTextLayout.Reset();
-
-    __super::Unbind();
-}
-
-/// <summary>
 /// Initializes the boundaries of this instance and prepares the transform.
 /// </summary>
 void bar_t::InitializeMetrics(const D2D1_RECT_F & rect) noexcept
@@ -466,8 +456,19 @@ void bar_t::InitializeMetrics(const D2D1_RECT_F & rect) noexcept
         hr = DirectWriteFactory::Get()->CreateTextLayout(_Measurement->ChannelName.c_str(), (UINT32) _Measurement->ChannelName.length(), _NameStyle->_TextFormat.Get(), Width, Height, _NameTextLayout.GetAddressOf());
     }
 
-    if (SUCCEEDED(hr) && (_StaticContent == nullptr) && _State._HasScaleLines)
+    if (_State._HasScaleLines && (_StaticContent == nullptr))
         hr = CreateStaticContent();
+}
+
+/// <summary>
+/// Unbinds the Direct2D resources from this instance.
+/// </summary>
+void bar_t::Unbind() noexcept
+{
+    _StaticContent.Reset();
+    _NameTextLayout.Reset();
+
+    __super::Unbind();
 }
 
 /// <summary>
@@ -706,47 +707,47 @@ void bar_t::Render() const noexcept
 /// </summary>
 HRESULT bar_t::CreateStaticContent() noexcept
 {
-    // BeginDraw() was already called by the graph. End drawing on the old target.
-    HRESULT hr = _DeviceContext->EndDraw();
+    HRESULT hr = S_OK;
 
-    if (FAILED(hr))
-        return hr;
+    ComPtr<ID2D1DeviceContext> DeviceContext;
 
-    ComPtr<ID2D1Image> OldTarget;
+    {
+        ComPtr<ID2D1Device> D2DDevice;
 
-    _DeviceContext->GetTarget(OldTarget.GetAddressOf());
+        _DeviceContext->GetDevice(D2DDevice.GetAddressOf());
 
-    hr = _DeviceContext->CreateCommandList(_StaticContent.GetAddressOf());
+        hr = D2DDevice->CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_ENABLE_MULTITHREADED_OPTIMIZATIONS, DeviceContext.GetAddressOf());
+
+        if (FAILED(hr))
+            return hr;
+    }
+
+    hr = DeviceContext->CreateCommandList(_StaticContent.ReleaseAndGetAddressOf());
 
     if (SUCCEEDED(hr))
     {
-        _DeviceContext->SetTarget(_StaticContent.Get());
+        DeviceContext->SetTarget(_StaticContent.Get());
 
-        _DeviceContext->BeginDraw();
+        DeviceContext->BeginDraw();
 
-        _DeviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED); // Prevent line blurring
+        DeviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED); // Prevent line blurring
 
         if (_State._IsHorizontalPeakMeter)
         {
             for (const label_t & Label : _Labels)
-                _DeviceContext->DrawLine(D2D1::Point2F(Label.P2.x, _Rect.top), D2D1::Point2F(Label.P2.x, _Rect.bottom), _ScaleLineStyle->_Brush.Get(), _ScaleLineStyle->_Thickness);
+                DeviceContext->DrawLine(D2D1::Point2F(Label.P2.x, _Rect.top), D2D1::Point2F(Label.P2.x, _Rect.bottom), _ScaleLineStyle->_Brush.Get(), _ScaleLineStyle->_Thickness);
         }
         else
         {
             for (const label_t & Label : _Labels)
-                _DeviceContext->DrawLine(D2D1::Point2F(_Rect.left, Label.P1.y), D2D1::Point2F(_Rect.right, Label.P1.y), _ScaleLineStyle->_Brush.Get(), _ScaleLineStyle->_Thickness);
+                DeviceContext->DrawLine(D2D1::Point2F(_Rect.left, Label.P1.y), D2D1::Point2F(_Rect.right, Label.P1.y), _ScaleLineStyle->_Brush.Get(), _ScaleLineStyle->_Thickness);
         }
 
-        hr = _DeviceContext->EndDraw();
+        hr = DeviceContext->EndDraw();
     }
 
     if (SUCCEEDED(hr))
         hr = _StaticContent->Close();
-
-    // Resume drawing on the old target.
-    _DeviceContext->SetTarget(OldTarget.Get());
-
-    _DeviceContext->BeginDraw();
 
     return hr;
 }

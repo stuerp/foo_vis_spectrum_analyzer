@@ -67,7 +67,7 @@ Enjoy the show.
 
 ## Features
 
-- Fast Fourier (FFT), Constant-Q (CQT), Sliding Windowed Infinite Fourier (SWIFT) and Analog-style transforms
+- Fast Fourier (FFT), Constant-Q (CQT), Sliding Windowed Infinite Fourier (SWIFT), Analog-style and Composite Three-Tier FFT transforms
 - Multiple frequency range and smoothing options
 - Multiple graph types
 - Styling of all visual elements
@@ -553,6 +553,17 @@ CQT looks better for music because:
 - Sliding Windowed Infinite Fourier (SWIFT)
 - Analog-style
 
+#### Composite Three-Tier FFT
+
+This transform uses three standard FFT transforms with three different FFT sizes. The user specified FFT size is used for the high frequency tier;
+double and quadruple FFT sizes are used for the mid- and lower tier respectively. The magnitudes of the three tiers are composited before display.
+
+The larger FFT size for the lower tier allows for a better frequency resolutionin the bass. 
+
+> [!Note]
+> This transform will always force power-of-two FFT size as the base FFT size.
+> This transform is fairly compute intensive.
+
 #### Transform group
 
 `Method`
@@ -626,18 +637,6 @@ The hop size is the number of samples the analysis window shifts forward between
 
 A large fraction has a high CPU impact.
 
-`Coefficient aggregation`
-
-Determines which method is used to aggregate the coefficients of the FFT before they get mapped to a frequency band.
-
-- Minimum
-- Maximum
-- Sum
-- Residual Mean Square (RMS)
-- RMS Sum
-- Average
-- Median
-
 `Coefficient mapping`
 
 Determines how the FFT coefficients are mapped to the frequency bands.
@@ -649,6 +648,18 @@ Determines how the FFT coefficients are mapped to the frequency bands.
 
 > [!Note]
 > The `Triangular Filter Bank` mapping always uses frequencies generated from the [Mel scale](https://en.wikipedia.org/wiki/Mel_scale).
+
+`Coefficient aggregation`
+
+Determines which method is used to aggregate the coefficients of the FFT before they get mapped to a frequency band.
+
+- Minimum
+- Maximum
+- Sum
+- Residual Mean Square (RMS)
+- RMS Sum
+- Average
+- Median
 
 `Smooth lower frequencies`
 

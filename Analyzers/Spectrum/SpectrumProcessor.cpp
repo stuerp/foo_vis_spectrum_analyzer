@@ -850,12 +850,12 @@ namespace Spectrum
     /// Normalizes the amplitude for display with peak smoothing. Instant attack with exponential peak and gradual decay of the amplitude. Preserves peaks and transients.
     /// </summary>
     void processor_t::NormalizeWithPeakSmoothing(double strength) noexcept
-{
-    for (frequency_band_t & fb : FrequencyBands)
     {
-        const auto ScaledValue = std::isfinite(fb.Magnitude) ? _Options->ScaleAmplitude(fb.Magnitude) : 0.;
+        for (frequency_band_t & fb : FrequencyBands)
+        {
+            const auto ScaledValue = std::isfinite(fb.Magnitude) ? _Options->ScaleAmplitude(fb.Magnitude) : 0.;
 
-        fb.Value = std::clamp(std::max(fb.Value * strength, ScaledValue), 0., 1.);
+            fb.Value = std::clamp(std::max(fb.Value * strength, ScaledValue), 0., 1.);
+        }
     }
-}
 }

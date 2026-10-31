@@ -84,6 +84,8 @@ protected:
     ComPtr<ID2D1SolidColorBrush> _DebugBrush;
     ComPtr<ID2D1Bitmap> _OpacityMask;
 
+    ComPtr<ID2D1CommandList> _StaticContent;
+
     static constexpr FLOAT _TickSize = 4.f;
 
     style_t * _BackgroundStyle { };
@@ -140,8 +142,6 @@ private:
     D2D1_MATRIX_3X2_F _Transform { };
 
     FLOAT _LEDSize = 0.f;
-
-    ComPtr<ID2D1CommandList> _StaticContent;
 };
 
 /// <summary>
@@ -162,7 +162,7 @@ public:
     scale_t & operator=(const scale_t &) = delete;
     scale_t & operator=(scale_t &&) = delete;
 
-    virtual void Unbind() noexcept override final;
+    void Unbind() noexcept override final;
 
     void InitializeMetrics(const D2D1_RECT_F & rect) noexcept override final;
     void Render() const noexcept override final;
@@ -171,9 +171,6 @@ public:
 
 private:
     HRESULT CreateStaticContent() noexcept;
-
-private:
-    ComPtr<ID2D1CommandList> _StaticContent;
 };
 
 }
