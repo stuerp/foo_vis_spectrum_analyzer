@@ -51,7 +51,7 @@ private:
 
 protected:
     const state_t & _State;
-    const graph_options_t * _GraphOptions;
+    const graph_options_t * _GraphOptions = nullptr;
 
     D2D1_RECT_F _Rect { };
     D2D1_SIZE_F _Size { };
@@ -109,7 +109,7 @@ protected:
 class bar_t : public part_t
 {
 public:
-    bar_t(const state_t & state, const graph_options_t * settings, const peak_measurement_t * measurement) noexcept : part_t(state, settings)
+    bar_t(const state_t & state, const graph_options_t * options, const peak_measurement_t * measurement) noexcept : part_t(state, options)
     {
         _Measurement = measurement;
 
@@ -117,8 +117,9 @@ public:
     }
 
     bar_t(const bar_t &) = delete;
-    bar_t & operator=(const bar_t &) = delete;
     bar_t(bar_t &&) = delete;
+
+    bar_t & operator=(const bar_t &) = delete;
     bar_t & operator=(bar_t &&) = delete;
 
     void Unbind() noexcept override final;
@@ -134,11 +135,11 @@ private:
 
 private:
     const peak_measurement_t * _Measurement { };
-    double _dBFSZeroNormalized { };
+    double _dBFSZeroNormalized = 0.;
 
     D2D1_MATRIX_3X2_F _Transform { };
 
-    FLOAT _LEDSize { };
+    FLOAT _LEDSize = 0.f;
 
     ComPtr<ID2D1CommandList> _StaticContent;
 };
@@ -149,7 +150,7 @@ private:
 class scale_t final : public part_t
 {
 public:
-    scale_t(const state_t & state, const graph_options_t * settings, DWRITE_TEXT_ALIGNMENT textAlignment, DWRITE_PARAGRAPH_ALIGNMENT paragraphAlignment) noexcept : part_t(state, settings)
+    scale_t(const state_t & state, const graph_options_t * options, DWRITE_TEXT_ALIGNMENT textAlignment, DWRITE_PARAGRAPH_ALIGNMENT paragraphAlignment) noexcept : part_t(state, options)
     {
         _TextAlignment      = textAlignment;
         _ParagraphAlignment = paragraphAlignment;

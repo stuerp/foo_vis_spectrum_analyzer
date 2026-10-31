@@ -98,12 +98,13 @@ To create the component first build the x86 configuration and next the x64 confi
 
 v0.14.0.0-alpha3, 2026-xx-xx
 
-- Changed: Refactored the whole audio processor hierarchy to facility maintenance, improve performance and make future expansion easier. Things may have gotten broken. Report any issues, please.
-- Improved: Decades frequency setting generates at least the requested number of bands.
+- Changed: Refactored the whole audio processor hierarchy to facilitate maintenance, improve performance and make future expansion easier. Things may have gotten broken. Report any issues, please.
+- Improved: Decades frequency setting generates at least the requested number of frequency bands.
 - New: Hop size support for the spectrum analyzers.
   - The `Hop size fraction` parameter specifies a hop size relative to the FFT size. Smaller hops (larger fraction) produce more frequent analysis updates.
   - The default value is 0% which results in the old behavior.
 - Fixed: Styles that use the artwork colors were not correctly initialized at startup. (Regression)
+- Fixed: Peak Meter render bug when multiple graphs are used in the layout. It was caused by unfinished code for this use case.
 
 You can read the full history [here](docs/History.md).
 

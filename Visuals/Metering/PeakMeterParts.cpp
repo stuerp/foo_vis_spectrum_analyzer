@@ -1,5 +1,5 @@
 
-/** $VER: PeakMeterParts.cpp (2026.10.28) P. Stuer - Implements the parts of a peak meter. **/
+/** $VER: PeakMeterParts.cpp (2026.10.31) P. Stuer - Implements the parts of a peak meter. **/
 
 #include "pch.h"
 
@@ -432,25 +432,27 @@ void bar_t::InitializeMetrics(const D2D1_RECT_F & rect) noexcept
 {
     __super::InitializeMetrics(rect);
 
-    // Prealculate the transform.
+    // Precalculate the transform. All bar geometry is expressed relative to its own origin.
     _Transform = D2D1::Matrix3x2F::Identity();
 
-    // Compute center of the area.
-    const D2D1_POINT_2F Center = { (_Rect.left + _Rect.right) / 2.f, (_Rect.top + _Rect.bottom) / 2.f };
-
-    if (_GraphOptions->_FlipHorizontally)
-        _Transform = D2D1::Matrix3x2F::Scale(-1.0f, 1.0f, Center);
+    // Compute the center of the local area.
+    const D2D1_POINT_2F Center = { _Size.width / 2.f, _Size.height / 2.f };
 
     if (_State._IsHorizontalPeakMeter)
     {
-        if (_GraphOptions->_FlipVertically)
-            _Transform = _Transform * D2D1::Matrix3x2F::Scale(1.0f, -1.0f, Center);
+        // In a horizontal meter the horizontal option reverses the value axis. The vertical option only changes the channel order and is handled while creating the parts.
+        if (_GraphOptions->_FlipHorizontally)
+            _Transform = D2D1::Matrix3x2F::Scale(-1.f, 1.f, Center);
     }
     else
     {
+        // FlipVertically reverses the value axis and therefore needs no reflection. FlipHorizontally only changes the channel order.
         if (!_GraphOptions->_FlipVertically)
-            _Transform = _Transform * D2D1::Matrix3x2F::Scale(1.0f, -1.0f, Center);
+            _Transform = D2D1::Matrix3x2F::Scale(1.f, -1.f, Center);
     }
+
+    // Position the local bar after applying its orientation.
+    _Transform = _Transform * D2D1::Matrix3x2F::Translation(_Rect.left, _Rect.top);
 
     _LEDSize = _State._LEDLight + _State._LEDGap;
 
@@ -475,23 +477,10 @@ void bar_t::Render() const noexcept
 {
 //  _DebugBrush->SetColor(D2D1::ColorF(D2D1::ColorF::Green)); _DeviceContext->DrawRectangle(_Rect, _DebugBrush);
 
-    D2D1_RECT_F Rect = _Rect;
+    D2D1_RECT_F Rect = D2D1::RectF(0.f, 0.f, _Size.width, _Size.height);
 
     // Draw tick lines.
     _DeviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
-
-/*
-    if (_State._HorizontalPeakMeter)
-    {
-        for (const label_t & Label : _Labels)
-            _DeviceContext->DrawLine(D2D1::Point2F(Label.P2.x, _Rect.top), D2D1::Point2F(Label.P2.x, _Rect.bottom), _ScaleLineStyle->_Brush.Get(), _ScaleLineStyle->_Thickness);
-    }
-    else
-    {
-        for (const label_t & Label : _Labels)
-            _DeviceContext->DrawLine(D2D1::Point2F(_Rect.left, Label.P1.y), D2D1::Point2F(_Rect.right, Label.P1.y), _ScaleLineStyle->_Brush.Get(), _ScaleLineStyle->_Thickness);
-    }
-*/
 
     if (_StaticContent != nullptr)
         _DeviceContext->DrawImage(_StaticContent.Get());
@@ -510,62 +499,72 @@ void bar_t::Render() const noexcept
             }
 
             // Draw the foreground (Peak).
+            if (_PeakStyle->IsEnabled())
             {
-                Rect.right = _Rect.left + (FLOAT) _Measurement->NormalizedPeak * _Size.width;
+                const FLOAT Peak = std::clamp((FLOAT) _Measurement->NormalizedPeak, 0.f, 1.f) * _Size.width;
+
+                Rect = D2D1::RectF(0.f, 0.f, Peak, _Size.height);
 
                 DrawHorizontalRectangle(Rect, _PeakStyle);
 
                 // Draw the foreground (Peak, Measurement > 0dBFS).
                 if (_Peak0dBStyle->IsEnabled() && (_Measurement->NormalizedPeak > _dBFSZeroNormalized))
                 {
-                    Rect.left  = _Rect.left + (FLOAT) _dBFSZeroNormalized * _Size.width;
-                    Rect.right = _Rect.left + (FLOAT) _Measurement->NormalizedPeak * _Size.width;
+                    const FLOAT dBFSZero = std::clamp((FLOAT) _dBFSZeroNormalized, 0.f, 1.f) * _Size.width;
+
+                    Rect = D2D1::RectF(dBFSZero, 0.f, Peak, _Size.height);
 
                     DrawHorizontalRectangle(Rect, _Peak0dBStyle);
                 }
             }
+
             // Draw the foreground (Peak Top).
             if ((_State._PeakMode != PeakMode::None) && (_Measurement->MaxNormalizedPeak > 0.) && _MaxPeakStyle->IsEnabled())
             {
-                const FLOAT x = (FLOAT) _Measurement->MaxNormalizedPeak * _Size.width;
+                const FLOAT PeakTop = std::clamp((FLOAT) _Measurement->MaxNormalizedPeak, 0.f, 1.f) * _Size.width;
 
-                Rect.left  = _Rect.left + x;
-                Rect.right = _Rect.left + x;
+                const bool IsIntegralLED = _State._LEDMode && _State._LEDIntegralSize;
 
-                if (!_State._LEDMode)
+                if (IsIntegralLED)
                 {
-                    Rect.left  -= _MaxPeakStyle->_Thickness / 2.f;
-                    Rect.right += _MaxPeakStyle->_Thickness / 2.f;
+                    // Draw the light portion of exactly one LED directly.
+                    const FLOAT LED = std::min(std::floorf(PeakTop / _LEDSize), std::max(0.f, std::ceilf(_Size.width / _LEDSize) - 1.f));
+                    const FLOAT Left = LED * _LEDSize;
+
+                    Rect = D2D1::RectF(Left, 0.f, std::min(_Size.width, Left + _State._LEDLight), _Size.height);
                 }
                 else
                 {
-                    if (!_State._LEDIntegralSize)
-                    {
-                        Rect.top    -= _LEDSize / 2.f;
-                        Rect.bottom += _LEDSize / 2.f;
-                    }
+                    const FLOAT Thickness = _State._LEDMode ? _LEDSize : _MaxPeakStyle->_Thickness;
+
+                    Rect = D2D1::RectF(std::max(0.f, PeakTop - Thickness / 2.f), 0.f, std::min(_Size.width, PeakTop + Thickness / 2.f), _Size.height);
                 }
 
                 const FLOAT Opacity = ((_State._PeakMode == PeakMode::FadeOut) || (_State._PeakMode == PeakMode::FadingAIMP)) ? (FLOAT) _Measurement->Opacity : _MaxPeakStyle->_Opacity;
 
                 _MaxPeakStyle->_Brush->SetOpacity(Opacity);
 
-                DrawHorizontalRectangle(Rect, _MaxPeakStyle);
+                if (IsIntegralLED)
+                    _DeviceContext->FillRectangle(Rect, _MaxPeakStyle->_Brush.Get());
+                else
+                    DrawHorizontalRectangle(Rect, _MaxPeakStyle);
             }
 
             // Draw the foreground (RMS).
             if (_RMSStyle->IsEnabled())
             {
-                Rect.left  = _Rect.left;
-                Rect.right = _Rect.left + (FLOAT) _Measurement->NormalizedRMS * _Size.width;
+                const FLOAT RMS = std::clamp((FLOAT) _Measurement->NormalizedRMS, 0.f, 1.f) * _Size.width;
+
+                Rect = D2D1::RectF(0.f, 0.f, RMS, _Size.height);
 
                 DrawHorizontalRectangle(Rect, _RMSStyle);
 
                 // Draw the foreground (RMS, Measurement > 0dBFS).
                 if (_RMS0dBStyle->IsEnabled() && (_Measurement->NormalizedRMS > _dBFSZeroNormalized))
                 {
-                    Rect.left  = _Rect.left + (FLOAT) _dBFSZeroNormalized * _Size.width;
-                    Rect.right = _Rect.left + (FLOAT) _Measurement->NormalizedRMS * _Size.width;
+                    const FLOAT dBFSZero = std::clamp((FLOAT) _dBFSZeroNormalized, 0.f, 1.f) * _Size.width;
+
+                    Rect = D2D1::RectF(dBFSZero, 0.f, RMS, _Size.height);
 
                     DrawHorizontalRectangle(Rect, _RMS0dBStyle);
                 }
@@ -582,15 +581,18 @@ void bar_t::Render() const noexcept
             // Draw the foreground (Peak).
             if (_PeakStyle->IsEnabled())
             {
-                Rect.bottom = _Rect.top + ((FLOAT) _Measurement->NormalizedPeak * _Size.height);
+                const FLOAT Peak = std::clamp((FLOAT) _Measurement->NormalizedPeak, 0.f, 1.f) * _Size.height;
+
+                Rect = D2D1::RectF(0.f, 0.f, _Size.width, Peak);
 
                 DrawVerticalRectangle(Rect, _PeakStyle);
 
                 // Draw the foreground (Peak, Measurement > 0dBFS).
                 if (_Peak0dBStyle->IsEnabled() && (_Measurement->NormalizedPeak > _dBFSZeroNormalized))
                 {
-                    Rect.top    = _Rect.top + (FLOAT) _dBFSZeroNormalized * _Size.height;
-                    Rect.bottom = _Rect.top + (FLOAT) _Measurement->NormalizedPeak * _Size.height;
+                    const FLOAT dBFSZero = std::clamp((FLOAT) _dBFSZeroNormalized, 0.f, 1.f) * _Size.height;
+
+                    Rect = D2D1::RectF(0.f, dBFSZero, _Size.width, Peak);
 
                     DrawVerticalRectangle(Rect, _Peak0dBStyle);
                 }
@@ -599,45 +601,50 @@ void bar_t::Render() const noexcept
             // Draw the foreground (Peak Top).
             if ((_State._PeakMode != PeakMode::None) && (_Measurement->MaxNormalizedPeak > 0.) && _MaxPeakStyle->IsEnabled())
             {
-                const FLOAT y = (FLOAT) _Measurement->MaxNormalizedPeak * _Size.height;
+                const FLOAT PeakTop = std::clamp((FLOAT) _Measurement->MaxNormalizedPeak, 0.f, 1.f) * _Size.height;
 
-                Rect.top    = _Rect.top + y;
-                Rect.bottom = _Rect.top + y;
+                const bool IsIntegralLED = _State._LEDMode && _State._LEDIntegralSize;
 
-                if (!_State._LEDMode)
+                if (IsIntegralLED)
                 {
-                    Rect.top    -= _MaxPeakStyle->_Thickness / 2.f;
-                    Rect.bottom += _MaxPeakStyle->_Thickness / 2.f;
+                    // Draw the light portion of exactly one LED directly.
+                    const FLOAT LED = std::min(std::floorf(PeakTop / _LEDSize), std::max(0.f, std::ceilf(_Size.height / _LEDSize) - 1.f));
+                    const FLOAT Top = LED * _LEDSize;
+
+                    Rect = D2D1::RectF(0.f, Top, _Size.width, std::min(_Size.height, Top + _State._LEDLight));
                 }
                 else
                 {
-                    if (!_State._LEDIntegralSize)
-                    {
-                        Rect.top    -= _LEDSize / 2.f;
-                        Rect.bottom += _LEDSize / 2.f;
-                    }
+                    const FLOAT Thickness = _State._LEDMode ? _LEDSize : _MaxPeakStyle->_Thickness;
+
+                    Rect = D2D1::RectF(0.f, std::max(0.f, PeakTop - Thickness / 2.f), _Size.width, std::min(_Size.height, PeakTop + Thickness / 2.f));
                 }
 
                 const FLOAT Opacity = ((_State._PeakMode == PeakMode::FadeOut) || (_State._PeakMode == PeakMode::FadingAIMP)) ? (FLOAT) _Measurement->Opacity : _MaxPeakStyle->_Opacity;
 
                 _MaxPeakStyle->_Brush->SetOpacity(Opacity);
 
-                DrawVerticalRectangle(Rect, _MaxPeakStyle);
+                if (IsIntegralLED)
+                    _DeviceContext->FillRectangle(Rect, _MaxPeakStyle->_Brush.Get());
+                else
+                    DrawVerticalRectangle(Rect, _MaxPeakStyle);
             }
 
             // Draw the foreground (RMS).
             if (_RMSStyle->IsEnabled())
             {
-                Rect.top    = _Rect.top;
-                Rect.bottom = _Rect.top + (FLOAT) _Measurement->NormalizedRMS * _Size.height;
+                const FLOAT RMS = std::clamp((FLOAT) _Measurement->NormalizedRMS, 0.f, 1.f) * _Size.height;
+
+                Rect = D2D1::RectF(0.f, 0.f, _Size.width, RMS);
 
                 DrawVerticalRectangle(Rect, _RMSStyle);
 
-                // Draw the foreground (Peak, Measurement > 0dBFS).
+                // Draw the foreground (RMS, Measurement > 0dBFS).
                 if (_RMS0dBStyle->IsEnabled() && (_Measurement->NormalizedRMS > _dBFSZeroNormalized))
                 {
-                    Rect.top    = _Rect.top + (FLOAT) _dBFSZeroNormalized * _Size.height;
-                    Rect.bottom = _Rect.top + (FLOAT) _Measurement->NormalizedRMS * _Size.height;
+                    const FLOAT dBFSZero = std::clamp((FLOAT) _dBFSZeroNormalized, 0.f, 1.f) * _Size.height;
+
+                    Rect = D2D1::RectF(0.f, dBFSZero, _Size.width, RMS);
 
                     DrawVerticalRectangle(Rect, _RMS0dBStyle);
                 }
@@ -749,17 +756,20 @@ HRESULT bar_t::CreateStaticContent() noexcept
 /// </summary>
 void bar_t::DrawHorizontalRectangle(D2D1_RECT_F & rect, const style_t * style) const noexcept
 {
-//  _DeviceContext->DrawRectangle(rect, _DebugBrush);
+//  _DeviceContext->DrawRectangle(rect, _DebugBrush.Get());
 
     if (_State._LEDMode)
     {
         if (_State._LEDIntegralSize)
         {
-            rect.left  = std::max(_Rect.left,  _Rect.left + std::floorf((rect.left  - _Rect.left) / _LEDSize) * _LEDSize);
-            rect.right = std::min(_Rect.right, _Rect.left + std::ceilf ((rect.right - _Rect.left) / _LEDSize) * _LEDSize);
+            // Compensate for floating-point error at an exact LED boundary.
+            const FLOAT Epsilon = std::max(1e-4f, _LEDSize * 1e-4f);
+
+            rect.left  = std::max(0.f,         std::floorf((rect.left  + Epsilon) / _LEDSize) * _LEDSize);
+            rect.right = std::min(_Size.width, std::ceilf ((rect.right - Epsilon) / _LEDSize) * _LEDSize);
         }
 
-        const D2D1_RECT_F Src = { 0.f, _Rect.top, rect.right - rect.left, _Rect.bottom };
+        const D2D1_RECT_F Src = { rect.left, 0.f, rect.right, _Size.height };
 
         _DeviceContext->PushAxisAlignedClip(rect, D2D1_ANTIALIAS_MODE_ALIASED);
 
@@ -776,17 +786,20 @@ void bar_t::DrawHorizontalRectangle(D2D1_RECT_F & rect, const style_t * style) c
 /// </summary>
 void bar_t::DrawVerticalRectangle(D2D1_RECT_F & rect, const style_t * style) const noexcept
 {
-//  _DeviceContext->DrawRectangle(rect, _DebugBrush);
+//  _DeviceContext->DrawRectangle(rect, _DebugBrush.Get());
 
     if (_State._LEDMode)
     {
         if (_State._LEDIntegralSize)
         {
-            rect.top    = std::max(_Rect.top,    _Rect.top + std::floorf((rect.top    - _Rect.top) / _LEDSize) * _LEDSize);
-            rect.bottom = std::min(_Rect.bottom, _Rect.top + std::ceilf ((rect.bottom - _Rect.top) / _LEDSize) * _LEDSize);
+            // Compensate for floating-point error at an exact LED boundary.
+            const FLOAT Epsilon = std::max(1e-4f, _LEDSize * 1e-4f);
+
+            rect.top    = std::max(0.f,          std::floorf((rect.top    + Epsilon) / _LEDSize) * _LEDSize);
+            rect.bottom = std::min(_Size.height, std::ceilf ((rect.bottom - Epsilon) / _LEDSize) * _LEDSize);
         }
 
-        const D2D1_RECT_F Src = { _Rect.left, 0.f, _Rect.right, rect.bottom - rect.top };
+        const D2D1_RECT_F Src = { 0.f, rect.top, _Size.width, rect.bottom };
 
         _DeviceContext->PushAxisAlignedClip(rect, D2D1_ANTIALIAS_MODE_ALIASED);
 
@@ -827,25 +840,6 @@ void scale_t::Render() const noexcept
     _DeviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
 
     _DeviceContext->DrawImage(_StaticContent.Get());
-/*
-    _DeviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
-
-//  _DebugBrush->SetColor(D2D1::ColorF(D2D1::ColorF::Yellow)); _DeviceContext->DrawRectangle(_Rect, _DebugBrush);
-
-    _ScaleTextStyle->SetHorizontalAlignment(_TextAlignment);
-    _ScaleTextStyle->SetVerticalAlignment(_ParagraphAlignment);
-
-    for (const label_t & Label : _Labels)
-    {
-//      _DebugBrush->SetColor(D2D1::ColorF(D2D1::ColorF::Red)); _DeviceContext->DrawRectangle(Label.Rect, _DebugBrush);
-
-        if (!Label.IsHidden)
-            _DeviceContext->DrawText(Label.Text.c_str(), (UINT) Label.Text.size(), _ScaleTextStyle->_TextFormat, Label.Rect, _ScaleTextStyle->_Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_NONE);
-
-        if (!IsCenter())
-            _DeviceContext->DrawLine(Label.P1, Label.P2, _ScaleLineStyle->_Brush.Get(), _ScaleLineStyle->_Thickness);
-    }
-*/
 }
 
 /// <summary>

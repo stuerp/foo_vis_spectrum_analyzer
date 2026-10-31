@@ -212,9 +212,12 @@ void spectrogram_t::Render(ID2D1DeviceContext * deviceContext) noexcept
     {
         if (_State._IsHorizontalSpectrogram)
         {
-            _X++;
+            _X++; // In DIP, like the compatible render target and the bitmap rectangles.
 
-            if (_X > _BitmapSize.width)
+            // The right edge is exclusive. Do not leave _X equal to the width for the next
+            // frame: RenderSpectrum() would draw outside the bitmap and the wrapped image
+            // would expose the stale first column for one frame.
+            if (_X >= _BitmapSize.width)
             {
                 _X = 0.f;
 
@@ -224,9 +227,10 @@ void spectrogram_t::Render(ID2D1DeviceContext * deviceContext) noexcept
         }
         else
         {
-            _Y++;
+            _Y++; // In DIP, like the compatible render target and the bitmap rectangles.
 
-            if (_Y > _BitmapSize.height)
+            // The bottom edge is exclusive for the same reason as the right edge above.
+            if (_Y >= _BitmapSize.height)
             {
                 _Y = 0.f;
 
@@ -755,6 +759,8 @@ HRESULT spectrogram_t::CreateSizeDependentResources(ID2D1DeviceContext * deviceC
     {
         if (_BitmapRenderTarget == nullptr)
         {
+            // _BitmapSize is expressed in DIP. The compatible render target inherits the
+            // parent render target DPI and derives its physical pixel size from this DIP size.
             HRESULT hr = deviceContext->CreateCompatibleRenderTarget(_BitmapSize, _BitmapRenderTarget.GetAddressOf());
 
             if (FAILED(hr))

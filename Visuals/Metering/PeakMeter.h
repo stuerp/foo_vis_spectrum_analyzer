@@ -65,9 +65,9 @@ private:
     void Initialize() noexcept;
 
 private:
-    processor_t * _Processor;
+    processor_t * _Processor = nullptr;
 
-    uint32_t _RenderedChannels { 0 };
+    uint32_t _RenderedChannels = 0;
 
     static constexpr FLOAT _TickSize = 4.f;
 

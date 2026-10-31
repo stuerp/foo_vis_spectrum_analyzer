@@ -168,48 +168,52 @@ namespace Metering
 
         const double RMSFrameCount = (double) _RMSFrameCount;
 
+        // Normalize and smooth the RMS values. // https://skippystudio.nl/2021/07/sound-intensity-and-decibels/
         for (auto & Measurement : _PeakMeasurements)
         {
             const double MeanSquare = Measurement.RMSTotal / RMSFrameCount;
 
-            // https://skippystudio.nl/2021/07/sound-intensity-and-decibels/
             Measurement.RMS           = ToDecibel(std::sqrt(MeanSquare)) + (_State._HasRMSPlus3 ? dBCorrection : 0.0);
             Measurement.NormalizedRMS = SmoothValue(NormalizeValue(Measurement.RMS), Measurement.NormalizedRMS);
 
-            Measurement.RMSTotal = 0.0;
+            Measurement.RMSTotal = 0.;
         }
-
-        const double LeftRMS  = std::sqrt(_Left  / RMSFrameCount);
-        const double RightRMS = std::sqrt(_Right / RMSFrameCount);
 
         // Converts a signed level difference into the normalized meter range. Silence, denormalized input, and non-finite values produce the centered normalized value instead of NaN.
         const auto CalculateNormalizedDifference = [&](double Positive, double Negative) noexcept -> double
         {
                 const double Denominator = std::max(Positive, Negative);
 
-                if (!(Denominator > 0.0) || !std::isfinite(Denominator))
-                    return NormalizeLLevelValue(0.0);
+                if (!(Denominator > 0.) || !std::isfinite(Denominator))
+                    return NormalizeLLevelValue(0.);
 
                 const double Difference = (Positive - Negative) / Denominator;
 
                 if (!std::isfinite(Difference))
-                    return NormalizeLLevelValue(0.0);
+                    return NormalizeLLevelValue(0.);
 
                 return NormalizeLLevelValue(Difference);
         };
 
-        if (!std::isfinite(_Balance))
-            _Balance = 0.5;
+        {
+            const double LeftRMS  = std::sqrt(_Left  / RMSFrameCount);
+            const double RightRMS = std::sqrt(_Right / RMSFrameCount);
 
-        _Balance = SmoothValue(CalculateNormalizedDifference(RightRMS, LeftRMS), _Balance);
+            if (!std::isfinite(_Balance))
+                _Balance = 0.5;
 
-        const double MidRMS  = std::sqrt(_Mid  / RMSFrameCount);
-        const double SideRMS = std::sqrt(_Side / RMSFrameCount);
+            _Balance = SmoothValue(CalculateNormalizedDifference(RightRMS, LeftRMS), _Balance);
+        }
 
-        if (!std::isfinite(_Phase))
-            _Phase = 0.5;
+        {
+            const double MidRMS  = std::sqrt(_Mid  / RMSFrameCount);
+            const double SideRMS = std::sqrt(_Side / RMSFrameCount);
 
-        _Phase = SmoothValue(CalculateNormalizedDifference(MidRMS, SideRMS), _Phase);
+            if (!std::isfinite(_Phase))
+                _Phase = 0.5;
+
+            _Phase = SmoothValue(CalculateNormalizedDifference(MidRMS, SideRMS), _Phase);
+        }
 
         ResetRMSDependentValues();
     }
