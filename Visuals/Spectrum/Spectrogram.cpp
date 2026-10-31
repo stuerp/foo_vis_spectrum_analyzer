@@ -1,5 +1,5 @@
 
-/** $VER: Spectrogram.cpp (2026.10.29) P. Stuer - Represents a spectrum analysis as a 2D heat map **/
+/** $VER: Spectrogram.cpp (2026.10.31) P. Stuer - Represents a spectrum analysis as a 2D heat map **/
 
 #include "pch.h"
 
@@ -212,11 +212,8 @@ void spectrogram_t::Render(ID2D1DeviceContext * deviceContext) noexcept
     {
         if (_State._IsHorizontalSpectrogram)
         {
-            _X++; // In DIP, like the compatible render target and the bitmap rectangles.
+            _X++;
 
-            // The right edge is exclusive. Do not leave _X equal to the width for the next
-            // frame: RenderSpectrum() would draw outside the bitmap and the wrapped image
-            // would expose the stale first column for one frame.
             if (_X >= _BitmapSize.width)
             {
                 _X = 0.f;
@@ -227,9 +224,8 @@ void spectrogram_t::Render(ID2D1DeviceContext * deviceContext) noexcept
         }
         else
         {
-            _Y++; // In DIP, like the compatible render target and the bitmap rectangles.
+            _Y++;
 
-            // The bottom edge is exclusive for the same reason as the right edge above.
             if (_Y >= _BitmapSize.height)
             {
                 _Y = 0.f;
@@ -759,9 +755,7 @@ HRESULT spectrogram_t::CreateSizeDependentResources(ID2D1DeviceContext * deviceC
     {
         if (_BitmapRenderTarget == nullptr)
         {
-            // _BitmapSize is expressed in DIP. The compatible render target inherits the
-            // parent render target DPI and derives its physical pixel size from this DIP size.
-            HRESULT hr = deviceContext->CreateCompatibleRenderTarget(_BitmapSize, _BitmapRenderTarget.GetAddressOf());
+            HRESULT hr = deviceContext->CreateCompatibleRenderTarget(_BitmapSize, _BitmapRenderTarget.GetAddressOf()); // Bitmap size in DIPs.
 
             if (FAILED(hr))
                 return hr;
@@ -1099,6 +1093,21 @@ void spectrogram_t::Initialize() noexcept
                     Rect.y2 = Rect.y1 + _FreqTextStyle._Height;
                 }
 
+                // Keep the tick at the mapped frequency while moving the text rectangle into the viewport when a label is centered on its top or bottom edge.
+                Label.Tick = (Rect.y2 + Rect.y1) / 2.f;
+
+                if (Rect.y1 < _BitmapRect.top)
+                {
+                    Rect.y2 += _BitmapRect.top - Rect.y1;
+                    Rect.y1  = _BitmapRect.top;
+                }
+                else
+                if (Rect.y2 > _BitmapRect.bottom)
+                {
+                    Rect.y1 -= Rect.y2 - _BitmapRect.bottom;
+                    Rect.y2  = _BitmapRect.bottom;
+                }
+
                 // Left axis
                 Label.Rect1 = Rect;
 
@@ -1111,9 +1120,12 @@ void spectrogram_t::Initialize() noexcept
                 Label.Rect2.left  = _BitmapRect.right + TickSize + 1.f;
                 Label.Rect2.right = Label.Rect2.left + _FreqTextStyle._Width;
 
+                Label.IsHidden = (Label.Tick < _BitmapRect.top) || (Label.Tick > _BitmapRect.bottom);
+/*
                 Label.IsHidden = (Rect.y2 < _BitmapRect.top) || (Rect.y1 > _BitmapRect.bottom);
 
                 Label.Tick = (Label.Rect1.bottom + Label.Rect1.top) / 2.f;
+*/
             }
 
             if (_FreqLabels.size() > 2)

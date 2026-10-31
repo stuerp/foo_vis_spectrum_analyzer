@@ -96,7 +96,7 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.14.0.0-alpha3, 2026-xx-xx
+v0.14.0.0-alpha3, 2026-10-31
 
 - Changed: Refactored the whole audio processor hierarchy to facilitate maintenance, improve performance and make future expansion easier. Things may have gotten broken. Report any issues, please.
 - Improved: Decades frequency setting generates at least the requested number of frequency bands.
@@ -105,6 +105,8 @@ v0.14.0.0-alpha3, 2026-xx-xx
   - The default value is 0% which results in the old behavior.
 - Fixed: Styles that use the artwork colors were not correctly initialized at startup. (Regression)
 - Fixed: Peak Meter render bug when multiple graphs are used in the layout. It was caused by unfinished code for this use case.
+- Fixed: Spectrogram showed spectrum residue to the left and top when scrolling in high-DPI scenarios.
+- Fixed: Cosmetic error. The label of the top tick of a Y-axis of the spectrogram was cut off when the tick aligned with the top of the viewport.
 
 You can read the full history [here](docs/History.md).
 
