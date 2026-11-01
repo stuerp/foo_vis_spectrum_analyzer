@@ -10,7 +10,11 @@ Over time other visualisations were added.
 
 [![Screenshot](assets/Gallery.png?raw=true "Gallery")](docs/Gallery.md)
 
-Click the image above to view [the gallery](docs/Gallery.md).
+Click the image above to view [the gallery](docs/Gallery.md) of the visualizations.
+
+[![Screenshot](assets/EffectsGallery.png?raw=true "Effects Gallery")](docs/EffectsGallery.md)
+
+Click the image above to view [the gallery](docs/EffectsGallery.md) of the Eye Candy effects.
 
 ## Features
 
