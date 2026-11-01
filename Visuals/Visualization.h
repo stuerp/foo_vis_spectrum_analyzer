@@ -18,7 +18,7 @@ public:
 
     virtual ~visualization_t() noexcept = default;
 
-    virtual void Configure(graph_options_t * options, audio_processor_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice = nullptr, ID3D11DeviceContext * d3dDeviceContext = nullptr) noexcept = 0;
+    virtual void Configure(graph_options_t * options, audio_processor_t * analysis, bool isFirst, bool isLast) noexcept = 0;
     virtual bool UsesDirect3D() const noexcept { return false; }
 
     static std::unique_ptr<visualization_t> Create(state_t & state, render_context_t & renderContext) noexcept;

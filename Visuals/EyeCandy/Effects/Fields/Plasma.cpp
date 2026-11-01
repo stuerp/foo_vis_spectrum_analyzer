@@ -74,7 +74,7 @@ namespace Plasma
 
         // Update the pixel matrix.
         {
-            _Audio = _Analyzer.Analyze(chunk, deltaTime);
+            _Processor.Process(chunk, deltaTime);
 
             {
                 const double SpeedFactor = [&]() noexcept
@@ -148,25 +148,30 @@ namespace Plasma
             return;
 
         const double ClampedZoom = std::clamp(_Interaction.Zoom, .55, 2.2); // Prevent extreme or invalid scaling.
-        const double CoordinateScale = (2.3 - (.55 * _Audio.Bass)) / ClampedZoom;
+        const double CoordinateScale = (2.3 - (.55 * _Processor._Bass)) / ClampedZoom;
 
         work_t Work
         {
             .Time                 = time,
+
             .InverseWidth         = 1. / (double) _RasterWidth,
             .InverseHeight        = 1. / (double) _RasterHeight,
+
             .CoordinateScale      = CoordinateScale,
             .HorizontalScale      = CoordinateScale * ((double) _RasterWidth / (double) _RasterHeight),
-            .HorizontalFrequency  = 2.2 + 1.8 * _Audio.Mid,
-            .DiagonalFrequency    = 2.7 + 1.2 * _Audio.Bass,
-            .RadialFrequency      = 7.  + 3.  * _Audio.Bass,
-            .HorizontalPhase      = time * (.70 + .7 * _Audio.Treble),
-            .DiagonalPhase        = time * (.55 + _Audio.Mid),
-            .RadialPhase          = time * (1.1 + _Audio.Peak),
-            .DetailPhase          = time * .42,
-            .RipplePhase          = time * 9.,
-            .ColorPhase           = time * .12 + _Audio.Treble * 2.,
-            .BalanceOffset        = .28 * _Audio.Balance,
+
+            .HorizontalFrequency  = 2.2 + (1.8 * _Processor._Mid),
+            .DiagonalFrequency    = 2.7 + (1.2 * _Processor._Bass),
+            .RadialFrequency      = 7.  + (3.0 * _Processor._Bass),
+
+            .HorizontalPhase      = time * (0.70 + _Processor._Treble * 0.70),
+            .DiagonalPhase        = time * (0.55 + _Processor._Mid),
+            .RadialPhase          = time * (1.10 + _Processor._Peak),
+            .DetailPhase          = time *  0.42,
+            .RipplePhase          = time *  9.00,
+            .ColorPhase           = time * (0.12 + _Processor._Treble * 2.00),
+
+            .BalanceOffset        = .28 * _Processor._Balance,
             .RadialCenterX        = .65 * std::sin(time * .31),
             .RadialCenterY        = .55 * std::cos(time * .27),
             .HasImpulse           = (_Interaction.Impulse != 0.)
@@ -275,18 +280,18 @@ namespace Plasma
         const double PlasmaIntensity = Clamp(value);
 
         // Shape the loudness response independently from the analyzer. The default exponent of .5 reproduces the original square-root response.
-        const double LoudnessResponse = std::pow(Clamp(_Audio.Loudness), Colorization.LoudnessExponent);
+        const double LoudnessResponse = std::pow(Clamp(_Processor._Loudness), Colorization.LoudnessExponent);
 
         // Map plasma intensity across the theme palette, then shift its hue independently according to the energy in each frequency band.
         const double H =
             _Theme.BaseHue +
             _Theme.HueSpan   * PlasmaIntensity +
-            _Theme.BassHue   * _Audio.Bass +
-            _Theme.MidHue    * _Audio.Mid +
-            _Theme.TrebleHue * _Audio.Treble;
+            _Theme.BassHue   * _Processor._Bass +
+            _Theme.MidHue    * _Processor._Mid +
+            _Theme.TrebleHue * _Processor._Treble;
 
         // Treble can increase saturation to make high-frequency activity appear sharper and more colorful.
-        const double S = Clamp(_Theme.Saturation + (Colorization.TrebleSaturation * _Audio.Treble));
+        const double S = Clamp(_Theme.Saturation + (Colorization.TrebleSaturation * _Processor._Treble));
 
         // Shape brightness across the plasma field. With the default settings, middle intensities are brighter than either end of the palette.
         const double Frequency           = Colorization.IntensityCurveFrequency * PlasmaIntensity;
@@ -294,7 +299,7 @@ namespace Plasma
         const double IntensityBrightness = Colorization.IntensityBrightnessBase + (Colorization.IntensityBrightnessSpan * std::sin(Frequency + Phase));
 
         // Separate the continuous loudness response from short transient flashes.
-        const double AudioBrightness = Colorization.MinimumBrightness + (Colorization.LoudnessBrightness * LoudnessResponse) + (Colorization.PeakBrightness * _Audio.Peak);
+        const double AudioBrightness = Colorization.MinimumBrightness + (Colorization.LoudnessBrightness * LoudnessResponse) + (Colorization.PeakBrightness * _Processor._Peak);
 
         const double V = Clamp(_Theme.Brightness * AudioBrightness * IntensityBrightness);
 
@@ -303,9 +308,9 @@ namespace Plasma
         HSVToRGB(H, S, V, R, G, B);
 
         // Apply frequency-specific RGB accents after HSV conversion.
-        R = Clamp(R + _Theme.BassRed    * _Audio.Bass);
-        G = Clamp(G + _Theme.MidGreen   * _Audio.Mid);
-        B = Clamp(B + _Theme.TrebleBlue * _Audio.Treble);
+        R = Clamp(R + _Theme.BassRed    * _Processor._Bass);
+        G = Clamp(G + _Theme.MidGreen   * _Processor._Mid);
+        B = Clamp(B + _Theme.TrebleBlue * _Processor._Treble);
 
         const double BrightnessFactor = [&]() noexcept
         {

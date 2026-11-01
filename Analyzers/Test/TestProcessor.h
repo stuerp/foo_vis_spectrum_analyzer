@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "AudioProcessor.h"
+#include "BaseProcessor.h"
 #include "State.h"
 
 #include <sdk/audio_chunk.h>

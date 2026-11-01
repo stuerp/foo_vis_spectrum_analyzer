@@ -31,7 +31,7 @@ void d3d_tester_t::Move(const D2D1_RECT_F & rect) noexcept
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void d3d_tester_t::Configure(graph_options_t * options, audio_processor_t * processor, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept
+void d3d_tester_t::Configure(graph_options_t * options, audio_processor_t * processor, bool isFirst, bool isLast) noexcept
 {
     _GraphOptions = options;
     _Processor    = (processor_t *) processor;

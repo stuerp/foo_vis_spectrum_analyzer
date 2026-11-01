@@ -74,7 +74,7 @@ namespace Metaballs
 
         // Update the pixel matrix.
         {
-            _Audio = _Analyzer.Analyze(chunk, deltaTime);
+            _Processor.Process(chunk, deltaTime);
 
             {
                 const double SpeedFactor = [&]() noexcept
@@ -154,10 +154,12 @@ namespace Metaballs
             return;
 
         const double Zoom     = std::clamp(_Interaction.Zoom, .55, 2.2);
-        const double Bass     = Clamp(_Audio.Bass);
-        const double Mid      = Clamp(_Audio.Mid);
-        const double Treble   = Clamp(_Audio.Treble);
-        const double Loudness = Clamp(_Audio.Loudness);
+
+        const double Bass     = Clamp(_Processor._Bass);
+        const double Mid      = Clamp(_Processor._Mid);
+        const double Treble   = Clamp(_Processor._Treble);
+
+        const double Loudness = Clamp(_Processor._Loudness);
 
         work_t Work {};
 
@@ -183,7 +185,7 @@ namespace Metaballs
             const double Phase     = time * Speed * Direction + Index * 1.713;
             const double Travel    = ((i < 3) ? .105 : ((i < 5) ? .145 : .190)) * (.65 + .35 * Band);
 
-            Work.BlobX[i] = BaseX[i] + _Interaction.X * .18 + _Audio.Balance * .08 + std::cos(Phase) * Travel;
+            Work.BlobX[i] = BaseX[i] + _Interaction.X * .18 + _Processor._Balance * .08 + std::cos(Phase) * Travel;
             Work.BlobY[i] = BaseY[i] + _Interaction.Y * .18 + std::sin(Phase * (1.13 + .03 * Index)) * Travel * .72;
 
             const double Expansion = (i < 3) ? (.060 * Bass) : ((i < 5) ? (.042 * Mid) : (.025 * Treble));
@@ -238,7 +240,7 @@ namespace Metaballs
         edge     = Clamp(edge);
         glow     = Clamp(glow);
 
-        const double H = _Theme.BaseHue + (_Theme.HueSpan * (.12 + .72 * interior)) + (_Theme.BassHue * _Audio.Bass) + (_Theme.MidHue * _Audio.Mid) + (_Theme.TrebleHue * _Audio.Treble);
+        const double H = _Theme.BaseHue + (_Theme.HueSpan * (.12 + .72 * interior)) + (_Theme.BassHue * _Processor._Bass) + (_Theme.MidHue * _Processor._Mid) + (_Theme.TrebleHue * _Processor._Treble);
         const double S = Clamp(_Theme.Saturation + .08 - .22 * edge);
         const double V = Clamp(glow + surface * (_Theme.Brightness * (.36 + .50 * interior)) + .28 * edge);
 
@@ -246,9 +248,9 @@ namespace Metaballs
 
         HSVToRGB(H, S, V, R, G, B);
 
-        R = Clamp(R + surface * _Theme.BassRed    * _Audio.Bass   + .12 * edge);
-        G = Clamp(G + surface * _Theme.MidGreen   * _Audio.Mid    + .15 * edge);
-        B = Clamp(B + surface * _Theme.TrebleBlue * _Audio.Treble + .20 * edge);
+        R = Clamp(R + surface * _Theme.BassRed    * _Processor._Bass   + .12 * edge);
+        G = Clamp(G + surface * _Theme.MidGreen   * _Processor._Mid    + .15 * edge);
+        B = Clamp(B + surface * _Theme.TrebleBlue * _Processor._Treble + .20 * edge);
 
         const double BrightnessFactor = [&]() noexcept
         {

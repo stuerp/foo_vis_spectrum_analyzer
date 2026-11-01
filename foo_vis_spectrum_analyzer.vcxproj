@@ -224,7 +224,7 @@
     <ClInclude Include="Analyzers\Metering\MeteringProcessor.h" />
     <ClInclude Include="Analyzers\Oscilloscope\OscilloscopeProcessor.h" />
     <ClInclude Include="Analyzers\Spectrum\AnalogStyleAnalyzer.h" />
-    <ClInclude Include="Analyzers\AudioProcessor.h" />
+    <ClInclude Include="Analyzers\BaseProcessor.h" />
     <ClInclude Include="Analyzers\Spectrum\CompositeFFTAnalyzer.h" />
     <ClInclude Include="Analyzers\Goniometer\CrossoverFilter.h" />
     <ClInclude Include="Analyzers\Oscilloscope\Downmixer.h" />
@@ -235,6 +235,9 @@
     <ClInclude Include="Analyzers\Test\TestProcessor.h" />
     <ClInclude Include="Configuration\CommonPage.h" />
     <ClInclude Include="Configuration\CommonPageLayout.h" />
+    <ClInclude Include="Visuals\EyeCandy\Effects\EffectProcessor.h" />
+    <ClInclude Include="Visuals\EyeCandy\Effects\Technical\Monitor.h" />
+    <ClInclude Include="Visuals\EyeCandy\Effects\Technical\Waveform.h" />
     <ClInclude Include="Visuals\Oscilloscope\AmplitudeScaler.h" />
     <ClInclude Include="Configuration\DialogParameters.h" />
     <ClInclude Include="Configuration\EyeCandyPage.h" />
@@ -290,7 +293,6 @@
     <ClInclude Include="Visuals\EyeCandy\Effects\Trails\LissajousTrails.h" />
     <ClInclude Include="Visuals\EyeCandy\Effects\Trails\RibbonFlow.h" />
     <ClInclude Include="Visuals\EyeCandy\Effects\Trails\Spirograph.h" />
-    <ClInclude Include="Visuals\EyeCandy\Effects\Trails\Waveform.h" />
     <ClInclude Include="Visuals\Metering\BalanceMeter.h" />
     <ClInclude Include="Visuals\EyeCandy\EyeCandy.h" />
     <ClInclude Include="Visuals\Oscilloscope\Oscilloscope.h" />
@@ -359,7 +361,7 @@
     <ClCompile Include="Analyzers\Metering\MeteringProcessor.cpp" />
     <ClCompile Include="Analyzers\Oscilloscope\OscilloscopeProcessor.cpp" />
     <ClCompile Include="Analyzers\Spectrum\AnalogStyleAnalyzer.cpp" />
-    <ClCompile Include="Analyzers\AudioProcessor.cpp" />
+    <ClCompile Include="Analyzers\BaseProcessor.cpp" />
     <ClCompile Include="Analyzers\Spectrum\CompositeFFTAnalyzer.cpp" />
     <ClCompile Include="Analyzers\Spectrum\CQTAnalyzer.cpp" />
     <ClCompile Include="Analyzers\Goniometer\CrossoverFilter.cpp" />
@@ -397,6 +399,7 @@
     <ClCompile Include="Configuration\MenuListBox.cpp" />
     <ClCompile Include="Tests.cpp" />
     <ClCompile Include="UIElementToolTips.cpp" />
+    <ClCompile Include="Visuals\EyeCandy\Effects\EffectProcessor.cpp" />
     <ClCompile Include="Visuals\EyeCandy\Effects\DynamicSystems\AizawaAttractor.cpp" />
     <ClCompile Include="Visuals\EyeCandy\Effects\DynamicSystems\CliffordAttractor.cpp" />
     <ClCompile Include="Visuals\EyeCandy\Effects\DynamicSystems\DeJongAttractor.cpp" />
@@ -420,11 +423,12 @@
     <ClCompile Include="Visuals\EyeCandy\Effects\ParticleSystems\Swarm.cpp" />
     <ClCompile Include="Visuals\EyeCandy\Effects\Retro\NeonTunnel.cpp" />
     <ClCompile Include="Visuals\EyeCandy\Effects\Retro\VectorGrid.cpp" />
+    <ClCompile Include="Visuals\EyeCandy\Effects\Technical\Monitor.cpp" />
+    <ClCompile Include="Visuals\EyeCandy\Effects\Technical\Waveform.cpp" />
     <ClCompile Include="Visuals\EyeCandy\Effects\ThreeD.cpp" />
     <ClCompile Include="Visuals\EyeCandy\Effects\Trails\LissajousTrails.cpp" />
     <ClCompile Include="Visuals\EyeCandy\Effects\Trails\RibbonFlow.cpp" />
     <ClCompile Include="Visuals\EyeCandy\Effects\Trails\Spirograph.cpp" />
-    <ClCompile Include="Visuals\EyeCandy\Effects\Trails\Waveform.cpp" />
     <ClCompile Include="Visuals\RenderContext.cpp" />
     <ClCompile Include="Visuals\Visualization.cpp" />
     <ClCompile Include="Visuals\BitMeter\BitMeter.cpp" />
@@ -518,7 +522,7 @@
     <None Include="Build-FB2KComponent.ps1" />
     <None Include="Analyzers\Spectrum\FFT.h" />
     <None Include="cpp.hint" />
-    <None Include="docs\Effects Gallery.md" />
+    <None Include="docs\EffectsGallery.md" />
     <None Include="docs\Gallery.md" />
     <None Include="docs\History.md" />
     <None Include="docs\README.md" />

@@ -15,7 +15,7 @@ namespace Spectrum
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void y_axis_t::Configure(graph_options_t * options, audio_processor_t * processor, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept
+void y_axis_t::Configure(graph_options_t * options, audio_processor_t * processor, bool isFirst, bool isLast) noexcept
 {
     _GraphOptions = options;
     _Processor    = (processor_t *) processor;

@@ -120,10 +120,6 @@ namespace AudioGalaxy
         double _StarDeltaTime        = 0.;
         double _ForwardSpeed         = 0.;
 
-        double _BassState            = 0.;
-        double _DCState              = 0.;
-        double _MidState             = 0.;
-
         double _PreviousPeak         = 0.;
         double _PreviousTreble       = 0.;
 

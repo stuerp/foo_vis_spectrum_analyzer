@@ -1,9 +1,10 @@
 
-/** $VER: FieldEffect.h (2026.10.23) - Base class for a field effect */
+/** $VER: FieldEffect.h (2026.11.01) - Base class for a field effect */
 
 #pragma once
 
 #include "Effect.h"
+#include "EffectProcessor.h"
 
 #include <d2d1.h>
 #include <wrl/client.h>
@@ -13,29 +14,6 @@ namespace Field
     using namespace EyeCandy;
 
     using Microsoft::WRL::ComPtr;
-
-    struct audio_t
-    {
-        double Loudness = 0.;
-        double Bass     = 0.;
-        double Mid      = 0.;
-        double Treble   = 0.;
-        double Balance  = 0.;
-        double Peak     = 0.;
-    };
-
-    class analyzer_t
-    {
-    public:
-        audio_t Analyze(const audio_chunk & chunk, double deltaTime) noexcept;
-        void Decay(double deltaTime) noexcept;
-
-    private:
-        audio_t _Audio {};
-
-        double _LowState  = 0.;
-        double _HighState = 0.;
-    };
 
     struct theme_t : EyeCandy::theme_t
     {
@@ -419,13 +397,12 @@ namespace Field
         void DeleteDeviceDependentResources() noexcept;
 
     protected:
-        analyzer_t _Analyzer;
-
-        audio_t _Audio {};
+        processor_t _Processor;
 
     protected:
         static constexpr size_t BytesPerPixel = sizeof(uint32_t);
 
+        // The raster size can be different than the render target size.
         UINT32 _RasterWidth  = 0;
         UINT32 _RasterHeight = 0;
 

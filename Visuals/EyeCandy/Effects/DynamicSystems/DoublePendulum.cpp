@@ -98,8 +98,8 @@ namespace DoublePendulum
         _SmoothedPeak        = ExponentialSmoothing(_SmoothedPeak,        _Peak,        deltaTime, (_Peak > _SmoothedPeak) ? 22. : 5.);
         _SmoothedRMS         = ExponentialSmoothing(_SmoothedRMS,         _RMS,         deltaTime, (_RMS  > _SmoothedRMS)  ? 16. : 4.);
 
-        _SmoothedWidth       = ExponentialSmoothing(_SmoothedWidth,       _StereoWidth, deltaTime, 5.5);
-        _SmoothedCorrelation = ExponentialSmoothing(_SmoothedCorrelation, _Correlation, deltaTime, 4.);
+        _SmoothedStereoWidth = ExponentialSmoothing(_SmoothedStereoWidth, _StereoWidth, deltaTime, 5.5);
+        _SmoothedCorrelation = ExponentialSmoothing(_SmoothedCorrelation, _Correlation, deltaTime, 4.0);
 
         UpdateCurveTheme(deltaTime);
     }
@@ -111,7 +111,7 @@ namespace DoublePendulum
     {
         const double Peak  = Clamp(_SmoothedPeak);
         const double RMS   = Clamp(_SmoothedRMS);
-        const double Width = Clamp(_SmoothedWidth);
+        const double Width = Clamp(_SmoothedStereoWidth);
         const double Phase = Clamp(_PhaseEnergy);
 
         _AudioOrbit = ExponentialSmoothing(_AudioOrbit, Width * 0.24,                   deltaTime, 3.5);
@@ -173,7 +173,7 @@ namespace DoublePendulum
             .PointCount = PointCount,
             .Gravity    = 9.81   + (_SmoothedPeak * 0.75),
             .Length1    = 1.,
-            .Length2    = 0.92   + (_SmoothedWidth * 0.025),
+            .Length2    = 0.92   + (_SmoothedStereoWidth * 0.025),
             .Mass1      = 1.,
             .Mass2      = 1.     + (_PhaseEnergy * 0.08),
             .Damping    = 0.0015 + (_SmoothedRMS * 0.0015),

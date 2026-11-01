@@ -116,16 +116,8 @@ namespace Starfield
 
         std::atomic<size_t> _NextStar { 0 };
 
-        double _StarDeltaTime = 0.;
-        double _ForwardSpeed  = 0.;
-
-        double _BassState = 0.;
-        double _DCState   = 0.;
-        double _MidState  = 0.;
-
-        double _PreviousBass         = 0.;
-        double _PreviousMid          = 0.;
-        double _MidDirectionCooldown = 0.;
+        double _StarDeltaTime        = 0.;
+        double _ForwardSpeed         = 0.;
 
         double _CameraRollVelocity   = 0.;
         double _CameraRollDirection  = 1.;
@@ -142,6 +134,11 @@ namespace Starfield
         static constexpr double HVerticalVanishingPointRange  = .25; // 25% of the viewport height.
 
         D2D1_POINT_2F _Center {};
+
+    private:
+        double _PreviousBass         = 0.;
+        double _PreviousMid          = 0.;
+        double _MidDirectionCooldown = 0.;
 
     private:
         inline static constexpr std::array<float, 10> ThemeHues =

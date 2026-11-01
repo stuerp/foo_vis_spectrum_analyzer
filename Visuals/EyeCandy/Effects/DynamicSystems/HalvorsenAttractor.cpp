@@ -107,7 +107,7 @@ namespace HalvorsenAttractor
         _SmoothedPeak        = ExponentialSmoothing(_SmoothedPeak,        _Peak,        deltaTime, (_Peak > _SmoothedPeak) ? 22. : 5.);
         _SmoothedRMS         = ExponentialSmoothing(_SmoothedRMS,         _RMS,         deltaTime, (_RMS  > _SmoothedRMS)  ? 16. : 4.);
 
-        _SmoothedWidth       = ExponentialSmoothing(_SmoothedWidth,       _StereoWidth, deltaTime, 5.5);
+        _SmoothedStereoWidth = ExponentialSmoothing(_SmoothedStereoWidth, _StereoWidth, deltaTime, 5.5);
         _SmoothedCorrelation = ExponentialSmoothing(_SmoothedCorrelation, _Correlation, deltaTime, 4.0);
 
         UpdateCurveTheme(deltaTime);
@@ -267,7 +267,7 @@ namespace HalvorsenAttractor
     {
         const double Peak  = Clamp(_SmoothedPeak);
         const double RMS   = Clamp(_SmoothedRMS);
-        const double Width = Clamp(_SmoothedWidth);
+        const double Width = Clamp(_SmoothedStereoWidth);
         const double Phase = Clamp(_PhaseEnergy);
 
         _AudioOrbit = ExponentialSmoothing(_AudioOrbit, Width * 0.34,                    deltaTime, 3.5);

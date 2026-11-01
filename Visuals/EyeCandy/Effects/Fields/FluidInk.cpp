@@ -72,7 +72,7 @@ namespace FluidInk
 
         // Update the pixel matrix.
         {
-            _Audio = _Analyzer.Analyze(chunk, deltaTime);
+            _Processor.Process(chunk, deltaTime);
 
             {
                 const double SpeedFactor = [&]() noexcept
@@ -165,24 +165,24 @@ namespace FluidInk
             return;
 
         const double ClampedZoom = std::clamp(_Interaction.Zoom, .55, 2.2); // Prevent extreme or invalid scaling.
-        const double Transient   = Clamp(std::max(0., _Audio.Peak - .42) * 1.75 + std::abs(_Interaction.Impulse));
+        const double Transient   = Clamp(std::max(0., _Processor._Peak - .42) * 1.75 + std::abs(_Interaction.Impulse));
 
         work_t Work
         {
             .Time            = time,
             .InverseWidth    = 1. / (double) _RasterWidth,
             .InverseHeight   = 1. / (double) _RasterHeight,
-            .CoordinateScale = (1.12 + (.20 * _Audio.Bass)) / ClampedZoom,
+            .CoordinateScale = (1.12 + (.20 * _Processor._Bass)) / ClampedZoom,
             .HorizontalScale = (double) _RasterWidth / std::max(1., (double) _RasterHeight),
-            .FlowSpeed       = .18 + (.72 * _Audio.Loudness),
-            .BassPush        = .18 + (1.75 * _Audio.Bass),
-            .MidCurl         = .28 + (1.45 * _Audio.Mid),
-            .TrebleDetail    = .12 + (1.35 * _Audio.Treble),
+            .FlowSpeed       = .18 + (.72 * _Processor._Loudness),
+            .BassPush        = .18 + (1.75 * _Processor._Bass),
+            .MidCurl         = .28 + (1.45 * _Processor._Mid),
+            .TrebleDetail    = .12 + (1.35 * _Processor._Treble),
             .TransientForce  = Transient,
-            .ForcePositionX  = .48 * std::sin(time * .31 + _Audio.Balance * 2.1),
-            .ForcePositionY  = .34 * std::cos(time * .23 - _Audio.Balance * 1.4),
-            .ColorPhase      = time * (.09 + (.22 * _Audio.Treble)),
-            .BalanceOffset   = .24 * _Audio.Balance,
+            .ForcePositionX  = .48 * std::sin(time * .31 + _Processor._Balance * 2.1),
+            .ForcePositionY  = .34 * std::cos(time * .23 - _Processor._Balance * 1.4),
+            .ColorPhase      = time * (.09 + (.22 * _Processor._Treble)),
+            .BalanceOffset   = .24 * _Processor._Balance,
             .HasImpulse      = (_Interaction.Impulse != 0.)
         };
 
@@ -219,11 +219,11 @@ namespace FluidInk
         const double Stream    = Clamp(stream);
         const double Highlight = Clamp(highlight);
 
-        const double H = _Theme.BaseHue + (_Theme.HueSpan * (.12 + (.88 * Stream))) + (_Theme.BassHue * _Audio.Bass) + (_Theme.MidHue * _Audio.Mid) + (_Theme.TrebleHue * _Audio.Treble);
+        const double H = _Theme.BaseHue + (_Theme.HueSpan * (.12 + (.88 * Stream))) + (_Theme.BassHue * _Processor._Bass) + (_Theme.MidHue * _Processor._Mid) + (_Theme.TrebleHue * _Processor._Treble);
 
         const double S = Clamp((_Theme.Saturation * (.74 + (.24 * Density))) + (.12 * Stream));
 
-        const double Ambient = .035 + (.22 * std::pow(Clamp(_Audio.Loudness), .55));
+        const double Ambient = .035 + (.22 * std::pow(Clamp(_Processor._Loudness), .55));
 
         const double V = Clamp(Ambient + (_Theme.Brightness * (.58 * Density + .34 * Highlight)));
 
@@ -231,9 +231,9 @@ namespace FluidInk
 
         HSVToRGB(H, S, V, R, G, B);
 
-        R = Clamp(R + (_Theme.BassRed    * _Audio.Bass)   + (.10 * Highlight));
-        G = Clamp(G + (_Theme.MidGreen   * _Audio.Mid)    + (.07 * Highlight));
-        B = Clamp(B + (_Theme.TrebleBlue * _Audio.Treble) + (.14 * Highlight));
+        R = Clamp(R + (_Theme.BassRed    * _Processor._Bass)   + (.10 * Highlight));
+        G = Clamp(G + (_Theme.MidGreen   * _Processor._Mid)    + (.07 * Highlight));
+        B = Clamp(B + (_Theme.TrebleBlue * _Processor._Treble) + (.14 * Highlight));
 
         const double BrightnessFactor = [&]() noexcept
         {

@@ -153,7 +153,7 @@ namespace DynamicSystem
         const double AntiPhase = 0.5 * (1. - _SmoothedCorrelation);
 
         const auto H = (float) Fraction(Phase + (_AnimationTime * 0.018) + (AntiPhase * 0.12));
-        const auto S = (float)      Clamp(0.80 + (_SmoothedWidth * 0.08));
+        const auto S = (float)      Clamp(0.80 + (_SmoothedStereoWidth * 0.08));
         const auto V = (float) std::clamp(0.70 + (_SmoothedRMS   * 1.20) + (_SmoothedPeak * 0.18), 0.70, 1.); // Brightness
 
         return HSVToColor(H, S, V);

@@ -16,24 +16,24 @@
 /// <summary>
 /// Configures this instance.
 /// </summary>
-void graph_t::Configure(graph_options_t * graphOptions, bool isFirst, bool isLast) noexcept
+void graph_t::Configure(graph_options_t * options, bool isFirst, bool isLast) noexcept
 {
-    _GraphOptions = graphOptions;
+    _GraphOptions = options;
     _IsFirst = isFirst;
     _IsLast = isLast;
 
-    _Description = graphOptions->_Description;
+    _Description = options->_Description;
 
     // Configure the visualization.
     _Visualization.reset();
 
     _Processor = audio_processor_t::Create(_State);
 
-    _Processor->Configure(graphOptions);
+    _Processor->Configure(options);
 
     _Visualization = visualization_t::Create(_State, _RenderContext);
 
-    _Visualization->Configure(graphOptions, _Processor.get(), _IsFirst, _IsLast, _RenderContext._D3DDevice, _RenderContext._D3DDeviceContext);
+    _Visualization->Configure(options, _Processor.get(), _IsFirst, _IsLast);
 }
 
 /// <summary>

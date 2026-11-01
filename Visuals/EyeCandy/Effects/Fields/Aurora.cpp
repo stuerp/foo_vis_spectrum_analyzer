@@ -72,7 +72,7 @@ namespace Aurora
 
         // Update the pixel matrix.
         {
-            _Audio = _Analyzer.Analyze(chunk, deltaTime);
+            _Processor.Process(chunk, deltaTime);
 
             {
                 const double SpeedFactor = [&]() noexcept
@@ -167,9 +167,11 @@ namespace Aurora
             return;
 
         const double ClampedZoom = std::clamp(_Interaction.Zoom, .55, 2.2); // Prevent extreme or invalid scaling.
-        const double LowEnergy   = Clamp((_Audio.Bass   * .82) + (_Audio.Loudness * .18));
-        const double MidEnergy   = Clamp((_Audio.Mid    * .84) + (_Audio.Loudness * .16));
-        const double HighEnergy  = Clamp((_Audio.Treble * .88) + (_Audio.Peak     * .12));
+
+        const double LowEnergy   = Clamp((_Processor._Bass   * .82) + (_Processor._Loudness * .18));
+        const double MidEnergy   = Clamp((_Processor._Mid    * .84) + (_Processor._Loudness * .16));
+        const double HighEnergy  = Clamp((_Processor._Treble * .88) + (_Processor._Peak     * .12));
+
         const double BroadEnergy = Clamp((LowEnergy + MidEnergy + HighEnergy) / 3.);
 
         work_t Work
@@ -186,7 +188,7 @@ namespace Aurora
             .MidEnergy     = MidEnergy,
             .HighEnergy    = HighEnergy,
             .BroadEnergy   = BroadEnergy,
-            .BalanceOffset = .16 * _Audio.Balance,
+            .BalanceOffset = .16 * _Processor._Balance,
             .Horizon       = .80 - (.05 * LowEnergy),
             .HasImpulse    = (_Interaction.Impulse != 0.)
         };
@@ -227,13 +229,13 @@ namespace Aurora
         const double H =
             _Theme.BaseHue +
            (_Theme.HueSpan   * ((Fold * .72) + (Height * .18))) +
-           (_Theme.BassHue   * _Audio.Bass) +
-           (_Theme.MidHue    * _Audio.Mid) +
-           (_Theme.TrebleHue * _Audio.Treble);
+           (_Theme.BassHue   * _Processor._Bass) +
+           (_Theme.MidHue    * _Processor._Mid) +
+           (_Theme.TrebleHue * _Processor._Treble);
 
-        const double S = Clamp((_Theme.Saturation * .78) + (.14 * Fold) + (.08 * _Audio.Treble));
+        const double S = Clamp((_Theme.Saturation * .78) + (.14 * Fold) + (.08 * _Processor._Treble));
 
-        const double Ambient = .012 + (.055 * std::pow(Clamp(_Audio.Loudness), .6));
+        const double Ambient = .012 + (.055 * std::pow(Clamp(_Processor._Loudness), .6));
 
         const double V = Clamp(Ambient + (_Theme.Brightness * Intensity * (.56 + (.44 * Fold))));
 
@@ -241,9 +243,9 @@ namespace Aurora
 
         HSVToRGB(H, S, V, R, G, B);
 
-        R = Clamp(R + (_Theme.BassRed    * _Audio.Bass)   + (.06 * Fold));
-        G = Clamp(G + (_Theme.MidGreen   * _Audio.Mid)    + (.14 * Intensity));
-        B = Clamp(B + (_Theme.TrebleBlue * _Audio.Treble) + (.10 * Fold));
+        R = Clamp(R + (_Theme.BassRed    * _Processor._Bass)   + (.06 * Fold));
+        G = Clamp(G + (_Theme.MidGreen   * _Processor._Mid)    + (.14 * Intensity));
+        B = Clamp(B + (_Theme.TrebleBlue * _Processor._Treble) + (.10 * Fold));
 
         const double BrightnessFactor = [&]() noexcept
         {

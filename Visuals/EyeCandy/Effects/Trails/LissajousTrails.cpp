@@ -254,8 +254,8 @@ namespace LissajousTrails
         _SmoothedPeak        = ExponentialSmoothing(_SmoothedPeak,        _Peak,        deltaTime, (_Peak > _SmoothedPeak) ? 22. : 5.);
         _SmoothedRMS         = ExponentialSmoothing(_SmoothedRMS,         _RMS,         deltaTime, (_RMS > _SmoothedRMS)   ? 16. : 4.);
 
-        _SmoothedWidth       = ExponentialSmoothing(_SmoothedWidth,       _StereoWidth, deltaTime, 5.5f);
-        _SmoothedCorrelation = ExponentialSmoothing(_SmoothedCorrelation, _Correlation, deltaTime, 4.0f);
+        _SmoothedStereoWidth = ExponentialSmoothing(_SmoothedStereoWidth, _StereoWidth, deltaTime, 5.5);
+        _SmoothedCorrelation = ExponentialSmoothing(_SmoothedCorrelation, _Correlation, deltaTime, 4.0);
     }
 
     /// <summary>
@@ -272,7 +272,7 @@ namespace LissajousTrails
         }
 
         const double BaseRotation     = -Pi * 0.25;
-        const double AnimatedRotation = 0.055 * std::sin(_AnimationTime * 0.37) * Clamp(_SmoothedWidth);
+        const double AnimatedRotation = 0.055 * std::sin(_AnimationTime * 0.37) * Clamp(_SmoothedStereoWidth);
 
         const field_t Field
         {

@@ -122,67 +122,75 @@ namespace Starfield
             return;
 
         const audio_sample * Frame = chunk.get_data() + (FrameIndex * ChannelCount);
-        const audio_sample * const End = Frame + (MaxFrames * ChannelCount);
+        const audio_sample * const EndFrame = Frame + (MaxFrames * ChannelCount);
 
         // Initialize the energy accumulators.
-        double Sum     = 0.;
-        double SumBass = 0.;
-        double SumMid  = 0.;
+        double Sum     = 0.; // Full-audio band
+
+        double SumBass = 0.; // Bass
+        double SumMid  = 0.; // Mid
 
         // Two cascaded one-pole filters create a lightweight low-frequency detector. The first follows content below approximately 180 Hz.
         // Subtracting the slower 35 Hz follower rejects DC and subsonic content.
         {
             // Configure the coefficients. Generic formula: coefficient = e^(-2π × cutoff / sample rate).
             // A coefficient close to 1 means that the filter changes slowly and remembers more of its previous state.
-            // _BassState and _DCState track the configured frequencies.
-            const double DCCoefficient   = std::exp(-TwoPi *   35.0 / (double) SampleRate);
-            const double BassCoefficient = std::exp(-TwoPi *  180.0 / (double) SampleRate);
-            const double MidCoefficient  = std::exp(-TwoPi * 2000.0 / (double) SampleRate);
+            // _BassState and _SubBassState track the configured frequencies.
+            const double SubBassCoefficient = std::exp(-TwoPi * SubBassCutoff / (double) SampleRate);
+            const double BassCoefficient    = std::exp(-TwoPi * BassCutoff    / (double) SampleRate);
+            const double MidCoefficient     = std::exp(-TwoPi * MidCutoff     / (double) SampleRate);
 
             const double ChannelScale = 1. / (double) ChannelCount;
 
-            while (Frame < End)
+            // Process all frames in the chunk.
+            while (Frame < EndFrame)
             {
                 double Mono = 0.;
 
-                const audio_sample * Channel = Frame;
-                const audio_sample * const ChannelEnd = Frame + ChannelCount;
+                // Process all samples in the frame.
+                {
+                    const audio_sample * Channel = Frame;
+                    const audio_sample * const ChannelEnd = Frame + ChannelCount;
 
-                while (Channel < ChannelEnd)
-                    Mono += *Channel++;
+                    while (Channel < ChannelEnd)
+                        Mono += *Channel++;
+                }
 
-                const double Sample = ClampAudio(Mono * ChannelScale);
+                Mono = ClampAudio(Mono * ChannelScale);
 
-                _Peak = std::max(_Peak, std::abs(Sample));
+                // Calculate peak level.
+                _Peak = std::max(_Peak, std::abs(Mono));
 
-                Sum += Sample * Sample;
+                // Accumulate the full-band RMS energy.
+                Sum += Mono * Mono;
 
-                _BassState = (1.0 - BassCoefficient) * Sample + BassCoefficient * _BassState;
-                _DCState   = (1.0 - DCCoefficient) * _BassState + DCCoefficient * _DCState;
+                // Split the mono signal into broad frequency bands.
+                _BassState    = (1. - BassCoefficient)    * Mono       + (BassCoefficient    * _BassState);
+                _SubBassState = (1. - SubBassCoefficient) * _BassState + (SubBassCoefficient * _SubBassState);
+                _MidState     = (1. - MidCoefficient)     * Mono       + (MidCoefficient     * _MidState);
 
-                const double Bass = _BassState - _DCState;
+                // Derive bass and mid.
+                const double Bass = _BassState - _SubBassState;
+                const double Mid  = _MidState - _BassState;
 
+                // Accumulate the energy for each band.
                 SumBass += Bass * Bass;
+                SumMid  += Mid * Mid;
 
-                _MidState = (1.0 - MidCoefficient) * Sample + MidCoefficient * _MidState;
-
-                const double Mid = _MidState - _BassState;
-
-                SumMid += Mid * Mid;
-
+                // Move to the next frame.
                 Frame += ChannelCount;
             }
         }
 
-        const double CountScale = 1. / (double) MaxFrames;
+        const double FramesScale = 1. / (double) MaxFrames;
 
-        _RMS        = std::sqrt(Sum     * CountScale);
-        _BassEnergy = std::sqrt(SumBass * CountScale);
-        _MidEnergy  = std::sqrt(SumMid  * CountScale);
+        _RMS        = std::sqrt(Sum     * FramesScale);
+        _BassEnergy = std::sqrt(SumBass * FramesScale);
+        _MidEnergy  = std::sqrt(SumMid  * FramesScale);
 
-        // Compress the bass and mid energy into ranges useful for visualization.
-        _BassEnergy = Clamp(std::log1p(_BassEnergy * 36.) / std::log1p(36.));
-        _MidEnergy  = Clamp(std::log1p(_MidEnergy  * 18.) / std::log1p(18.));
+        // Compress the bass and mid energy nonlinear into ranges useful for visualization.
+        _BassEnergy = Clamp(std::log1p(_BassEnergy * 36.) / std::log1p(36.)); // Gain 36
+        _MidEnergy  = Clamp(std::log1p(_MidEnergy  * 18.) / std::log1p(18.)); // Gain 18
 
         _HasAudio = (_Peak > 1.0e-5) || (_RMS > 1.0e-6);
     }
@@ -389,7 +397,7 @@ namespace Starfield
         Projection.LensOffsetY = 0.;
 
         _BassState = 0.;
-        _DCState   = 0.;
+        _SubBassState   = 0.;
         _MidState  = 0.;
 
         _MidEnergy = 0.;

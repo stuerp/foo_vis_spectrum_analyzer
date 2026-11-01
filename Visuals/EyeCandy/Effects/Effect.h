@@ -19,6 +19,7 @@ using Microsoft::WRL::ComPtr;
 #include <array>
 #include <condition_variable>
 #include <memory>
+#include <numbers>
 #include <string>
 #include <thread>
 
@@ -31,6 +32,14 @@ namespace EyeCandy
     constexpr double Pi = std::numbers::pi_v<double>;
     constexpr double TwoPi = 2. * Pi;
     constexpr double Epsilon = std::numeric_limits<double>::epsilon();
+
+    constexpr double BassFrequency   =  250.; // 16 to 250 Hz (C0 to C4), https://en.wikipedia.org/wiki/Bass_(sound)
+    constexpr double TrebleFrequency = 6000.; // 6 to 20 kHz, https://en.wikipedia.org/wiki/Treble_(sound)
+
+    // Cutoff frequencies for the first-order low-pass filters.
+    constexpr double SubBassCutoff  =   35.; // Hz, Removes DC and very-low-frequency movement.
+    constexpr double BassCutoff     =  220.; // Hz, Separates bass from the mid frequecies.
+    constexpr double MidCutoff      = 2400.; // Hz, Separates the mids from treble.
 
     struct interaction_t
     {
@@ -459,8 +468,9 @@ namespace EyeCandy
 
         double _AnimationTime = 0.;
 
-        double _Peak                = 0.; // [0, 1], Overall peak amplitude. (The loudest individual sample in a chunk.
-        double _RMS                 = 0.; // [0, 1], RMS loudness
+    protected:
+        double _Peak                = 0.; // [0, 1], Overall peak amplitude. The loudest individual mono sample in a chunk.
+        double _RMS                 = 0.; // [0, 1], Full-band mono RMS loudness
         double _StereoWidth         = 0.; // [0, 1]
         double _Correlation         = 1.; // [0, 1]
 
@@ -478,7 +488,7 @@ namespace EyeCandy
         double _SmoothedMid         = 0.; // [0, 1]
         double _SmoothedTreble      = 0.; // [0, 1]
 
-        double _SmoothedWidth       = 0.; // [0, 1]
+        double _SmoothedStereoWidth       = 0.; // [0, 1]
         double _SmoothedCorrelation = 1.; // [0, 1]
 
         double _SmoothedSpectralFlux = 0.; // [0, 1]
@@ -506,6 +516,11 @@ namespace EyeCandy
         double _BassImpulse          = 0.; // Represents transient visual energy.
         double _BassExpansion        = 0.;
         double _BassTwist            = 0.;
+
+        // First-order low-pass filter states.
+        double _SubBassState         = 0.;
+        double _BassState            = 0.;
+        double _MidState             = 0.;
 
         bool _HasAudio = false;
 

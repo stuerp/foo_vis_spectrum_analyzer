@@ -44,7 +44,7 @@ public:
     void OnConfigurationChanged(ConfigurationChanges configurationChanges) noexcept;
 
     // visualization_t
-    void Configure(graph_options_t * options, audio_processor_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice = nullptr, ID3D11DeviceContext * d3dDeviceContext = nullptr) noexcept override final;
+    void Configure(graph_options_t * options, audio_processor_t * analysis, bool isFirst, bool isLast) noexcept override final;
 
     const D2D1_RECT_F & GetClientRect() const noexcept { return _BitmapRect; }
 

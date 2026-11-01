@@ -100,11 +100,12 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.14.0.0-alpha4, 2026-11-xx
+v0.14.0.0-alpha4, 2026-11-01
 
 - Improved: The composite three-tier FFT analyzer cross-fades between the tiers using ratios derived from the FFT's bin width instead of fixed ratios.
 - Fixed: Peak Meter static content did not react to changed color selections.
 - Fixed: Non-spectrum analyzers received inadvertedly many short audio chunks due to a bug in the FFT hop code. (Alpha3 regression).
+- Fixed: Spectrogram showed spectrum residue to the left and top when scrolling in high-DPI scenarios. (Confirmed fix).
 
 You can read the full history [here](docs/History.md).
 

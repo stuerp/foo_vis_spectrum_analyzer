@@ -55,7 +55,9 @@ namespace EyeCandy
         FluidInk,
         Aurora,
 
+        Monitor,
+
         Min = Waveform,
-        Max = Plasma,
+        Max = Monitor,
     };
 }

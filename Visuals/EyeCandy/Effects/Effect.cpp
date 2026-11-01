@@ -31,10 +31,12 @@
 #include "Effects/Retro/NeonTunnel.h"
 #include "Effects/Retro/VectorGrid.h"
 
-#include "Effects/Trails/Waveform.h"
 #include "Effects/Trails/LissajousTrails.h"
 #include "Effects/Trails/RibbonFlow.h"
 #include "Effects/Trails/Spirograph.h"
+
+#include "Effects/Technical/Monitor.h"
+#include "Effects/Technical/Waveform.h"
 
 namespace EyeCandy
 {
@@ -44,6 +46,9 @@ std::unique_ptr<effect_t> effect_t::Create(Effect effect) noexcept
     switch (effect)
     {
         default:
+        case Effect::Monitor:
+            return std::make_unique<Monitor::effect_t>();
+
         case Effect::Waveform:
             return std::make_unique<Waveform::effect_t>();
 
