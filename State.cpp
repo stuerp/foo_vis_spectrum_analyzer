@@ -1,5 +1,5 @@
 
-/** $VER: State.cpp (2026.10.28) P. Stuer **/
+/** $VER: State.cpp (2026.11.01) P. Stuer **/
 
 #include "pch.h"
 #include "State.h"
@@ -2349,5 +2349,12 @@ bool state_t::IsSlidingWindowTransform() const noexcept
     return (_TransformMethod == TransformMethod::SWIFT || _TransformMethod == TransformMethod::AnalogStyle);
 }
 
+/// <summary>
+/// Returns true if visualization is an oscilloscope.
+/// </summary>
+bool state_t::IsOscilloscope() const noexcept
+{
+    return (_VisualizationType == VisualizationType::Oscilloscope);
+}
 
 cfg_int CfgLogLevel({ 0xf06c6211, 0x1617, 0x41ac, { 0xaf, 0xbe, 0x7f, 0xb3, 0xda, 0xef, 0x6, 0x69 } }, DefaultCfgLogLevel);

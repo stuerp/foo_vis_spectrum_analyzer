@@ -27,7 +27,7 @@ namespace Spectrum
 class x_axis_t final : public visualization_t
 {
 public:
-    x_axis_t(state_t & state) : visualization_t(state) { }
+    x_axis_t(state_t & state, render_context_t & renderContext) : visualization_t(state, renderContext) { }
 
     x_axis_t(const x_axis_t &) = delete;
     x_axis_t(x_axis_t &&) = delete;

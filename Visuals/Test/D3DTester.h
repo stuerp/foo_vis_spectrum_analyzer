@@ -1,5 +1,5 @@
 
-/** $VER: D3DTester.cpp (2026.10.28) P. Stuer - Implements a minimal Direct3D visualization for testing purposes. **/
+/** $VER: D3DTester.cpp (2026.11.01) P. Stuer - Implements a minimal Direct3D visualization for testing purposes. **/
 
 #pragma once
 
@@ -17,7 +17,7 @@ namespace Test
 class d3d_tester_t final : public visualization_t
 {
 public:
-    d3d_tester_t(state_t & state) : visualization_t(state) { }
+    d3d_tester_t(state_t & state, render_context_t & renderContext) : visualization_t(state, renderContext) { }
 
     d3d_tester_t(const d3d_tester_t &) = delete;
     d3d_tester_t(d3d_tester_t &&) = delete;
@@ -29,11 +29,12 @@ public:
 
     // element_t
     void Move(const D2D1_RECT_F & rect) noexcept override final;
-    void Render3D(render_context_t & renderContext) noexcept override final;
+    void Render3D() noexcept override final;
     void Reset() noexcept override final;
 
     // visualization_t
     void Configure(graph_options_t * options, audio_processor_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept override final;
+    virtual bool UsesDirect3D() const noexcept override final { return true; }
 
 private:
     HRESULT CreatePipeline() noexcept;
@@ -48,9 +49,6 @@ private:
     };
 
 private:
-    ComPtr<ID3D11Device> _D3DDevice;
-    ComPtr<ID3D11DeviceContext> _D3DDeviceContext;
-
     ComPtr<ID3D11VertexShader> _VertexShader;
     ComPtr<ID3D11PixelShader> _PixelShader;
     ComPtr<ID3D11InputLayout> _InputLayout;

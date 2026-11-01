@@ -14,7 +14,7 @@ namespace Test
 class tester_t final : public visualization_t
 {
 public:
-    tester_t(state_t & state) : visualization_t(state) { }
+    tester_t(state_t & state, render_context_t & renderContext) : visualization_t(state, renderContext) { }
 
     tester_t(const tester_t &) = delete;
     tester_t(tester_t &&) = delete;

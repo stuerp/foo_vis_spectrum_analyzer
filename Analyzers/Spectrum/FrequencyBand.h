@@ -5,7 +5,7 @@
 
 #include <CppCoreCheck/Warnings.h>
 
-#pragma warning(disable: 4100 4625 4626 4710 4711 5045 ALL_CPPCORECHECK_WARNINGS)
+#pragma warning(disable: 4100 4625 4626 4710 4711 4820 5045 ALL_CPPCORECHECK_WARNINGS)
 
 #include <SDKDDKVer.h>
 #include <Windows.h>
@@ -13,35 +13,11 @@
 
 #include <vector>
 
-#pragma warning(disable: 4820)
 struct frequency_band_t
 {
     frequency_band_t() noexcept : Magnitude(), Value(), PeakValue(), Low(), Center(), High(), HoldTime(), FallRate(), Opacity(1.) { }
 
     frequency_band_t(double l, double c, double h) noexcept : Magnitude(), Value(), PeakValue(), Low(l), Center(c), High(h), HoldTime(), FallRate(), Opacity(1.) { }
-
-    frequency_band_t(const frequency_band_t & other) noexcept
-    {
-        Magnitude  = other.Magnitude;
-        Value     = other.Value;
-        PeakValue = other.PeakValue;
-
-        Low       = other.Low;
-        Center    = other.Center;
-        High      = other.High;
-
-        HoldTime  = other.HoldTime;
-        FallRate  = other.FallRate;
-
-        Opacity   = other.Opacity;
-
-        ::memcpy(Label, other.Label, sizeof(Label));
-
-        HasDarkBackground = other.HasDarkBackground;
-        GradientColor     = other.GradientColor;
-    }
-
-    virtual ~frequency_band_t() noexcept { }
 
     double Magnitude;   // The aggregated magnitude (Power) for this frequency band.
 

@@ -1,5 +1,5 @@
 
-/** $VER: Element.h (2026.10.27) P. Stuer - Base class for all visual elements (both graph and visualizations). **/
+/** $VER: Element.h (2026.11.01) P. Stuer - Base class for all visual elements (both graph and visualizations). **/
 
 #pragma once
 
@@ -15,7 +15,7 @@
 class element_t
 {
 public:
-    element_t(state_t & state) : _State(state) { };
+    element_t(state_t & state, render_context_t & renderContext) : _State(state), _RenderContext(renderContext) { };
 
     virtual ~element_t() = default;
 
@@ -23,7 +23,7 @@ public:
     virtual void Render(ID2D1DeviceContext * deviceContext) noexcept { }
     virtual void Reset() noexcept { };
 
-    virtual void Render3D(render_context_t & renderContext) noexcept { }
+    virtual void Render3D() noexcept { }
 
     virtual const D2D1_RECT_F & GetRect() const noexcept { return _Rect; }
     virtual const D2D1_RECT_F & GetClientRect() const noexcept { return _Rect; };
@@ -43,7 +43,9 @@ protected:
 
 protected:
     state_t & _State;
-    graph_options_t * _GraphOptions { nullptr };
+    render_context_t & _RenderContext;
+
+    graph_options_t * _GraphOptions = nullptr;
     std::unique_ptr<audio_processor_t> _Processor;
 
     bool _IsFirst = false;

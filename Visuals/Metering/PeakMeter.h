@@ -25,7 +25,7 @@ namespace Metering
 class peak_meter_t final : public visualization_t
 {
 public:
-    peak_meter_t(state_t & state) : visualization_t(state) { }
+    peak_meter_t(state_t & state, render_context_t & renderContext) : visualization_t(state, renderContext) { }
 
     peak_meter_t(const peak_meter_t &) = delete;
     peak_meter_t(peak_meter_t &&) = delete;

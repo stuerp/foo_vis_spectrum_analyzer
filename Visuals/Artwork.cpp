@@ -218,7 +218,7 @@ void artwork_t::Render(render_context_t & renderContext, const D2D1_RECT_F & rec
 {
     msc::lock_t Lock(_CriticalSection);
 
-    HRESULT hr = CreateDeviceSpecificResources(renderContext.D2DDeviceContext);
+    HRESULT hr = CreateDeviceSpecificResources(renderContext._D2DDeviceContext);
 
     if (FAILED(hr))
         return;
@@ -233,13 +233,13 @@ void artwork_t::Render(render_context_t & renderContext, const D2D1_RECT_F & rec
 
     if (state->_ArtworkBlurSigma == 0.f)
     {
-        renderContext.D2DDeviceContext->DrawBitmap(_Bitmap.Get(), Rect, state->_ArtworkOpacity, D2D1_BITMAP_INTERPOLATION_MODE::D2D1_BITMAP_INTERPOLATION_MODE_LINEAR);
+        renderContext._D2DDeviceContext->DrawBitmap(_Bitmap.Get(), Rect, state->_ArtworkOpacity, D2D1_BITMAP_INTERPOLATION_MODE::D2D1_BITMAP_INTERPOLATION_MODE_LINEAR);
     }
     else
     {
         FLOAT DPIX, DPIY;
 
-        renderContext.D2DDeviceContext->GetDpi(&DPIX, &DPIY);
+        renderContext._D2DDeviceContext->GetDpi(&DPIX, &DPIY);
 
         const FLOAT DPIScale = DPIX / 96.f;
 
@@ -252,7 +252,7 @@ void artwork_t::Render(render_context_t & renderContext, const D2D1_RECT_F & rec
 
         const D2D1_POINT_2F Offset = { Rect.left, Rect.top };
 
-        renderContext.D2DDeviceContext->DrawImage(_OpacityEffect.Get(), Offset);
+        renderContext._D2DDeviceContext->DrawImage(_OpacityEffect.Get(), Offset);
     }
 }
 

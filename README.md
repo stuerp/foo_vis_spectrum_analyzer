@@ -100,6 +100,7 @@ v0.14.0.0-alpha4, 2026-11-xx
 
 - Improved: The composite three-tier FFT analyzer cross-fades between the tiers using ratios derived from the FFT's bin width instead of fixed ratios.
 - Fixed: Peak Meter static content did not react to changed color selections.
+- Fixed: Non-spectrum analyzers received inadvertedly many short audio chunks due to a bug in the FFT hop code. (Alpha3 regression).
 
 You can read the full history [here](docs/History.md).
 

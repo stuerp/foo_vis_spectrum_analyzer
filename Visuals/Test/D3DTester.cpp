@@ -38,9 +38,6 @@ void d3d_tester_t::Configure(graph_options_t * options, audio_processor_t * proc
 
     Reset();
 
-    _D3DDevice        = d3dDevice;
-    _D3DDeviceContext = d3dDeviceContext;
-
     HRESULT hr = CreatePipeline();
 
     if (FAILED(hr))
@@ -99,7 +96,7 @@ HRESULT d3d_tester_t::CreatePipeline() noexcept
             return hr;
         }
 
-        hr = _D3DDevice->CreateVertexShader(VertextShaderByteCode->GetBufferPointer(), VertextShaderByteCode->GetBufferSize(), nullptr, _VertexShader.GetAddressOf());
+        hr = _RenderContext._D3DDevice->CreateVertexShader(VertextShaderByteCode->GetBufferPointer(), VertextShaderByteCode->GetBufferSize(), nullptr, _VertexShader.GetAddressOf());
 
         if (FAILED(hr))
             return hr;
@@ -119,7 +116,7 @@ HRESULT d3d_tester_t::CreatePipeline() noexcept
             return hr;
         }
 
-        hr = _D3DDevice->CreatePixelShader(PixelShaderByteCode->GetBufferPointer(), PixelShaderByteCode->GetBufferSize(), nullptr, _PixelShader.GetAddressOf());
+        hr = _RenderContext._D3DDevice->CreatePixelShader(PixelShaderByteCode->GetBufferPointer(), PixelShaderByteCode->GetBufferSize(), nullptr, _PixelShader.GetAddressOf());
 
         if (FAILED(hr))
             return hr;
@@ -133,7 +130,7 @@ HRESULT d3d_tester_t::CreatePipeline() noexcept
             { "COLOR",    0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, sizeof(float) * 2, D3D11_INPUT_PER_VERTEX_DATA, 0 },
         };
 
-        HRESULT hr = _D3DDevice->CreateInputLayout(ied, _countof(ied), VertextShaderByteCode->GetBufferPointer(), VertextShaderByteCode->GetBufferSize(), _InputLayout.GetAddressOf());
+        HRESULT hr = _RenderContext._D3DDevice->CreateInputLayout(ied, _countof(ied), VertextShaderByteCode->GetBufferPointer(), VertextShaderByteCode->GetBufferSize(), _InputLayout.GetAddressOf());
 
         if (FAILED(hr))
             return hr;
@@ -165,16 +162,16 @@ HRESULT d3d_tester_t::CreatePipeline() noexcept
             .SysMemSlicePitch = 0,
         };
 
-        return _D3DDevice->CreateBuffer(&bd, &sd, _VertexBuffer.GetAddressOf());
+        return _RenderContext._D3DDevice->CreateBuffer(&bd, &sd, _VertexBuffer.GetAddressOf());
     }
 }
-
+/*
 /// <summary>
 /// Renders the 3D content.
 /// </summary>
 void d3d_tester_t::Render3D(render_context_t & renderContext) noexcept
 {
-    assert(renderContext.D3DDevice && renderContext.SwapChain);
+    assert(renderContext.IsValid());
 
     // Create and bind a render target view for the swap-chain back buffer.
     {
@@ -197,15 +194,7 @@ void d3d_tester_t::Render3D(render_context_t & renderContext) noexcept
 
     // Configure a viewport to restrict rasterization.
     {
-        const D3D11_VIEWPORT Viewport =
-        {
-            0.0f,
-            0.0f,
-            _Size.width,
-            _Size.height,
-            0.0f,
-            1.0f
-        };
+        const D3D11_VIEWPORT Viewport = { 0.f, 0.f, _Size.width, _Size.height, 0.f, 1.f };
 
         _D3DDeviceContext->RSSetViewports(1, &Viewport);
     }
@@ -240,6 +229,33 @@ void d3d_tester_t::Render3D(render_context_t & renderContext) noexcept
 
 //  _D3DDeviceContext->Flush();
 }
+*/
+/// <summary>
+/// Renders the 3D content.
+/// </summary>
+void d3d_tester_t::Render3D() noexcept
+{
+    // Configure the graphics pipeline and draw the content.
+    constexpr UINT Stride = sizeof(vertex_t);
+    constexpr UINT Offset = 0;
+
+    ID3D11Buffer * VertexBuffers[] =
+    {
+        _VertexBuffer.Get()
+    };
+
+    auto * dc = _RenderContext._D3DDeviceContext;
+
+    dc->IASetInputLayout(_InputLayout.Get());
+
+    dc->IASetVertexBuffers(0, _countof(VertexBuffers), VertexBuffers, &Stride, &Offset);
+    dc->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+    dc->VSSetShader(_VertexShader.Get(), nullptr, 0);
+    dc->PSSetShader(_PixelShader.Get(), nullptr, 0);
+
+    dc->Draw(3, 0);
+}
 
 /// <summary>
 /// Resets this instance.
@@ -250,9 +266,6 @@ void d3d_tester_t::Reset() noexcept
     _InputLayout.Reset();
     _PixelShader.Reset();
     _VertexShader.Reset();
-
-    _D3DDeviceContext.Reset();
-    _D3DDevice.Reset();
 }
 
 }

@@ -13,7 +13,7 @@ namespace Oscilloscope
 class oscilloscope_xy_t final : public oscilloscope_base_t
 {
 public:
-    oscilloscope_xy_t(state_t & state) : oscilloscope_base_t(state) { }
+    oscilloscope_xy_t(state_t & state, render_context_t & renderContext) : oscilloscope_base_t(state, renderContext) { }
 
     oscilloscope_xy_t(const oscilloscope_xy_t &) = delete;
     oscilloscope_xy_t(oscilloscope_xy_t &&) = delete;

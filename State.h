@@ -1,5 +1,5 @@
 
-/** $VER: State.h (2026.10.28) P. Stuer **/
+/** $VER: State.h (2026.11.01) P. Stuer **/
 
 #pragma once
 
@@ -40,6 +40,7 @@ public:
 
     bool IsSpectrumAnalyzer() const noexcept;
     bool IsSlidingWindowTransform() const noexcept;
+    bool IsOscilloscope() const noexcept;
 
 public:
     // Configuration Dialog
@@ -352,7 +353,7 @@ public:
 
     size_t _FFTSize;                                                    // The number of bins used by the spectrum analyzer.
 
-    double _PlaybackTime;                                               // Spectrogram: Timestamp of the last rendered audio chunk.
+    double _PreviousPlaybackTime;                                       // Timestamp of the last rendered audio chunk.
     double _TrackTime;                                                  // Spectrogram
 
     bool _IsPaused;                                                     // Playback has been paused.

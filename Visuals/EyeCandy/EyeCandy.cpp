@@ -44,11 +44,11 @@ void eye_candy_t::Render(ID2D1DeviceContext * deviceContext) noexcept
     _Effect->SetBrightness(_State._EffectBrightness);
     _Effect->SetDensity(_State._EffectDensity);
 
-    double DeltaTime = _State._PlaybackTime - _PlaybackTime;
+    double DeltaTime = _State._PreviousPlaybackTime - _PlaybackTime;
 
     _Effect->Render(deviceContext, DeltaTime, _Processor->_Chunk);
 
-    _PlaybackTime = _State._PlaybackTime;
+    _PlaybackTime = _State._PreviousPlaybackTime;
 }
 
 /// <summary>
@@ -63,7 +63,7 @@ void eye_candy_t::Reset() noexcept
         _EffectId = _State._EffectId;
     }
 
-    _PlaybackTime = _State._PlaybackTime;
+    _PlaybackTime = _State._PreviousPlaybackTime;
 }
 
 /// <summary>

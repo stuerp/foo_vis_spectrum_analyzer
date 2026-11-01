@@ -24,7 +24,7 @@ namespace Metering
 class balance_meter_t final : public visualization_t
 {
 public:
-    balance_meter_t(state_t & state) : visualization_t(state) { }
+    balance_meter_t(state_t & state, render_context_t & renderContext) : visualization_t(state, renderContext) { }
 
     balance_meter_t(const balance_meter_t &) = delete;
     balance_meter_t(balance_meter_t &&) = delete;

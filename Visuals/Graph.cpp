@@ -1,5 +1,5 @@
 
-/** $VER: Graph.cpp (2026.10.29) P. Stuer - Implements a graph on which the visualizations are rendered. **/
+/** $VER: Graph.cpp (2026.11.01) P. Stuer - Implements a graph on which the visualizations are rendered. **/
 
 #include "pch.h"
 
@@ -31,9 +31,9 @@ void graph_t::Configure(graph_options_t * graphOptions, bool isFirst, bool isLas
 
     _Processor->Configure(graphOptions);
 
-    _Visualization = visualization_t::Create(_State);
+    _Visualization = visualization_t::Create(_State, _RenderContext);
 
-    _Visualization->Configure(graphOptions, _Processor.get(), _IsFirst, _IsLast, _RenderContext.D3DDevice, _RenderContext.D3DDeviceContext);
+    _Visualization->Configure(graphOptions, _Processor.get(), _IsFirst, _IsLast, _RenderContext._D3DDevice, _RenderContext._D3DDeviceContext);
 }
 
 /// <summary>
@@ -75,6 +75,7 @@ void graph_t::Process(const audio_chunk & chunk) noexcept
 /// <summary>
 /// Renders this instance to the specified render target.
 /// </summary>
+#ifdef v1
 void graph_t::Render(artwork_t & artwork) noexcept
 {
     HRESULT hr = CreateDeviceSpecificResources(_RenderContext.D2DDeviceContext);
@@ -95,6 +96,31 @@ void graph_t::Render(artwork_t & artwork) noexcept
     }
 
     _Visualization->Render(_RenderContext.D2DDeviceContext);
+
+    RenderDescription();
+}
+#endif
+void graph_t::Render(artwork_t & artwork) noexcept
+{
+    HRESULT hr = CreateDeviceSpecificResources(_RenderContext._D2DDeviceContext);
+
+    if (FAILED(hr))
+        return;
+
+    RenderBackground(artwork);
+
+    if (_Visualization->UsesDirect3D())
+    {
+        _RenderContext.Begin3D();
+
+        _Visualization->Render3D();
+
+        _RenderContext.End3D();
+
+        _RenderContext.Composite3D(_Rect);
+    }
+
+    _Visualization->Render(_RenderContext._D2DDeviceContext);
 
     RenderDescription();
 }
@@ -186,7 +212,7 @@ bool graph_t::GetToolTipText(FLOAT x, FLOAT y, std::wstring & toolTip, size_t & 
 void graph_t::RenderBackground(artwork_t & artwork) noexcept
 {
     if (_BackgroundStyle.IsEnabled())
-        _RenderContext.D2DDeviceContext->FillRectangle(_Rect, _BackgroundStyle._Brush.Get());
+        _RenderContext._D2DDeviceContext->FillRectangle(_Rect, _BackgroundStyle._Brush.Get());
 
     if (!_State._ShowArtworkOnBackground)
         return;
@@ -234,10 +260,10 @@ void graph_t::RenderDescription() noexcept
     Rect.bottom = Rect.top  + TextMetrics.height + (Inset * 2.f);
 
     if (_DescriptionBackgroundStyle.IsEnabled())
-        _RenderContext.D2DDeviceContext->FillRoundedRectangle(D2D1::RoundedRect(Rect, Inset, Inset), _DescriptionBackgroundStyle._Brush.Get());
+        _RenderContext._D2DDeviceContext->FillRoundedRectangle(D2D1::RoundedRect(Rect, Inset, Inset), _DescriptionBackgroundStyle._Brush.Get());
 
     if (_DescriptionTextStyle.IsEnabled())
-        _RenderContext.D2DDeviceContext->DrawText(_Description.c_str(), (UINT) _Description.length(), _DescriptionTextStyle._TextFormat.Get(), Rect, _DescriptionTextStyle._Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_NONE);
+        _RenderContext._D2DDeviceContext->DrawText(_Description.c_str(), (UINT) _Description.length(), _DescriptionTextStyle._TextFormat.Get(), Rect, _DescriptionTextStyle._Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_NONE);
 }
 
 /// <summary>

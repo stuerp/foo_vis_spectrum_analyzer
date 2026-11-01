@@ -1,5 +1,5 @@
 
-/** $VER: MeteringProcessor.cpp (2026.10.28) P. Stuer - Implements an audio processor for the metering visualization. **/
+/** $VER: MeteringProcessor.cpp (2026.11.01) P. Stuer - Implements an audio processor for the metering visualization. **/
 
 #include <pch.h>
 
@@ -25,7 +25,7 @@ namespace Metering
 
         // Peak/RMS Meter
         {
-            ResetPeakMeasurements();
+            ResetMeasurements();
             ResetRMSDependentValues();
 
             InitializeMeasurements((uint32_t) Channels::ConfigStereo);
@@ -57,17 +57,18 @@ namespace Metering
         constexpr size_t MaximumChannelCount = 32;
         constexpr size_t BalanceChannelCount = 2;
 
-        struct meter_channel_t
+        // Per-channel mapping structure.
+        struct channel_t
         {
-            uint32_t SampleOffset {};
-            size_t MeasurementIndex {};
+            uint32_t SampleOffset {};   // Position of the channel within an audio frame
+            size_t MeasurementIndex {}; // Corresponding position in _PeakMeasurements.
         };
 
-        std::array<meter_channel_t, MaximumChannelCount> MeterChannels {};
+        std::array<channel_t, MaximumChannelCount> MeterChannels {};  // Mappings for channels used by the meter.
 
         size_t MeterChannelCount = 0;
 
-        std::array<uint32_t, BalanceChannelCount> BalanceOffsets {};
+        std::array<uint32_t, BalanceChannelCount> BalanceOffsets {};        // Store the offsets of the samples used by the balance pair.
 
         size_t BalanceOffsetCount = 0;
 
@@ -90,7 +91,7 @@ namespace Metering
                 {
                     const bool IsActive = (ActiveChannelMask & ChannelBit) != 0;
 
-                    if (IsActive && (MeasurementIndex < _PeakMeasurements.size()))
+                    if (IsActive && (MeasurementIndex < _Measurements.size()))
                     {
                         MeterChannels[MeterChannelCount++] =
                         {
@@ -116,24 +117,24 @@ namespace Metering
         const size_t FrameCount           = chunk.get_sample_count();
         const uint32_t ChannelCount       = chunk.get_channel_count();
 
-        for (size_t FrameIndex = 0; FrameIndex < FrameCount; ++FrameIndex)
-        {
-            const audio_sample * const Frame = Frames + (FrameIndex * (size_t) ChannelCount);
+        const audio_sample * Frame = Frames;
 
+        for (size_t FrameIndex = 0; FrameIndex < FrameCount; FrameIndex += (size_t) ChannelCount, Frame += ChannelCount)
+        {
             for (size_t ChannelIndex = 0; ChannelIndex < MeterChannelCount; ++ChannelIndex)
             {
-                const meter_channel_t & Channel = MeterChannels[ChannelIndex];
+                const channel_t & Channel = MeterChannels[ChannelIndex];
 
                 const double Sample    = (double) Frame[Channel.SampleOffset];
                 const double Magnitude = std::abs(Sample);
 
-                auto & Measurement = _PeakMeasurements[Channel.MeasurementIndex];
+                auto & Measurement = _Measurements[Channel.MeasurementIndex];
 
                 Measurement.Peak      = std::max(Measurement.Peak, Magnitude);
                 Measurement.RMSTotal += Sample * Sample;
             }
 
-            // Reset the balance samples for every frame. This prevents a sample from an earlier frame being reused when fewer than two paired channels are available.
+            // Reset the balance samples for every frame.
             std::array<double, BalanceChannelCount> BalanceSamples {};
 
             for (size_t ChannelIndex = 0; ChannelIndex < BalanceOffsetCount; ++ChannelIndex)
@@ -142,21 +143,21 @@ namespace Metering
             const double Left  = BalanceSamples[0];
             const double Right = BalanceSamples[1];
 
-            _Left  += Left  * Left;
-            _Right += Right * Right;
+            _LeftSumSquared  += Left  * Left;
+            _RightSumSquared += Right * Right;
 
             const double Mid  = (Left + Right) * 0.5;
             const double Side = (Left - Right) * 0.5;
 
-            _Mid  += Mid  * Mid;
-            _Side += Side * Side;
+            _MidSumSquared  += Mid  * Mid;
+            _SideSumSquared += Side * Side;
         }
 
         _RMSFrameCount  += FrameCount;
         _RMSTimeElapsed += chunk.get_duration();
 
         // Normalize and smooth the peak values. https://skippystudio.nl/2021/07/sound-intensity-and-decibels/
-        for (auto & Measurement : _PeakMeasurements)
+        for (auto & Measurement : _Measurements)
         {
             Measurement.Peak           = ToDecibel(Measurement.Peak);
             Measurement.NormalizedPeak = SmoothValue(NormalizeValue(Measurement.Peak), Measurement.NormalizedPeak);
@@ -168,36 +169,36 @@ namespace Metering
 
         const double RMSFrameCount = (double) _RMSFrameCount;
 
-        // Normalize and smooth the RMS values. // https://skippystudio.nl/2021/07/sound-intensity-and-decibels/
-        for (auto & Measurement : _PeakMeasurements)
+        // Normalize and smooth the RMS values. https://skippystudio.nl/2021/07/sound-intensity-and-decibels/
+        for (auto & m : _Measurements)
         {
-            const double MeanSquare = Measurement.RMSTotal / RMSFrameCount;
+            const double MeanSquare = m.RMSTotal / RMSFrameCount;
 
-            Measurement.RMS           = ToDecibel(std::sqrt(MeanSquare)) + (_State._HasRMSPlus3 ? dBCorrection : 0.0);
-            Measurement.NormalizedRMS = SmoothValue(NormalizeValue(Measurement.RMS), Measurement.NormalizedRMS);
+            m.RMS           = ToDecibel(std::sqrt(MeanSquare)) + (_State._HasRMSPlus3 ? dBCorrection : 0.0);
+            m.NormalizedRMS = SmoothValue(NormalizeValue(m.RMS), m.NormalizedRMS);
 
-            Measurement.RMSTotal = 0.;
+            m.RMSTotal = 0.;
         }
 
         // Converts a signed level difference into the normalized meter range. Silence, denormalized input, and non-finite values produce the centered normalized value instead of NaN.
         const auto CalculateNormalizedDifference = [&](double Positive, double Negative) noexcept -> double
         {
-                const double Denominator = std::max(Positive, Negative);
+            const double Denominator = std::max(Positive, Negative);
 
-                if (!(Denominator > 0.) || !std::isfinite(Denominator))
-                    return NormalizeLLevelValue(0.);
+            if (!(Denominator > 0.) || !std::isfinite(Denominator))
+                return NormalizeLLevelValue(0.);
 
-                const double Difference = (Positive - Negative) / Denominator;
+            const double Difference = (Positive - Negative) / Denominator;
 
-                if (!std::isfinite(Difference))
-                    return NormalizeLLevelValue(0.);
+            if (!std::isfinite(Difference))
+                return NormalizeLLevelValue(0.);
 
-                return NormalizeLLevelValue(Difference);
+            return NormalizeLLevelValue(Difference);
         };
 
         {
-            const double LeftRMS  = std::sqrt(_Left  / RMSFrameCount);
-            const double RightRMS = std::sqrt(_Right / RMSFrameCount);
+            const double LeftRMS  = std::sqrt(_LeftSumSquared  / RMSFrameCount);
+            const double RightRMS = std::sqrt(_RightSumSquared / RMSFrameCount);
 
             if (!std::isfinite(_Balance))
                 _Balance = 0.5;
@@ -206,8 +207,8 @@ namespace Metering
         }
 
         {
-            const double MidRMS  = std::sqrt(_Mid  / RMSFrameCount);
-            const double SideRMS = std::sqrt(_Side / RMSFrameCount);
+            const double MidRMS  = std::sqrt(_MidSumSquared  / RMSFrameCount);
+            const double SideRMS = std::sqrt(_SideSumSquared / RMSFrameCount);
 
             if (!std::isfinite(_Phase))
                 _Phase = 0.5;
@@ -237,7 +238,7 @@ namespace Metering
         if (_State._VisualizationType == VisualizationType::PeakMeter)
         {
             // Animate the smoothed peak and RMS values.
-            for (auto & m : _PeakMeasurements)
+            for (auto & m : _Measurements)
             {
                 if (m.NormalizedPeak >= m.MaxNormalizedPeak)
                 {
@@ -363,12 +364,12 @@ namespace Metering
 
             size_t i = 0;
 
-            _PeakMeasurements.clear();
+            _Measurements.clear();
 
             for (uint32_t ActiveChannelMask = selectedChannels; (ActiveChannelMask != 0) && (i < _countof(ChannelNames)); ActiveChannelMask >>= 1, ++i)
             {
                 if (ActiveChannelMask & 1)
-                    _PeakMeasurements.push_back({ (Channels)(1 << i), ChannelNames[i] });
+                    _Measurements.push_back({ (Channels)(1 << i), ChannelNames[i] });
             }
 
             _SelectedChannels = selectedChannels;
@@ -378,20 +379,23 @@ namespace Metering
         else
         {
             // Reset only the peak level of each bar to -∞.
-            for (auto & m : _PeakMeasurements)
+            for (auto & m : _Measurements)
                 m.Peak = -std::numeric_limits<double>::infinity();
         }
     }
 
     /// <summary>
-    /// Resets the peak measurements.
+    /// Resets the measurements.
     /// </summary>
-    void processor_t::ResetPeakMeasurements() noexcept
+    void processor_t::ResetMeasurements() noexcept
     {
-        for (peak_measurement_t & m : _PeakMeasurements)
+        for (auto & m : _Measurements)
         {
-            m.Peak = m.RMS = -std::numeric_limits<double>::infinity();
-            m.NormalizedPeak = m.NormalizedRMS = 0.;
+            m.Peak =
+            m.RMS  = -std::numeric_limits<double>::infinity();
+
+            m.NormalizedPeak =
+            m.NormalizedRMS  = 0.;
         }
     }
 
@@ -403,10 +407,13 @@ namespace Metering
         _RMSTimeElapsed = 0.;
         _RMSFrameCount = 0;
 
-        _Left  = 0.;
-        _Right = 0.;
+        for (auto & m : _Measurements)
+            m.RMSTotal = 0.;
 
-        _Mid   = 0.;
-        _Side  = 0.;
+        _LeftSumSquared  = 0.;
+        _RightSumSquared = 0.;
+
+        _MidSumSquared   = 0.;
+        _SideSumSquared  = 0.;
     }
 }

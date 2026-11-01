@@ -1,5 +1,5 @@
 
-/** $VER: Graph.h (2026.10.24) P. Stuer - Implements a graph on which the visualizations are rendered. **/
+/** $VER: Graph.h (2026.11.01) P. Stuer - Implements a graph on which the visualizations are rendered. **/
 
 #pragma once
 
@@ -22,7 +22,7 @@
 class graph_t : public element_t
 {
 public:
-    graph_t(state_t & state, render_context_t & renderContext) : element_t(state), _RenderContext(renderContext) { }
+    graph_t(state_t & state, render_context_t & renderContext) : element_t(state, renderContext) { }
 
     virtual ~graph_t() = default;
 
@@ -74,8 +74,6 @@ public:
     std::unique_ptr<audio_processor_t> _Processor;
 
 private:
-    render_context_t & _RenderContext;
-
     std::wstring _Description;
     std::unique_ptr<visualization_t> _Visualization;
 

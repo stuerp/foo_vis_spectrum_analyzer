@@ -14,7 +14,7 @@ namespace Oscilloscope
 class oscilloscope_t final : public oscilloscope_base_t
 {
 public:
-    oscilloscope_t(state_t & state) : oscilloscope_base_t(state) { }
+    oscilloscope_t(state_t & state, render_context_t & renderContext) : oscilloscope_base_t(state, renderContext) { }
 
     oscilloscope_t(const oscilloscope_t &) = delete;
     oscilloscope_t(oscilloscope_t &&) = delete;

@@ -24,7 +24,7 @@ namespace Spectrum
 class spectrum_t final : public visualization_t
 {
 public:
-    spectrum_t(state_t & state) : visualization_t(state), _XAxis(state), _YAxis(state) { }
+    spectrum_t(state_t & state, render_context_t & renderContext) : visualization_t(state, renderContext), _XAxis(state, renderContext), _YAxis(state, renderContext) { }
 
     spectrum_t(const spectrum_t &) = delete;
     spectrum_t(spectrum_t &&) = delete;

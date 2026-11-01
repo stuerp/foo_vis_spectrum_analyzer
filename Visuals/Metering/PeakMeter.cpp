@@ -77,7 +77,7 @@ HRESULT peak_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceC
         (void) deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), _DebugBrush.GetAddressOf());
 #endif
 
-    if (_BarCount != _Processor->_PeakMeasurements.size())
+    if (_BarCount != _Processor->_Measurements.size())
         _State._SizeHasChanged = true;
 
     if (_State._ColorsHaveChanged || _State._SizeHasChanged)
@@ -127,7 +127,7 @@ HRESULT peak_meter_t::CreateSizeDependentResources(ID2D1DeviceContext * deviceCo
             return hr;
     }
 
-    if ((_BarCount != _Processor->_PeakMeasurements.size()) || (_RenderedChannels != _Processor->_SelectedChannels))
+    if ((_BarCount != _Processor->_Measurements.size()) || (_RenderedChannels != _Processor->_SelectedChannels))
     {
         DeleteParts();
 
@@ -333,12 +333,12 @@ void peak_meter_t::CreateParts() noexcept
 
         const auto AddMeter = [this, &IsFirstBar](const auto & channel)
         {
-            const auto Measurement = std::find_if(_Processor->_PeakMeasurements.cbegin(), _Processor->_PeakMeasurements.cend(), [channel](const peak_measurement_t & item)
+            const auto Measurement = std::find_if(_Processor->_Measurements.cbegin(), _Processor->_Measurements.cend(), [channel](const measurement_t & item)
             {
                 return item.Channel == channel;
             });
 
-            if (Measurement != _Processor->_PeakMeasurements.cend())
+            if (Measurement != _Processor->_Measurements.cend())
             {
                 if (_State._HasCenterScale && !IsFirstBar)
                     _Parts.push_back(std::make_unique<scale_t>(_State, _GraphOptions, DWRITE_TEXT_ALIGNMENT_CENTER, DWRITE_PARAGRAPH_ALIGNMENT_CENTER));
@@ -360,7 +360,7 @@ void peak_meter_t::CreateParts() noexcept
             std::for_each(ChannelOrder.cbegin(), ChannelOrder.cend(), AddMeter);
         }
 
-        _BarCount = _Processor->_PeakMeasurements.size();
+        _BarCount = _Processor->_Measurements.size();
     }
 
     if (_GraphOptions->_YAxisRight)

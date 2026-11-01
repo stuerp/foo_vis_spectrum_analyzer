@@ -1,5 +1,5 @@
 
-/** $VER: MeteringProcessor.h (2026.10.28) P. Stuer - Implements an audio processor for the metering visualizations. **/
+/** $VER: MeteringProcessor.h (2026.11.01) P. Stuer - Implements an audio processor for the metering visualizations. **/
 
 #pragma once
 
@@ -16,9 +16,9 @@ namespace Metering
 /// <summary>
 /// Represents a peak meter measurement.
 /// </summary>
-struct peak_measurement_t : ::measurement_t
+struct measurement_t : ::measurement_t
 {
-    peak_measurement_t(Channels channel, const WCHAR * channelName) noexcept : ::measurement_t(channel, channelName)
+    measurement_t(Channels channel, const WCHAR * channelName) noexcept : ::measurement_t(channel, channelName)
     {
         HoldTime = 0.;
         FallRate = 0.;
@@ -71,7 +71,7 @@ public:
 
 private:
     void InitializeMeasurements(uint32_t channelMask) noexcept;
-    void ResetPeakMeasurements() noexcept;
+    void ResetMeasurements() noexcept;
     void ResetRMSDependentValues() noexcept;
 
     double NormalizeLLevelValue(double level) const noexcept
@@ -105,18 +105,18 @@ public:
     audio_chunk_impl _Chunk;
 
     // Peak meter
-    std::vector<peak_measurement_t> _PeakMeasurements;
+    std::vector<measurement_t> _Measurements;
     uint32_t _SelectedChannels = 0;
 
     double _RMSTimeElapsed = 0.; // Elapsed time in the current RMS window (in seconds).
     size_t _RMSFrameCount  = 0;  // Number of frames used in the current RMS window.
 
     // Balance Meter
-    double _Left    = 0.;   // [-1, 1]
-    double _Right   = 0.;   // [-1, 1]
+    double _LeftSumSquared    = 0.;   // [-1, 1]
+    double _RightSumSquared   = 0.;   // [-1, 1]
 
-    double _Mid     = 0.;   // [-1, 1]
-    double _Side    = 0.;   // [-1, 1]
+    double _MidSumSquared     = 0.;   // [-1, 1]
+    double _SideSumSquared    = 0.;   // [-1, 1]
 
     double _Balance = 0.5;  // [0, 1], 0.5 = Center
     double _Phase   = 0.5;  // [0, 1], 0.5 = Center

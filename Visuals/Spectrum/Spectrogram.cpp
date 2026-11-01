@@ -1,5 +1,5 @@
 
-/** $VER: Spectrogram.cpp (2026.10.31) P. Stuer - Represents a spectrum analysis as a 2D heat map **/
+/** $VER: Spectrogram.cpp (2026.11.01) P. Stuer - Represents a spectrum analysis as a 2D heat map **/
 
 #include "pch.h"
 
@@ -53,6 +53,14 @@ void spectrogram_t::Render(ID2D1DeviceContext * deviceContext) noexcept
     if (FAILED(hr))
         return;
 
+    // Get the DPI metrics for the complete render pass.
+    _Bitmap->GetDpi(&_DPIX, &_DPIY);
+
+    const D2D1_SIZE_U BitmapPixelSize = _Bitmap->GetPixelSize();
+
+    const FLOAT BitmapWidth  = (FLOAT) BitmapPixelSize.width  * 96.f / _DPIX;
+    const FLOAT BitmapHeight = (FLOAT) BitmapPixelSize.height * 96.f / _DPIY;
+
     // Update the offscreen bitmap.
     RenderSpectrum(_BitmapRenderTarget.Get());
 
@@ -69,18 +77,26 @@ void spectrogram_t::Render(ID2D1DeviceContext * deviceContext) noexcept
                 if (_State._IsScrollingSpectrogram)
                 {
                     // Render the new lines.
-                    auto Src = D2D1_RECT_F( _X, 0.f, _BitmapSize.width,      _BitmapSize.height);
-                    auto Dst = D2D1_RECT_F(0.f, 0.f, _BitmapSize.width - _X, _BitmapSize.height);
+                    const FLOAT PixelWidth = 96.f / _DPIX;
+                    const FLOAT SplitX = std::min(_X + PixelWidth, BitmapWidth);
 
-                    deviceContext->DrawBitmap(_Bitmap.Get(), &Dst, _SpectrogramStyle._Opacity, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR, &Src);
+                    const FLOAT DstWidth = _BitmapSize.width * (BitmapWidth - SplitX) / BitmapWidth;
 
-                    Src.right = Src.left;
-                    Src.left  = 0.f;
+                    if (SplitX < BitmapWidth)
+                    {
+                        const auto Src = D2D1_RECT_F(SplitX, 0.f, BitmapWidth, BitmapHeight);
+                        const auto Dst = D2D1_RECT_F(   0.f, 0.f, DstWidth,    _BitmapSize.height);
 
-                    Dst.left  = Dst.right;
-                    Dst.right = _BitmapSize.width;
+                        deviceContext->DrawBitmap(_Bitmap.Get(), &Dst, _SpectrogramStyle._Opacity, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR, &Src);
+                    }
 
-                    deviceContext->DrawBitmap(_Bitmap.Get(), &Dst, _SpectrogramStyle._Opacity, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR, &Src);
+                    if (SplitX > 0.f)
+                    {
+                        const auto Src = D2D1_RECT_F(     0.f, 0.f, SplitX,            BitmapHeight);
+                        const auto Dst = D2D1_RECT_F(DstWidth, 0.f, _BitmapSize.width, _BitmapSize.height);
+
+                        deviceContext->DrawBitmap(_Bitmap.Get(), &Dst, _SpectrogramStyle._Opacity, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR, &Src);
+                    }
                 }
                 else
                 {
@@ -140,19 +156,27 @@ void spectrogram_t::Render(ID2D1DeviceContext * deviceContext) noexcept
                 if (_State._IsScrollingSpectrogram)
                 {
                     // Render the new lines.
-                    auto Src = D2D1_RECT_F(0.f,  _Y, _BitmapSize.width, _BitmapSize.height);
-                    auto Dst = D2D1_RECT_F(0.f, 0.f, _BitmapSize.width, _BitmapSize.height - _Y);
+                    const FLOAT PixelHeight = 96.f / _DPIY;
+                    const FLOAT SplitY = std::min(_Y + PixelHeight, BitmapHeight);
 
-                    deviceContext->DrawBitmap(_Bitmap.Get(), &Dst, _SpectrogramStyle._Opacity, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR, &Src);
+                    const FLOAT DstHeight = _BitmapSize.height * (BitmapHeight - SplitY) / BitmapHeight;
+
+                    if (SplitY < BitmapHeight)
+                    {
+                        const auto Src = D2D1_RECT_F(0.f, SplitY, BitmapWidth,       BitmapHeight);
+                        const auto Dst = D2D1_RECT_F(0.f,    0.f, _BitmapSize.width, DstHeight);
+
+                        deviceContext->DrawBitmap(_Bitmap.Get(), &Dst, _SpectrogramStyle._Opacity, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR, &Src);
+                    }
 
                     // Render the old lines.
-                    Src.bottom = Src.top;
-                    Src.top    = 0.f;
+                    if (SplitY > 0.f)
+                    {
+                        const auto Src = D2D1_RECT_F(0.f,       0.f, BitmapWidth,       SplitY);
+                        const auto Dst = D2D1_RECT_F(0.f, DstHeight, _BitmapSize.width, _BitmapSize.height);
 
-                    Dst.top    = Dst.bottom;
-                    Dst.bottom = _BitmapSize.height;
-
-                    deviceContext->DrawBitmap(_Bitmap.Get(), &Dst, _SpectrogramStyle._Opacity, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR, &Src);
+                        deviceContext->DrawBitmap(_Bitmap.Get(), &Dst, _SpectrogramStyle._Opacity, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR, &Src);
+                    }
                 }
                 else
                 {
@@ -208,34 +232,44 @@ void spectrogram_t::Render(ID2D1DeviceContext * deviceContext) noexcept
     if (_State._SpectrogramLegend)
         deviceContext->DrawBitmap(_LegendBitmap.Get(), _LegendRect, 1.f);
 
-    if (_State._PlaybackTime != _PlaybackTime) // Not paused
+    if (_State._PreviousPlaybackTime != _PlaybackTime) // Not paused
     {
+        const D2D1_SIZE_U PixelSize = _Bitmap->GetPixelSize();
+
         if (_State._IsHorizontalSpectrogram)
         {
-            _X++;
+            const FLOAT PixelWidth = 96.f / _DPIX;
 
-            if (_X >= _BitmapSize.width)
+            UINT32 PixelX = (UINT32) std::lround(_X / PixelWidth) + 1;
+
+            if (PixelX >= PixelSize.width)
             {
-                _X = 0.f;
+                PixelX = 0;
 
                 if (!_State._IsScrollingSpectrogram)
                     _TimeLabels.clear();
             }
+
+            _X = (FLOAT) PixelX * PixelWidth;
         }
         else
         {
-            _Y++;
+            const FLOAT PixelHeight = 96.f / _DPIY;
 
-            if (_Y >= _BitmapSize.height)
+            UINT32 PixelY = (UINT32) std::lround(_Y / PixelHeight) + 1;
+
+            if (PixelY >= PixelSize.height)
             {
-                _Y = 0.f;
+                PixelY = 0;
 
                 if (!_State._IsScrollingSpectrogram)
                     _TimeLabels.clear();
             }
+
+            _Y = (FLOAT) PixelY * PixelHeight;
         }
 
-        _PlaybackTime = _State._PlaybackTime;
+        _PlaybackTime = _State._PreviousPlaybackTime;
     }
 }
 
@@ -388,13 +422,19 @@ bool spectrogram_t::RenderSpectrum(ID2D1BitmapRenderTarget * renderTarget) noexc
 
     renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
 
+    const D2D1_SIZE_U BitmapPixelSize = renderTarget->GetPixelSize();
+
+    const FLOAT BitmapWidth  = (FLOAT) BitmapPixelSize.width  * 96.f / _DPIX;
+    const FLOAT BitmapHeight = (FLOAT) BitmapPixelSize.height * 96.f / _DPIY;
+
     ID2D1Brush * SpectrogramBrush = _SpectrogramStyle._Brush.Get();
 
     if (IsHorizontalSpectrogram)
     {
         // Draw the next spectrogram line.
         {
-            const FLOAT Bandwidth = _BitmapSize.height / (FLOAT) Bands.size();
+            const FLOAT Bandwidth  = BitmapHeight / (FLOAT) Bands.size();
+            const FLOAT PixelWidth = 96.f / _DPIX;
 
             FLOAT y1 = 0.f;
             FLOAT y2 = Bandwidth;
@@ -406,7 +446,7 @@ bool spectrogram_t::RenderSpectrum(ID2D1BitmapRenderTarget * renderTarget) noexc
 
                 _SpectrogramStyle.SetBrushColor(fb.Value);
 
-                renderTarget->DrawLine({ _X, y1 }, { _X, y2 }, SpectrogramBrush);
+                renderTarget->FillRectangle({ _X, y1, std::min(_X + PixelWidth, BitmapWidth), y2 }, SpectrogramBrush);
 
                 y1  = y2;
                 y2 += Bandwidth;
@@ -417,11 +457,13 @@ bool spectrogram_t::RenderSpectrum(ID2D1BitmapRenderTarget * renderTarget) noexc
     {
         // Draw the next spectrogram line.
         {
-            const FLOAT Bandwidth     = _State._UseSpectrumBarMetrics ? std::max(std::floor(_BitmapSize.width / (FLOAT) Bands.size()), 2.f) : _BitmapSize.width / (FLOAT) Bands.size();
+            const FLOAT Bandwidth   = _State._UseSpectrumBarMetrics ? std::max(std::floor(BitmapWidth / (FLOAT) Bands.size()), 2.f) : BitmapWidth / (FLOAT) Bands.size();
+            const FLOAT PixelHeight = 96.f / _DPIY;
+
             const FLOAT SpectrumWidth = Bandwidth * (FLOAT) Bands.size();
 
-            FLOAT x1 = _State._UseSpectrumBarMetrics ? (_BitmapSize.width - SpectrumWidth) / 2.f : 0.f;
-            FLOAT x2 = Bandwidth;
+            FLOAT x1 = _State._UseSpectrumBarMetrics ? (BitmapWidth - SpectrumWidth) / 2.f : 0.f;
+            FLOAT x2 = x1 + Bandwidth;
 
             for (const auto & fb : Bands)
             {
@@ -430,7 +472,7 @@ bool spectrogram_t::RenderSpectrum(ID2D1BitmapRenderTarget * renderTarget) noexc
 
                 _SpectrogramStyle.SetBrushColor(fb.Value);
 
-                renderTarget->DrawLine({ x1, _Y }, { x2, _Y }, SpectrogramBrush);
+                renderTarget->FillRectangle({ x1, _Y, x2, std::min(_Y + PixelHeight, BitmapHeight) }, SpectrogramBrush);
 
                 x1  = x2;
                 x2 += Bandwidth;
@@ -447,7 +489,7 @@ bool spectrogram_t::RenderSpectrum(ID2D1BitmapRenderTarget * renderTarget) noexc
     if (FAILED(hr))
         return false;
 
-    const double PlaybackTime = _State._PlaybackTime;
+    const double PlaybackTime = _State._PreviousPlaybackTime;
     const double TrackTime    = _State._TrackTime;
 
     // Update the time axis.
@@ -455,14 +497,14 @@ bool spectrogram_t::RenderSpectrum(ID2D1BitmapRenderTarget * renderTarget) noexc
     {
         if (IsHorizontalSpectrogram)
         {
-            const FLOAT dx = FlipHorizontally ? 1.f : -1.f; // Move the labels 1 pixel to the left or to the right.
+            const FLOAT dx = (FlipHorizontally ? 1.f : -1.f) * (96.f / _DPIX); // Move the labels 1 physical pixel to the left or to the right.
 
             for (auto & Label : _TimeLabels)
                 Label.X += dx;
         }
         else
         {
-            const FLOAT dy = FlipVertically ? -1.f : 1.f;
+            const FLOAT dy = (FlipVertically ? -1.f : 1.f) * (96.f / _DPIY); // Move the labels 1 physical pixel upwards or downwards.
 
             for (auto & Label : _TimeLabels)
                 Label.Y += dy;
@@ -538,17 +580,24 @@ void spectrogram_t::RenderNyquistFrequencyMarker(ID2D1BitmapRenderTarget * rende
     // The position of the Nyquist marker is calculated at the exact frequency and may not align with the center frequency of spectrum bar.
     const double Scale = ScaleFrequency(_Processor->NyquistFrequency, _State._ScalingFunction, _State._SkewFactor);
 
+    const D2D1_SIZE_U BitmapPixelSize = renderTarget->GetPixelSize();
+
+    const FLOAT BitmapWidth  = (FLOAT) BitmapPixelSize.width  * 96.f / _DPIX;
+    const FLOAT BitmapHeight = (FLOAT) BitmapPixelSize.height * 96.f / _DPIY;
+
     if (_State._IsHorizontalSpectrogram)
     {
-        const FLOAT y = msc::Map(Scale, MinScale, MaxScale, 0.f, _BitmapSize.height);
+        const FLOAT y = msc::Map(Scale, MinScale, MaxScale, 0.f, BitmapHeight);
+        const FLOAT PixelWidth = 96.f / _DPIX;
 
-        renderTarget->DrawLine(D2D1_POINT_2F(_X, y), D2D1_POINT_2F(_X, y + 1), _NyquistMarkerStyle._Brush.Get(), _NyquistMarkerStyle._Thickness, nullptr);
+        renderTarget->FillRectangle(D2D1_RECT_F(_X, y, std::min(_X + PixelWidth, BitmapWidth), y + _NyquistMarkerStyle._Thickness), _NyquistMarkerStyle._Brush.Get());
     }
     else
     {
-        const FLOAT x = msc::Map(Scale, MinScale, MaxScale, 0.f, _BitmapSize.width);
+        const FLOAT x = msc::Map(Scale, MinScale, MaxScale, 0.f, BitmapWidth);
+        const FLOAT PixelHeight = 96.f / _DPIY;
 
-        renderTarget->DrawLine(D2D1_POINT_2F(x, _Y), D2D1_POINT_2F(x + 1, _Y), _NyquistMarkerStyle._Brush.Get(), _NyquistMarkerStyle._Thickness, nullptr);
+        renderTarget->FillRectangle(D2D1_RECT_F(x, _Y, x + _NyquistMarkerStyle._Thickness, std::min(_Y + PixelHeight, BitmapHeight)), _NyquistMarkerStyle._Brush.Get());
     }
 }
 
@@ -701,12 +750,30 @@ void spectrogram_t::Reset() noexcept
 /// </summary>
 HRESULT spectrogram_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept
 {
+    // Recreate the render target if the per-monitor DPI changes.
+    bool HasDPIChanged = false;
+
+    if (_BitmapRenderTarget != nullptr)
+    {
+        FLOAT DeviceDPIX = 96.f;
+        FLOAT DeviceDPIY = 96.f;
+
+        deviceContext->GetDpi(&DeviceDPIX, &DeviceDPIY);
+
+        FLOAT BitmapDPIX = 96.f;
+        FLOAT BitmapDPIY = 96.f;
+
+        _BitmapRenderTarget->GetDpi(&BitmapDPIX, &BitmapDPIY);
+
+        HasDPIChanged = (std::abs(DeviceDPIX - BitmapDPIX) > std::numeric_limits<FLOAT>::epsilon()) || (std::abs(DeviceDPIY - BitmapDPIY) > std::numeric_limits<FLOAT>::epsilon());
+    }
+
 #ifdef _DEBUG
     if (_DebugBrush == nullptr)
         (void) deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Green), _DebugBrush.GetAddressOf());
 #endif
 
-    if (_State._ColorsHaveChanged || _State._SizeHasChanged)
+    if (_State._ColorsHaveChanged || _State._SizeHasChanged || HasDPIChanged)
     {
         DeleteColorDependentResources();
 
@@ -718,9 +785,16 @@ HRESULT spectrogram_t::CreateDeviceSpecificResources(ID2D1DeviceContext * device
             return hr;
     }
 
-    if (_State._SizeHasChanged)
+    if (_State._SizeHasChanged || HasDPIChanged)
     {
         DeleteSizeDependentResources();
+
+        if (HasDPIChanged)
+        {
+            _X = 0.f;
+            _Y = 0.f;
+            _TimeLabels.clear();
+        }
 
         Initialize();
 
@@ -1251,10 +1325,25 @@ frequency_bands_t spectrogram_t::DecimateSpectrum(const frequency_bands_t & fb, 
     if (fb.empty() || targetCount == 0)
         return {};
 
+    if ((targetCount == 1) || (fb.size() == 1))
+    {
+        frequency_bands_t Dst(1);
+
+        double Sum = 0.;
+
+        for (const auto & Band : fb)
+            Sum += Band.Value;
+
+        Dst[0] = fb.front();
+        Dst[0].Value = std::clamp(Sum / (double) fb.size(), 0., 1.);
+
+        return Dst;
+    }
+
     const double Scale = (double) (fb.size() - 1) / (double) (targetCount - 1);
 
     const size_t SrcCount = fb.size();
-    const size_t DstCount = std::max<size_t>(1, (size_t) std::lround((double) SrcCount / Scale));
+    const size_t DstCount = targetCount;
 
     frequency_bands_t Dst(DstCount);
     std::vector<double> Weights(DstCount, 0.);
@@ -1299,10 +1388,23 @@ frequency_bands_t spectrogram_t::ResampleSpectrum(const frequency_bands_t & fb, 
     if (fb.empty() || targetCount == 0)
         return {};
 
-    const double Scale = (double) (fb.size() - 1) / (double) (targetCount - 1);
+    if ((targetCount == 1) || (fb.size() == 1))
+    {
+        frequency_bands_t Dst(1);
+
+        double Sum = 0.;
+
+        for (const auto & Band : fb)
+            Sum += Band.Value;
+
+        Dst[0] = fb.front();
+        Dst[0].Value = std::clamp(Sum / (double) fb.size(), 0., 1.);
+
+        return Dst;
+    }
 
     const size_t SrcCount = fb.size();
-    const size_t DstCount = std::max<size_t>(1, (size_t) std::lround((double) SrcCount / Scale));
+    const size_t DstCount = targetCount;
 
     frequency_bands_t Dst(DstCount);
 

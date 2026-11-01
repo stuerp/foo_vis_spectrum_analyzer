@@ -16,7 +16,7 @@ namespace EyeCandy
 class eye_candy_t final : public visualization_t
 {
 public:
-    eye_candy_t(state_t & state) : visualization_t(state) { }
+    eye_candy_t(state_t & state, render_context_t & renderContext) : visualization_t(state, renderContext) { }
 
     eye_candy_t(const eye_candy_t &) = delete;
     eye_candy_t & operator=(const eye_candy_t &) = delete;

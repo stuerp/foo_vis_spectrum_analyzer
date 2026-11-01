@@ -1,5 +1,5 @@
 
-/** $VER: UIElementRendering.cpp (2026.10.28) P. Stuer - UIElement methods that run on the render thread. **/
+/** $VER: UIElementRendering.cpp (2026.11.01) P. Stuer - UIElement methods that run on the render thread. **/
 
 #include "pch.h"
 
@@ -138,8 +138,8 @@ void uielement_t::ProcessEvents() noexcept
 
     if (event_t::IsRaised(Flags, event_t::PlaybackNewTrack))
     {
-        _RenderState._PlaybackTime = 0.;
-        _RenderState._TrackTime    = 0.;
+        _RenderState._PreviousPlaybackTime = 0.;
+        _RenderState._TrackTime            = 0.;
 
         _IsAnalysisTimeInitialized = false;
 
@@ -165,8 +165,8 @@ void uielement_t::ProcessEvents() noexcept
     else
     if (event_t::IsRaised(Flags, event_t::PlaybackStopped))
     {
-        _RenderState._PlaybackTime = 0.;
-        _RenderState._TrackTime = 0.;
+        _RenderState._PreviousPlaybackTime = 0.;
+        _RenderState._TrackTime            = 0.;
 
         for (auto & Graph : _Grid)
             Graph->Initialize();
@@ -184,16 +184,67 @@ void uielement_t::ProcessEvents() noexcept
         _RenderState._IsPaused = false;
     }
 
-    if (event_t::IsRaised(Flags, event_t::ArtworkColorsChanged))
-        _RenderState._ColorsHaveChanged = true;
-
-    if (event_t::IsRaised(Flags, event_t::UserInterfaceColorsChanged))
+    if (event_t::IsRaised(Flags, event_t::ArtworkColorsChanged) || event_t::IsRaised(Flags, event_t::UserInterfaceColorsChanged))
         _RenderState._ColorsHaveChanged = true;
 }
 
 /// <summary>
 /// Processes an audio chunk.
 /// </summary>
+#ifdef v1
+void uielement_t::ProcessAudio() noexcept
+{
+    assert(!fb2k::is_main_thread());
+
+    if (!_VisualisationStream.is_valid())
+        return;
+
+    double PlaybackTime; // in seconds
+
+    if (!(_VisualisationStream->get_absolute_time(PlaybackTime) && (PlaybackTime != _RenderState._PreviousPlaybackTime)))
+        return; // Playback is paused.
+
+    double WindowSize;   // in seconds
+    double WindowOffset; // in seconds
+
+    const bool IsSlidingWindow = (_RenderState._TransformMethod == TransformMethod::SWIFT) || (_RenderState._TransformMethod == TransformMethod::AnalogStyle);
+
+    if (!IsSlidingWindow)
+    {
+        if (_RenderState._SampleRate != 0)
+        {
+            const size_t FrameCount = (_RenderState._VisualizationType != VisualizationType::Oscilloscope) ? _RenderState._FFTSize : _RenderState._FrameCount;
+
+            WindowSize   = (double) FrameCount / (double) _RenderState._SampleRate;
+            WindowOffset = PlaybackTime - (WindowSize * (0.5 + _RenderState._ReactionAlignment));
+        }
+        else
+        {
+            // Get a very small chunk from the visualisation stream to initialize the sample rate dependent parameters. Test with DSF files.
+            WindowSize   = 0.0005; // 500 μs
+            WindowOffset = PlaybackTime;
+        }
+    }
+    else
+    {
+        WindowSize   = PlaybackTime - _RenderState._PreviousPlaybackTime;
+        WindowOffset = _RenderState._PreviousPlaybackTime;
+    }
+
+    audio_chunk_impl Chunk;
+
+    if (_VisualisationStream->get_chunk_absolute(Chunk, WindowOffset, WindowSize))
+//  if (GetAudioChunk(Chunk, 44'100, (uint32_t) _RenderState._BinCount))
+    {
+        InitializeSampleRateDependentParameters(Chunk);
+
+        for (auto & Item : _Grid)
+            Item->Process(Chunk);
+    }
+
+    _RenderState._PreviousPlaybackTime = PlaybackTime;
+}
+#else
 void uielement_t::ProcessAudio() noexcept
 {
     assert(!fb2k::is_main_thread());
@@ -216,12 +267,14 @@ void uielement_t::ProcessAudio() noexcept
         if (_VisualisationStream->get_chunk_absolute(Chunk, PlaybackTime, InitializationWindow))
         {
             InitializeSampleRateDependentParameters(Chunk);
-
+/*
+            // Don't pass the startup chunk to the visualizations any more.
             for (auto& Item : _Grid)
                 Item->Process(Chunk);
+*/
         }
 
-        _RenderState._PlaybackTime = PlaybackTime;
+        _RenderState._PreviousPlaybackTime = PlaybackTime;
 
         _NextAnalysisTime = PlaybackTime;
         _IsAnalysisTimeInitialized = true;
@@ -232,7 +285,7 @@ void uielement_t::ProcessAudio() noexcept
     const double SampleRate = (double) _RenderState._SampleRate;
 
     double WindowSize   = 0.; // In seconds
-    double WindowOffset = 0.; // In seoncds
+    double WindowOffset = 0.; // In seconds
 
     if (UseHops())
     {
@@ -257,7 +310,7 @@ void uielement_t::ProcessAudio() noexcept
 
         if (HopSize == 0)
         {
-            _RenderState._PlaybackTime = PlaybackTime;
+            _RenderState._PreviousPlaybackTime = PlaybackTime;
 
             return;
         }
@@ -265,7 +318,7 @@ void uielement_t::ProcessAudio() noexcept
         const double HopDuration = (double) HopSize / SampleRate;
 
         // Initialize the hop clock or reset it when playback moves backward, such as after a backward seek or track restart.
-        if (!_IsAnalysisTimeInitialized || (PlaybackTime < _RenderState._PlaybackTime))
+        if (!_IsAnalysisTimeInitialized || (PlaybackTime < _RenderState._PreviousPlaybackTime))
         {
             _NextAnalysisTime = PlaybackTime;
             _IsAnalysisTimeInitialized = true;
@@ -274,7 +327,7 @@ void uielement_t::ProcessAudio() noexcept
         // Playback has not reached the next hop. This also handles paused playback because the playback timestamp stops advancing.
         if (PlaybackTime < _NextAnalysisTime)
         {
-            _RenderState._PlaybackTime = PlaybackTime;
+            _RenderState._PreviousPlaybackTime = PlaybackTime;
 
             return;
         }
@@ -293,35 +346,74 @@ void uielement_t::ProcessAudio() noexcept
         // A complete fixed-size window is not yet available.
         if (WindowOffset < 0.)
         {
-            _RenderState._PlaybackTime = PlaybackTime;
+            _RenderState._PreviousPlaybackTime = PlaybackTime;
 
             return;
         }
     }
     else
+    if (_RenderState.IsSlidingWindowTransform())
     {
         if (!_IsAnalysisTimeInitialized)
         {
-            _RenderState._PlaybackTime = PlaybackTime;
+            _RenderState._PreviousPlaybackTime = PlaybackTime;
+
+            _NextAnalysisTime = PlaybackTime;
             _IsAnalysisTimeInitialized = true;
 
             return;
         }
 
         // Do nothing when playback is paused.
-        if (PlaybackTime == _RenderState._PlaybackTime)
+        if (PlaybackTime == _RenderState._PreviousPlaybackTime)
             return;
 
-        if (PlaybackTime < _RenderState._PlaybackTime)
+        // Reset the analysis clock when the user seeks backwards.
+        if (PlaybackTime < _RenderState._PreviousPlaybackTime)
         {
-            _RenderState._PlaybackTime = PlaybackTime;
+            _RenderState._PreviousPlaybackTime = PlaybackTime;
             _NextAnalysisTime = PlaybackTime;
 
             return;
         }
 
-        WindowOffset = _RenderState._PlaybackTime;
-        WindowSize   = PlaybackTime - _RenderState._PlaybackTime;
+        WindowSize   = PlaybackTime - _RenderState._PreviousPlaybackTime;
+        WindowOffset = _RenderState._PreviousPlaybackTime;
+    }
+    else
+    {
+        // Do nothing when playback is paused.
+        if (PlaybackTime == _RenderState._PreviousPlaybackTime)
+            return;
+
+        // Reset the analysis clock when the user seeks backwards.
+        if (PlaybackTime < _RenderState._PreviousPlaybackTime)
+        {
+            _RenderState._PreviousPlaybackTime = PlaybackTime;
+            _NextAnalysisTime = PlaybackTime;
+        }
+
+        const size_t FrameCount = _RenderState.IsOscilloscope() ? _RenderState._FrameCount :  _RenderState._FFTSize;
+
+        if (FrameCount == 0)
+        {
+            _RenderState._PreviousPlaybackTime = PlaybackTime;
+
+            return;
+        }
+
+        // Fixed-window visualizations always receive a complete, stable analysis window instead of a render-frame-sized chunk.
+        WindowSize   = (double) FrameCount / SampleRate;
+        WindowOffset = PlaybackTime - WindowSize * (0.5 + _RenderState._ReactionAlignment);
+
+        // A complete fixed-size window is not yet available.
+        if (WindowOffset < 0.)
+        {
+            _RenderState._PreviousPlaybackTime = PlaybackTime;
+            return;
+        }
+
+        _IsAnalysisTimeInitialized = true;
     }
 
     audio_chunk_impl Chunk;
@@ -343,8 +435,9 @@ void uielement_t::ProcessAudio() noexcept
         }
     }
 
-    _RenderState._PlaybackTime = PlaybackTime;
+    _RenderState._PreviousPlaybackTime = PlaybackTime;
 }
+#endif
 
 /// <summary>
 /// Renders a frame.
@@ -397,7 +490,7 @@ void uielement_t::Animate(int64_t now) noexcept
         return;
 
     // Needs to be called even when no audio is playing to keep animating the decay of the peak indicators after the audio stops.
-    const bool IsStopped = (_RenderState._PlaybackTime == 0.);
+    const bool IsStopped = (_RenderState._PreviousPlaybackTime == 0.);
 
     for (auto & Item : _Grid)
         Item->_Processor->UpdatePeaks(IsStopped);
@@ -550,9 +643,11 @@ HRESULT uielement_t::CreateDeviceIndependentResources() noexcept
         }
     }
 
-    _RenderContext.D3DDevice        = _D3DDevice.Get();
-    _RenderContext.D3DDeviceContext = _D3DDeviceContext.Get();
+    // Store the Direct3D device and device context in the render context.
+    _RenderContext._D3DDevice        = _D3DDevice.Get();
+    _RenderContext._D3DDeviceContext = _D3DDeviceContext.Get();
 
+    // Initialize the device independent resources of the frame counter.
     hr = _FrameCounter.CreateDeviceIndependentResources();
 
     if (FAILED(hr))
@@ -572,8 +667,8 @@ HRESULT uielement_t::CreateDeviceIndependentResources() noexcept
 /// </summary>
 void uielement_t::DeleteDeviceIndependentResources() noexcept
 {
-    _RenderContext.D3DDevice = nullptr;
-    _RenderContext.D3DDeviceContext = nullptr;
+    _RenderContext._D3DDevice = nullptr;
+    _RenderContext._D3DDeviceContext = nullptr;
 
     _FrameCounter.DeleteDeviceIndependentResources();
 
@@ -594,19 +689,19 @@ HRESULT uielement_t::CreateDeviceSpecificResources() noexcept
 {
     HRESULT hr = S_OK;
 
+    CRect cr;
+
+    GetClientRect(cr);
+
+    const auto Width  = (UINT32) cr.Width();
+    const auto Height = (UINT32) cr.Height();
+
+    if ((Width == 0) || (Height == 0))
+        return DXGI_ERROR_INVALID_CALL;
+
     // Create the device context.
     if (_D2DDeviceContext == nullptr)
     {
-        CRect cr;
-
-        GetClientRect(cr);
-
-        const auto Width  = (UINT32) cr.Width();
-        const auto Height = (UINT32) cr.Height();
-
-        if ((Width == 0) || (Height == 0))
-            return DXGI_ERROR_INVALID_CALL;
-
         // Create the Direct2D device and the device context and get the monitor refresh from the DXGI device.
         {
             ComPtr<IDXGIDevice1> DXGIDevice;
@@ -637,7 +732,8 @@ HRESULT uielement_t::CreateDeviceSpecificResources() noexcept
 
             _D2DDeviceContext->SetDpi((FLOAT) _DPI, (FLOAT) _DPI);
 
-            _RenderContext.D2DDeviceContext = _D2DDeviceContext.Get();
+            // Store the Direct2D device context in the render context.
+            _RenderContext._D2DDeviceContext = _D2DDeviceContext.Get();
         }
 
         if (_SwapChain == nullptr)
@@ -659,8 +755,6 @@ HRESULT uielement_t::CreateDeviceSpecificResources() noexcept
 
             if (FAILED(hr))
                 return hr;
-
-            _RenderContext.SwapChain = _SwapChain.Get();
         }
 
         // Set up DirectComposition.
@@ -699,20 +793,28 @@ HRESULT uielement_t::CreateDeviceSpecificResources() noexcept
         if (FAILED(hr))
             return hr;
 
-        _D2DDeviceContext->SetTarget(_BackBuffer.Get());
+        // Create the Direct3D render target.
+        hr = _RenderContext.CreateD3DRenderTarget(Width, Height, (FLOAT) _DPI, (FLOAT) _DPI);
 
-        _D2DDeviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
-        _D2DDeviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
-        _D2DDeviceContext->SetTextAntialiasMode(D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE); // https://learn.microsoft.com/en-us/windows/win32/direct2d/improving-direct2d-performance
+        if (FAILED(hr))
+            return hr;
 
-        // Initialize the size-dependent resources.
         {
-            const D2D1_SIZE_F SizeF = _D2DDeviceContext->GetSize(); // Gets the size in DPIs.
+            _D2DDeviceContext->SetTarget(_BackBuffer.Get());
 
-            _Grid.Resize(SizeF.width, SizeF.height);
-            _FrameCounter.Resize(SizeF.width, SizeF.height);
+            _D2DDeviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
+            _D2DDeviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+            _D2DDeviceContext->SetTextAntialiasMode(D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE); // https://learn.microsoft.com/en-us/windows/win32/direct2d/improving-direct2d-performance
 
-            _RenderState._SizeHasChanged = true;
+            // Initialize the size-dependent resources.
+            {
+                const D2D1_SIZE_F SizeF = _D2DDeviceContext->GetSize(); // Gets the size in DPIs.
+
+                _Grid.Resize(SizeF.width, SizeF.height);
+                _FrameCounter.Resize(SizeF.width, SizeF.height);
+
+                _RenderState._SizeHasChanged = true;
+            }
         }
     }
 
@@ -737,11 +839,11 @@ void uielement_t::DeleteDeviceSpecificResources() noexcept
         Item->Reset();
 
     _Artwork.DeleteWICResources();
-
     _FrameCounter.DeleteDeviceSpecificResources();
 
-    _RenderContext.SwapChain = nullptr;
-    _RenderContext.D2DDeviceContext = nullptr;
+    _RenderContext.ReleaseD3DRenderTarget();
+
+    _RenderContext._D2DDeviceContext = nullptr;
 
     _BackBuffer.Reset();
     _CompositionVisual.Reset();
@@ -772,6 +874,9 @@ HRESULT uielement_t::ResizeSwapChain(UINT width, UINT height) noexcept
     // Resize the swap chain.
     HRESULT hr = _SwapChain->ResizeBuffers(0, width, height, DXGI_FORMAT_B8G8R8A8_UNORM, 0);
 
+    if (FAILED(hr))
+        return hr;
+
     // Recreate the Direct2D back buffer.
     hr = CreateBackBuffer();
 
@@ -780,6 +885,12 @@ HRESULT uielement_t::ResizeSwapChain(UINT width, UINT height) noexcept
 
     // Set the target buffer of the device context.
     _D2DDeviceContext->SetTarget(_BackBuffer.Get());
+
+    // Recreate the Direct3D render target.
+    hr = _RenderContext.CreateD3DRenderTarget(width, height, (FLOAT) _DPI, (FLOAT) _DPI);
+
+    if (FAILED(hr))
+        return hr;
 
     return S_OK;
 }
@@ -902,7 +1013,7 @@ void uielement_t::RenderDebug() noexcept
     if (FAILED(hr))
         return;
 
-    std::wstring Text = msc::FormatText(L"%.2fs", _RenderState._PlaybackTime);
+    std::wstring Text = msc::FormatText(L"%.2fs", _RenderState._PreviousPlaybackTime);
 
     _D2DDeviceContext->DrawText(Text.c_str(), (UINT) Text.size(), TextFormat.Get(), Rect, _DebugBrush.Get(), D2D1_DRAW_TEXT_OPTIONS_NONE);
 }

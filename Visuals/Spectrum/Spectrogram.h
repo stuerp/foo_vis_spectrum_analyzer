@@ -1,5 +1,5 @@
 
-/** $VER: Spectrogram.h (2026.10.28) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
+/** $VER: Spectrogram.h (2026.11.01) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
 
 #pragma once
 
@@ -26,7 +26,7 @@ namespace Spectrum
 class spectrogram_t final : public visualization_t
 {
 public:
-    spectrogram_t(state_t & state) : visualization_t(state) { }
+    spectrogram_t(state_t & state, render_context_t & renderContext) : visualization_t(state, renderContext) { }
 
     spectrogram_t(const spectrogram_t &) = delete;
     spectrogram_t(spectrogram_t &&) = delete;
@@ -142,6 +142,10 @@ private:
     };
 
     std::vector<freq_label_t> _FreqLabels;
+
+private:
+    FLOAT _DPIX = 96.f;
+    FLOAT _DPIY = 96.f;
 
     ComPtr<ID2D1BitmapRenderTarget> _BitmapRenderTarget;
     ComPtr<ID2D1Bitmap> _Bitmap;

@@ -24,7 +24,7 @@ namespace Goniometer
 class goniometer_t final : public visualization_t
 {
 public:
-    goniometer_t(state_t & state) : visualization_t(state) { }
+    goniometer_t(state_t & state, render_context_t & renderContext) : visualization_t(state, renderContext) { }
 
     goniometer_t(const goniometer_t &) = delete;
     goniometer_t(goniometer_t &&) = delete;

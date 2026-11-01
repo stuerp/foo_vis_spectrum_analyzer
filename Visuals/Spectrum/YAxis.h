@@ -27,7 +27,7 @@ namespace Spectrum
 class y_axis_t final : public visualization_t
 {
 public:
-    y_axis_t(state_t & state) : visualization_t(state) { }
+    y_axis_t(state_t & state, render_context_t & renderContext) : visualization_t(state, renderContext) { }
 
     y_axis_t(const y_axis_t &) = delete;
     y_axis_t(y_axis_t &&) = delete;

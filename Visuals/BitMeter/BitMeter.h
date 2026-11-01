@@ -24,7 +24,7 @@ namespace BitMeter
 class bit_meter_t final : public visualization_t
 {
 public:
-    bit_meter_t(state_t & state) : visualization_t(state) { }
+    bit_meter_t(state_t & state, render_context_t & renderContext) : visualization_t(state, renderContext) { }
 
     bit_meter_t(const bit_meter_t &) = delete;
     bit_meter_t(bit_meter_t &&) = delete;

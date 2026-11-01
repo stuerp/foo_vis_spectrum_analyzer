@@ -1,5 +1,5 @@
 
-/** $VER: RenderContext.h (2026.10.11) P. Stuer - Render context. **/
+/** $VER: RenderContext.h (2026.10.31) P. Stuer - Render context. **/
 
 #pragma once
 
@@ -17,19 +17,34 @@ struct render_context_t
 public:
     void Reset() noexcept
     {
-        D3DDevice = nullptr;
-        D3DDeviceContext = nullptr;
+        _D2DDeviceContext = nullptr;
 
-        D2DDeviceContext = nullptr;
-
-        SwapChain = nullptr;
+        _D3DDevice = nullptr;
+        _D3DDeviceContext = nullptr;
     }
 
 public:
-    ID3D11Device * D3DDevice { };
-    ID3D11DeviceContext * D3DDeviceContext { };
+    HRESULT CreateD3DRenderTarget(UINT width, UINT height, FLOAT dpiX, FLOAT dpiY) noexcept;
 
-    ID2D1DeviceContext * D2DDeviceContext { };
+    void ReleaseD3DRenderTarget() noexcept;
 
-    IDXGISwapChain1 * SwapChain { };
+    void Begin3D() noexcept;
+    void End3D() noexcept;
+
+    void Composite3D(const D2D1_RECT_F & destinationRectangle, FLOAT opacity = 1.f) noexcept;
+
+    bool IsValid() const noexcept { return (_D3DDevice && _D3DDeviceContext && _D3DRenderTargetView); };
+
+public:
+    ID3D11Device * _D3DDevice = nullptr;
+    ID3D11DeviceContext * _D3DDeviceContext = nullptr;
+
+    ID2D1DeviceContext * _D2DDeviceContext = nullptr;
+
+private:
+    ComPtr<ID3D11Texture2D>        _D3DTexture;
+    ComPtr<ID3D11RenderTargetView> _D3DRenderTargetView;
+    ComPtr<ID2D1Bitmap1>           _D3DBitmap;
+
+    D3D11_VIEWPORT _D3DViewport = {};
 };
