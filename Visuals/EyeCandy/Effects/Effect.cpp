@@ -1,5 +1,5 @@
 
-/** $VER: Effect.h (2026.10.23) P. Stuer - Base class for the Eye Candy effects. **/
+/** $VER: Effect.h (2026.11.02) P. Stuer - Base class for the Eye Candy effects. **/
 
 #include <pch.h>
 
@@ -16,21 +16,28 @@
 
 #include "Effects/DynamicSystems/DoublePendulum.h"
 
-#include "Effects/Fields/Plasma.h"
-#include "Effects/Fields/FluidInk.h"
 #include "Effects/Fields/Aurora.h"
+#include "Effects/Fields/FluidInk.h"
 #include "Effects/Fields/Metaballs.h"
+#include "Effects/Fields/Plasma.h"
+#include "Effects/Fields/RotoZoomer.h"
 
+#include "Effects/ParticleSystems/AudioGalaxy.h"
 #include "Effects/ParticleSystems/Fireflies.h"
 #include "Effects/ParticleSystems/Fireworks.h"
 #include "Effects/ParticleSystems/ParticleVortex.h"
 #include "Effects/ParticleSystems/Starfield.h"
-#include "Effects/ParticleSystems/AudioGalaxy.h"
 #include "Effects/ParticleSystems/Swarm.h"
 
+#include "Effects/Retro/HiddenLineLandscape.h"
 #include "Effects/Retro/NeonTunnel.h"
 #include "Effects/Retro/VectorGrid.h"
+#include "Effects/Retro/InterferenceMoire.h"
+#include "Effects/Retro/FlipDotMatrix.h"
+#include "Effects/Retro/DitherField.h"
 
+#include "Effects/Trails/FlowerScope.h"
+#include "Effects/Trails/HarmonicHarp.h"
 #include "Effects/Trails/LissajousTrails.h"
 #include "Effects/Trails/RibbonFlow.h"
 #include "Effects/Trails/Spirograph.h"
@@ -100,31 +107,52 @@ std::unique_ptr<effect_t> effect_t::Create(Effect effect) noexcept
         case Effect::Spirograph:
             return std::make_unique<Spirograph::effect_t>();
 
+        case Effect::FlowerScope:
+            return std::make_unique<FlowerScope::effect_t>();
+
         // Particle Systems
+        case Effect::AudioGalaxy:
+            return std::make_unique<AudioGalaxy::effect_t>();
+
         case Effect::Fireflies:
             return std::make_unique<Fireflies::effect_t>();
 
         case Effect::Fireworks:
             return std::make_unique<Fireworks::effect_t>();
 
+        case Effect::HarmonicHarp:
+            return std::make_unique<HarmonicHarp::effect_t>();
+
         case Effect::ParticleVortex:
             return std::make_unique<ParticleVortex::effect_t>();
 
+        case Effect::Rotozoomer:
+            return std::make_unique<Rotozoomer::effect_t>();
+
         case Effect::Starfield:
             return std::make_unique<Starfield::effect_t>();
-
-        case Effect::AudioGalaxy:
-            return std::make_unique<AudioGalaxy::effect_t>();
 
         case Effect::Swarm:
             return std::make_unique<Swarm::effect_t>();
 
         // Retro
+        case Effect::HiddenLineLandscape:
+            return std::make_unique<HiddenLineLandscape::effect_t>();
+
         case Effect::NeonTunnel:
             return std::make_unique<NeonTunnel::effect_t>();
 
         case Effect::VectorGrid:
             return std::make_unique<VectorGrid::effect_t>();
+
+        case Effect::InterferenceMoire:
+            return std::make_unique<InterferenceMoire::effect_t>();
+
+        case Effect::FlipDotMatrix:
+            return std::make_unique<FlipDotMatrix::effect_t>();
+
+        case Effect::DitherField:
+            return std::make_unique<DitherField::effect_t>();
     }
 }
 

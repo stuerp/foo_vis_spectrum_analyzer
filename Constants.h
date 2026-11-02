@@ -1,5 +1,5 @@
 
-/** $VER: Constants.h (2026.10.28) P. Stuer **/
+/** $VER: Constants.h (2026.11.02) P. Stuer **/
 
 #pragma once
 
@@ -788,51 +788,58 @@ const std::vector<effect_category_t> EffectCategories
         EyeCandy::Category::DynamicSystems,
         L"Dynamic Systems",
         {
-            { EyeCandy::Effect::AizawaAttractor,    L"Aizawa Attractor" },
-            { EyeCandy::Effect::HalvorsenAttractor, L"Halvorsen Attractor" },
-            { EyeCandy::Effect::LorenzAttractor,    L"Lorenz Attractor" },
-            { EyeCandy::Effect::RosslerAttractor,   L"R\u00F6ssler Attractor" },
-            { EyeCandy::Effect::ThomasAttractor,    L"Thomas Attractor" },
-            { EyeCandy::Effect::DoublePendulum,     L"Double Pendulum" },
+            { EyeCandy::Effect::AizawaAttractor,        L"Aizawa Attractor" },
+            { EyeCandy::Effect::HalvorsenAttractor,     L"Halvorsen Attractor" },
+            { EyeCandy::Effect::LorenzAttractor,        L"Lorenz Attractor" },
+            { EyeCandy::Effect::RosslerAttractor,       L"R\u00F6ssler Attractor" },
+            { EyeCandy::Effect::ThomasAttractor,        L"Thomas Attractor" },
+            { EyeCandy::Effect::DoublePendulum,         L"Double Pendulum" },
         }
     },
     {
         EyeCandy::Category::Fields,
         L"Fields",
         {
-            { EyeCandy::Effect::Aurora,             L"Aurora" },
-            { EyeCandy::Effect::FluidInk,           L"Fluid Ink" },
-            { EyeCandy::Effect::Metaballs,          L"Metaballs" },
-            { EyeCandy::Effect::Plasma,             L"Plasma" },
+            { EyeCandy::Effect::Aurora,                 L"Aurora" },
+            { EyeCandy::Effect::FluidInk,               L"Fluid Ink" },
+            { EyeCandy::Effect::Metaballs,              L"Metaballs" },
+            { EyeCandy::Effect::Plasma,                 L"Plasma" },
+            { EyeCandy::Effect::Rotozoomer,             L"Rotozoomer" },
         }
     },
     {
         EyeCandy::Category::ParticleSystems,
         L"Particle Systems",
         {
-            { EyeCandy::Effect::AudioGalaxy,        L"Audio Galaxy" },
-            { EyeCandy::Effect::Fireflies,          L"Fireflies" },
-            { EyeCandy::Effect::Fireworks,          L"Fireworks" },
-            { EyeCandy::Effect::ParticleVortex,     L"Particle Vortex" },
-            { EyeCandy::Effect::Starfield,          L"Starfield" },
-            { EyeCandy::Effect::Swarm,              L"Swarm" },
+            { EyeCandy::Effect::AudioGalaxy,            L"Audio Galaxy" },
+            { EyeCandy::Effect::Fireflies,              L"Fireflies" },
+            { EyeCandy::Effect::Fireworks,              L"Fireworks" },
+            { EyeCandy::Effect::ParticleVortex,         L"Particle Vortex" },
+            { EyeCandy::Effect::Starfield,              L"Starfield" },
+            { EyeCandy::Effect::Swarm,                  L"Swarm" },
         }
     },
     {
         EyeCandy::Category::Retro,
         L"Retro",
         {
-            { EyeCandy::Effect::NeonTunnel,         L"Neon Tunnel" },
-            { EyeCandy::Effect::VectorGrid,         L"Vector Grid" },
+            { EyeCandy::Effect::DitherField,            L"Dither Field" },
+            { EyeCandy::Effect::FlipDotMatrix,          L"Flip Dot Matrix" },
+            { EyeCandy::Effect::HiddenLineLandscape,    L"Hidden Line Landscape" },
+            { EyeCandy::Effect::InterferenceMoire,      L"Interference Moir\u00E9" },
+            { EyeCandy::Effect::NeonTunnel,             L"Neon Tunnel" },
+            { EyeCandy::Effect::VectorGrid,             L"Vector Grid" },
         }
     },
     {
         EyeCandy::Category::Trails,
         L"Trails",
         {
-            { EyeCandy::Effect::LissajousTrails,    L"Lissajous Trails" },
-            { EyeCandy::Effect::RibbonFlow,         L"Ribbon Flow" },
-            { EyeCandy::Effect::Spirograph,         L"Spirograph" },
+            { EyeCandy::Effect::FlowerScope,            L"Flower Scope" },
+            { EyeCandy::Effect::HarmonicHarp,           L"Harmonic Harp" },
+            { EyeCandy::Effect::LissajousTrails,        L"Lissajous Trails" },
+            { EyeCandy::Effect::RibbonFlow,             L"Ribbon Flow" },
+            { EyeCandy::Effect::Spirograph,             L"Spirograph" },
         }
     },
 };

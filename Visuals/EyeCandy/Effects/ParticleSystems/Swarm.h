@@ -78,6 +78,9 @@ namespace Swarm
         std::vector<agent_t> _Agents;
         std::vector<agent_t> _Snapshot;
 
+    private:
+        std::vector<double> _Samples;
+
         std::array<double, BandCount> _BandEnergy {};
         std::array<double, BandCount> _SmoothedBandEnergy {};
         std::array<double, BandCount> _PreviousBandEnergy {};
@@ -93,7 +96,8 @@ namespace Swarm
 
         size_t _PaletteIndex          = 0;
         size_t _PreviousPaletteIndex  = 0;
-
+    
+    private:
         ComPtr<ID2D1SolidColorBrush> _Brush;
         ComPtr<ID2D1StrokeStyle> _StrokeStyle;
 

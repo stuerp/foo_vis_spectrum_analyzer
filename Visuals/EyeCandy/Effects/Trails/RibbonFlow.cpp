@@ -66,11 +66,13 @@ namespace RibbonFlow
     /// </summary>
     void effect_t::AnalyzeAudio(const audio_chunk & chunk, const channel_pair_t & channels)
     {
-        for (auto & Band : _Bands)
-            Band.Energy = 0.;
-
         if (chunk.is_empty())
+        {
+            for (auto & Band : _Bands)
+                Band.Energy = 0.;
+
             return;
+        }
 
         const size_t ChannelCount = chunk.get_channel_count();
         const size_t FrameCount = chunk.get_sample_count();
@@ -78,53 +80,65 @@ namespace RibbonFlow
         if ((channels[0] >= ChannelCount) || (channels[1] >= ChannelCount) || (FrameCount < 16))
             return;
 
-        const audio_sample * Data = chunk.get_data();
-        const size_t AnalysisCount = std::min<size_t>(FrameCount, _Quality == EyeCandy::Quality::High ? 1024 : 512);
-        const size_t FrameStep = std::max<size_t>(1, FrameCount / AnalysisCount);
+        const size_t MaxFrames = std::min<size_t>(FrameCount, (_Quality == EyeCandy::Quality::High) ? 1024 : 512);
+        const size_t FrameStep = std::max<size_t>(1, FrameCount / MaxFrames);
 
-        std::vector<double> Samples(AnalysisCount);
+        if (_Samples.size() < MaxFrames)
+            _Samples.resize(MaxFrames);
 
-        for (size_t i = 0; i < AnalysisCount; ++i)
+        auto Samples = std::span<double>(_Samples.data(), MaxFrames);
+
+        // Process all frames.
         {
-            const size_t Frame  = std::min(i * FrameStep, FrameCount - 1);
+            const double WindowScale = TwoPi / (double) (MaxFrames - 1);
 
-            const double Mono = 0.5 * (ClampAudio(Data[Frame * ChannelCount + channels[0]]) + ClampAudio(Data[Frame * ChannelCount + channels[1]]));
+            const audio_sample * Frames = chunk.get_data();
 
-            // Apply a Hann window.
-            const double Window = 0.5 - (std::cos((TwoPi * (double) i) / (double) (AnalysisCount - 1)) * 0.5);
+            for (size_t i = 0; i < MaxFrames; ++i)
+            {
+                const size_t FrameIndex  = std::min(i * FrameStep, FrameCount - 1) * ChannelCount;
 
-            Samples[i] = Mono * Window;
+                // Convert to mono.
+                const double Mono = 0.5 * (ClampAudio(Frames[FrameIndex + channels[0]]) + ClampAudio(Frames[FrameIndex + channels[1]]));
+
+                // Apply a Hann window.
+                const double Window = 0.5 - (std::cos((double) i * WindowScale) * 0.5);
+
+                Samples[i] = Mono * Window;
+            }
         }
-
-        constexpr double MinFrequency = 40.;
-
-        const double MaxFrequency = std::min(16'500., _SampleRate * 0.50); // 40 Hz to 16.5 kHz
 
         std::array<double, BandCount> RawEnergies {};
 
-        for (size_t i = 0; i < BandCount; ++i)
         {
-            const double Amount      = ((double) i + 0.5) / (double) BandCount;
-            const double Frequency   = MinFrequency * std::pow(MaxFrequency / MinFrequency, Amount);
-            const double AngularStep = TwoPi * Frequency / _SampleRate;
+            constexpr double MinFrequency = 40.;
 
-            double Real      = 0.;
-            double Imaginary = 0.;
+            const double MaxFrequency = std::min(16'500., _SampleRate * 0.50); // 40 Hz to 16.5 kHz
 
-            for (size_t j = 0; j < AnalysisCount; ++j)
+            for (size_t i = 0; i < BandCount; ++i)
             {
-                const double Angle = AngularStep * (double) j;
+                const double Amount          = (double) i / (double) (BandCount - 1);
+                const double CenterFrequency = MinFrequency * std::pow(MaxFrequency / MinFrequency, Amount);
+                const double AngularStep     = TwoPi * CenterFrequency / _SampleRate;
 
-                Real      += Samples[j] * std::cos(Angle);
-                Imaginary -= Samples[j] * std::sin(Angle);
+                double Real      = 0.;
+                double Imaginary = 0.;
+
+                for (size_t j = 0; j < MaxFrames; ++j)
+                {
+                    const double Angle = AngularStep * (double) j;
+
+                    Real      += Samples[j] * std::cos(Angle);
+                    Imaginary -= Samples[j] * std::sin(Angle);
+                }
+
+                const double Magnitude = 2. * std::sqrt((Real * Real) + (Imaginary * Imaginary)) / (double) MaxFrames;
+
+                // Broad visual gain and mild compression make every frequency region react strongly while retaining useful dynamic range.
+                const double FrequencyGain = 1.75 + (4.25 * std::pow(Amount, 1.20));
+
+                RawEnergies[i] = Clamp(std::pow(Magnitude * FrequencyGain * 7.4, 0.72));
             }
-
-            const double Magnitude = 2. * std::sqrt((Real * Real) + (Imaginary * Imaginary)) / (double) AnalysisCount;
-
-            // Broad visual gain and mild compression make every frequency region react strongly while retaining useful dynamic range.
-            const double FrequencyGain = 1.75 + (4.25 * std::pow(Amount, 1.20));
-
-            RawEnergies[i] = Clamp(std::pow(Magnitude * FrequencyGain * 7.4, 0.72));
         }
 
         // Blend adjacent logarithmic bands to suppress isolated spikes and produce a more cohesive layered flow.

@@ -89,116 +89,150 @@ namespace Swarm
         if (chunk.is_empty())
             return;
 
-        const audio_sample * Frames = chunk.get_data();
+        const size_t FrameCount   = chunk.get_sample_count();
+        const size_t ChannelCount = chunk.get_channel_count();
+        const size_t SampleRate   = chunk.get_sample_rate();
 
-        const unsigned ChannelCount = chunk.get_channel_count();
-        const unsigned SampleRate   = chunk.get_sample_rate();
+        const size_t MaxFrames = std::min<size_t>(FrameCount, 2048); // 2048 frames @ 44100 Hz ~ 46 ms
 
-        const size_t FrameCount = std::min(chunk.get_sample_count(), (size_t) 2048);
-
-        if (!Frames || !ChannelCount || FrameCount < 32 || !SampleRate)
+        if (MaxFrames < 32)
             return;
 
-        std::vector<double> WindowedSamples(FrameCount);
 
-        double SquareSum  = 0.;
+        // Initialize the energy accumulators.
+        double Sum  = 0.;           // Full-audio band
+
         double LeftPower  = 0.;
         double RightPower = 0.;
 
-        for (size_t i = 0; i < FrameCount; ++i)
+        if (_Samples.size() < MaxFrames)
+            _Samples.resize(MaxFrames);
+
+        auto Samples = std::span<double>(_Samples.data(), MaxFrames);
+
+        // Process all frames.
         {
-            const audio_sample * Frame = Frames + (i * ChannelCount);
+            const audio_sample * Frames = chunk.get_data();
 
-            double Mono = 0.;
-
+            for (size_t i = 0; i < MaxFrames; ++i)
             {
-                for (unsigned c = 0; c < ChannelCount; ++c)
-                    Mono += Frame[c];
+                const audio_sample * Frame = Frames + (i * ChannelCount);
 
-                Mono = ClampAudio(Mono / ChannelCount);
+                // Convert the frame to mono.
+                double Mono = 0.;
+                {
+                    for (unsigned c = 0; c < ChannelCount; ++c)
+                        Mono += Frame[c];
+
+                    Mono = ClampAudio(Mono / (double) ChannelCount);
+                }
+
+                // Apply a Hann window.
+                {
+                    const double Window = 0.5 - (std::cos(TwoPi * (double) i / ((double) MaxFrames - 1.)) * 0.5);
+
+                    Samples[i] = Mono * Window;
+                }
+
+                // Calculate peak level.
+                _Peak = std::max(_Peak, std::abs(Mono));
+
+                // Accumulate the full-band RMS energy.
+                Sum += Mono * Mono;
+
+                // Accumulate the stereo power.
+                LeftPower += Frame[0] * Frame[0];
+
+                const double Right = Frame[ChannelCount > 1 ? 1 : 0];
+
+                RightPower += Right * Right;
             }
-
-            // Apply a Hann window.
-            {
-                const double Window = 0.5 - (std::cos(TwoPi * (double) i / ((double) FrameCount - 1.)) * 0.5);
-
-                WindowedSamples[i] = Mono * Window;
-            }
-
-            SquareSum += Mono * Mono;
-
-            _Peak = std::max(_Peak, std::abs(Mono));
-
-            LeftPower += Frame[0] * Frame[0];
-
-            const double Right = Frame[ChannelCount > 1 ? 1 : 0];
-
-            RightPower += Right * Right;
         }
 
-        _RMS = std::sqrt(SquareSum / (double) FrameCount);
+        _RMS = std::sqrt(Sum / (double) MaxFrames);
 
+        // Detect silence.
         _HasAudio = (_Peak > 1.e-5) || (_RMS > 1.e-6);
 
         if (!_HasAudio)
             return;
 
-        const double StereoPower = LeftPower + RightPower;
-
-        _StereoBalance = (StereoPower > 1.e-12) ? std::clamp((RightPower - LeftPower) / StereoPower, -1., 1.) : 0.;
-
-        const double Nyquist = (double) SampleRate * 0.5;
-
-        double MaximumEnergy = 0.;
-
-        for (size_t i = 0; i < BandCount; ++i)
+        // Calculate the stereo balance.
         {
-            const double Amount = (double) i / (double) (BandCount - 1.);
-            const double Center = 40. * std::pow(400., Amount);
+            const double StereoPower = LeftPower + RightPower;
 
-            double Power = 0.;
+            _StereoBalance = (StereoPower > 1.e-12) ? std::clamp((RightPower - LeftPower) / StereoPower, -1., 1.) : 0.;
+        }
 
-            for (double Ratio : { .890898718, 1., 1.122462048 })
+        // Perform a spectrum analysis of logarithmically spaced frequency bands.
+        {
+            const double Nyquist = (double) SampleRate * 0.5;
+
+            double MaximumEnergy = 0.;
+
+            for (size_t i = 0; i < BandCount; ++i)
             {
-                const double Frequency   = std::clamp(Center * Ratio, 20., Nyquist * .95);
-                const double Omega       = TwoPi * Frequency / (double) SampleRate;
-                const double Coefficient = 2. * std::cos(Omega);
+                const double Amount = (double) i / (double) (BandCount - 1.); // [0, 1]
+                const double CenterFrequency = 40. * std::pow(400., Amount);
 
-                double q1 = 0.;
-                double q2 = 0.;
+                double Power = 0.;
 
-                for (double sample : WindowedSamples)
+                // Sample three frequencies per band: roughly one whole tone below the center, the center frequency and one whole tone above the center (std::pow(2, -1/6), 1, std::pow(2, +1/6))
+                for (double Ratio : { .890898718, 1., 1.122462048 })
                 {
-                    const double q0 = sample + Coefficient * q1 - q2;
+                    const double Frequency   = std::clamp(CenterFrequency * Ratio, 20., Nyquist * .95); // [40, 16000] Hz
 
-                    q2 = q1;
-                    q1 = q0;
+                    // Configure the Goertzel detector.
+                    {
+                        const double Omega       = TwoPi * Frequency / (double) SampleRate;
+                        const double Coefficient = 2. * std::cos(Omega);
+
+                        double q1 = 0.;
+                        double q2 = 0.;
+
+                        // Run the Goertzel ecurrence over the windowed signal.
+                        for (double sample : Samples)
+                        {
+                            const double q0 = sample + Coefficient * q1 - q2;
+
+                            q2 = q1;
+                            q1 = q0;
+                        }
+
+                        // Convert the detector state to power.
+                        Power += std::max(0., q2 * q2 + q1 * q1 - Coefficient * q1 * q2);
+                    }
                 }
 
-                Power += std::max(0., q2 * q2 + q1 * q1 - Coefficient * q1 * q2);
+                // Convert power to magnitude: Averages the three detector powers, converts power-like values into amplitude-like magnitude and normalizes the value.
+                const double Magnitude = std::sqrt(Power / 3.) / (double) MaxFrames;
+
+                // Compress (logarithmic) and shape the band energy. Perform high-frequency weighting: 0.9 for the lowest band, 1.5 for the highest band.
+                _BandEnergy[i] = Clamp(std::log1p(Magnitude * 80.) / std::log1p(80.) * Lerp(.9, 1.5, Amount));
+
+                // Track the highest frequency band energy.
+                MaximumEnergy = std::max(MaximumEnergy, _BandEnergy[i]);
             }
 
-            const double Magnitude = std::sqrt(Power / 3.) / (double) FrameCount;
-
-            _BandEnergy[i] = Clamp(std::log1p(Magnitude * 80.) / std::log1p(80.) * Lerp(.9, 1.5, Amount));
-
-            MaximumEnergy = std::max(MaximumEnergy, _BandEnergy[i]);
+            // Normalize the spectrum.
+            if (MaximumEnergy > 1.e-5)
+            {
+                for (double & e : _BandEnergy)
+                    e = Clamp(e / std::max(0.3, MaximumEnergy));
+            }
         }
 
-        if (MaximumEnergy > 1.e-5)
+        // Calculate the half-wave rectified spectral flux. It responds when spectral energy increases such as during drum hits, note attacks, sudden treble bursts and new musical events.
         {
-            for (double & e : _BandEnergy)
-                e = Clamp(e / std::max(.3, MaximumEnergy));
+            for (size_t i = 0; i < BandCount; ++i)
+            {
+                _SpectralFlux += std::max(0., _BandEnergy[i] - _PreviousBandEnergy[i]);
+
+                _PreviousBandEnergy[i] = _BandEnergy[i];
+            }
+
+            _SpectralFlux = Clamp(_SpectralFlux / (double) BandCount * 5.8); // Boost the spectral flux artificially by 5.8 to make it react more strongly.
         }
-
-        for (size_t i = 0; i < BandCount; ++i)
-        {
-            _SpectralFlux += std::max(0., _BandEnergy[i] - _PreviousBandEnergy[i]);
-
-            _PreviousBandEnergy[i] = _BandEnergy[i];
-        }
-
-        _SpectralFlux = Clamp(_SpectralFlux / (double) BandCount * 5.8); // Boost the spectral flux artificially by 5.8 to make it react more strongly.
     }
 
     /// <summary>

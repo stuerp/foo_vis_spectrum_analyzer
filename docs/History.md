@@ -1,6 +1,13 @@
 
 # foo_vis_spectrum_analyzer History
 
+v0.14.0.0-alpha4, 2026-11-01
+
+- Improved: The composite three-tier FFT analyzer cross-fades between the tiers using ratios derived from the FFT's bin width instead of fixed ratios.
+- Fixed: Peak Meter static content did not react to changed color selections.
+- Fixed: Non-spectrum analyzers received many short audio chunks due to a bug in the FFT hop code. (Alpha3 regression).
+- Fixed: Spectrogram showed spectrum residue to the left and top when scrolling in high-DPI scenarios. (Confirmed fix).
+
 v0.14.0.0-alpha3, 2026-10-31, Halloween edition.
 
 - Changed: Refactored the whole audio processor hierarchy to facilitate maintenance, improve performance and make future expansion easier. Things may have gotten broken. Report any issues, please.

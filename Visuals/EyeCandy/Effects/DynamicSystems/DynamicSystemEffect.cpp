@@ -1,5 +1,5 @@
 
-/** $VER: DynamicSystemEffect.cpp (2026.10.22) - Base class for a chaotic map effect (https://en.wikipedia.org/wiki/List_of_chaotic_maps) */
+/** $VER: DynamicSystemEffect.cpp (2026.11.01) - Base class for a chaotic map effect (https://en.wikipedia.org/wiki/List_of_chaotic_maps) */
 
 #include <pch.h>
 
@@ -63,53 +63,59 @@ namespace DynamicSystem
         const size_t FrameCount   = chunk.get_sample_count();
         const size_t ChannelCount = chunk.get_channel_count();
 
-        const audio_sample * Frame = chunk.get_data();
+        // Initialize the energy accumulators.
+        std::vector<double> ChannelPower(ChannelCount, 0.); // Total squared amplitude in a channel.
 
-        std::vector<double> ChannelPower(ChannelCount, 0.);
+        double TotalPower   = 0.; // Squared amplitude across all channels.
+        double CenterPower  = 0.; // Energy common to the channels. (Mid energy)
+        double SpatialPower = 0.; // Energy representing differences between channels. (Side energy)
+        double CrossProduct = 0.; // Pairwise channel similarity.
+        double Peak         = 0.; // Largest absolute sample value.
 
-        double TotalPower   = 0.;
-        double CenterPower  = 0.;
-        double SpatialPower = 0.;
-        double CrossProduct = 0.;
-        double Peak         = 0.;
-
-        const double ChannelScale = 1. / (double) ChannelCount;
-
-        const audio_sample * const End = Frame + FrameCount * ChannelCount;
-
-        while (Frame < End)
+        // Process all frames.
         {
-            const audio_sample * Sample = Frame;
-            const audio_sample * const FrameEnd = Frame + ChannelCount;
+            const double ChannelScale = 1. / (double) ChannelCount;
 
-            double FrameSum   = 0.;
-            double FramePower = 0.;
+            const audio_sample * Frame = chunk.get_data();
+            const audio_sample * const EndFrame = Frame + (FrameCount * ChannelCount);
 
-            size_t Channel = 0;
-
-            while (Sample < FrameEnd)
+            while (Frame < EndFrame)
             {
-                const double Value = (double) *Sample++;
-                const double Power = Value * Value;
+                const audio_sample * Sample = Frame;
+                const audio_sample * const FrameEnd = Frame + ChannelCount;
 
-                FrameSum   += Value;
-                FramePower += Power;
+                double FrameSum   = 0.;
+                double FramePower = 0.;
 
-                ChannelPower[Channel++] += Power;
+                // Process all channels in the frame.
+                {
+                    size_t Channel = 0;
 
-                Peak = std::max(Peak, std::abs(Value));
+                    while (Sample < FrameEnd)
+                    {
+                        const double Value = (double) *Sample++;
+                        const double Power = Value * Value;
+
+                        FrameSum   += Value;
+                        FramePower += Power;
+
+                        ChannelPower[Channel++] += Power;
+
+                        Peak = std::max(Peak, std::abs(Value));
+                    }
+                }
+
+                const double Center = FrameSum * ChannelScale;
+                const double CenterSquared = Center * Center;
+
+                CrossProduct += 0.5 * (FrameSum * FrameSum - FramePower);
+
+                TotalPower   += FramePower;
+                CenterPower  += CenterSquared;
+                SpatialPower += std::max(0., FramePower * ChannelScale - CenterSquared);
+
+                Frame = FrameEnd;
             }
-
-            const double Center = FrameSum * ChannelScale;
-            const double CenterSquared = Center * Center;
-
-            CrossProduct += 0.5 * (FrameSum * FrameSum - FramePower);
-
-            TotalPower   += FramePower;
-            CenterPower  += CenterSquared;
-            SpatialPower += std::max(0., FramePower * ChannelScale - CenterSquared);
-
-            Frame = FrameEnd;
         }
 
         _Peak = Peak;
@@ -117,30 +123,40 @@ namespace DynamicSystem
         if (TotalPower <= Epsilon)
             return;
 
-        _RMS = std::sqrt(TotalPower / (double) (FrameCount * ChannelCount));
+        _HasAudio = true;
 
-        if (CenterPower > Epsilon)
-            _StereoWidth = std::sqrt(SpatialPower / CenterPower);
-        else
-            _StereoWidth = (SpatialPower > Epsilon) ? 2. : 0.;
+        _RMS = std::sqrt(TotalPower / (double) (FrameCount * ChannelCount)); // RMS across all channels.
 
-        _StereoWidth = std::clamp(_StereoWidth, 0., 2.);
-
-        double CorrelationScale = 0.;
-
-        for (size_t LeftChannel = 0; LeftChannel < ChannelCount; ++LeftChannel)
+        // Calculate the stereo width: Side-to-mid ratio: 0.0: identical channels, fully mono; around 1.0: side energy equals mid energy;  above 1.0: more side energy than mid energy; 2.0: maximum displayed width after clamping.
         {
-            const double LeftPower = ChannelPower[LeftChannel];
+            if (CenterPower > Epsilon)
+                _StereoWidth = std::sqrt(SpatialPower / CenterPower);
+            else
+                _StereoWidth = (SpatialPower > Epsilon) ? 2. : 0.;
 
-            for (size_t RightChannel = LeftChannel + 1; RightChannel < ChannelCount; ++RightChannel)
-            {
-                CorrelationScale += std::sqrt(LeftPower * ChannelPower[RightChannel]);
-            }
+            _StereoWidth = std::clamp(_StereoWidth, 0., 2.); 
         }
 
-        if (CorrelationScale > Epsilon)
-            _Correlation = std::clamp(CrossProduct / CorrelationScale, -1., 1.);
+        // Calculate the correlation: +1: channels have the same shape and polarity; 0: channels are unrelated or orthogonal over the analysis window; -1: channels have the same shape but opposite polarity.
+        {
+            double CorrelationScale = 0.;
 
+            // Calculate the normalization factor.
+            for (size_t LeftChannel = 0; LeftChannel < ChannelCount; ++LeftChannel)
+            {
+                const double LeftPower = ChannelPower[LeftChannel];
+
+                for (size_t RightChannel = LeftChannel + 1; RightChannel < ChannelCount; ++RightChannel)
+                {
+                    CorrelationScale += std::sqrt(LeftPower * ChannelPower[RightChannel]);
+                }
+            }
+
+            if (CorrelationScale > Epsilon)
+                _Correlation = std::clamp(CrossProduct / CorrelationScale, -1., 1.);
+        }
+
+        // Calculate the phase energy. L=R: phase energy is 0; only one channel active: phase energy is 0.5; L=−RL=-RL=−R: phase energy is 1; unrelated equal-power channels: approximately 0.5.
         _PhaseEnergy = Clamp(SpatialPower * (double) ChannelCount / TotalPower);
     }
 

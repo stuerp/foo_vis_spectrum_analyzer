@@ -32,29 +32,19 @@ namespace EyeCandy
 
         const audio_sample * Sample = chunk.get_data();
 
-        // During track hand-off a chunk can be structurally empty even when is_empty() did not catch it.
-        // Do not divide by zero or construct invalid filter coefficients from that transient chunk.
-        if (FrameCount == 0 || ChannelCount == 0 || SampleRate == 0 || Sample == nullptr)
-        {
-            // Keep the visualizer moving naturally when no new audio is available.
-            Decay(deltaTime);
-
-            return;
-        }
-
         // Calculate the one-pole low-pass filter coefficients. _LowState tracks frequencies below roughly 220 Hz, while _HighState tracks frequencies below 2400 Hz.
-        const double BassCoefficient   = std::exp(-TwoPi * BassCutoff / (double) SampleRate);
-        const double TrebleCoefficient = std::exp(-TwoPi * MidCutoff  / (double) SampleRate);
+        const double BassCoefficient = std::exp(-TwoPi * BassCutoff / (double) SampleRate);
+        const double MidCoefficient  = std::exp(-TwoPi * MidCutoff  / (double) SampleRate);
 
-        const double BassInputCoefficient   = 1. - BassCoefficient;
-        const double TrebleInputCoefficient = 1. - TrebleCoefficient;
+        const double BassInputCoefficient = 1. - BassCoefficient;
+        const double MidInputCoefficient  = 1. - MidCoefficient;
 
         const double ChannelScale = 1. / (double) ChannelCount;
 
-        double TotalSignalEnergy  = 0.;
+        double TotalEnergy  = 0.;
 
         double BassEnergy         = 0.;
-        double MidrangeEnergy     = 0.;
+        double MidEnergy     = 0.;
         double TrebleEnergy       = 0.;
 
         double LeftChannelEnergy  = 0.;
@@ -113,7 +103,7 @@ namespace EyeCandy
                 const double ChannelSample       = (double) *Sample;
                 const double ChannelSampleEnergy = ChannelSample * ChannelSample;
 
-                TotalSignalEnergy += ChannelSampleEnergy;
+                TotalEnergy += ChannelSampleEnergy;
                 Mono        += ChannelSample;
 
                 PeakAmplitude = std::max(PeakAmplitude, std::abs(ChannelSample));
@@ -160,41 +150,42 @@ namespace EyeCandy
             Mono *= ChannelScale;
 
             // Update the persistent one-pole low-pass filter states.
-            _LowState  = (BassInputCoefficient   * Mono) + (BassCoefficient   * _LowState);
-            _HighState = (TrebleInputCoefficient * Mono) + (TrebleCoefficient * _HighState);
+            _BassState = (BassInputCoefficient * Mono) + (BassCoefficient * _BassState);
+            _MidState  = (MidInputCoefficient  * Mono) + (MidCoefficient  * _MidState);
 
             // Split the mono signal into approximate frequency bands.
-            const double Bass   = _LowState;
-            const double Treble = Mono - _HighState;
-            const double Mid    = _HighState - _LowState;
+            const double Bass   = _BassState;
+            const double Treble = Mono - _MidState;
+            const double Mid    = _MidState - _BassState;
 
-            BassEnergy     += Bass   * Bass;
-            MidrangeEnergy += Mid    * Mid;
-            TrebleEnergy   += Treble * Treble;
+            // Accumulate the energy for each band.
+            BassEnergy   += Bass   * Bass;
+            MidEnergy    += Mid    * Mid;
+            TrebleEnergy += Treble * Treble;
         }
 
         const double FramesScale  = 1. / (double) FrameCount;
         const double SamplesScale = FramesScale * ChannelScale;
 
         // Convert accumulated signal energy to RMS amplitudes. The scale factors tune visual sensitivity.
-        double NewLoudness = Clamp(std::sqrt(TotalSignalEnergy * SamplesScale) * 3.4);
+        double NewLoudness     = Clamp(std::sqrt(TotalEnergy * SamplesScale) * 3.4);
 
-        double NewBass     = Clamp(std::sqrt(BassEnergy        * FramesScale) * 5.2);
-        double NewMid      = Clamp(std::sqrt(MidrangeEnergy    * FramesScale) * 6.4);
-        double NewTreble   = Clamp(std::sqrt(TrebleEnergy      * FramesScale) * 8.5);
+        double NewBassEnergy   = Clamp(std::sqrt(BassEnergy   * FramesScale) * 5.2);
+        double NewMidEnergy    = Clamp(std::sqrt(MidEnergy    * FramesScale) * 6.4);
+        double NewTrebleEnergy = Clamp(std::sqrt(TrebleEnergy * FramesScale) * 8.5);
 
         // Energy balance ranges approximately from -1 for fully left to +1 for fully right.
         double NewBalance  = (RightChannelEnergy - LeftChannelEnergy) / (LeftChannelEnergy + RightChannelEnergy + Epsilon);
         double NewPeak     = Clamp(PeakAmplitude);
 
         // Apply separate response speeds because each visual characteristic benefits from a different amount of motion and stability.
-        _Loudness = Interpolate(_Loudness, NewLoudness, deltaTime, 10);
+        _Loudness     = Interpolate(_Loudness,     NewLoudness,     deltaTime, 10);
 
-        _Bass     = Interpolate(_Bass,     NewBass,     deltaTime,  7);
-        _Mid      = Interpolate(_Mid,      NewMid,      deltaTime,  9);
-        _Treble   = Interpolate(_Treble,   NewTreble,   deltaTime, 13);
+        _BassEnergy   = Interpolate(_BassEnergy,   NewBassEnergy,   deltaTime,  7);
+        _MidEnergy    = Interpolate(_MidEnergy,    NewMidEnergy,    deltaTime,  9);
+        _TrebleEnergy = Interpolate(_TrebleEnergy, NewTrebleEnergy, deltaTime, 13);
 
-        _Balance  = Interpolate(_Balance,  NewBalance,  deltaTime,  5);
+        _Balance      = Interpolate(_Balance,      NewBalance,      deltaTime,  5);
 
         // PeakAmplitude tracks the largest absolute sample in the entire chunk. Unlike RMS loudness, this responds directly to sharp transients such as drum hits.
         // The smoothing logic gives peaks an immediate attack and an exponential release producing a stable peak-hold effect without hiding sudden transients.
@@ -208,13 +199,13 @@ namespace EyeCandy
     /// </summary>
     void processor_t::Decay(double deltaTime) noexcept
     {
-        _Loudness *= std::exp(-2.4 * deltaTime);
+        _Loudness     *= std::exp(-2.4 * deltaTime);
 
-        _Bass     *= std::exp(-2   * deltaTime);
-        _Mid      *= std::exp(-2.5 * deltaTime);
-        _Treble   *= std::exp(-3   * deltaTime);
+        _BassEnergy   *= std::exp(-2.0 * deltaTime);
+        _MidEnergy    *= std::exp(-2.5 * deltaTime);
+        _TrebleEnergy *= std::exp(-3.0 * deltaTime);
 
-        _Balance  *= std::exp(-2   * deltaTime);
-        _Peak     *= std::exp(-2.8 * deltaTime);
+        _Balance      *= std::exp(-2.0 * deltaTime);
+        _Peak         *= std::exp(-2.8 * deltaTime);
     }
 }

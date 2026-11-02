@@ -206,17 +206,17 @@ namespace Fireflies
         const unsigned SampleRate   = chunk.get_sample_rate();
 
         // Analyze only the most recent 2048 sample frames.
-        const size_t AnalysisCount = std::min(FrameCount, (size_t) 2048);
+        const size_t MaxFrames = std::min(FrameCount, (size_t) 2048);
 
-        if (AnalysisCount < 32)
+        if (MaxFrames < 32)
             return;
 
-        const size_t FirstFrame = FrameCount - AnalysisCount;
+        const size_t FirstFrame = FrameCount - MaxFrames;
 
-        std::vector<double> WindowedSamples(AnalysisCount, 0.);
+        std::vector<double> WindowedSamples(MaxFrames, 0.);
 
         const audio_sample *       Frame    = Frames + FirstFrame * (size_t) ChannelCount;
-        const audio_sample * const FrameEnd = Frame + AnalysisCount * (size_t) ChannelCount;
+        const audio_sample * const FrameEnd = Frame + MaxFrames * (size_t) ChannelCount;
 
         double * WindowedSample = WindowedSamples.data();
 
@@ -243,7 +243,7 @@ namespace Fireflies
 
                 // Apply a Hann window.
                 {
-                    const double Window = 0.5 - (std::cos(TwoPi * (double) FrameIndex / (double) (AnalysisCount - 1)) * 0.5);
+                    const double Window = 0.5 - (std::cos(TwoPi * (double) FrameIndex / (double) (MaxFrames - 1)) * 0.5);
 
                     *WindowedSample++ = Sample * Window;
                 }
@@ -258,7 +258,7 @@ namespace Fireflies
             }
         }
 
-        _RMS = std::sqrt(SquaredSum / (double) AnalysisCount);
+        _RMS = std::sqrt(SquaredSum / (double) MaxFrames);
 
         _HasAudio = (_Peak > 1.0e-5) || (_RMS > 1.0e-6);
 
@@ -299,7 +299,7 @@ namespace Fireflies
                 double Previous2 = 0.;
 
                 const double *       Sample    = WindowedSamples.data();
-                const double * const SampleEnd = Sample + AnalysisCount;
+                const double * const SampleEnd = Sample + MaxFrames;
 
                 while (Sample < SampleEnd)
                 {
@@ -312,7 +312,7 @@ namespace Fireflies
                 BandPower += std::max(0., Previous2 * Previous2 + Previous * Previous - Coefficient * Previous * Previous2);
             }
 
-            const double Magnitude  = std::sqrt(BandPower / (double) _countof(Frequencies)) / (double) AnalysisCount;
+            const double Magnitude  = std::sqrt(BandPower / (double) _countof(Frequencies)) / (double) MaxFrames;
             const double Compressed = std::log1p(Magnitude * 80.) / std::log1p(80.);
 
             _BandEnergy[i] = (float) Clamp(Compressed * Lerp(0.85, 1.45, BandAmount));

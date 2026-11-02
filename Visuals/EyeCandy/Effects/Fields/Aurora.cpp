@@ -168,9 +168,9 @@ namespace Aurora
 
         const double ClampedZoom = std::clamp(_Interaction.Zoom, .55, 2.2); // Prevent extreme or invalid scaling.
 
-        const double LowEnergy   = Clamp((_Processor._Bass   * .82) + (_Processor._Loudness * .18));
-        const double MidEnergy   = Clamp((_Processor._Mid    * .84) + (_Processor._Loudness * .16));
-        const double HighEnergy  = Clamp((_Processor._Treble * .88) + (_Processor._Peak     * .12));
+        const double LowEnergy   = Clamp((_Processor._BassEnergy   * .82) + (_Processor._Loudness * .18));
+        const double MidEnergy   = Clamp((_Processor._MidEnergy    * .84) + (_Processor._Loudness * .16));
+        const double HighEnergy  = Clamp((_Processor._TrebleEnergy * .88) + (_Processor._Peak     * .12));
 
         const double BroadEnergy = Clamp((LowEnergy + MidEnergy + HighEnergy) / 3.);
 
@@ -229,11 +229,11 @@ namespace Aurora
         const double H =
             _Theme.BaseHue +
            (_Theme.HueSpan   * ((Fold * .72) + (Height * .18))) +
-           (_Theme.BassHue   * _Processor._Bass) +
-           (_Theme.MidHue    * _Processor._Mid) +
-           (_Theme.TrebleHue * _Processor._Treble);
+           (_Theme.BassHue   * _Processor._BassEnergy) +
+           (_Theme.MidHue    * _Processor._MidEnergy) +
+           (_Theme.TrebleHue * _Processor._TrebleEnergy);
 
-        const double S = Clamp((_Theme.Saturation * .78) + (.14 * Fold) + (.08 * _Processor._Treble));
+        const double S = Clamp((_Theme.Saturation * .78) + (.14 * Fold) + (.08 * _Processor._TrebleEnergy));
 
         const double Ambient = .012 + (.055 * std::pow(Clamp(_Processor._Loudness), .6));
 
@@ -243,9 +243,9 @@ namespace Aurora
 
         HSVToRGB(H, S, V, R, G, B);
 
-        R = Clamp(R + (_Theme.BassRed    * _Processor._Bass)   + (.06 * Fold));
-        G = Clamp(G + (_Theme.MidGreen   * _Processor._Mid)    + (.14 * Intensity));
-        B = Clamp(B + (_Theme.TrebleBlue * _Processor._Treble) + (.10 * Fold));
+        R = Clamp(R + (_Theme.BassRed    * _Processor._BassEnergy)   + (.06 * Fold));
+        G = Clamp(G + (_Theme.MidGreen   * _Processor._MidEnergy)    + (.14 * Intensity));
+        B = Clamp(B + (_Theme.TrebleBlue * _Processor._TrebleEnergy) + (.10 * Fold));
 
         const double BrightnessFactor = [&]() noexcept
         {

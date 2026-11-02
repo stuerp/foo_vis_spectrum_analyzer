@@ -1,5 +1,5 @@
 
-/** $VER: RibbonFlow.h (2026.10.22) */
+/** $VER: RibbonFlow.h (2026.11.02) */
 
 #pragma once
 
@@ -67,6 +67,7 @@ namespace RibbonFlow
 
         D2D1_COLOR_F Colorize(double value) const noexcept;
 
+    private:
         HRESULT CreateDeviceDependentResources(ID2D1RenderTarget * renderTarget) noexcept;
         void DeleteDeviceDependentResources() noexcept;
 
@@ -75,7 +76,9 @@ namespace RibbonFlow
         std::vector<ribbon_t> _Ribbons;
 
         double _SampleRate = 44100.;
+        std::vector<double> _Samples;
 
+    private:
         ComPtr<ID2D1SolidColorBrush> _Brush;
         ComPtr<ID2D1StrokeStyle> _StrokeStyle;
         ComPtr<ID2D1BitmapRenderTarget> _BackBufferRenderTarget;

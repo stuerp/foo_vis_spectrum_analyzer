@@ -95,17 +95,19 @@ namespace AudioGalaxy
     /// </summary>
     void effect_t::AnalyzeAudio(const audio_chunk & chunk)
     {
-        _Peak         = 0.;
-        _RMS          = 0.;
-
-        _BassEnergy   = 0.;
-        _MidEnergy    = 0.;
-        _TrebleEnergy = 0.;
-
         _HasAudio = false;
 
         if (chunk.is_empty())
+        {
+            _Peak         = 0.;
+            _RMS          = 0.;
+
+            _BassEnergy   = 0.;
+            _MidEnergy    = 0.;
+            _TrebleEnergy = 0.;
+
             return;
+        }
 
         const size_t FrameCount   = chunk.get_sample_count();
         const size_t ChannelCount = chunk.get_channel_count();
@@ -114,19 +116,15 @@ namespace AudioGalaxy
         const size_t MaxFrames  = std::min<size_t>(FrameCount, 4096); // 4096 frames @ 44100 Hz ~ 93 ms
         const size_t FrameIndex = FrameCount - MaxFrames;
 
-        if ((MaxFrames < 8) || !ChannelCount || !SampleRate)
+        if (MaxFrames < 8)
             return;
 
-        // Determine the analysis window.
-        const audio_sample *       Frame    = chunk.get_data() + (FrameIndex * ChannelCount);
-        const audio_sample * const EndFrame = Frame            + (MaxFrames  * ChannelCount);
-
         // Initialize the energy accumulators.
-        double Sum = 0.;        // Full-audio band
+        double Sum = 0.;            // Full-audio band
 
-        double SumBass   = 0.;  // Bass
-        double SumMid    = 0.;  // Mid
-        double SumTreble = 0.;  // Treble
+        double BassEnergy   = 0.;   // Bass
+        double MidEnergy    = 0.;   // Mid
+        double TrebleEnergy = 0.;   // Treble
 
         // Calculate the one-pole low-pass filter coefficients. _LowState tracks frequencies below roughly 180 Hz, while _HighState tracks frequencies below 2400 Hz.
         const double SubBassCoefficient = std::exp(-TwoPi * SubBassCutoff / (double) SampleRate);
@@ -134,15 +132,19 @@ namespace AudioGalaxy
         const double MidCoefficient     = std::exp(-TwoPi * MidCutoff     / (double) SampleRate);
 
         // Process all frames.
+        const audio_sample *       Frame    = chunk.get_data() + (FrameIndex * ChannelCount);
+        const audio_sample * const EndFrame = Frame            + (MaxFrames  * ChannelCount);
+
         while (Frame < EndFrame)
         {
             // Convert the frame to mono.
             double Mono = 0.;
+            {
+                for (size_t i = 0; i < ChannelCount; ++i)
+                    Mono += Frame[i];
 
-            for (size_t i = 0; i < ChannelCount; ++i)
-                Mono += Frame[i];
-
-            Mono = ClampAudio(Mono / (double) ChannelCount);
+                Mono = ClampAudio(Mono / (double) ChannelCount);
+            }
 
             // Calculate peak level.
             _Peak = std::max(_Peak, std::abs(Mono));
@@ -155,15 +157,15 @@ namespace AudioGalaxy
             _SubBassState = (1. - SubBassCoefficient) * _BassState + (SubBassCoefficient * _SubBassState);
             _MidState     = (1. - MidCoefficient)     * Mono       + (MidCoefficient     * _MidState);
 
-            // Derive bass, mid and treble.
+            // Split the mono signal into approximate frequency bands.
             const double Bass   = _BassState - _SubBassState;
             const double Mid    = _MidState - _BassState;
             const double Treble = Mono - _MidState;
 
             // Accumulate the energy for each band.
-            SumBass   += Bass   * Bass;
-            SumMid    += Mid    * Mid;
-            SumTreble += Treble * Treble;
+            BassEnergy   += Bass   * Bass;
+            MidEnergy    += Mid    * Mid;
+            TrebleEnergy += Treble * Treble;
 
             // Move to the next frame.
             Frame += ChannelCount;
@@ -174,10 +176,11 @@ namespace AudioGalaxy
         _RMS = std::sqrt(Sum * FramesScale);
 
         // Compress the bass and mid energy nonlinear into ranges useful for visualization.
-        _BassEnergy   = Clamp(std::log1p(std::sqrt(SumBass   * FramesScale) * 36.) / std::log1p(36.)); // Gain 36
-        _MidEnergy    = Clamp(std::log1p(std::sqrt(SumMid    * FramesScale) * 22.) / std::log1p(22.)); // Gain 22
-        _TrebleEnergy = Clamp(std::log1p(std::sqrt(SumTreble * FramesScale) * 16.) / std::log1p(16.)); // Gain 16
+        _BassEnergy   = Clamp(std::log1p(std::sqrt(BassEnergy   * FramesScale) * 36.) / std::log1p(36.)); // Gain 36
+        _MidEnergy    = Clamp(std::log1p(std::sqrt(MidEnergy    * FramesScale) * 22.) / std::log1p(22.)); // Gain 22
+        _TrebleEnergy = Clamp(std::log1p(std::sqrt(TrebleEnergy * FramesScale) * 16.) / std::log1p(16.)); // Gain 16
 
+        // Detect silence.
         _HasAudio = (_Peak > 1.e-5) || (_RMS > 1.e-6);
     }
 

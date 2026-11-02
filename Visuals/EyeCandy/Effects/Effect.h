@@ -419,6 +419,8 @@ namespace EyeCandy
 
         interaction_t _Interaction {};
 
+        virtual void OnMouseWheel(short wheelDelta) noexcept { };
+
         // Factory method
         static std::unique_ptr<effect_t> Create(Effect effect) noexcept;
 
@@ -451,7 +453,7 @@ namespace EyeCandy
         static const color_theme_t & GetTheme(ColorTheme theme) noexcept;
         static const std::wstring GetThemeName(ColorTheme theme) noexcept;
 
-        static inline float SmoothStep(float lower, float upper, float value) noexcept;
+        template <typename T> static T SmoothStep(T lower, T upper, T value) noexcept;
 
         static inline uint32_t Hash(uint32_t value) noexcept;
         static inline double Random(uint32_t & state) noexcept;
@@ -469,29 +471,29 @@ namespace EyeCandy
         double _AnimationTime = 0.;
 
     protected:
-        double _Peak                = 0.; // [0, 1], Overall peak amplitude. The loudest individual mono sample in a chunk.
-        double _RMS                 = 0.; // [0, 1], Full-band mono RMS loudness
-        double _StereoWidth         = 0.; // [0, 1]
-        double _Correlation         = 1.; // [0, 1]
+        double _Peak                 = 0.; // [ 0, 1], Overall peak amplitude. The loudest individual mono sample in a chunk.
+        double _RMS                  = 0.; // [ 0, 1], Full-band mono RMS loudness
+        double _StereoWidth          = 0.; // [ 0, 2], Side-to-mid ratio: 0.0: identical channels, fully mono; around 1.0: side energy equals mid energy;  above 1.0: more side energy than mid energy; 2.0: maximum displayed width after clamping.
+        double _Correlation          = 1.; // [-1, 1], +1: channels have the same shape and polarity; 0: channels are unrelated or orthogonal over the analysis window; -1: channels have the same shape but opposite polarity.
 
-        double _BassEnergy          = 0.; // [0, 1] Combined bass energy
-        double _MidEnergy           = 0.; // [0, 1] Combined midrange energy
-        double _TrebleEnergy        = 0.; // [0, 1] Combined treble energy
-        double _PhaseEnergy         = 0.; // [0, 1]
+        double _BassEnergy           = 0.; // [ 0, 1], Combined bass energy
+        double _MidEnergy            = 0.; // [ 0, 1], Combined midrange energy
+        double _TrebleEnergy         = 0.; // [ 0, 1], Combined treble energy
+        double _PhaseEnergy          = 0.; // [ 0, 1], L=R: phase energy is 0; only one channel active: phase energy is 0.5; L=−RL=-RL=−R: phase energy is 1; unrelated equal-power channels: approximately 0.5.
 
-        double _SpectralFlux        = 0.; // [0, 1] How much the frequency spectrum increased since the previous call.
+        double _SpectralFlux         = 0.; // [ 0, 1], How much the frequency spectrum increased since the previous call. Responds when spectral energy increases such as during drum hits, note attacks, sudden treble bursts and new musical events.
 
-        double _SmoothedPeak        = 0.; // [0, 1]
-        double _SmoothedRMS         = 0.; // [0, 1]
+        double _SmoothedPeak         = 0.; // [ 0, 1]
+        double _SmoothedRMS          = 0.; // [ 0, 1]
 
-        double _SmoothedBass        = 0.; // [0, 1]
-        double _SmoothedMid         = 0.; // [0, 1]
-        double _SmoothedTreble      = 0.; // [0, 1]
+        double _SmoothedBass         = 0.; // [ 0, 1]
+        double _SmoothedMid          = 0.; // [ 0, 1]
+        double _SmoothedTreble       = 0.; // [ 0, 1]
 
-        double _SmoothedStereoWidth       = 0.; // [0, 1]
-        double _SmoothedCorrelation = 1.; // [0, 1]
+        double _SmoothedStereoWidth  = 0.; // [ 0, 1]
+        double _SmoothedCorrelation  = 1.; // [ 0, 1]
 
-        double _SmoothedSpectralFlux = 0.; // [0, 1]
+        double _SmoothedSpectralFlux = 0.; // [ 0, 1]
 
         static constexpr size_t FrequencyBandCount = 8;
 
@@ -602,16 +604,17 @@ namespace EyeCandy
     };
 
     /// <summary>
-    /// Converts v into a smoothly interpolated value between 0 and 1. Unlike a linear interpolation, it starts and ends gradually, avoiding sharp transitions.
+    /// Converts value into a smoothly interpolated value between 0 and 1. Unlike a linear interpolation, it starts and ends gradually, avoiding sharp transitions.
     /// </summary>
-    float effect_t::SmoothStep(float lower, float upper, float value) noexcept
+    template <typename T>
+    T effect_t::SmoothStep(T lower, T upper, T value) noexcept
     {
         if (lower == upper)
-            return value >= upper ? 1.f : 0.f;
+            return value >= upper ? T { 1 } : T { 0 };
 
-        const float Amount = Clamp((value - lower) / (upper - lower));
+        const T Amount = Clamp((value - lower) / (upper - lower));
 
-        return Amount * Amount * (3.f - (2.f * Amount));
+        return Amount * Amount * (T { 3 } - T { 2 } * Amount);
     }
 
     /// <summary>

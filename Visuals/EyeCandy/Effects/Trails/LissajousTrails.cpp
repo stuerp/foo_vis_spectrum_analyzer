@@ -1,5 +1,5 @@
 
-/** $VER: LissajousTrails.cpp (2026.10.20) **/
+/** $VER: LissajousTrails.cpp (2026.11.01) **/
 
 #include <pch.h>
 
@@ -204,6 +204,7 @@ namespace LissajousTrails
         const double MidSquared  = 0.25 * (TotalPower + 2. * CrossProduct);
         const double SideSquared = 0.25 * (TotalPower - 2. * CrossProduct);
 
+        // Calculate the stereo width: Side-to-mid ratio: 0.0: identical channels, fully mono; around 1.0: side energy equals mid energy;  above 1.0: more side energy than mid energy; 2.0: maximum displayed width after clamping.
         {
             // Stereo width is the side-channel RMS relative to the mid-channel RMS.
             if (MidSquared > Epsilon)
@@ -215,6 +216,7 @@ namespace LissajousTrails
             _StereoWidth = std::clamp(_StereoWidth, 0., 2.);
         }
 
+        // Calculate the correlation: +1: channels have the same shape and polarity; 0: channels are unrelated or orthogonal over the analysis window; -1: channels have the same shape but opposite polarity.
         {
             const double CorrelationPower = LeftSquared * RightSquared;
 
@@ -225,6 +227,7 @@ namespace LissajousTrails
                 _Correlation = 1.;
         }
 
+        // Calculate the phase energy. L=R: phase energy is 0; only one channel active: phase energy is 0.5; L=−RL=-RL=−R: phase energy is 1; unrelated equal-power channels: approximately 0.5.
         _PhaseEnergy = Clamp(2. * SideSquared / TotalPower);
     }
 

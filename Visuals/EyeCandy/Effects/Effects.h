@@ -1,5 +1,5 @@
 
-/** $VER: Effects.h (2026.10.22) P. Stuer **/
+/** $VER: Effects.h (2026.11.02) P. Stuer **/
 
 #pragma once
 
@@ -57,7 +57,15 @@ namespace EyeCandy
 
         Monitor,
 
+        HiddenLineLandscape,
+        Rotozoomer,
+        InterferenceMoire,
+        FlipDotMatrix,
+        DitherField,
+        FlowerScope,
+        HarmonicHarp,
+
         Min = Waveform,
-        Max = Monitor,
+        Max = HarmonicHarp,
     };
 }

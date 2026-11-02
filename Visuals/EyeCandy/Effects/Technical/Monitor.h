@@ -92,7 +92,7 @@ namespace Monitor
 
     private:
         void AnalyzeAudio(const audio_chunk & chunk, const channel_pair_t & channels) noexcept;
-        void AnalyzeSpectrum(const std::vector<double> & samples, double sampleRate) noexcept;
+        void AnalyzeSpectrum(const std::span<double> & samples, double sampleRate) noexcept;
         void Update(double deltaTime) noexcept;
         void RecordHistory(double deltaTime) noexcept;
 
@@ -153,7 +153,7 @@ namespace Monitor
         double _BassCorrelation = 1.;
         double _TransientRate = 0.;
 
-        std::vector<double> _AnalysisSamples;
+        std::vector<double> _Samples;
         std::vector<double> _AnalysisWindow;
         double _AnalysisWindowGain = 1.;
 

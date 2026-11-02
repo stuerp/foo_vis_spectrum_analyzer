@@ -147,8 +147,8 @@ namespace Plasma
         if (_Pixels.empty() || _Workers.empty())
             return;
 
-        const double ClampedZoom = std::clamp(_Interaction.Zoom, .55, 2.2); // Prevent extreme or invalid scaling.
-        const double CoordinateScale = (2.3 - (.55 * _Processor._Bass)) / ClampedZoom;
+        const double ClampedZoom = std::clamp(_Interaction.Zoom, .50, 2.50); // Prevent extreme or invalid scaling.
+        const double CoordinateScale = (2.5 - (.50 * _Processor._BassEnergy)) / ClampedZoom;
 
         work_t Work
         {
@@ -160,16 +160,16 @@ namespace Plasma
             .CoordinateScale      = CoordinateScale,
             .HorizontalScale      = CoordinateScale * ((double) _RasterWidth / (double) _RasterHeight),
 
-            .HorizontalFrequency  = 2.2 + (1.8 * _Processor._Mid),
-            .DiagonalFrequency    = 2.7 + (1.2 * _Processor._Bass),
-            .RadialFrequency      = 7.  + (3.0 * _Processor._Bass),
+            .HorizontalFrequency  = 2.2 + (1.8 * _Processor._MidEnergy),
+            .DiagonalFrequency    = 2.7 + (1.2 * _Processor._BassEnergy),
+            .RadialFrequency      = 7.  + (3.0 * _Processor._BassEnergy),
 
-            .HorizontalPhase      = time * (0.70 + _Processor._Treble * 0.70),
-            .DiagonalPhase        = time * (0.55 + _Processor._Mid),
+            .HorizontalPhase      = time * (0.70 + _Processor._TrebleEnergy * 0.70),
+            .DiagonalPhase        = time * (0.55 + _Processor._MidEnergy),
             .RadialPhase          = time * (1.10 + _Processor._Peak),
             .DetailPhase          = time *  0.42,
             .RipplePhase          = time *  9.00,
-            .ColorPhase           = time * (0.12 + _Processor._Treble * 2.00),
+            .ColorPhase           = time * (0.12 + _Processor._TrebleEnergy * 2.00),
 
             .BalanceOffset        = .28 * _Processor._Balance,
             .RadialCenterX        = .65 * std::sin(time * .31),
@@ -286,12 +286,12 @@ namespace Plasma
         const double H =
             _Theme.BaseHue +
             _Theme.HueSpan   * PlasmaIntensity +
-            _Theme.BassHue   * _Processor._Bass +
-            _Theme.MidHue    * _Processor._Mid +
-            _Theme.TrebleHue * _Processor._Treble;
+            _Theme.BassHue   * _Processor._BassEnergy +
+            _Theme.MidHue    * _Processor._MidEnergy +
+            _Theme.TrebleHue * _Processor._TrebleEnergy;
 
         // Treble can increase saturation to make high-frequency activity appear sharper and more colorful.
-        const double S = Clamp(_Theme.Saturation + (Colorization.TrebleSaturation * _Processor._Treble));
+        const double S = Clamp(_Theme.Saturation + (Colorization.TrebleSaturation * _Processor._TrebleEnergy));
 
         // Shape brightness across the plasma field. With the default settings, middle intensities are brighter than either end of the palette.
         const double Frequency           = Colorization.IntensityCurveFrequency * PlasmaIntensity;
@@ -308,9 +308,9 @@ namespace Plasma
         HSVToRGB(H, S, V, R, G, B);
 
         // Apply frequency-specific RGB accents after HSV conversion.
-        R = Clamp(R + _Theme.BassRed    * _Processor._Bass);
-        G = Clamp(G + _Theme.MidGreen   * _Processor._Mid);
-        B = Clamp(B + _Theme.TrebleBlue * _Processor._Treble);
+        R = Clamp(R + _Theme.BassRed    * _Processor._BassEnergy);
+        G = Clamp(G + _Theme.MidGreen   * _Processor._MidEnergy);
+        B = Clamp(B + _Theme.TrebleBlue * _Processor._TrebleEnergy);
 
         const double BrightnessFactor = [&]() noexcept
         {

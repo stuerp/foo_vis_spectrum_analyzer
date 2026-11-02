@@ -172,16 +172,16 @@ namespace FluidInk
             .Time            = time,
             .InverseWidth    = 1. / (double) _RasterWidth,
             .InverseHeight   = 1. / (double) _RasterHeight,
-            .CoordinateScale = (1.12 + (.20 * _Processor._Bass)) / ClampedZoom,
+            .CoordinateScale = (1.12 + (.20 * _Processor._BassEnergy)) / ClampedZoom,
             .HorizontalScale = (double) _RasterWidth / std::max(1., (double) _RasterHeight),
             .FlowSpeed       = .18 + (.72 * _Processor._Loudness),
-            .BassPush        = .18 + (1.75 * _Processor._Bass),
-            .MidCurl         = .28 + (1.45 * _Processor._Mid),
-            .TrebleDetail    = .12 + (1.35 * _Processor._Treble),
+            .BassPush        = .18 + (1.75 * _Processor._BassEnergy),
+            .MidCurl         = .28 + (1.45 * _Processor._MidEnergy),
+            .TrebleDetail    = .12 + (1.35 * _Processor._TrebleEnergy),
             .TransientForce  = Transient,
             .ForcePositionX  = .48 * std::sin(time * .31 + _Processor._Balance * 2.1),
             .ForcePositionY  = .34 * std::cos(time * .23 - _Processor._Balance * 1.4),
-            .ColorPhase      = time * (.09 + (.22 * _Processor._Treble)),
+            .ColorPhase      = time * (.09 + (.22 * _Processor._TrebleEnergy)),
             .BalanceOffset   = .24 * _Processor._Balance,
             .HasImpulse      = (_Interaction.Impulse != 0.)
         };
@@ -219,7 +219,7 @@ namespace FluidInk
         const double Stream    = Clamp(stream);
         const double Highlight = Clamp(highlight);
 
-        const double H = _Theme.BaseHue + (_Theme.HueSpan * (.12 + (.88 * Stream))) + (_Theme.BassHue * _Processor._Bass) + (_Theme.MidHue * _Processor._Mid) + (_Theme.TrebleHue * _Processor._Treble);
+        const double H = _Theme.BaseHue + (_Theme.HueSpan * (.12 + (.88 * Stream))) + (_Theme.BassHue * _Processor._BassEnergy) + (_Theme.MidHue * _Processor._MidEnergy) + (_Theme.TrebleHue * _Processor._TrebleEnergy);
 
         const double S = Clamp((_Theme.Saturation * (.74 + (.24 * Density))) + (.12 * Stream));
 
@@ -231,9 +231,9 @@ namespace FluidInk
 
         HSVToRGB(H, S, V, R, G, B);
 
-        R = Clamp(R + (_Theme.BassRed    * _Processor._Bass)   + (.10 * Highlight));
-        G = Clamp(G + (_Theme.MidGreen   * _Processor._Mid)    + (.07 * Highlight));
-        B = Clamp(B + (_Theme.TrebleBlue * _Processor._Treble) + (.14 * Highlight));
+        R = Clamp(R + (_Theme.BassRed    * _Processor._BassEnergy)   + (.10 * Highlight));
+        G = Clamp(G + (_Theme.MidGreen   * _Processor._MidEnergy)    + (.07 * Highlight));
+        B = Clamp(B + (_Theme.TrebleBlue * _Processor._TrebleEnergy) + (.14 * Highlight));
 
         const double BrightnessFactor = [&]() noexcept
         {

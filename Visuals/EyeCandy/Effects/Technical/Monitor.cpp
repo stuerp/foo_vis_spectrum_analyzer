@@ -1,5 +1,5 @@
 
-/** $VER: Monitor.cpp (2026.10.25) **/
+/** $VER: Monitor.cpp (2026.11.02) */
 
 #include <pch.h>
 
@@ -229,28 +229,21 @@ namespace Monitor
 
         _SampleRate = std::max(1., (double) chunk.get_sample_rate());
 
-        const audio_sample * Data = chunk.get_data();
-
-        const size_t AnalysisCount = std::min<size_t>(FrameCount, (_Quality == Quality::High) ? FrameCount : (_Quality == Quality::Low) ? FrameCount / 4 : FrameCount / 2);
-        const size_t FrameStep     = std::max<size_t>(1, FrameCount / AnalysisCount);
-
-        _AnalysisSamples.resize(AnalysisCount);
-
         double Peak = 0.;
 
-        double SumLeftSquares = 0.;
+        double SumLeftSquares  = 0.;
         double SumRightSquares = 0.;
-        double SumCross = 0.;
+        double SumCross        = 0.;
 
         double SumSquares = 0.;
 
-        double SumMidSquares = 0.;
+        double SumMidSquares  = 0.;
         double SumSideSquares = 0.;
 
-        double SumLeft = 0.;
+        double SumLeft  = 0.;
         double SumRight = 0.;
 
-        double BassLeft = 0.;
+        double BassLeft  = 0.;
         double BassRight = 0.;
 
         double SumBassLeftSquares  = 0.;
@@ -259,59 +252,73 @@ namespace Monitor
 
         size_t ClippedSampleCount  = 0;
 
+        const size_t MaxFrames = std::min<size_t>(FrameCount, (_Quality == Quality::High) ? FrameCount : (_Quality == Quality::Low) ? FrameCount / 4 : FrameCount / 2);
+        const size_t FrameStep = std::max<size_t>(1, FrameCount / MaxFrames);
+
         const double BassCoefficient  = 1. - std::exp(-TwoPi * BassCutoff / std::max(1., _SampleRate / (double) FrameStep));
 
-        for (size_t i = 0; i < AnalysisCount; ++i)
         {
-            const size_t FrameIndex = std::min(i * FrameStep, FrameCount - 1);
+            const audio_sample * Frames = chunk.get_data();
 
-            const audio_sample * Frame = &Data[FrameIndex * ChannelCount];
+            if (_Samples.size() < MaxFrames)
+                _Samples.resize(MaxFrames);
 
-            const double Left  = ClampAudio(Frame[channels[0]]);
-            const double Right = ClampAudio(Frame[channels[1]]);
+            auto Samples = std::span<double>(_Samples.data(), MaxFrames);
 
-            const double Mid   = 0.5 * (Left + Right);
-            const double Side  = 0.5 * (Left - Right);
+            for (size_t i = 0; i < MaxFrames; ++i)
+            {
+                const size_t FrameIndex = std::min(i * FrameStep, FrameCount - 1);
 
-            Peak = std::max(Peak, std::max(std::abs(Left), std::abs(Right)));
+                const audio_sample * Frame = &Frames[FrameIndex * ChannelCount];
 
-            SumLeftSquares      += Left  * Left;
-            SumRightSquares     += Right * Right;
-            SumCross            += Left  * Right;
+                const double Left  = ClampAudio(Frame[channels[0]]);
+                const double Right = ClampAudio(Frame[channels[1]]);
 
-            SumSquares          += 0.5 * ((Left  * Left) + (Right * Right));
+                const double Mid   = 0.5 * (Left + Right);
+                const double Side  = 0.5 * (Left - Right);
 
-            SumMidSquares       += Mid  * Mid;
-            SumSideSquares      += Side * Side;
+                Peak = std::max(Peak, std::max(std::abs(Left), std::abs(Right)));
 
-            SumLeft             += Left;
-            SumRight            += Right;
+                SumLeftSquares      += Left  * Left;
+                SumRightSquares     += Right * Right;
+                SumCross            += Left  * Right;
 
-            BassLeft            += (Left  - BassLeft)  * BassCoefficient;
-            BassRight           += (Right - BassRight) * BassCoefficient;
+                SumSquares          += 0.5 * ((Left  * Left) + (Right * Right));
 
-            SumBassLeftSquares  += BassLeft  * BassLeft;
-            SumBassRightSquares += BassRight * BassRight;
-            SumBassCross        += BassLeft  * BassRight;
+                SumMidSquares       += Mid  * Mid;
+                SumSideSquares      += Side * Side;
 
-            if (std::abs(Left) >= 0.999 || std::abs(Right) >= 0.999)
-                ++ClippedSampleCount;
+                SumLeft             += Left;
+                SumRight            += Right;
 
-            _AnalysisSamples[i] = Mid;
+                BassLeft            += (Left  - BassLeft)  * BassCoefficient;
+                BassRight           += (Right - BassRight) * BassCoefficient;
+
+                SumBassLeftSquares  += BassLeft  * BassLeft;
+                SumBassRightSquares += BassRight * BassRight;
+                SumBassCross        += BassLeft  * BassRight;
+
+                if (std::abs(Left) >= 0.999 || std::abs(Right) >= 0.999)
+                    ++ClippedSampleCount;
+
+                Samples[i] = Mid;
+            }
+
+            AnalyzeSpectrum(Samples, _SampleRate / (double) FrameStep);
         }
 
         {
             _Peak = Clamp(Peak);
-            _RMS  = Clamp(std::sqrt(SumSquares / (double) AnalysisCount));
+            _RMS  = Clamp(std::sqrt(SumSquares / (double) MaxFrames));
         }
         {
             const double CorrelationDenominator = std::sqrt(SumLeftSquares * SumRightSquares);
 
-            _Correlation = (CorrelationDenominator > Epsilon) ? Clamp(SumCross / CorrelationDenominator) : 0.;
+            _Correlation = (CorrelationDenominator > Epsilon) ? std::clamp(SumCross / CorrelationDenominator, -1., 1.) : 0.;
         }
 
-        const double MidRMS  = std::sqrt(SumMidSquares  / (double) AnalysisCount);
-        const double SideRMS = std::sqrt(SumSideSquares / (double) AnalysisCount);
+        const double MidRMS  = std::sqrt(SumMidSquares  / (double) MaxFrames);
+        const double SideRMS = std::sqrt(SumSideSquares / (double) MaxFrames);
 
         _StereoWidth = (MidRMS + SideRMS) > Epsilon ? Clamp(SideRMS / (MidRMS + SideRMS)) : 0.;
 
@@ -322,8 +329,8 @@ namespace Monitor
         }
 
         {
-            const double LeftRMS  = std::sqrt(SumLeftSquares  / (double) AnalysisCount);
-            const double RightRMS = std::sqrt(SumRightSquares / (double) AnalysisCount);
+            const double LeftRMS  = std::sqrt(SumLeftSquares  / (double) MaxFrames);
+            const double RightRMS = std::sqrt(SumRightSquares / (double) MaxFrames);
 
             // Negative values indicate left dominance; positive values indicate right dominance.
             _ChannelBalance = std::clamp(20. * std::log10(std::max(RightRMS, 0.000001) / std::max(LeftRMS, 0.000001)), -18., 18.);
@@ -331,14 +338,14 @@ namespace Monitor
 
         {
             _MonoCompatibility  = (_RMS > Epsilon) ? Clamp(MidRMS / _RMS) : 0.;
-            _ClippedSampleRatio =      Clamp((double) ClippedSampleCount  / (double) AnalysisCount);
-            _DCOffset           = std::clamp(500. * ((SumLeft + SumRight) / (double) AnalysisCount), -10., 10.);
+            _ClippedSampleRatio =      Clamp((double) ClippedSampleCount  / (double) MaxFrames);
+            _DCOffset           = std::clamp(500. * ((SumLeft + SumRight) / (double) MaxFrames), -10., 10.);
         }
 
         {
             const double BassCorrelationDenominator = std::sqrt(SumBassLeftSquares * SumBassRightSquares);
 
-            _BassCorrelation = (BassCorrelationDenominator > Epsilon) ? Clamp(SumBassCross / BassCorrelationDenominator) : 0.;
+            _BassCorrelation = (BassCorrelationDenominator > Epsilon) ? std::clamp(SumBassCross / BassCorrelationDenominator, -1., 1.) : 0.;
         }
 
         {
@@ -346,14 +353,12 @@ namespace Monitor
         }
 
         _HasAudio = (_Peak > SignalThreshold) || (_RMS > SignalThreshold);
-
-        AnalyzeSpectrum(_AnalysisSamples, _SampleRate / (double) FrameStep);
     }
 
     /// <summary>
     /// Integrates a Hann-windowed DFT over octave-like bands and computes positive spectral flux.
     /// </summary>
-    void effect_t::AnalyzeSpectrum(const std::vector<double> & samples, double sampleRate) noexcept
+    void effect_t::AnalyzeSpectrum(const std::span<double> & samples, double sampleRate) noexcept
     {
         if (samples.size() < 16)
             return;
@@ -370,7 +375,7 @@ namespace Monitor
 
             for (size_t i = 0; i < SampleCount; ++i)
             {
-                _AnalysisWindow[i] = 0.5 - (0.5 * std::cos(TwoPi * (double) i / (double)(SampleCount - 1)));
+                _AnalysisWindow[i] = 0.5 - (0.5 * std::cos(TwoPi * (double) i / (double) (SampleCount - 1)));
 
                 WindowSum += _AnalysisWindow[i];
             }
@@ -419,6 +424,7 @@ namespace Monitor
             const double Amplitude = 2. * std::sqrt((Real * Real) + (Imaginary * Imaginary)) / ((double)SampleCount * CoherentGain);
 
             SumSquares[Band] += Amplitude * Amplitude;
+
             ++BinCounts[Band];
         }
 
@@ -435,39 +441,49 @@ namespace Monitor
             _PreviousBands[i] = _MonitorBands[i];
         }
 
-        double TotalPower = 0.;
-        double WeightedFrequency = 0.;
-        double LogPowerSum = 0.;
-
         constexpr double PowerFloor = 1e-12;
 
-        for (size_t i = 0; i < MonitorBandCount; ++i)
-        {
-            const double CenterFrequency = std::sqrt(BandEdges[i] * BandEdges[i + 1]);
-            const double Power = std::max(_MonitorBands[i] * _MonitorBands[i], PowerFloor);
+        double TotalPower = 0.;
+        double LogPowerSum = 0.;
 
-            TotalPower += Power;
-            WeightedFrequency += CenterFrequency * Power;
-            LogPowerSum += std::log(Power);
+        {
+            double WeightedFrequency = 0.;
+
+            for (size_t i = 0; i < MonitorBandCount; ++i)
+            {
+                const double CenterFrequency = std::sqrt(BandEdges[i] * BandEdges[i + 1]);
+                const double Power = std::max(_MonitorBands[i] * _MonitorBands[i], PowerFloor);
+
+                TotalPower  += Power;
+                LogPowerSum += std::log(Power);
+
+                WeightedFrequency += CenterFrequency * Power;
+            }
+
+            _SpectralCentroid = (TotalPower > PowerFloor) ? std::clamp(WeightedFrequency / TotalPower, BandEdges.front(), BandEdges.back()) : BandEdges.front();
         }
 
-        _SpectralCentroid = TotalPower > PowerFloor ? std::clamp(WeightedFrequency / TotalPower, BandEdges.front(), BandEdges.back()) : BandEdges.front();
+        {
+            const double ArithmeticMean = TotalPower / (double) MonitorBandCount;
+            const double GeometricMean  = std::exp(LogPowerSum / (double) MonitorBandCount);
 
-        const double ArithmeticMean = TotalPower / (double)MonitorBandCount;
-        const double GeometricMean = std::exp(LogPowerSum / (double)MonitorBandCount);
-
-        _SpectralFlatness = ArithmeticMean > PowerFloor ? Clamp(GeometricMean / ArithmeticMean) : 0.;
-
-        // Preserve the base class' eight-band controls by energy-combining adjacent monitor bands.
-        for (size_t i = 0; i < FrequencyBandCount; ++i)
-            _Bands[i] = std::sqrt(0.5 * ((_MonitorBands[i * 2] * _MonitorBands[i * 2]) + (_MonitorBands[i * 2 + 1] * _MonitorBands[i * 2 + 1])));
+            _SpectralFlatness = ArithmeticMean > PowerFloor ? Clamp(GeometricMean / ArithmeticMean) : 0.;
+        }
 
         _SpectralFlux = Clamp(PositiveDifference / ReferenceEnergy);
 
+        // Preserve the base class' eight-band controls by energy-combining adjacent monitor bands.
+        {
+            for (size_t i = 0; i < FrequencyBandCount; ++i)
+                _Bands[i] = std::sqrt(0.5 * ((_MonitorBands[i * 2] * _MonitorBands[i * 2]) + (_MonitorBands[i * 2 + 1] * _MonitorBands[i * 2 + 1])));
+        }
+
         // Combine band amplitudes as RMS energy. Arithmetic averaging suppresses narrow-band content and makes the regional histories appear incorrectly flat.
-        _BassEnergy   = std::sqrt(((_Bands[0] * _Bands[0]) + (_Bands[1] * _Bands[1]) + (_Bands[2] * _Bands[2])) / 3.);
-        _MidEnergy    = std::sqrt(((_Bands[3] * _Bands[3]) + (_Bands[4] * _Bands[4]) + (_Bands[5] * _Bands[5])) / 3.);
-        _TrebleEnergy = std::sqrt(((_Bands[6] * _Bands[6]) + (_Bands[7] * _Bands[7]))                           / 2.);
+        {
+            _BassEnergy   = std::sqrt(((_Bands[0] * _Bands[0]) + (_Bands[1] * _Bands[1]) + (_Bands[2] * _Bands[2])) / 3.);
+            _MidEnergy    = std::sqrt(((_Bands[3] * _Bands[3]) + (_Bands[4] * _Bands[4]) + (_Bands[5] * _Bands[5])) / 3.);
+            _TrebleEnergy = std::sqrt(((_Bands[6] * _Bands[6]) + (_Bands[7] * _Bands[7]))                           / 2.);
+        }
     }
 
     /// <summary>

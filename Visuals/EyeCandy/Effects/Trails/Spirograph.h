@@ -1,5 +1,5 @@
 
-/** $VER: Spirograph.h (2026.10.22) */
+/** $VER: Spirograph.h (2026.11.02) */
 
 #pragma once
 
@@ -71,6 +71,7 @@ namespace Spirograph
 
         D2D1_COLOR_F Colorize(double value) const noexcept;
 
+    private:
         HRESULT CreateDeviceDependentResources(ID2D1RenderTarget * renderTarget) noexcept;
         void DeleteDeviceDependentResources() noexcept;
 
@@ -78,6 +79,9 @@ namespace Spirograph
         std::array<band_t, BandCount> _Bands {};
         std::array<double, 12> _PitchClasses {};
 
+        std::vector<double> _Samples;
+
+    private:
         std::vector<curve_t> _Curves;
 
         double _SampleRate       = 44100.;
@@ -92,6 +96,7 @@ namespace Spirograph
 
         double _Rotation         = 0.;
 
+    private:
         ComPtr<ID2D1SolidColorBrush> _Brush;
         ComPtr<ID2D1StrokeStyle> _StrokeStyle;
 

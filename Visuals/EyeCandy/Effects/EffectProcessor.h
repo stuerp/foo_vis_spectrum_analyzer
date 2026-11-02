@@ -16,15 +16,15 @@ namespace EyeCandy
     public:
         double _Loudness = 0.;
 
-        double _Bass     = 0.;
-        double _Mid      = 0.;
-        double _Treble   = 0.;
+        double _BassEnergy     = 0.;
+        double _MidEnergy      = 0.;
+        double _TrebleEnergy   = 0.;
 
         double _Balance  = 0.;
         double _Peak     = 0.;
 
     private:
-        double _LowState  = 0.;
-        double _HighState = 0.;
+        double _BassState  = 0.;
+        double _MidState = 0.;
     };
 }

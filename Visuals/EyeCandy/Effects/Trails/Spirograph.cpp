@@ -66,15 +66,17 @@ namespace Spirograph
     /// </summary>
     void effect_t::AnalyzeAudio(const audio_chunk & chunk, const channel_pair_t & channels)
     {
-        for (auto & Band : _Bands)
-            Band.Energy = 0.;
-
         _PitchClasses.fill(0.);
 
-        _Rhythm = 0.;
-
         if (chunk.is_empty())
+        {
+            for (auto & Band : _Bands)
+                Band.Energy = 0.;
+
+            _Rhythm = 0.;
+
             return;
+        }
 
         const size_t ChannelCount = chunk.get_channel_count();
         const size_t FrameCount   = chunk.get_sample_count();
@@ -82,30 +84,36 @@ namespace Spirograph
         if ((channels[0] >= ChannelCount) || (channels[1] >= ChannelCount) || (FrameCount < 16))
             return;
 
-        const audio_sample * Data = chunk.get_data();
+        const size_t MaxFrames = std::min<size_t>(FrameCount, (_Quality == EyeCandy::Quality::High) ? 1024 : 512);
+        const size_t FrameStep = std::max<size_t>(1, FrameCount / MaxFrames);
 
-        const size_t AnalysisCount = std::min<size_t>(FrameCount, _Quality == EyeCandy::Quality::High ? 1024 : 512);
-        const size_t FrameStep     = std::max<size_t>(1, FrameCount / AnalysisCount);
+        if (_Samples.size() < MaxFrames)
+            _Samples.resize(MaxFrames);
 
-        std::vector<double> Samples(AnalysisCount);
-
+        // Process all frames.
         {
-            const double WindowScale = TwoPi / (double) (AnalysisCount - 1);
+            const double WindowScale = TwoPi / (double) (MaxFrames - 1);
 
             double MeanSquare = 0.;
             double Difference = 0.;
 
             double Previous = 0.;
 
-            for (size_t i = 0; i < AnalysisCount; ++i)
+            const audio_sample * Frames = chunk.get_data();
+
+            auto Samples = std::span<double>(_Samples.data(), MaxFrames);
+
+            for (size_t i = 0; i < MaxFrames; ++i)
             {
-                const size_t Frame = std::min(i * FrameStep, FrameCount - 1);
+                const size_t FrameIndex = std::min(i * FrameStep, FrameCount - 1) * ChannelCount;
 
                 // Convert to mono.
-                const double Mono   = 0.5 * (ClampAudio(Data[Frame * ChannelCount + channels[0]]) + ClampAudio(Data[Frame * ChannelCount + channels[1]]));
+                const double Mono = 0.5 * (ClampAudio(Frames[FrameIndex + channels[0]]) + ClampAudio(Frames[FrameIndex + channels[1]]));
 
                 // Apply a Hann Window.
-                Samples[i] = Mono * (0.5 - (std::cos((double) i * WindowScale) * 0.5));
+                const double Window = 0.5 - (std::cos((double) i * WindowScale) * 0.5);
+
+                Samples[i] = Mono * Window;
 
                 MeanSquare += Mono * Mono;
                 Difference += std::abs(Mono - Previous); // Sample-to-sample difference tends to be larger for percussion, transients, noisy or bright signals or rapidly varying waveforms
@@ -113,7 +121,7 @@ namespace Spirograph
                 Previous = Mono;
             }
 
-            _Rhythm = Clamp((std::sqrt(MeanSquare / (double) AnalysisCount) * 4.8) + (Difference / (double) AnalysisCount * 2.2));
+            _Rhythm = Clamp((std::sqrt(MeanSquare / (double) MaxFrames) * 4.8) + (Difference / (double) MaxFrames * 2.2));
         }
 
         {
@@ -134,16 +142,16 @@ namespace Spirograph
                 double Imaginary = 0.;
 
                 {
-                    for (size_t j = 0; j < AnalysisCount; ++j)
+                    for (size_t j = 0; j < MaxFrames; ++j)
                     {
                         const double Angle = AngularStep * (double) j;
 
-                        Real      += Samples[j] * std::cos(Angle);
-                        Imaginary -= Samples[j] * std::sin(Angle);
+                        Real      += _Samples[j] * std::cos(Angle);
+                        Imaginary -= _Samples[j] * std::sin(Angle);
                     }
                 }
 
-                const double Magnitude = 2. * std::sqrt((Real * Real) + (Imaginary * Imaginary)) / (double) AnalysisCount;
+                const double Magnitude = 2. * std::sqrt((Real * Real) + (Imaginary * Imaginary)) / (double) MaxFrames;
 
                 // Apply perceptual frequency compensation.
                 const double FrequencyGain = 1.65 + (4.1 * std::pow(Amount, 1.18));
