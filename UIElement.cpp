@@ -330,6 +330,14 @@ void uielement_t::OnLButtonDblClk(UINT flags, CPoint point) noexcept
 }
 
 /// <summary>
+/// Handles a rotation of the mouse wheel.
+/// </summary>
+BOOL uielement_t::OnMouseWheel(UINT flags, short wheelDelta, CPoint pt) noexcept
+{
+    return (BOOL) 0;
+}
+
+/// <summary>
 /// Handles a DPI change.
 /// </summary>
 LRESULT uielement_t::OnDPIChanged(UINT dpiX, UINT dpiY, PRECT newRect) noexcept

@@ -148,15 +148,15 @@ namespace NeonTunnel
 
         // Perform the frequency analysis using a Goertzel-style frequency detector at selected frequencies.
         const double NyquistFrequency   = SampleRate * 0.5;
-        const double MaximumCenter      = NyquistFrequency * 0.92;
-        const double MaximumProbe       = NyquistFrequency * 0.95;
+        const double MaximumCenter      = NyquistFrequency;
+        const double MaximumProbe       = NyquistFrequency;
         const double InverseFrameCount  = 1. / (double) FrameCount;
         const double MagnitudeScale     = 1. / std::log1p(90.0);
         const double ProbeOffset        = 1.122462048;
         const double InverseProbeOffset = 1. / ProbeOffset;
 
         // Calculate the logarithmic step once instead of calculating pow() for every band.
-        const double CenterStep = std::pow(16'500.0 / 40.0, 1. / (double) (FrequencyBandCount - 1)); // 40 Hz to 16.5 kHz
+        const double CenterStep = std::pow(FrequencyRatio, 1. / (double) (FrequencyBandCount - 1));
 
         double Center = 45.;
 
@@ -165,7 +165,7 @@ namespace NeonTunnel
             const double NormalizedBandIndex = (double) i / (double) (FrequencyBandCount - 1);
 
             // Distribute band centers approximately between 45 Hz and 14 kHz using logarithmic spacing.
-            const double ClampedCenter = std::clamp(Center, 20.0, MaximumCenter);
+            const double ClampedCenter = std::clamp(Center, LoFrequency, MaximumCenter);
 
             // Create three probes around each center. 1.122462048 ~= 2^1/6 or 2 semitones.
             const double Probes[] =
@@ -180,7 +180,7 @@ namespace NeonTunnel
             // Analyze each probe frequency.
             for (double Probe : Probes)
             {
-                Probe = std::clamp(Probe, 20.0, MaximumProbe);
+                Probe = std::clamp(Probe, LoFrequency, MaximumProbe);
 
                 // Goertzel-style detector
                 {
@@ -968,7 +968,9 @@ namespace NeonTunnel
     /// </summary>
     void effect_t::StartWorkers()
     {
-        const auto WorkerCount = (size_t) std::max(1u, std::thread::hardware_concurrency());
+        const size_t HardwareThreads = std::max<size_t>(1, std::thread::hardware_concurrency());
+
+        const size_t WorkerCount = std::clamp<size_t>(HardwareThreads > 1 ? HardwareThreads - 1 : 1, 1, _MaxWorkers);
 
         _Workers.reserve(WorkerCount);
 

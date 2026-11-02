@@ -260,6 +260,7 @@ HRESULT balance_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * devi
     if (_State._ColorsHaveChanged || _State._SizeHasChanged)
     {
         DeleteColorDependentResources();
+        DeleteSizeDependentResources();
 
         Initialize();
 
@@ -267,13 +268,6 @@ HRESULT balance_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * devi
 
         if (FAILED(hr))
             return hr;
-    }
-
-    if (_State._SizeHasChanged)
-    {
-        DeleteSizeDependentResources();
-
-        Initialize();
 
         hr = CreateSizeDependentResources(deviceContext);
 

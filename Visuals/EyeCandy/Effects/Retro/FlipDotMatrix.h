@@ -1,5 +1,5 @@
 
-/** $VER: FlipDotMatrix.h (2026.11.02) */
+/** $VER: FlipDotMatrix.h (2026.11.02) **/
 
 #pragma once
 

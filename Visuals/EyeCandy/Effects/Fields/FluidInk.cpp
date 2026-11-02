@@ -263,7 +263,9 @@ namespace FluidInk
     /// </summary>
     void effect_t::StartWorkers()
     {
-        const auto WorkerCount = (size_t) std::max(1u, std::thread::hardware_concurrency());
+        const size_t HardwareThreads = std::max<size_t>(1, std::thread::hardware_concurrency());
+
+        const size_t WorkerCount = std::clamp<size_t>(HardwareThreads > 1 ? HardwareThreads - 1 : 1, 1, _MaxWorkers);
 
         _Workers.reserve(WorkerCount);
 
@@ -402,12 +404,12 @@ namespace FluidInk
                 const double RibbonCoordinate = InkX * (2.25 + (.45 * work.BassPush)) + .82 * std::sin(FlowY * 3.15 + work.Time * .27) + .34 * work.TrebleDetail * std::sin((InkX - FlowY) * 8.7 - work.Time * .56);
 
                 const double StreamWave = std::sin(RibbonCoordinate);
-                const double FineWave = std::sin(RibbonCoordinate * 2.03 + FlowY * 5.4 + work.ColorPhase);
-                const double Ridge = std::pow(1. - std::abs(StreamWave), 3.4);
-                const double Filament = std::pow(1. - std::abs(FineWave), 8.);
-                const double Density = Clamp(.12 + (.68 * Ridge) + (.34 * Filament) + (.26 * ForceFalloff));
-                const double Stream = .5 + (.5 * std::sin(RibbonCoordinate * .47 + work.ColorPhase));
-                const double Highlight = Clamp((.62 * Filament) + (.38 * Ridge * work.TrebleDetail) + (.44 * ForceFalloff));
+                const double FineWave   = std::sin(RibbonCoordinate * 2.03 + FlowY * 5.4 + work.ColorPhase);
+                const double Ridge      = std::pow(1. - std::abs(StreamWave), 3.4);
+                const double Filament   = std::pow(1. - std::abs(FineWave), 8.);
+                const double Density    = Clamp(.12 + (.68 * Ridge) + (.34 * Filament) + (.26 * ForceFalloff));
+                const double Stream     = .5 + (.5 * std::sin(RibbonCoordinate * .47 + work.ColorPhase));
+                const double Highlight  = Clamp((.62 * Filament) + (.38 * Ridge * work.TrebleDetail) + (.44 * ForceFalloff));
 
                 *Row = Colorize(Density, Stream, Highlight);
             }

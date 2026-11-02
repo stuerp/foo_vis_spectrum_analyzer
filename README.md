@@ -102,7 +102,8 @@ To create the component first build the x86 configuration and next the x64 confi
 
 v0.14.0.0-alpha5, 2026-11-xx
 
-- 
+- New: Eye Candy effects: Rotozoomer, Dither Field, Flip Dot Matrix, Hidden-line Landscape, Interference Moiré, Flower Scope and Harmonic Harp.
+  - I really like how that last one turned out.
 
 You can read the full history [here](docs/History.md).
 

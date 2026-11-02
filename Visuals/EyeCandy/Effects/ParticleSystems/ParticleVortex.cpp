@@ -15,9 +15,9 @@ namespace ParticleVortex
     {
         for (size_t i = 0; i < FrequencyBandCount; ++i)
         {
-            const float Amount = (float) i / (float) (FrequencyBandCount - 1);
+            const double Amount = (double) i / (double) (FrequencyBandCount - 1);
 
-            _Centers[i].Frequency = 40. * std::pow(16'500. / 40., Amount); // 40 Hz to 16.5 kHz
+            _Centers[i].Frequency = LoFrequency * std::pow(FrequencyRatio, Amount); // 40 Hz to 16.5 kHz
             _Centers[i].Phase     = Amount * TwoPi;
         }
 
@@ -274,14 +274,14 @@ namespace ParticleVortex
         if (!_HasAudio)
             return;
 
-        const double Nyquist = (double) SampleRate * 0.5;
+        const double NyquistFrequency = (double) SampleRate * 0.5;
 
         double MaximumEnergy = 0.;
 
         for (size_t i = 0; i < FrequencyBandCount; ++i)
         {
             const double BandAmount      = (FrequencyBandCount > 1) ? (double) i / (double) (FrequencyBandCount - 1) : 0.; 
-            const double CenterFrequency = 40. * std::pow(16'500. / 40., BandAmount); // 40 Hz to 16.5 kHz
+            const double CenterFrequency = LoFrequency * std::pow(FrequencyRatio, BandAmount);
 
             const double Frequencies[3] =
             {
@@ -294,7 +294,7 @@ namespace ParticleVortex
 
             for (const double j : Frequencies)
             {
-                const double Frequency   = std::clamp(j, 20., Nyquist * 0.95);
+                const double Frequency   = std::clamp(j, LoFrequency, NyquistFrequency);
                 const double Omega       = TwoPi * Frequency / (double) SampleRate;
                 const double Coefficient = 2. * std::cos(Omega);
 
@@ -780,7 +780,9 @@ namespace ParticleVortex
     /// </summary>
     void effect_t::StartWorkers()
     {
-        const auto WorkerCount = (size_t) std::max(1u, std::thread::hardware_concurrency());
+        const size_t HardwareThreads = std::max<size_t>(1, std::thread::hardware_concurrency());
+
+        const size_t WorkerCount = std::clamp<size_t>(HardwareThreads > 1 ? HardwareThreads - 1 : 1, 1, _MaxWorkers);
 
         _Workers.reserve(WorkerCount);
 

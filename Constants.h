@@ -825,7 +825,7 @@ const std::vector<effect_category_t> EffectCategories
         {
             { EyeCandy::Effect::DitherField,            L"Dither Field" },
             { EyeCandy::Effect::FlipDotMatrix,          L"Flip Dot Matrix" },
-            { EyeCandy::Effect::HiddenLineLandscape,    L"Hidden Line Landscape" },
+            { EyeCandy::Effect::HiddenLineLandscape,    L"Hidden-line Landscape" },
             { EyeCandy::Effect::InterferenceMoire,      L"Interference Moir\u00E9" },
             { EyeCandy::Effect::NeonTunnel,             L"Neon Tunnel" },
             { EyeCandy::Effect::VectorGrid,             L"Vector Grid" },

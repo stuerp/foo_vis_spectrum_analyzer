@@ -1,5 +1,5 @@
 
-/** $VER: FlowerScope.h (2026.11.02) */
+/** $VER: FlowerScope.h (2026.11.02) **/
 
 #pragma once
 
@@ -38,20 +38,23 @@ namespace FlowerScope
         std::wstring GetStatus() noexcept override final;
 
     private:
-        static constexpr size_t BandCount = 12;
-        static constexpr size_t CurveCount = 5;
-        static constexpr size_t PaletteCount = 12;
-        static constexpr size_t FlowerCount = 18;
+        static constexpr size_t BandCount        = 12;
+        static constexpr size_t CurveCount       =  5;
+        static constexpr size_t PaletteCount     = 12;
+        static constexpr size_t FlowerCount      = 18;
         static constexpr size_t RenderCurveCount = CurveCount * 2;
+
         struct band_t
         {
             double Energy = 0.;
             double SmoothedEnergy = 0.;
         };
+
         struct curve_t
         {
             std::vector<D2D1_POINT_2F> Points;
             D2D1_COLOR_F Color{ };
+
             float Width = 1.f;
             float Intensity = 0.f;
             float OuterGlow = 10.f;
@@ -60,30 +63,39 @@ namespace FlowerScope
             float InnerOpacity = .22f;
             float CoreOpacity = 1.f;
         };
+
     private:
         void AnalyzeAudio(const audio_chunk & chunk, const channel_pair_t & channels);
         void Update(double deltaTime);
+
         void GenerateCurves() noexcept;
         void GenerateCurve(size_t) noexcept;
         double FlowerPattern(size_t, double, double, double, double) const noexcept;
         size_t FlowerPetalOffset(size_t) const noexcept;
+
         void StartWorkers();
         void StopWorkers() noexcept;
-        void WorkerLoop(size_t) noexcept;
+        void Worker(size_t) noexcept;
+
         void Fade(ID2D1RenderTarget * renderTarget, double deltaTime) noexcept;
         void RenderCurves(ID2D1RenderTarget * renderTarget) noexcept;
         void DrawSmoothCurve(ID2D1RenderTarget * renderTarget, const curve_t & curve) noexcept;
         void SetBrush(const D2D1_COLOR_F & color, float opacity) noexcept;
+
         D2D1_COLOR_F Colorize(size_t palette, double value) const noexcept;
+
     private:
         HRESULT CreateDeviceDependentResources(ID2D1RenderTarget * renderTarget) noexcept;
         void DeleteDeviceDependentResources() noexcept;
+
     private:
         std::array<band_t, BandCount> _Bands{ };
         std::vector<double> _LeftSamples;
         std::vector<double> _RightSamples;
+
     private:
         std::vector<curve_t> _Curves;
+
         double _SampleRate = 44100.;
         double _Rhythm = 0.;
         double _SmoothedRhythm = 0.;
@@ -110,6 +122,7 @@ namespace FlowerScope
         size_t _PaletteA = 0;
         size_t _PaletteB = 1;
         double _PaletteBlend = 0.;
+
     private:
         ComPtr<ID2D1SolidColorBrush> _Brush;
         ComPtr<ID2D1StrokeStyle> _StrokeStyle;

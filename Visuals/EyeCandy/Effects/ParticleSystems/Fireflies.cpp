@@ -74,7 +74,7 @@ namespace Fireflies
         {
             const double Amount = (double) i / (double) (FrequencyBandCount - 1);
 
-            _Centers[i].Frequency = 40. * std::pow(16'500. / 40., Amount); // 40 Hz to 16.5 kHz
+            _Centers[i].Frequency = LoFrequency * std::pow(FrequencyRatio, Amount);
             _Centers[i].Phase     = Amount * TwoPi;
         }
 
@@ -213,17 +213,20 @@ namespace Fireflies
 
         const size_t FirstFrame = FrameCount - MaxFrames;
 
-        std::vector<double> WindowedSamples(MaxFrames, 0.);
+        if (MaxFrames > _Samples.size())
+            _Samples.resize(MaxFrames);
 
         const audio_sample *       Frame    = Frames + FirstFrame * (size_t) ChannelCount;
         const audio_sample * const FrameEnd = Frame + MaxFrames * (size_t) ChannelCount;
-
-        double * WindowedSample = WindowedSamples.data();
 
         double SquaredSum = 0.;
 
         {
             size_t FrameIndex = 0;
+
+            const double WindowStep = TwoPi / ((double) MaxFrames - 1.);
+
+            double * Sample = _Samples.data();
 
             while (Frame < FrameEnd)
             {
@@ -239,18 +242,18 @@ namespace Fireflies
                     Mono /= (double) ChannelCount;
                 }
 
-                const double Sample = ClampAudio(Mono);
+                Mono = ClampAudio(Mono);
 
                 // Apply a Hann window.
                 {
-                    const double Window = 0.5 - (std::cos(TwoPi * (double) FrameIndex / (double) (MaxFrames - 1)) * 0.5);
+                    const double Window = 0.5 - (std::cos((double) FrameIndex * WindowStep) * 0.5);
 
-                    *WindowedSample++ = Sample * Window;
+                    *Sample++ = Mono * Window;
                 }
 
-                SquaredSum += Sample * Sample;
+                SquaredSum += Mono * Mono;
 
-                _Peak = std::max(_Peak, std::abs(Sample));
+                _Peak = std::max(_Peak, std::abs(Mono));
 
                 Frame += ChannelCount;
 
@@ -265,7 +268,7 @@ namespace Fireflies
         if (!_HasAudio)
             return;
 
-        const double Nyquist = (double) SampleRate * 0.5;
+        const double NyquistFrequency = (double) SampleRate * 0.5;
 
         double MaximumEnergy = 0.;
 
@@ -273,7 +276,7 @@ namespace Fireflies
         {
             const double BandAmount = (FrequencyBandCount > 1) ? (double) i / (double) (FrequencyBandCount - 1) : 0.;
 
-            const double CenterFrequency = 40. * std::pow(16'500. / 40., BandAmount); // 40 Hz to 16.5 kHz
+            const double CenterFrequency = LoFrequency * std::pow(FrequencyRatio, BandAmount);
 
             const double Frequencies[] =
             {
@@ -289,7 +292,7 @@ namespace Fireflies
 
             while (Frequency < FrequencyEnd)
             {
-                const double ClampedFrequency = std::clamp(*Frequency++, 20., Nyquist * 0.95);
+                const double ClampedFrequency = std::clamp(*Frequency++, LoFrequency, NyquistFrequency);
 
                 const double Omega = TwoPi * ClampedFrequency / (double) SampleRate;
 
@@ -298,7 +301,7 @@ namespace Fireflies
                 double Previous  = 0.;
                 double Previous2 = 0.;
 
-                const double *       Sample    = WindowedSamples.data();
+                const double *       Sample    = _Samples.data();
                 const double * const SampleEnd = Sample + MaxFrames;
 
                 while (Sample < SampleEnd)
@@ -869,7 +872,9 @@ namespace Fireflies
     /// </summary>
     void effect_t::StartWorkers()
     {
-        const auto WorkerCount = (size_t) std::max(1u, std::thread::hardware_concurrency());
+        const size_t HardwareThreads = std::max<size_t>(1, std::thread::hardware_concurrency());
+
+        const size_t WorkerCount = std::clamp<size_t>(HardwareThreads > 1 ? HardwareThreads - 1 : 1, 1, _MaxWorkers);
 
         _Workers.reserve(WorkerCount);
 

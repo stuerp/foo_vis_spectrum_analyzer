@@ -125,16 +125,16 @@ namespace Spirograph
         }
 
         {
-            constexpr double MinFrequency = 40.; // Lowest analyzed frequency (Low end of most musical bass content)
-
-            const double MaxFrequency = std::min(16'500., _SampleRate * 0.50); // 40 Hz to 16.5 kHz
+            const double NyquistFrequency = _SampleRate * 0.5;
+            const double MaxFrequency     = std::min(HiFrequency, NyquistFrequency);
+            const double Ratio            = MaxFrequency / LoFrequency;
 
             std::array<double, BandCount> RawEnergies {};
 
             for (size_t i = 0; i < BandCount; ++i)
             {
-                const double Amount          = ((double) i + 0.5) / (double) BandCount;
-                const double CenterFrequency = MinFrequency * std::pow(MaxFrequency / MinFrequency, Amount);
+                const double Amount          = (double) i / (double) (BandCount - 1);
+                const double CenterFrequency = LoFrequency * std::pow(Ratio, Amount);
                 const double AngularStep     = TwoPi * CenterFrequency / _SampleRate;
 
                 // Evaluate one point of the discrete Fourier transform.

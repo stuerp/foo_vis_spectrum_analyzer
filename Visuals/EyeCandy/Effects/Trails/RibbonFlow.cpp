@@ -111,14 +111,12 @@ namespace RibbonFlow
         std::array<double, BandCount> RawEnergies {};
 
         {
-            constexpr double MinFrequency = 40.;
-
-            const double MaxFrequency = std::min(16'500., _SampleRate * 0.50); // 40 Hz to 16.5 kHz
+            const double MaxFrequency = std::min(HiFrequency, _SampleRate * 0.5);
 
             for (size_t i = 0; i < BandCount; ++i)
             {
                 const double Amount          = (double) i / (double) (BandCount - 1);
-                const double CenterFrequency = MinFrequency * std::pow(MaxFrequency / MinFrequency, Amount);
+                const double CenterFrequency = LoFrequency * std::pow(MaxFrequency / LoFrequency, Amount);
                 const double AngularStep     = TwoPi * CenterFrequency / _SampleRate;
 
                 double Real      = 0.;

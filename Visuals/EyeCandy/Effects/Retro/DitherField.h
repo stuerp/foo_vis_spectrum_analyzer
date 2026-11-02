@@ -1,5 +1,5 @@
 
-/** $VER: DitherField.h (2026.11.02) */
+/** $VER: DitherField.h (2026.11.02) **/
 
 #pragma once
 
@@ -39,16 +39,20 @@ namespace DitherField
     private:
         static constexpr size_t BandCount = 12;
         static constexpr size_t DitherModeCount = 10;
+
         void AnalyzeAudio(const audio_chunk &);
         void Update(double) noexcept;
+
         void BuildEnergyField() noexcept;
         void BuildErrorDiffusion() noexcept;
         void RenderTexture() noexcept;
-        void StartWorkers();
-        void StopWorkers() noexcept;
-        void WorkerLoop(size_t) noexcept;
+
         void RenderRows(UINT32, UINT32) noexcept;
         double OrderedThreshold(size_t, UINT32, UINT32) const noexcept;
+
+        void StartWorkers();
+        void StopWorkers() noexcept;
+        void Worker(size_t) noexcept;
 
     private:
         HRESULT CreateDeviceDependentResources(ID2D1RenderTarget *) noexcept;
@@ -56,9 +60,11 @@ namespace DitherField
 
     private:
         std::vector<double> _Samples;
+
         std::array<double, BandCount> _BandEnergy{ };
         std::array<double, BandCount> _SmoothedBandEnergy{ };
         std::array<double, BandCount> _PreviousBandEnergy{ };
+
         std::vector<float> _EnergyField;
         std::vector<float> _ErrorBuffer;
         std::vector<uint8_t> _DiffusedField;

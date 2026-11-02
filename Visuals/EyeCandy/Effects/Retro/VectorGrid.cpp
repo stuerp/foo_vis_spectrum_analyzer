@@ -202,14 +202,14 @@ namespace VectorGrid
         if (!_HasAudio)
             return;
 
-        const double Nyquist    = SampleRate * 0.50;
-        const double CenterStep = std::pow(16'500. / 40., 1. / (double)(FrequencyBandCount - 1)); // 40 Hz to 16.5 kHz
+        const double NyquistFrequency = SampleRate * 0.5;
+        const double CenterStep       = std::pow(FrequencyRatio, 1. / (double) (FrequencyBandCount - 1));
 
         double Center = 40.; // Hz
 
         for (size_t i = 0; i < FrequencyBandCount; ++i)
         {
-            const double Frequency   = std::clamp(Center, 20., Nyquist);
+            const double Frequency   = std::clamp(Center, LoFrequency, NyquistFrequency);
             const double Coefficient = 2. * std::cos(TwoPi * Frequency / SampleRate);
 
             double q1 = 0.;
@@ -605,7 +605,9 @@ namespace VectorGrid
     /// </summary>
     void effect_t::StartWorkers()
     {
-        const size_t WorkerCount = (size_t) std::thread::hardware_concurrency();
+        const size_t HardwareThreads = std::max<size_t>(1, std::thread::hardware_concurrency());
+
+        const size_t WorkerCount = std::clamp<size_t>(HardwareThreads > 1 ? HardwareThreads - 1 : 1, 1, _MaxWorkers);
 
         try
         {

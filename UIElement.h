@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.h (2026.10.28) P. Stuer **/
+/** $VER: UIElement.h (2026.11.02) P. Stuer **/
 
 #pragma once
 
@@ -79,6 +79,8 @@ private:
     void OnMouseMove(UINT, CPoint) noexcept;
     void OnMouseLeave() noexcept;
 
+    BOOL OnMouseWheel(UINT flags, short wheelDelta, CPoint pt) noexcept;
+
     LRESULT OnConfigurationChanged(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept;
 
     #pragma endregion
@@ -141,6 +143,8 @@ private:
 
         MSG_WM_MOUSEMOVE(OnMouseMove)   // Required for CToolTip
         MSG_WM_MOUSELEAVE(OnMouseLeave) // Required for tracking tooltip
+
+        MSG_WM_MOUSEWHEEL(OnMouseWheel)
 
         MESSAGE_HANDLER_EX(UM_CONFIGURATION_CHANGED, OnConfigurationChanged)
     END_MSG_MAP()

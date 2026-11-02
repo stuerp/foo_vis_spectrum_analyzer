@@ -33,21 +33,18 @@ namespace EyeCandy
     constexpr double TwoPi = 2. * Pi;
     constexpr double Epsilon = std::numeric_limits<double>::epsilon();
 
-    constexpr double BassFrequency   =  250.; // 16 to 250 Hz (C0 to C4), https://en.wikipedia.org/wiki/Bass_(sound)
-    constexpr double TrebleFrequency = 6000.; // 6 to 20 kHz, https://en.wikipedia.org/wiki/Treble_(sound)
+    constexpr double LoFrequency     =     20.;
+    constexpr double HiFrequency     = 20'000.;
+
+    constexpr double FrequencyRatio  = HiFrequency / LoFrequency;
+
+    constexpr double BassFrequency   =    250.; // 16 to 250 Hz (C0 to C4), https://en.wikipedia.org/wiki/Bass_(sound)
+    constexpr double TrebleFrequency =  6'000.; // 6 to 20 kHz, https://en.wikipedia.org/wiki/Treble_(sound)
 
     // Cutoff frequencies for the first-order low-pass filters.
     constexpr double SubBassCutoff  =   35.; // Hz, Removes DC and very-low-frequency movement.
     constexpr double BassCutoff     =  220.; // Hz, Separates bass from the mid frequecies.
     constexpr double MidCutoff      = 2400.; // Hz, Separates the mids from treble.
-
-    struct interaction_t
-    {
-        double X       = 0.;
-        double Y       = 0.;
-        double Zoom    = 1.;
-        double Impulse = 0.;
-    };
 
     enum class Quality
     {
@@ -135,14 +132,9 @@ namespace EyeCandy
     const D2D1_COLOR_F Black = D2D1::ColorF(D2D1::ColorF::Black);
     const D2D1_COLOR_F White = D2D1::ColorF(D2D1::ColorF::White);
 
-    inline float Clamp(float value) noexcept
+    template <typename T> inline constexpr T Clamp(T value) noexcept
     {
-        return std::clamp(value, 0.f, 1.f);
-    }
-
-    inline double Clamp(double value) noexcept
-    {
-        return std::clamp(value, 0., 1.);
+        return std::clamp(value, (T) 0., (T) 1.);
     }
 
     inline double ClampAudio(double value) noexcept
@@ -158,17 +150,12 @@ namespace EyeCandy
         return std::sqrt(x * x + y * y);
     }
 
-    inline float Fraction(float value) noexcept
+    template <typename T> inline constexpr T Fraction(T value) noexcept
     {
         return value - std::floor(value);
     }
 
-    inline double Fraction(double value) noexcept
-    {
-        return value - std::floor(value);
-    }
-
-    inline double Interpolate(double a, double b, double deltaTime, double rate) noexcept
+    inline constexpr double Interpolate(double a, double b, double deltaTime, double rate) noexcept
     {
         return std::lerp(a, b, 1. - std::exp(-rate * deltaTime));
     }
@@ -178,12 +165,7 @@ namespace EyeCandy
         return std::isfinite(point.x) && std::isfinite(point.y);
     }
 
-    inline constexpr float Lerp(float from, float to, float amount) noexcept
-    {
-        return from + (to - from) * amount;
-    }
-
-    inline constexpr double Lerp(double from, double to, double amount) noexcept
+    template <typename T> inline constexpr T Lerp(T from, T to, T amount) noexcept
     {
         return from + (to - from) * amount;
     }
@@ -224,14 +206,9 @@ namespace EyeCandy
         };
     }
 
-    static uint8_t ToByte(float value) noexcept
+    template <typename T> static uint8_t ToByte(T value) noexcept
     {
-        return (uint8_t) ((255.f * value) + 0.5f);
-    }
-
-    static uint8_t ToByte(double value) noexcept
-    {
-        return (uint8_t) ((255. * value) + 0.5);
+        return (uint8_t) (((T) 255. * value) + (T) 0.5);
     }
 
     static uint8_t ToRGB(double value) noexcept
@@ -335,6 +312,73 @@ namespace EyeCandy
         }
     }
 
+    struct interaction_t
+    {
+        double X       = 0.;
+        double Y       = 0.;
+        double Zoom    = 1.;
+        double Impulse = 0.;
+    };
+
+    class drag_helper_t
+    {
+    public:
+        void Start(HWND hWnd, int x, int y, const EyeCandy::interaction_t & interaction) noexcept
+        {
+            ::SetFocus(hWnd);
+            ::SetCapture(hWnd);
+
+            _hWnd = hWnd;
+            _IsDragging = true;
+
+            _Origin = { x, y };
+
+            _FocusX = interaction.X;
+            _FocusY = interaction.Y;
+        }
+
+        void Stop(int x, int y, EyeCandy::interaction_t & interaction) noexcept
+        {
+            if (!_IsDragging)
+                return;
+
+            const int dx = x - _Origin.x;
+            const int dy = y - _Origin.y;
+
+            if (((dx * dx) + (dy * dy)) < 16)
+                interaction.Impulse = 1.;
+
+            _IsDragging = false;
+
+            if (_hWnd == ::GetCapture())
+                ::ReleaseCapture();
+
+            _hWnd = NULL;
+        }
+
+        void Move(int x, int y, EyeCandy::interaction_t & interaction) noexcept
+        {
+            if (!_IsDragging)
+                return;
+
+            RECT rc;
+
+            ::GetClientRect(_hWnd, &rc);
+
+            interaction.X = _FocusX - 2.5 * (double) (x - _Origin.x) / std::max(1L, rc.right);
+            interaction.Y = _FocusY - 2.5 * (double) (y - _Origin.y) / std::max(1L, rc.bottom);
+        }
+
+    private:
+        HWND _hWnd = NULL;
+
+        bool _IsDragging = false;
+        POINT _Origin {};
+
+        double _FocusX = 0.;
+        double _FocusY = 0.;
+    };
+
     /// <summary>
     /// Base class for all effects.
     /// </summary>
@@ -367,6 +411,25 @@ namespace EyeCandy
         virtual void Render(ID2D1RenderTarget * renderTarget, double deltaTime, audio_chunk & chunk) noexcept = 0;
 
         virtual void Reset() noexcept { };
+
+        virtual void OnLButtonDown(HWND hWnd, int x, int y) noexcept
+        {
+            _DragHelper.Start(hWnd, x, y, _Interaction); 
+        };
+
+        virtual void OnLButtonUp(int x, int y) noexcept
+        {
+            _DragHelper.Stop(x, y, _Interaction);
+        };
+
+        virtual void OnMouseMove(int x, int y) noexcept
+        {
+            _DragHelper.Move(x, y, _Interaction);
+        };
+
+        virtual void OnMouseWheel(short wheelDelta) noexcept
+        {
+        };
 
         double GetTime() const noexcept
         {
@@ -407,6 +470,7 @@ namespace EyeCandy
 
             Reset();
         }
+
         void SetDensity(Density value)
         {
             if (_Density == value)
@@ -416,10 +480,6 @@ namespace EyeCandy
 
             Reset();
         }
-
-        interaction_t _Interaction {};
-
-        virtual void OnMouseWheel(short wheelDelta) noexcept { };
 
         // Factory method
         static std::unique_ptr<effect_t> Create(Effect effect) noexcept;
@@ -469,6 +529,8 @@ namespace EyeCandy
         D2D1_RECT_F _Rectangle {};
 
         double _AnimationTime = 0.;
+
+        interaction_t _Interaction {};
 
     protected:
         double _Peak                 = 0.; // [ 0, 1], Overall peak amplitude. The loudest individual mono sample in a chunk.
@@ -591,12 +653,17 @@ namespace EyeCandy
         size_t _Generation = 0;
         bool _IsStopping = false;
 
+        size_t _MaxWorkers = 8;
+
     protected:
         ID2D1RenderTarget * _RenderTarget = nullptr;
 
         ComPtr<ID2D1Factory> _D2DFactory;
         ComPtr<ID2D1LinearGradientBrush> _BackgroundBrush;
         ComPtr<ID2D1SolidColorBrush> _FrameBrush;
+
+    private:
+        drag_helper_t _DragHelper;
 
     private:
         ComPtr<ID2D1SolidColorBrush> _ScanlineBrush;

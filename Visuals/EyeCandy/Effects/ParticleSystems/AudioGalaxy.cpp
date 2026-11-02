@@ -378,7 +378,9 @@ namespace AudioGalaxy
     /// </summary>
     void effect_t::StartWorkers()
     {
-        const auto WorkerCount = (size_t) std::max(1u, std::thread::hardware_concurrency());
+        const size_t HardwareThreads = std::max<size_t>(1, std::thread::hardware_concurrency());
+
+        const size_t WorkerCount = std::clamp<size_t>(HardwareThreads > 1 ? HardwareThreads - 1 : 1, 1, _MaxWorkers);
 
         _Workers.reserve(WorkerCount);
 

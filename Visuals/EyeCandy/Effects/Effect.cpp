@@ -255,12 +255,12 @@ void effect_t::RenderScanlines(ID2D1RenderTarget * renderTarget) noexcept
             case EyeCandy::Quality::Low:
                 return 6.0f;
 
+            default:
+            case EyeCandy::Quality::Medium:
+                return 4.0f;
+
             case EyeCandy::Quality::High:
                 return 3.0f;
-
-            case EyeCandy::Quality::Medium:
-            default:
-                return 4.0f;
         }
     }();
 

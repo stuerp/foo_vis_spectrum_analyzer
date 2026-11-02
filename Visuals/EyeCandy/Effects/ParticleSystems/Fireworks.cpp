@@ -184,10 +184,8 @@ namespace Fireworks
         if (!_HasAudio)
             return;
 
-        const double NyquistFrequency   = SampleRate * 0.5;
-        const double InverseBandCount   = 1. / (double) (FrequencyBandCount - 1);
-
-        constexpr double FrequencyRatio = 16'500. / 40.;            // 40 Hz to 16.5 kHz
+        const double NyquistFrequency = SampleRate * 0.5;
+        const double InverseBandCount = 1. / (double) (FrequencyBandCount - 1);
 
         // Allocate the filter state.
         std::array<double, FrequencyBandCount> Coefficients;        // Goertzel-style resonators
@@ -199,8 +197,8 @@ namespace Fireworks
         {
             const double Amount = (double) Band * InverseBandCount; // [0, 1]
 
-            const double CenterFrequency = 40. * std::pow(FrequencyRatio, Amount);
-            const double Frequency       = std::clamp(CenterFrequency, 20., NyquistFrequency * 0.95);
+            const double CenterFrequency = LoFrequency * std::pow(FrequencyRatio, Amount);
+            const double Frequency       = std::clamp(CenterFrequency, LoFrequency, NyquistFrequency);
 
             Coefficients[Band] = 2. * std::cos(TwoPi * Frequency / SampleRate);
         }
@@ -918,7 +916,9 @@ namespace Fireworks
     /// </summary>
     void effect_t::StartWorkers()
     {
-        const auto WorkerCount = (size_t)std::max(1u, std::thread::hardware_concurrency());
+        const size_t HardwareThreads = std::max<size_t>(1, std::thread::hardware_concurrency());
+
+        const size_t WorkerCount = std::clamp<size_t>(HardwareThreads > 1 ? HardwareThreads - 1 : 1, 1, _MaxWorkers);
 
         _Workers.reserve(WorkerCount);
 

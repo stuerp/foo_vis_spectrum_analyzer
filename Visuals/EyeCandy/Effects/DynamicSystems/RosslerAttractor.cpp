@@ -53,7 +53,7 @@ namespace RosslerAttractor
         if (FAILED(hr))
             return;
 
-        deltaTime = std::clamp(deltaTime, 0., .1);
+        deltaTime = Clamp(deltaTime);
 
         AnalyzeAudio(chunk);
         Update(deltaTime);
@@ -148,7 +148,9 @@ namespace RosslerAttractor
     /// </summary>
     void effect_t::StartWorkers()
     {
-        const auto WorkerCount = std::max((size_t)1, (size_t)std::thread::hardware_concurrency());
+        const size_t HardwareThreads = std::max<size_t>(1, std::thread::hardware_concurrency());
+
+        const size_t WorkerCount = std::clamp<size_t>(HardwareThreads > 1 ? HardwareThreads - 1 : 1, 1, _MaxWorkers);
 
         _WorkerRanges.resize(WorkerCount);
         _Workers.reserve(WorkerCount);

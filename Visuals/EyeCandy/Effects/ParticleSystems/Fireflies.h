@@ -45,7 +45,6 @@ namespace Fireflies
         void Reset() noexcept override final;
 
         void SetPalette(Palette palette) noexcept;
-        void SetDensity(Density density);
 
         std::wstring GetStatus() noexcept override final;
 
@@ -114,6 +113,8 @@ namespace Fireflies
         void DeleteDeviceDependentResources() noexcept;
 
     private:
+        std::vector<double> _Samples;
+
         std::vector<particle_t> _Particles;
 
         std::atomic<size_t> _NextParticle { 0 };

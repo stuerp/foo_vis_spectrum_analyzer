@@ -44,7 +44,7 @@ namespace DoublePendulum
         if (FAILED(hr))
             return;
 
-        deltaTime = std::clamp(deltaTime, 0., 0.1);
+        deltaTime = Clamp(deltaTime);
 
         AnalyzeAudio(chunk);
         Update(deltaTime);

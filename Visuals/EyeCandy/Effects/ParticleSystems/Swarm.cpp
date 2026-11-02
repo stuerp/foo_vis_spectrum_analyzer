@@ -166,7 +166,7 @@ namespace Swarm
 
         // Perform a spectrum analysis of logarithmically spaced frequency bands.
         {
-            const double Nyquist = (double) SampleRate * 0.5;
+            const double NyquistFrequency = (double) SampleRate * 0.5;
 
             double MaximumEnergy = 0.;
 
@@ -180,7 +180,7 @@ namespace Swarm
                 // Sample three frequencies per band: roughly one whole tone below the center, the center frequency and one whole tone above the center (std::pow(2, -1/6), 1, std::pow(2, +1/6))
                 for (double Ratio : { .890898718, 1., 1.122462048 })
                 {
-                    const double Frequency   = std::clamp(CenterFrequency * Ratio, 20., Nyquist * .95); // [40, 16000] Hz
+                    const double Frequency = std::clamp(CenterFrequency * Ratio, LoFrequency, NyquistFrequency);
 
                     // Configure the Goertzel detector.
                     {

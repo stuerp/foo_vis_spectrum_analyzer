@@ -776,17 +776,6 @@ HRESULT spectrogram_t::CreateDeviceSpecificResources(ID2D1DeviceContext * device
     if (_State._ColorsHaveChanged || _State._SizeHasChanged || HasDPIChanged)
     {
         DeleteColorDependentResources();
-
-        Initialize();
-
-        HRESULT hr = CreateColorDependentResources(deviceContext);
-
-        if (FAILED(hr))
-            return hr;
-    }
-
-    if (_State._SizeHasChanged || HasDPIChanged)
-    {
         DeleteSizeDependentResources();
 
         if (HasDPIChanged)
@@ -798,7 +787,12 @@ HRESULT spectrogram_t::CreateDeviceSpecificResources(ID2D1DeviceContext * device
 
         Initialize();
 
-        HRESULT hr = CreateSizeDependentResources(deviceContext);
+        HRESULT hr = CreateColorDependentResources(deviceContext);
+
+        if (FAILED(hr))
+            return hr;
+
+        hr = CreateSizeDependentResources(deviceContext);
 
         if (FAILED(hr))
             return hr;

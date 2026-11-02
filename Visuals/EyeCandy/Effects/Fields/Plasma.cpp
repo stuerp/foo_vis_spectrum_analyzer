@@ -1,5 +1,5 @@
 
-/** $VER: Plasma.cpp (2026.10.23) **/
+/** $VER: Plasma.cpp (2026.11.02) **/
 
 #include <pch.h>
 
@@ -135,6 +135,17 @@ namespace Plasma
 
             renderTarget->DrawBitmap(_BackBuffer.Get(), _Rectangle);
         }
+    }
+
+    /// <summary>
+    /// Handles a rotation of the mouse wheel.
+    /// </summary>
+    void effect_t::OnMouseWheel(short wheelDelta) noexcept
+    {
+        if (wheelDelta == 0)
+            return;
+
+        _Interaction.Zoom = std::clamp(_Interaction.Zoom * std::pow(1.12, (float) wheelDelta / WHEEL_DELTA), .55, 2.2);
     }
 
     /// <summary>
@@ -340,7 +351,9 @@ namespace Plasma
     /// </summary>
     void effect_t::StartWorkers()
     {
-        const auto WorkerCount = (size_t) std::max(1u, std::thread::hardware_concurrency());
+        const size_t HardwareThreads = std::max<size_t>(1, std::thread::hardware_concurrency());
+
+        const size_t WorkerCount = std::clamp<size_t>(HardwareThreads > 1 ? HardwareThreads - 1 : 1, 1, _MaxWorkers);
 
         _Workers.reserve(WorkerCount);
 

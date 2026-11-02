@@ -1,5 +1,5 @@
 
-/** $VER: Plasma.h (2026.10.21) **/
+/** $VER: Plasma.h (2026.11.02) **/
 
 #pragma once
 
@@ -8,7 +8,6 @@
 #include <atomic>
 #include <cstdint>
 #include <string>
-#include <vector>
 
 namespace Plasma
 {
@@ -28,6 +27,7 @@ namespace Plasma
 
         void Reset() noexcept override final;
         void Render(ID2D1RenderTarget * renderTarget, double deltaTime, audio_chunk & chunk) noexcept override final;
+        void OnMouseWheel(short wheelDelta) noexcept override final;
 
         std::wstring GetStatus() noexcept override final;
 
@@ -51,6 +51,7 @@ namespace Plasma
             double BalanceOffset;
             double RadialCenterX;
             double RadialCenterY;
+
             bool HasImpulse;
         };
 
