@@ -1,5 +1,5 @@
 
-/** $VER: BaseProcessor.h (2026.10.28) P. Stuer **/
+/** $VER: BaseProcessor.h (2026.11.04) P. Stuer **/
 
 #pragma once
 
@@ -41,6 +41,7 @@ public:
     virtual void Reset() noexcept;
     virtual void UpdatePeaks(bool isStopped) noexcept;
     virtual void ResetPeaks() noexcept { }
+    virtual void ResetPeakHoldTimes() noexcept { }
 
     static std::unique_ptr<audio_processor_t> Create(state_t & state) noexcept;
 

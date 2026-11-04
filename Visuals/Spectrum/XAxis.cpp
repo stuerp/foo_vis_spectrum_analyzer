@@ -242,7 +242,6 @@ HRESULT x_axis_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceConte
     if (_State._ColorsHaveChanged || _State._SizeHasChanged)
     {
         DeleteColorDependentResources();
-        DeleteSizeDependentResources();
 
         Initialize();
 
@@ -251,10 +250,15 @@ HRESULT x_axis_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceConte
         if (FAILED(hr))
             return hr;
 
-        hr = CreateSizeDependentResources(deviceContext, styleManager);
+        if (_State._SizeHasChanged)
+        {
+            DeleteSizeDependentResources();
 
-        if (FAILED(hr))
-            return hr;
+            hr = CreateSizeDependentResources(deviceContext, styleManager);
+
+            if (FAILED(hr))
+                return hr;
+        }
     }
 
     return hr;

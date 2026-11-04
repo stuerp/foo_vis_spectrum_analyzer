@@ -83,7 +83,6 @@ HRESULT peak_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceC
     if (_State._ColorsHaveChanged || _State._SizeHasChanged)
     {
         DeleteColorDependentResources();
-        DeleteSizeDependentResources();
 
         Initialize();
 
@@ -92,10 +91,15 @@ HRESULT peak_meter_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceC
         if (FAILED(hr))
             return hr;
 
-        hr = CreateSizeDependentResources(deviceContext);
+        if (_State._SizeHasChanged)
+        {
+            DeleteSizeDependentResources();
 
-        if (FAILED(hr))
-            return hr;
+            hr = CreateSizeDependentResources(deviceContext);
+
+            if (FAILED(hr))
+                return hr;
+        }
     }
 
     return S_OK;

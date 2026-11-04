@@ -1,5 +1,5 @@
 
-/** $VER: SpectrumProcessor.h (2026.10.28) P. Stuer - Implements an audio processor for the spectrum visualizations. **/
+/** $VER: SpectrumProcessor.h (2026.11.04) P. Stuer - Implements an audio processor for the spectrum visualizations. **/
 
 #pragma once
 
@@ -34,6 +34,7 @@ public:
     void Process(const audio_chunk & chunk) noexcept override final;
     void UpdatePeaks(bool isStopped) noexcept override final;
     void ResetPeaks() noexcept override final;
+    void ResetPeakHoldTimes() noexcept override final;
 
 public:
     static double GetAcousticWeight(double x, WeightingType weightingType, double weightAmount) noexcept;

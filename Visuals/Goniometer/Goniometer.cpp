@@ -1,5 +1,5 @@
 
-/** $VER: Goniometer.cpp (2026.10.29) P. Stuer - Implements a goniometer. **/
+/** $VER: Goniometer.cpp (2026.11.04) P. Stuer - Implements a goniometer. **/
 
 #include <pch.h>
 
@@ -245,7 +245,6 @@ HRESULT goniometer_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceC
     if (_State._ColorsHaveChanged || _State._SizeHasChanged)
     {
         DeleteColorDependentResources();
-        DeleteSizeDependentResources();
 
         Initialize();
 
@@ -254,10 +253,15 @@ HRESULT goniometer_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceC
         if (FAILED(hr))
             return hr;
 
-        hr = CreateSizeDependentResources(deviceContext);
+        if (_State._SizeHasChanged)
+        {
+            DeleteSizeDependentResources();
 
-        if (FAILED(hr))
-            return hr;
+            hr = CreateSizeDependentResources(deviceContext);
+
+            if (FAILED(hr))
+                return hr;
+        }
     }
 
     return hr;
@@ -304,28 +308,51 @@ HRESULT goniometer_t::CreateSizeDependentResources(ID2D1DeviceContext * deviceCo
 
         if (_Processor->GetColorMode() == goniometer::ColorMode::Mono)
         {
-            _SignalStyle._CurrentColor = _SignalStyle._CustomColor;
+            if (_SignalStyle._ColorSource == ColorSource::Gradient)
+            {
+                D2D1_COLOR_F cm = { };
 
-            _Processor->SetMonoColor(_SignalStyle._CurrentColor);
+                // Find the first color that is in the middle of the gradient.
+                for (auto & gs : _SignalStyle._CurrentGradientStops)
+                {
+                    cm = gs.color;
+
+                    if (msc::InRange(gs.position, 1.f / 3.f, 2.f / 3.f))
+                        break;
+                }
+
+                _Processor->SetMonoColor(cm);
+            }
+            else
+            {
+                _Processor->SetMonoColor(_SignalStyle._CurrentColor);
+            }
         }
         else
         if (_Processor->GetColorMode() == goniometer::ColorMode::Triband)
         {
-            auto cl = _SignalStyle._CurrentGradientStops.front().color;
-            auto ch = _SignalStyle._CurrentGradientStops.back().color;
-
-            D2D1_COLOR_F cm = { };
-
-            // Find the first color that is in the middle of the gradient.
-            for (auto & gs : _SignalStyle._CurrentGradientStops)
+            if (_SignalStyle._ColorSource == ColorSource::Gradient)
             {
-                cm = gs.color;
+                auto cl = _SignalStyle._CurrentGradientStops.front().color;
+                auto ch = _SignalStyle._CurrentGradientStops.back().color;
 
-                if (msc::InRange(gs.position, 1.f / 3.f, 2.f / 3.f))
-                    break;
+                D2D1_COLOR_F cm = { };
+
+                // Find the first color that is in the middle of the gradient.
+                for (auto & gs : _SignalStyle._CurrentGradientStops)
+                {
+                    cm = gs.color;
+
+                    if (msc::InRange(gs.position, 1.f / 3.f, 2.f / 3.f))
+                        break;
+                }
+
+                _Processor->SetTriBandColors(cl, cm, ch);
             }
-
-            _Processor->SetTriBandColors(cl, cm, ch);
+            else
+            {
+                _Processor->SetTriBandColors(_SignalStyle._CurrentColor, _SignalStyle._CurrentColor, _SignalStyle._CurrentColor);
+            }
         }
     }
 

@@ -174,7 +174,6 @@ HRESULT bit_meter_t::CreateDeviceSpecificResources(_In_ ID2D1DeviceContext * dev
     if (_State._ColorsHaveChanged || _State._SizeHasChanged)
     {
         DeleteColorDependentResources();
-        DeleteSizeDependentResources();
 
         Initialize();
 
@@ -183,10 +182,15 @@ HRESULT bit_meter_t::CreateDeviceSpecificResources(_In_ ID2D1DeviceContext * dev
         if (FAILED(hr))
             return hr;
 
-        hr = CreateSizeDependentResources(deviceContext);
+        if (_State._SizeHasChanged)
+        {
+            DeleteSizeDependentResources();
 
-        if (FAILED(hr))
-            return hr;
+            hr = CreateSizeDependentResources(deviceContext);
+
+            if (FAILED(hr))
+                return hr;
+        }
     }
 
     return hr;

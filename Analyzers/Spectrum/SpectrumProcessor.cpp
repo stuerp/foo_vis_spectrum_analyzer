@@ -130,121 +130,154 @@ namespace Spectrum
         }
 
         // From here on frequency_band_t::Value is guaranteed to be in the range [0, 1].
-    /*
+/*
     {
         for (auto & fb : FrequencyBands)
             fb.Value = 0.;
 
-        FrequencyBands.front().Value = .5;
-        FrequencyBands.back() .Value = .5;
+        FrequencyBands.front().Value = 1.;
+        FrequencyBands.back() .Value = 1.;
     }
-    */
+*/
     }
 
     /// <summary>
     /// Updates the peak values.
     /// </summary>
-    void processor_t::UpdatePeaks(bool isStopped) noexcept
+    void processor_t::UpdatePeaks([[maybe_unused]] bool isStopped) noexcept
     {
         assert(_Options);
 
         const double DeltaTime = _Chrono.Elapsed();
 
+        _Chrono.Reset();
+
+        if (!std::isfinite(DeltaTime) || DeltaTime <= 0.)
+            return;
+
         const double AmplitudeRange = _Options->_AmplitudeHi - _Options->_AmplitudeLo;
 
-        const double HoldTime = _State._HoldTime * (double) _State._TargetRefreshRate;
-        const double FallRate = (_State._FallRate != 0) ? msc::Map(DeltaTime, 0., AmplitudeRange / _State._FallRate, 0., 1.) : 0.;
+        if (!std::isfinite(AmplitudeRange) || AmplitudeRange <= 0.)
+            return;
+
+        const double HoldDuration = std::max(_State._HoldTime, 0.);
+
+        // Convert dB/s into normalized amplitude units per second.
+        const double FallSpeed = (_State._FallRate > 0.) ? _State._FallRate / AmplitudeRange : 0.;
 
         const bool IsAIMP = (_State._PeakMode == PeakMode::AIMP) || (_State._PeakMode == PeakMode::FadingAIMP);
 
-        // Animate the spectrum peak value.
+        constexpr double GravityRampTime = 0.25;
+
+        const double GravityAcceleration = (GravityRampTime > 0.) ? FallSpeed / GravityRampTime : 0.;
+
         for (auto & fb : FrequencyBands)
         {
             if (fb.Value >= fb.PeakValue)
             {
+                const double PeakDifference = fb.Value - fb.PeakValue;
+
                 if (IsAIMP)
-                    fb.HoldTime += (fb.Value - fb.PeakValue) * HoldTime;
+                {
+                    fb.HoldTime = std::min(fb.HoldTime + PeakDifference * HoldDuration, HoldDuration); // In seconds
+                }
                 else
-                    fb.HoldTime = HoldTime;
+                {
+                    fb.HoldTime = HoldDuration;
+                }
 
                 fb.PeakValue = fb.Value;
                 fb.FallRate  = 0.;
                 fb.Opacity   = 1.;
+
+                continue;
             }
-            else
+
+            double RemainingTime = DeltaTime;
+
+            if (fb.HoldTime > 0.)
             {
-                if (fb.HoldTime > 0.)
-                {
-                    if (IsAIMP)
-                        fb.PeakValue += (fb.HoldTime - std::max(fb.HoldTime - 1., 0.)) / HoldTime;
+                const double HeldTime = std::min(fb.HoldTime, RemainingTime);
 
-                    fb.HoldTime--;
+                if (IsAIMP && HoldDuration > 0.)
+                    fb.PeakValue += HeldTime / HoldDuration;
 
-                    if (IsAIMP)
-                        fb.HoldTime = std::min(fb.HoldTime, HoldTime);
-                }
-                else
+                fb.HoldTime -= HeldTime;
+
+                RemainingTime -= HeldTime;
+            }
+
+            if (RemainingTime > 0. && fb.HoldTime <= 0.)
+            {
+                switch (_State._PeakMode)
                 {
-                    switch (_State._PeakMode)
+                    default:
+                    case PeakMode::None:
+                        break;
+
+                    case PeakMode::Classic:
                     {
-                        default:
+                        fb.FallRate   = FallSpeed; // In normalized units/s
+                        fb.PeakValue -= fb.FallRate * RemainingTime;
+                        break;
+                    }
 
-                        case PeakMode::None:
-                            break;
+                    case PeakMode::Gravity:
+                    {
+                        fb.PeakValue -= fb.FallRate * RemainingTime + 0.5 * GravityAcceleration * RemainingTime * RemainingTime;
+                        fb.FallRate  += GravityAcceleration * RemainingTime;
+                        break;
+                    }
 
-                        case PeakMode::Classic:
+                    case PeakMode::FadeOut:
+                    {
+                        fb.Opacity -= FallSpeed * RemainingTime;
+
+                        if (fb.Opacity <= 0.)
                         {
-                            constexpr double FallAcceleration = 0.1;
-
-                            fb.FallRate  = std::min(fb.FallRate + FallAcceleration, FallRate);
-                            fb.PeakValue -= fb.FallRate;
-                            break;
+                            fb.PeakValue = fb.Value;
+                            fb.Opacity   = 0.;
+                            fb.FallRate  = 0.;
                         }
 
-                        case PeakMode::Gravity:
+                        break;
+                    }
+
+                    case PeakMode::AIMP:
+                    {
+                        const double SpeedMultiplier = (fb.PeakValue < 0.5) ? 2. : 1.;
+
+                        fb.FallRate   = FallSpeed * SpeedMultiplier;
+                        fb.PeakValue -= fb.FallRate * RemainingTime;
+                        break;
+                    }
+
+                    case PeakMode::FadingAIMP:
+                    {
+                        const double SpeedMultiplier = (fb.PeakValue < 0.5) ? 2. : 1.;
+
+                        fb.FallRate = FallSpeed * SpeedMultiplier;
+
+                        const double Distance = fb.FallRate * RemainingTime;
+
+                        fb.PeakValue -= Distance;
+                        fb.Opacity   -= Distance;
+
+                        if (fb.Opacity <= 0.)
                         {
-                            fb.FallRate += FallRate;
-                            fb.PeakValue -= fb.FallRate;
-                            break;
+                            fb.PeakValue = fb.Value;
+                            fb.Opacity   = 0.;
+                            fb.FallRate  = 0.;
                         }
 
-                        case PeakMode::FadeOut:
-                        {
-                            fb.FallRate += FallRate;
-
-                            fb.Opacity -= fb.FallRate;
-
-                            if (fb.Opacity <= 0.)
-                                fb.PeakValue = fb.Value;
-                            break;
-                        }
-
-                        case PeakMode::AIMP:
-                        {
-                            fb.FallRate  = FallRate * (1. + (int) (fb.PeakValue < 0.5));
-                            fb.PeakValue -= fb.FallRate;
-                            break;
-                        }
-
-                        case PeakMode::FadingAIMP:
-                        {
-                            fb.FallRate  = FallRate * (1. + (int) (fb.PeakValue < 0.5));
-                            fb.PeakValue -= fb.FallRate;
-
-                            fb.Opacity -= fb.FallRate;
-
-                            if (fb.Opacity <= 0.)
-                                fb.PeakValue = fb.Value;
-                            break;
-                        }
+                        break;
                     }
                 }
-
-                fb.PeakValue = std::clamp(fb.PeakValue, fb.Value, 1.);
             }
-        }
 
-        _Chrono.Reset();
+            fb.Opacity   = std::clamp(fb.Opacity,   0.,       1.);
+            fb.PeakValue = std::clamp(fb.PeakValue, fb.Value, 1.);
+        }
     }
 
     /// <summary>
@@ -257,6 +290,18 @@ namespace Spectrum
             fb.PeakValue = 0.;
             fb.FallRate  = 0.;
             fb.Opacity   = 1.;
+        }
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    void processor_t::ResetPeakHoldTimes() noexcept
+    {
+        for (auto & fb : FrequencyBands)
+        {
+            fb.Value    = 0.;
+            fb.HoldTime = 0.;
         }
     }
 

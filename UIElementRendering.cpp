@@ -98,7 +98,7 @@ void uielement_t::RenderThreadProc() noexcept
 
             // Continue to animate the peak values unless the parent window is minized.
             if (!_IsFrozen)
-                Animate(Chrono.Now());
+                Animate();
 
             _CriticalSection.Leave();
         }
@@ -167,9 +167,20 @@ void uielement_t::ProcessEvents() noexcept
     {
         _RenderState._PreviousPlaybackTime = 0.;
         _RenderState._TrackTime            = 0.;
-
+/*
         for (auto & Graph : _Grid)
             Graph->Initialize();
+*/
+        if (_RenderState._ResetPeaksOnTrackChange)
+        {
+            for (auto & Graph : _Grid)
+                Graph->_Processor->ResetPeaks();
+        }
+        else
+        {
+            for (auto & Graph : _Grid)
+                Graph->_Processor->ResetPeakHoldTimes();
+        }
 
         _RenderState._IsPaused = false;
     }
@@ -482,14 +493,14 @@ void uielement_t::Render() noexcept
 /// <summary>
 /// Updates the current and peak values of all the graphs.
 /// </summary>
-void uielement_t::Animate(int64_t now) noexcept
+void uielement_t::Animate() noexcept
 {
     assert(!fb2k::is_main_thread());
 
     if (_RenderState._PeakMode == PeakMode::None)
         return;
 
-    // Needs to be called even when no audio is playing to keep animating the decay of the peak indicators after the audio stops.
+    // Keep animating after playback stops so existing peaks can finish decaying.
     const bool IsStopped = (_RenderState._PreviousPlaybackTime == 0.);
 
     for (auto & Item : _Grid)
