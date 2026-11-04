@@ -1,5 +1,5 @@
 
-/** $VER: CommonPageLayout.h (2026.10.09) P. Stuer - Defines the layout of a configuration dialog page. **/
+/** $VER: CommonPageLayout.h (2026.11.04) P. Stuer - Defines the layout of a configuration dialog page. **/
 
 #pragma once
 
@@ -50,6 +50,12 @@
     #define H_A95    H_CHB
     #define X_A95    X_A87 + W_A87 + IX
     #define Y_A95    Y_A87
+
+    // Checkbox: Alternate fullscreen mode
+    #define W_A96    90
+    #define H_A96    H_CHB
+    #define X_A96    X_A95
+    #define Y_A96    Y_A95 + H_A95 + IY
 
 #define W_B04  288
 #define H_B04   11 + H_A18 + IY + H_A38 + IY + H_A87 + IY + H_G19 + 7

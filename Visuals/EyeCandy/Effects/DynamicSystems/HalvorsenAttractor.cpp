@@ -138,13 +138,13 @@ namespace HalvorsenAttractor
             {
                 const double Amount = (double) i / (double) (_SplinePoints.size() - 1);
 
+                const auto Color = GetCurveColor(Amount + (_AnimationTime * 0.025));
+
                 const double Depth     = 1. - (Previous.LinearDepth + Current.LinearDepth) * 0.5;
                 const double ViewDepth =      (Previous.ViewDepth   + Current.ViewDepth)   * 0.5;
 
                 const float Intensity = (float) (Energy * (0.52 + (Depth * 0.48)));
                 const float Thickness = std::clamp(34.f / (float) std::max(ViewDepth, Projection.NearPlane), 0.55f, 2.20f);
-
-                const auto Color = GetCurveColor(Amount + (_AnimationTime * 0.025));
 
                 DrawGlowLine(renderTarget, Previous.Position, Current.Position, Color, Intensity, Thickness);
             }
@@ -154,12 +154,11 @@ namespace HalvorsenAttractor
     }
 
     /// <summary>
-    /// 
+    /// Start the worker threads.
     /// </summary>
     void effect_t::StartWorkers()
     {
         const size_t HardwareThreads = std::max<size_t>(1, std::thread::hardware_concurrency());
-
         const size_t WorkerCount = std::clamp<size_t>(HardwareThreads > 1 ? HardwareThreads - 1 : 1, 1, _MaxWorkers);
 
         _Workers.reserve(WorkerCount);
@@ -204,8 +203,8 @@ namespace HalvorsenAttractor
                 Worker.join();
         }
 
-        _WorkerRanges.clear();
         _Workers.clear();
+        _WorkerRanges.clear();
     }
 
     /// <summary>
@@ -222,7 +221,7 @@ namespace HalvorsenAttractor
             {
                 std::unique_lock Lock(_WorkerMutex);
 
-                _WorkerCondition.wait(Lock, [this, &Generation]() noexcept
+                _WorkerCondition.wait(Lock, [this, Generation]() noexcept
                 {
                     return _IsStopping || (_Generation != Generation);
                 });
@@ -272,9 +271,9 @@ namespace HalvorsenAttractor
         const double Width = Clamp(_SmoothedStereoWidth);
         const double Phase = Clamp(_PhaseEnergy);
 
-        _AudioOrbit = ExponentialSmoothing(_AudioOrbit, Width * 0.34,                    deltaTime, 3.5);
-        _AudioLift  = ExponentialSmoothing(_AudioLift, (Peak - RMS) * 2.0,               deltaTime, 5.0);
-        _AudioScale = ExponentialSmoothing(_AudioScale, 1.0 + RMS * 0.10 + Peak * 0.035, deltaTime, 7.0);
+        _AudioOrbit = ExponentialSmoothing(_AudioOrbit, Width * 0.34,                        deltaTime, 3.5);
+        _AudioLift  = ExponentialSmoothing(_AudioLift,  (Peak - RMS) * 2.0,                  deltaTime, 5.0);
+        _AudioScale = ExponentialSmoothing(_AudioScale, 1.0 + (RMS * 0.10) + (Peak * 0.035), deltaTime, 7.0);
 
         const double Time = _AnimationTime;
 
@@ -284,25 +283,25 @@ namespace HalvorsenAttractor
         Object.Position = { 0., -1.0 + _AudioLift, 0. };
         Object.Rotation =
         {
-            0.52 + std::sin(Time * 0.19) * 0.08 + Phase * 0.10,
+            0.52 +                       std::sin(Time * 0.19) * 0.08 + (Phase * 0.10),
             Time * (0.10 + RMS * 0.07) + std::sin(Time * 0.13) * 0.16,
-            std::sin(Time * 0.23) * (0.05 + Width * 0.15)
+                                         std::sin(Time * 0.23) * (0.05 + Width * 0.15)
         };
         Object.Scale = { _AudioScale, _AudioScale, _AudioScale };
 
-        const double Orbit = (Time * 0.055) + (_AudioOrbit * std::sin(Time * 0.31));
+        const double Orbit  = (Time * 0.055) + (_AudioOrbit * std::sin(Time * 0.31));
         const double Radius = 38.0 - (RMS * 3.0);
 
         Camera.Position =
         {
-            std::sin(Orbit) * Radius,
-            4.0 + (std::sin(Time * 0.11) * 2.) + (_AudioLift * 0.35),
-            -std::cos(Orbit) * Radius
+                   std::sin(Orbit) * Radius,
+            4.0 + (std::sin(Time * 0.11) * 2.0) + (_AudioLift * 0.35),
+                  -std::cos(Orbit) * Radius
         };
         Camera.Target = { Object.Position.X, Object.Position.Y, 0. };
-        Camera.Up = { 0., 1., 0. };
+        Camera.Up     = { 0., 1., 0. };
 
-        Projection.FieldOfView = 52. - Peak * 3.;
+        Projection.FieldOfView = 52. - (Peak * 3.);
     }
 
     /// <summary>
@@ -390,7 +389,26 @@ namespace HalvorsenAttractor
         });
 
         _Points.erase(IsInvalid, _Points.end());
+
         GenerateSpline();
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    effect_t::point3d_t effect_t::Integrate(point3d_t point, double step, double a) noexcept
+    {
+        const point3d_t k1 = Derive(point, a);
+        const point3d_t k2 = Derive({ point.X + k1.X * step * 0.5, point.Y + k1.Y * step * 0.5, point.Z + k1.Z * step * 0.5 }, a);
+        const point3d_t k3 = Derive({ point.X + k2.X * step * 0.5, point.Y + k2.Y * step * 0.5, point.Z + k2.Z * step * 0.5 }, a);
+        const point3d_t k4 = Derive({ point.X + k3.X * step,       point.Y + k3.Y * step,       point.Z + k3.Z * step },       a);
+
+        return
+        {
+            point.X + step * (k1.X + 2. * k2.X + 2. * k3.X + k4.X) / 6.,
+            point.Y + step * (k1.Y + 2. * k2.Y + 2. * k3.Y + k4.Y) / 6.,
+            point.Z + step * (k1.Z + 2. * k2.Z + 2. * k3.Z + k4.Z) / 6.
+        };
     }
 
     /// <summary>
@@ -403,24 +421,6 @@ namespace HalvorsenAttractor
             -a * point.X - 4. * point.Y - 4. * point.Z - point.Y * point.Y,
             -a * point.Y - 4. * point.Z - 4. * point.X - point.Z * point.Z,
             -a * point.Z - 4. * point.X - 4. * point.Y - point.X * point.X
-        };
-    }
-
-    /// <summary>
-    /// 
-    /// </summary>
-    effect_t::point3d_t effect_t::Integrate(point3d_t point, double step, double a) noexcept
-    {
-        const point3d_t k1 = Derive(point, a);
-        const point3d_t k2 = Derive({ point.X + k1.X * step * 0.5, point.Y + k1.Y * step * 0.5, point.Z + k1.Z * step * 0.5 }, a);
-        const point3d_t k3 = Derive({ point.X + k2.X * step * 0.5, point.Y + k2.Y * step * 0.5, point.Z + k2.Z * step * 0.5 }, a);
-        const point3d_t k4 = Derive({ point.X + k3.X * step, point.Y + k3.Y * step, point.Z + k3.Z * step }, a);
-
-        return
-        {
-            point.X + step * (k1.X + 2. * k2.X + 2. * k3.X + k4.X) / 6.,
-            point.Y + step * (k1.Y + 2. * k2.Y + 2. * k3.Y + k4.Y) / 6.,
-            point.Z + step * (k1.Z + 2. * k2.Z + 2. * k3.Z + k4.Z) / 6.
         };
     }
 }

@@ -868,12 +868,11 @@ namespace Fireflies
     }
 
     /// <summary>
-    ///
+    /// Start the worker threads.
     /// </summary>
     void effect_t::StartWorkers()
     {
         const size_t HardwareThreads = std::max<size_t>(1, std::thread::hardware_concurrency());
-
         const size_t WorkerCount = std::clamp<size_t>(HardwareThreads > 1 ? HardwareThreads - 1 : 1, 1, _MaxWorkers);
 
         _Workers.reserve(WorkerCount);
@@ -881,7 +880,9 @@ namespace Fireflies
         try
         {
             for (size_t i = 0; i < WorkerCount; ++i)
+            {
                 _Workers.emplace_back(&effect_t::Worker, this);
+            }
         }
         catch (...)
         {
@@ -927,7 +928,7 @@ namespace Fireflies
             {
                 std::unique_lock Lock(_WorkerMutex);
 
-                _WorkerCondition.wait(Lock, [this, &Generation]() noexcept
+                _WorkerCondition.wait(Lock, [this, Generation]() noexcept
                 {
                     return _IsStopping || (_Generation != Generation);
                 });

@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2026.11.02) P. Stuer **/
+/** $VER: Resources.h (2026.11.04) P. Stuer **/
 
 #pragma once
 
@@ -252,6 +252,7 @@
 #define IDC_SHOW_TOOLTIPS               6070
 #define IDC_SUPPRESS_MIRROR_IMAGE       6072
 #define IDC_VISUALIZE_DURING_PAUSE      6074
+#define IDC_ALT_FULLSCREEN              6076
 
 #pragma endregion
 

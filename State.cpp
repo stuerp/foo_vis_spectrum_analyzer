@@ -1,5 +1,5 @@
 
-/** $VER: State.cpp (2026.11.01) P. Stuer **/
+/** $VER: State.cpp (2026.11.04) P. Stuer **/
 
 #include "pch.h"
 #include "State.h"
@@ -186,9 +186,10 @@ void state_t::Reset() noexcept
 
     _CustomGradientStops_Deprecated = gradient_t::GetBuiltIn(ColorScheme::Custom);
 
-    _ShowToolTipsAlways = true;
-    _SuppressMirrorImage = true;
+    _ShowToolTipsAlways   = true;
+    _SuppressMirrorImage  = true;
     _VisualizeDuringPause = true;
+    _AltFullscreen        = false;
 
     // Artwork
     _NumArtworkColors = 10;
@@ -520,9 +521,10 @@ state_t & state_t::operator=(const state_t & other) noexcept
 //      _GradientStops = other._GradientStops;                  // Deprecated
 //      _CustomGradientStops_Deprecated = other._CustomGradientStops_Deprecated;
 
-        _ShowToolTipsAlways = other._ShowToolTipsAlways;
-        _SuppressMirrorImage = other._SuppressMirrorImage;
+        _ShowToolTipsAlways   = other._ShowToolTipsAlways;
+        _SuppressMirrorImage  = other._SuppressMirrorImage;
         _VisualizeDuringPause = other._VisualizeDuringPause;
+        _AltFullscreen        = other._AltFullscreen;
 
         // Artwork
         _NumArtworkColors = other._NumArtworkColors;
@@ -1692,6 +1694,7 @@ void state_t::FromJSON(const char * data, size_t size, bool isPreset)
     _ShowToolTipsAlways     = Object.value("showToolTipsAlways",                    _ShowToolTipsAlways);
     _SuppressMirrorImage    = Object.value("suppressMirrorImage",                   _SuppressMirrorImage);
     _VisualizeDuringPause   = Object.value("visualizeDuringPause",                  _VisualizeDuringPause);
+    _AltFullscreen          = Object.value("alternateFullscreenMode",               _AltFullscreen);
 
     // Artwork
     const auto & Artwork = Object.value("artwork", json::object());
@@ -2031,6 +2034,7 @@ json state_t::ToJSON(bool isPreset) const
         { "showToolTipsAlways",   _ShowToolTipsAlways },
         { "suppressMirrorImage",  _SuppressMirrorImage },
         { "visualizeDuringPause", _VisualizeDuringPause },
+        { "alternateFullscreenMode", _AltFullscreen},
 
         json::object_t::value_type
         (

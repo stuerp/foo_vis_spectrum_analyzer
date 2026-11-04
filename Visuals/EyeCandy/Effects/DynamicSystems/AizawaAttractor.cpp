@@ -133,25 +133,25 @@ namespace AizawaAttractor
         Object.Position = { 0., _AudioLift, 0. };
         Object.Rotation =
         {
-            0.52 + std::sin(Time * 0.17) * 0.10 + Phase * 0.08,
+            0.52 +                       std::sin(Time * 0.17) * 0.10 + Phase * 0.08,
             Time * (0.11 + RMS * 0.08) + std::sin(Time * 0.13) * 0.14,
-            std::sin(Time * 0.21) * (0.08 + Width * 0.12)
+                                         std::sin(Time * 0.21) * (0.08 + Width * 0.12)
         };
         Object.Scale = { _AudioScale, _AudioScale, _AudioScale };
 
-        const double Orbit = Time * 0.06 + _AudioOrbit * std::sin(Time * 0.31);
-        const double Radius = 8.5 - RMS * 0.55;
+        const double Orbit  = (Time * 0.06) + (_AudioOrbit * std::sin(Time * 0.31));
+        const double Radius = 8.5 - (RMS * 0.55);
 
         Camera.Position =
         {
-            std::sin(Orbit) * Radius,
-            2.4 + std::sin(Time * 0.11) * 0.45 + _AudioLift * 0.3,
-            -std::cos(Orbit) * Radius
+                   std::sin(Orbit) * Radius,
+            2.4 + (std::sin(Time * 0.11) * 0.45) + (_AudioLift * 0.3),
+                  -std::cos(Orbit) * Radius
         };
         Camera.Target = { Object.Position.X, Object.Position.Y, 0.15 };
-        Camera.Up = { 0., 1., 0. };
+        Camera.Up     = { 0., 1., 0. };
 
-        Projection.FieldOfView = 52. - Peak * 3.;
+        Projection.FieldOfView = 52. - (Peak * 3.);
     }
 
     /// <summary>
@@ -198,6 +198,7 @@ namespace AizawaAttractor
         _Points.resize(PointCount);
 
         const size_t WorkerCount = _Workers.size();
+
         size_t First = 0;
 
         for (size_t i = 0; i < WorkerCount; ++i)
@@ -270,10 +271,10 @@ namespace AizawaAttractor
             {
                 const double Amount = (double) i / (double) (_SplinePoints.size() - 1);
 
-                const auto Color = GetCurveColor(Amount + _AnimationTime * 0.025);
+                const auto Color = GetCurveColor(Amount + (_AnimationTime * 0.025));
 
                 const double Depth     = 1. - (Previous.LinearDepth + Current.LinearDepth) * 0.5;
-                const double ViewDepth = (Previous.ViewDepth + Current.ViewDepth) * 0.5;
+                const double ViewDepth =      (Previous.ViewDepth   + Current.ViewDepth)   * 0.5;
 
                 const float Intensity = (float) (Energy * (0.52 + Depth * 0.48));
                 const float Thickness = std::clamp(7.8f / (float) std::max(ViewDepth, Projection.NearPlane), 0.55f, 2.20f);
@@ -286,12 +287,11 @@ namespace AizawaAttractor
     }
 
     /// <summary>
-    /// 
+    /// Start the worker threads.
     /// </summary>
     void effect_t::StartWorkers()
     {
         const size_t HardwareThreads = std::max<size_t>(1, std::thread::hardware_concurrency());
-
         const size_t WorkerCount = std::clamp<size_t>(HardwareThreads > 1 ? HardwareThreads - 1 : 1, 1, _MaxWorkers);
 
         _Workers.reserve(WorkerCount);
@@ -336,8 +336,8 @@ namespace AizawaAttractor
                 Worker.join();
         }
 
-        _WorkerRanges.clear();
         _Workers.clear();
+        _WorkerRanges.clear();
     }
 
     /// <summary>
@@ -354,7 +354,7 @@ namespace AizawaAttractor
             {
                 std::unique_lock Lock(_WorkerMutex);
 
-                _WorkerCondition.wait(Lock, [this, &Generation]() noexcept
+                _WorkerCondition.wait(Lock, [this, Generation]() noexcept
                 {
                     return _IsStopping || (_Generation != Generation);
                 });
@@ -398,34 +398,34 @@ namespace AizawaAttractor
     /// <summary>
     /// 
     /// </summary>
-    effect_t::point3d_t effect_t::Derive(point3d_t point, double a, double b, double c, double d, double e, double f) noexcept
-    {
-        const double RadiusSquared = point.X * point.X + point.Y * point.Y;
-        const double XCubed = point.X * point.X * point.X;
-
-        return
-        {
-            (point.Z - b) * point.X - d * point.Y,
-            d * point.X + (point.Z - b) * point.Y,
-            c + a * point.Z - point.Z * point.Z * point.Z / 3. - RadiusSquared * (1. + e * point.Z) + f * point.Z * XCubed
-        };
-    }
-
-    /// <summary>
-    /// 
-    /// </summary>
     effect_t::point3d_t effect_t::Integrate(point3d_t point, double step, double a, double b, double c, double d, double e, double f) noexcept
     {
         const point3d_t k1 = Derive(point, a, b, c, d, e, f);
         const point3d_t k2 = Derive({ point.X + k1.X * step * 0.5, point.Y + k1.Y * step * 0.5, point.Z + k1.Z * step * 0.5 }, a, b, c, d, e, f);
         const point3d_t k3 = Derive({ point.X + k2.X * step * 0.5, point.Y + k2.Y * step * 0.5, point.Z + k2.Z * step * 0.5 }, a, b, c, d, e, f);
-        const point3d_t k4 = Derive({ point.X + k3.X * step, point.Y + k3.Y * step, point.Z + k3.Z * step }, a, b, c, d, e, f);
+        const point3d_t k4 = Derive({ point.X + k3.X * step,       point.Y + k3.Y * step,       point.Z + k3.Z * step },       a, b, c, d, e, f);
 
         return
         {
             point.X + step * (k1.X + 2. * k2.X + 2. * k3.X + k4.X) / 6.,
             point.Y + step * (k1.Y + 2. * k2.Y + 2. * k3.Y + k4.Y) / 6.,
             point.Z + step * (k1.Z + 2. * k2.Z + 2. * k3.Z + k4.Z) / 6.
+        };
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    effect_t::point3d_t effect_t::Derive(point3d_t point, double a, double b, double c, double d, double e, double f) noexcept
+    {
+        const double RadiusSquared = point.X * point.X + point.Y * point.Y;
+        const double XCubed        = point.X * point.X * point.X;
+
+        return
+        {
+            (point.Z - b) * point.X - d * point.Y,
+            d * point.X + (point.Z - b) * point.Y,
+            c + a * point.Z - point.Z * point.Z * point.Z / 3. - RadiusSquared * (1. + e * point.Z) + f * point.Z * XCubed
         };
     }
 }

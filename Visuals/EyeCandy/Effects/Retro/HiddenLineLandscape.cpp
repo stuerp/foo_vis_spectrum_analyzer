@@ -647,12 +647,14 @@ namespace HiddenLineLandscape
 
         _WorkerCondition.notify_all();
 
-        std::unique_lock Lock(_WorkerMutex);
-
-        _CompletionCondition.wait(Lock, [this]() noexcept
         {
-            return _PendingWorkers == 0;
-        });
+            std::unique_lock Lock(_WorkerMutex);
+
+            _CompletionCondition.wait(Lock, [this]() noexcept
+            {
+                return _PendingWorkers == 0;
+            });
+        }
     }
 
     /// <summary>
@@ -935,7 +937,7 @@ namespace HiddenLineLandscape
     }
 
     /// <summary>
-    /// Creates persistent workers for the CPU depth prepass.
+    /// Start the worker threads.
     /// </summary>
     void effect_t::StartWorkers()
     {
@@ -951,6 +953,7 @@ namespace HiddenLineLandscape
 
             _IsStopping = false;
             _Generation = 0;
+
             _PendingWorkers = 0;
             _ActiveWorkerCount = 0;
         }
@@ -988,7 +991,7 @@ namespace HiddenLineLandscape
 
         _WorkerCondition.notify_all();
 
-        for (std::thread & Worker : _Workers)
+        for (auto & Worker : _Workers)
         {
             if (Worker.joinable())
                 Worker.join();
@@ -1003,12 +1006,12 @@ namespace HiddenLineLandscape
     /// </summary>
     void effect_t::Worker(size_t workerIndex) noexcept
     {
-        size_t LocalGeneration = 0;
+        size_t Generation = 0;
 
         {
             const std::lock_guard Lock(_WorkerMutex);
 
-            LocalGeneration = _Generation;
+            Generation = _Generation;
         }
 
         for (;;)
@@ -1016,15 +1019,15 @@ namespace HiddenLineLandscape
             {
                 std::unique_lock Lock(_WorkerMutex);
 
-                _WorkerCondition.wait(Lock, [this, &LocalGeneration]() noexcept
+                _WorkerCondition.wait(Lock, [this, Generation]() noexcept
                 {
-                    return _IsStopping || (_Generation != LocalGeneration);
+                    return _IsStopping || (_Generation != Generation);
                 });
 
                 if (_IsStopping)
                     return;
 
-                LocalGeneration = _Generation;
+                Generation = _Generation;
             }
 
             if (workerIndex < _ActiveWorkerCount)

@@ -1,5 +1,5 @@
 
-/** $VER: State.h (2026.11.01) P. Stuer **/
+/** $VER: State.h (2026.11.04) P. Stuer **/
 
 #pragma once
 
@@ -264,6 +264,7 @@ public:
         bool _ShowToolTipsAlways;                                       // True if tooltips should be displayed.
         bool _SuppressMirrorImage;                                      // True if the mirror image of the spectrum is not rendered.
         bool _VisualizeDuringPause;                                     // True if visualization should continue when playback is paused.
+        bool _AltFullscreen;                                            // True if the alternate fullscreen mode is enabled.
 
     #pragma endregion
 

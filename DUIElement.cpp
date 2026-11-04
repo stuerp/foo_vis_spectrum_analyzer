@@ -1,5 +1,5 @@
 
-/** $VER: DUIElement.cpp (2026.03.21) P. Stuer **/
+/** $VER: DUIElement.cpp (2026.11.04) P. Stuer **/
 
 #include "pch.h"
 
@@ -171,7 +171,17 @@ void dui_element_t::OnContextMenu(CWindow wnd, CPoint position) noexcept
 /// </summary>
 void dui_element_t::ToggleFullScreen() noexcept
 {
-    static_api_ptr_t<ui_element_common_methods_v2>()->toggle_fullscreen(g_get_guid(), core_api::get_main_window());
+    assert(fb2k::is_main_thread());
+
+    if (_UIState._AltFullscreen)
+    {
+        if (_FullScreen.IsActive)
+            ExitFullScreen();
+        else
+            EnterFullScreen();
+    }
+    else
+        static_api_ptr_t<ui_element_common_methods_v2>()->toggle_fullscreen(g_get_guid(), core_api::get_main_window());
 }
 
 /// <summary>

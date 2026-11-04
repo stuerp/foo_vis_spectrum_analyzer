@@ -1,5 +1,5 @@
 
-/** $VER: CommonPage.rc (2026.10.09) P. Stuer **/
+/** $VER: CommonPage.rc (2026.11.04) P. Stuer **/
 
 #include "Resources.h"
 
@@ -27,6 +27,7 @@ style DS_SETFONT | DS_CONTROL | WS_CHILD | WS_CLIPCHILDREN
         control         "Suppress mirror image",    IDC_SUPPRESS_MIRROR_IMAGE,      "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_G19, Y_G19, W_G19, H_G19
 
         control         "Visualize during pause",   IDC_VISUALIZE_DURING_PAUSE,     "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_A95, Y_A95, W_A95, H_A95
+        control         "Alternate fullscreen mode",  IDC_ALT_FULLSCREEN,     "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_A96, Y_A96, W_A96, H_A96
 
     groupbox "Artwork", IDC_ARTWORK, X_B06, Y_B06, W_B06, H_B06, BS_GROUPBOX, WS_EX_TRANSPARENT
 

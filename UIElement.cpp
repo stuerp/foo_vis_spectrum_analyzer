@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.cpp (2026.10.11) P. Stuer - UIElement methods that run on the UI thread. **/
+/** $VER: UIElement.cpp (2026.11.04) P. Stuer - UIElement methods that run on the UI thread. **/
 
 #include "pch.h"
 
@@ -21,6 +21,11 @@ extern void RunTests();
 #endif
 
 #pragma region User Interface
+
+uielement_t::~uielement_t() noexcept
+{
+    RestoreDetachedWindow();
+}
 
 /// <summary>
 /// Gets the window class definition.
@@ -290,6 +295,39 @@ void uielement_t::OnContextMenu(CWindow wnd, CPoint position) noexcept
 }
 
 /// <summary>
+/// Handles a key press.
+/// </summary>
+void uielement_t::OnKeyDown(UINT virtualKey, UINT repeatCount, UINT flags) noexcept
+{
+    if (!_FullScreen.IsActive)
+        return;
+
+    switch (virtualKey)
+    {
+        case VK_ESCAPE:
+        {
+            ToggleFullScreen();
+            break;
+        }
+
+        case VK_PRIOR:
+        {
+            MoveFullScreenToNextMonitor(-1);
+            break;
+        }
+
+        case VK_NEXT:
+        {
+            MoveFullScreenToNextMonitor( 1);
+            break;
+        }
+
+        default:
+            break;
+    }
+}
+
+/// <summary>
 /// Handles a left mousebutton down message.
 /// </summary>
 void uielement_t::OnLButtonDown(UINT flags, CPoint point) noexcept
@@ -347,6 +385,24 @@ LRESULT uielement_t::OnDPIChanged(UINT dpiX, UINT dpiY, PRECT newRect) noexcept
     DeleteDeviceSpecificResources();
 
     return 0;
+}
+
+/// <summary>
+/// Handles a display change.
+/// </summary>
+void uielement_t::OnDisplayChange(UINT bitsPerPixel, CSize resolution) noexcept
+{
+    if (_FullScreen.IsActive)
+        MoveFullScreenToMonitor(::MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTONEAREST));
+}
+
+/// <summary>
+/// Handles a timer tick.
+/// </summary>
+void uielement_t::OnTimer(UINT_PTR timerId) noexcept
+{
+    if (timerId == FullScreenTransitionTimerId)
+        UpdateFullScreenTransition();
 }
 
 /// <summary>
@@ -545,6 +601,7 @@ HRESULT uielement_t::GetArtworkColors() noexcept
 
     return S_OK;
 }
+
 /// <summary>
 /// Updates the state.
 /// </summary>
@@ -660,6 +717,308 @@ void uielement_t::NotifyDialog(WPARAM wParam) noexcept
     _ConfigurationDialog.PostMessageW(UM_CONFIGURATION_CHANGED, wParam); // Must be sent outside the critical section.
 
     Log.AtDebug().Write(STR_COMPONENT_BASENAME " notified configuration dialog.");
+}
+
+/// <summary>
+/// Enters fullscreen mode using the existing DUI child window and animates it to the monitor bounds.
+/// </summary>
+bool uielement_t::EnterFullScreen() noexcept
+{
+    assert(fb2k::is_main_thread());
+
+    if (_FullScreen.IsActive || !::IsWindow(m_hWnd))
+        return false;
+
+    const HWND Parent = ::GetParent(m_hWnd);
+
+    if (Parent == NULL)
+        return false;
+
+    fullscreen_state_t State
+    {
+        .hParent = Parent,
+        .Style = (DWORD) ::GetWindowLongPtrW(m_hWnd, GWL_STYLE),
+        .ExStyle = (DWORD) ::GetWindowLongPtrW(m_hWnd, GWL_EXSTYLE),
+    };
+
+    RECT StartRect { };
+
+    if (!::GetWindowRect(m_hWnd, &StartRect))
+        return false;
+
+    State.OldRect = StartRect;
+
+    ::MapWindowPoints(HWND_DESKTOP, State.hParent, (POINT *) &State.OldRect, 2);
+
+    const HMONITOR hMonitor = ::MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTONEAREST);
+
+    MONITORINFOEXW mi { sizeof(mi) };
+
+    if (!::GetMonitorInfoW(hMonitor, &mi))
+        return false;
+
+    State.hMonitor          = hMonitor;
+    State.MonitorDeviceName = mi.szDevice;
+    State.IsActive          = true;
+
+    _FullScreen = State;
+
+    const DWORD FullScreenStyle   = (_FullScreen.Style  & ~WS_CHILD) | WS_POPUP;
+    const DWORD FullScreenExStyle = _FullScreen.ExStyle & ~(WS_EX_CONTROLPARENT | WS_EX_MDICHILD);
+
+    ::ShowWindow(m_hWnd, SW_HIDE);
+    ::SetLastError(ERROR_SUCCESS);
+
+    if (::SetParent(m_hWnd, NULL) == NULL && (::GetLastError() != ERROR_SUCCESS))
+    {
+        _FullScreen.IsActive = false;
+
+        ::ShowWindow(m_hWnd, SW_SHOW);
+
+        return false;
+    }
+
+    ::SetWindowLongPtrW(m_hWnd, GWL_STYLE,   (LONG_PTR) FullScreenStyle);
+    ::SetWindowLongPtrW(m_hWnd, GWL_EXSTYLE, (LONG_PTR) FullScreenExStyle);
+
+    ::SetWindowPos(m_hWnd, HWND_TOP, StartRect.left, StartRect.top, StartRect.right - StartRect.left, StartRect.bottom - StartRect.top, SWP_FRAMECHANGED | SWP_NOACTIVATE | SWP_SHOWWINDOW);
+
+    StartFullScreenTransition(StartRect, mi.rcMonitor, true);
+
+    DeleteTrackingToolTip();
+
+    ::SetForegroundWindow(m_hWnd);
+    ::SetFocus(m_hWnd);
+
+    ::SetThreadExecutionState(ES_CONTINUOUS | ES_DISPLAY_REQUIRED);
+
+    return true;
+}
+
+/// <summary>
+/// Animates the detached fullscreen window back to its original DUI rectangle.
+/// </summary>
+void uielement_t::ExitFullScreen() noexcept
+{
+    assert(fb2k::is_main_thread());
+
+    if (!_FullScreen.IsActive || _FullScreen.TransitionActive)
+        return;
+
+    if (!::IsWindow(_FullScreen.hParent))
+    {
+        ::DestroyWindow(m_hWnd);
+        return;
+    }
+
+    RECT StartRect { };
+
+    if (!::GetWindowRect(m_hWnd, &StartRect))
+        return;
+
+    RECT EndRect = _FullScreen.OldRect;
+
+    ::MapWindowPoints(_FullScreen.hParent, HWND_DESKTOP, (POINT *) &EndRect, 2);
+
+    StartFullScreenTransition(StartRect, EndRect, false);
+}
+
+/// <summary>
+/// Restores child-window mode immediately during teardown.
+/// </summary>
+void uielement_t::RestoreDetachedWindow() noexcept
+{
+    if (!_FullScreen.IsActive)
+        return;
+
+    ::KillTimer(m_hWnd, FullScreenTransitionTimerId);
+
+    _FullScreen.TransitionActive = false;
+
+    CompleteFullScreenExit();
+}
+
+/// <summary>
+/// Move the fullscreen window to the specified monitor.
+/// </summary>
+void uielement_t::MoveFullScreenToMonitor(HMONITOR monitor) noexcept
+{
+    if (!_FullScreen.IsActive || _FullScreen.TransitionActive || (monitor == NULL))
+        return;
+
+    MONITORINFOEXW mi { sizeof(mi) };
+
+    if (!::GetMonitorInfoW(monitor, &mi))
+        return;
+
+    _FullScreen.hMonitor           = monitor;
+    _FullScreen.MonitorDeviceName = mi.szDevice;
+
+    const RECT & Bounds = mi.rcMonitor;
+
+    ::SetWindowPos(m_hWnd, HWND_TOP, Bounds.left, Bounds.top, Bounds.right - Bounds.left, Bounds.bottom - Bounds.top, SWP_FRAMECHANGED | SWP_NOACTIVATE | SWP_SHOWWINDOW);
+}
+
+/// <summary>
+/// Moves the fullscreen window the next monitor taking into account horizontal and vertical stacking.
+/// </summary>
+void uielement_t::MoveFullScreenToNextMonitor(int direction) noexcept
+{
+    if (!_FullScreen.IsActive || _FullScreen.TransitionActive || (direction == 0))
+        return;
+
+    std::vector<monitor_t> Monitors;
+
+    ::EnumDisplayMonitors(nullptr, nullptr, [](HMONITOR Handle, HDC, LPRECT, LPARAM Data) noexcept -> BOOL
+    {
+        MONITORINFOEXW mi { sizeof(mi) };
+
+        if (::GetMonitorInfoW(Handle, &mi))
+        {
+            auto & Items = *(std::vector<monitor_t> *) Data;
+
+            Items.push_back({ Handle, mi.szDevice, mi.rcMonitor, (mi.dwFlags & MONITORINFOF_PRIMARY) != 0 });
+        }
+
+        return TRUE;
+    }, (LPARAM) &Monitors);
+
+    if (Monitors.size() < 2)
+        return;
+
+    LONG MinLeft   = Monitors.front().Bounds.left;
+    LONG MaxRight  = Monitors.front().Bounds.right;
+    LONG MinTop    = Monitors.front().Bounds.top;
+    LONG MaxBottom = Monitors.front().Bounds.bottom;
+
+    for (const auto & Monitor : Monitors)
+    {
+        MinLeft   = std::min(MinLeft,   Monitor.Bounds.left);
+        MaxRight  = std::max(MaxRight,  Monitor.Bounds.right);
+        MinTop    = std::min(MinTop,    Monitor.Bounds.top);
+        MaxBottom = std::max(MaxBottom, Monitor.Bounds.bottom);
+    }
+
+    const bool IsVerticalLayout = (MaxBottom - MinTop) > (MaxRight - MinLeft);
+
+    std::sort(Monitors.begin(), Monitors.end(), [IsVerticalLayout](const monitor_t & Left, const monitor_t & Right)
+    {
+        const LONG LeftCenterX  = Left.Bounds.left  + (Left.Bounds.right -  Left.Bounds.left)   / 2;
+        const LONG LeftCenterY  = Left.Bounds.top   + (Left.Bounds.bottom  - Left.Bounds.top)   / 2;
+        const LONG RightCenterX = Right.Bounds.left + (Right.Bounds.right  - Right.Bounds.left) / 2;
+        const LONG RightCenterY = Right.Bounds.top  + (Right.Bounds.bottom - Right.Bounds.top)  / 2;
+
+        if (IsVerticalLayout)
+            return (LeftCenterY != RightCenterY) ? LeftCenterY < RightCenterY : LeftCenterX < RightCenterX;
+
+        return (LeftCenterX != RightCenterX) ? LeftCenterX < RightCenterX : LeftCenterY < RightCenterY;
+    });
+
+    const HMONITOR hCurrent = ::MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTONEAREST);
+
+    const auto Item = std::find_if(Monitors.begin(), Monitors.end(), [hCurrent](const monitor_t & Candidate)
+    {
+        return Candidate.Handle == hCurrent;
+    });
+
+    size_t Index = (Item == Monitors.end()) ? 0 : (size_t) std::distance(Monitors.begin(), Item);
+
+    const size_t Count = Monitors.size();
+
+    Index = (direction < 0) ? (Index + Count - 1) % Count : (Index + 1) % Count;
+
+    MoveFullScreenToMonitor(Monitors[Index].Handle);
+}
+
+/// <summary>
+/// Starts a smooth zoom transition between two screen-coordinate rectangles.
+/// </summary>
+void uielement_t::StartFullScreenTransition(const RECT & startRect, const RECT & endRect, bool entering) noexcept
+{
+    _FullScreen.TransitionStartRect = startRect;
+    _FullScreen.TransitionEndRect   = endRect;
+    _FullScreen.TransitionEntering  = entering;
+    _FullScreen.TransitionStartTime = std::chrono::steady_clock::now();
+    _FullScreen.TransitionActive    = true;
+
+    ::SetTimer(m_hWnd, FullScreenTransitionTimerId, FullScreenTransitionTimerInterval, nullptr);
+
+    UpdateFullScreenTransition();
+}
+
+/// <summary>
+/// Advances the fullscreen zoom transition using smoothstep easing.
+/// </summary>
+void uielement_t::UpdateFullScreenTransition() noexcept
+{
+    if (!_FullScreen.TransitionActive)
+        return;
+
+    const auto Elapsed = std::chrono::steady_clock::now() - _FullScreen.TransitionStartTime;
+
+    float Progress = std::chrono::duration<float>(Elapsed).count() / std::chrono::duration<float>(FullScreenTransitionDuration).count();
+
+    Progress = std::clamp(Progress, 0.f, 1.f);
+
+    const float EasedProgress = Progress * Progress * (3.f - (2.f * Progress));
+
+    const auto Interpolate = [](LONG start, LONG end, float amount) noexcept
+    {
+        return start + (LONG) std::lround((float) (end - start) * amount);
+    };
+
+    RECT CurrentRect
+    {
+        Interpolate(_FullScreen.TransitionStartRect.left,   _FullScreen.TransitionEndRect.left,   EasedProgress),
+        Interpolate(_FullScreen.TransitionStartRect.top,    _FullScreen.TransitionEndRect.top,    EasedProgress),
+        Interpolate(_FullScreen.TransitionStartRect.right,  _FullScreen.TransitionEndRect.right,  EasedProgress),
+        Interpolate(_FullScreen.TransitionStartRect.bottom, _FullScreen.TransitionEndRect.bottom, EasedProgress)
+    };
+
+    ::SetWindowPos(m_hWnd, HWND_TOP, CurrentRect.left, CurrentRect.top, std::max(1L, CurrentRect.right - CurrentRect.left), std::max(1L, CurrentRect.bottom - CurrentRect.top), SWP_NOACTIVATE | SWP_NOOWNERZORDER | SWP_SHOWWINDOW);
+
+    if (Progress < 1.0f)
+        return;
+
+    ::KillTimer(m_hWnd, FullScreenTransitionTimerId);
+
+    _FullScreen.TransitionActive = false;
+
+    if (_FullScreen.TransitionEntering)
+        ::SetWindowPos(m_hWnd, HWND_TOP, _FullScreen.TransitionEndRect.left, _FullScreen.TransitionEndRect.top, _FullScreen.TransitionEndRect.right - _FullScreen.TransitionEndRect.left, _FullScreen.TransitionEndRect.bottom - _FullScreen.TransitionEndRect.top, SWP_FRAMECHANGED | SWP_NOACTIVATE | SWP_NOOWNERZORDER | SWP_SHOWWINDOW);
+    else
+        CompleteFullScreenExit();
+}
+
+/// <summary>
+/// Reattaches the animated window to its original DUI parent.
+/// </summary>
+void uielement_t::CompleteFullScreenExit() noexcept
+{
+    const auto State = _FullScreen;
+
+    _FullScreen.IsActive = false;
+    _FullScreen.TransitionActive = false;
+
+    ::SetThreadExecutionState(ES_CONTINUOUS);
+
+    ::ShowWindow(m_hWnd, SW_HIDE);
+
+    ::SetWindowLongPtrW(m_hWnd, GWL_STYLE,   (LONG_PTR) State.Style);
+    ::SetWindowLongPtrW(m_hWnd, GWL_EXSTYLE, (LONG_PTR) State.ExStyle);
+
+    if (!::IsWindow(State.hParent))
+    {
+        ::DestroyWindow(m_hWnd);
+
+        return;
+    }
+
+    ::SetParent(m_hWnd, State.hParent);
+    ::SetWindowPos(m_hWnd, nullptr, State.OldRect.left, State.OldRect.top, State.OldRect.right - State.OldRect.left, State.OldRect.bottom - State.OldRect.top, SWP_FRAMECHANGED | SWP_NOACTIVATE | SWP_NOZORDER | SWP_SHOWWINDOW);
+
+    DeleteTrackingToolTip();
+    Resize();
 }
 
 #pragma endregion

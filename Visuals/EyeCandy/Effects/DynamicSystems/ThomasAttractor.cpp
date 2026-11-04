@@ -100,24 +100,37 @@ namespace ThomasAttractor
         const double Width = Clamp(_SmoothedStereoWidth);
         const double Phase = Clamp(_PhaseEnergy);
 
-        _AudioOrbit = ExponentialSmoothing(_AudioOrbit, Width * .34, deltaTime, 3.5);
-        _AudioLift  = ExponentialSmoothing(_AudioLift, (Peak - RMS) * 1.5, deltaTime, 5.);
-        _AudioScale = ExponentialSmoothing(_AudioScale, 1. + RMS * .10 + Peak * .035, deltaTime, 7.);
+        _AudioOrbit = ExponentialSmoothing(_AudioOrbit, Width * 0.34,                        deltaTime, 3.5);
+        _AudioLift  = ExponentialSmoothing(_AudioLift,  (Peak - RMS) * 1.5,                  deltaTime, 5.0);
+        _AudioScale = ExponentialSmoothing(_AudioScale, 1.0 + (RMS * 0.10) + (Peak * 0.035), deltaTime, 7.0);
+
+        const double Time = _AnimationTime;
 
         World = {};
-        World.Scale = { 1.,1.,1. };
+        World.Scale = { 1., 1., 1. };
 
-        Object.Position = { 0.,_AudioLift,0. };
-        Object.Rotation = { .55 + std::sin(_AnimationTime * .19) * .08 + Phase * .10,_AnimationTime * (.10 + RMS * .07) + std::sin(_AnimationTime * .13) * .16,std::sin(_AnimationTime * .23) * (.05 + Width * .15) };
-        Object.Scale    = { _AudioScale,_AudioScale,_AudioScale };
+        Object.Position = { 0., _AudioLift, 0. };
+        Object.Rotation =
+        {
+            0.55 +                       std::sin(Time * 0.19) * 0.08 + (Phase * 0.10),
+            Time * (0.10 + RMS * 0.07) + std::sin(Time * 0.13) * 0.16,
+                                         std::sin(Time * 0.23) * (0.05 + Width * 0.15)
+        };
+        Object.Scale = { _AudioScale, _AudioScale, _AudioScale };
 
-        const double o = _AnimationTime * .055 + _AudioOrbit * std::sin(_AnimationTime * .31), radius = 24. - RMS * 1.5;
+        const double Orbit  = (Time * 0.055) + (_AudioOrbit * std::sin(Time * 0.31));
+        const double Radius = 24.0 - (RMS * 1.5);
 
-        Camera.Position = { std::sin(o) * radius,3. + std::sin(_AnimationTime * .11) * 1.5 + _AudioLift * .35,-std::cos(o) * radius };
-        Camera.Target   = { 0.,_AudioLift,0. };
-        Camera.Up       = { 0.,1.,0. };
+        Camera.Position =
+        {
+                   std::sin(Orbit) * Radius,
+            3.0 + (std::sin(Time * 0.11) * 1.5) + (_AudioLift * 0.35),
+                  -std::cos(Orbit) * Radius
+        };
+        Camera.Target = { 0., _AudioLift, 0. };
+        Camera.Up     = { 0., 1., 0. };
 
-        Projection.FieldOfView = 52. - Peak * 3.;
+        Projection.FieldOfView = 52. - (Peak * 3.);
     }
 
     /// <summary>
@@ -194,32 +207,19 @@ namespace ThomasAttractor
             {
                 const double Amount = (double) i / (double) (_SplinePoints.size() - 1);
 
+                const auto Color = GetCurveColor(Amount + (_AnimationTime * 0.025));
+
                 const double Depth     = 1. - (Previous.LinearDepth + Current.LinearDepth) * 0.5;
                 const double ViewDepth =      (Previous.ViewDepth   + Current.ViewDepth)   * 0.5;
 
                 const float Intensity = (float) (Energy * (0.52 + (Depth * 0.48)));
                 const float Thickness = std::clamp(22.f / (float) std::max(ViewDepth, Projection.NearPlane), 0.55f, 2.20f);
 
-                const auto Color = GetCurveColor(Amount + (_AnimationTime * 0.025));
-
                 DrawGlowLine(renderTarget, Previous.Position, Current.Position, Color, Intensity, Thickness);
             }
 
             Previous = Current;
         }
-    }
-
-    /// <summary>
-    /// 
-    /// </summary>
-    effect_t::point3d_t effect_t::Derive(point3d_t p, double b) noexcept
-    {
-        return
-        {
-            std::sin(p.Y) - b * p.X,
-            std::sin(p.Z) - b * p.Y,
-            std::sin(p.X) - b * p.Z
-        };
     }
 
     /// <summary>
@@ -237,6 +237,19 @@ namespace ThomasAttractor
             p.X + s * (k1.X + 2. * k2.X + 2. * k3.X + k4.X) / 6.,
             p.Y + s * (k1.Y + 2. * k2.Y + 2. * k3.Y + k4.Y) / 6.,
             p.Z + s * (k1.Z + 2. * k2.Z + 2. * k3.Z + k4.Z) / 6.
+        };
+    }
+
+    /// <summary>
+    ///
+    /// </summary>
+    effect_t::point3d_t effect_t::Derive(point3d_t p, double b) noexcept
+    {
+        return
+        {
+            std::sin(p.Y) - b * p.X,
+            std::sin(p.Z) - b * p.Y,
+            std::sin(p.X) - b * p.Z
         };
     }
 }

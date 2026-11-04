@@ -1,5 +1,5 @@
 
-/** $VER: EyeCandyPageLayout.h (2026.10.23) P. Stuer - Defines the layout of a configuration dialog page. **/
+/** $VER: EyeCandyPageLayout.h (2026.11.04) P. Stuer - Defines the layout of a configuration dialog page. **/
 
 #pragma once
 
@@ -31,7 +31,7 @@
 #define Y_B03    Y_B02
 
 // Combobox
-#define W_B04    86
+#define W_B04    100
 #define H_B04    H_CBX
 #define X_B04    X_B03 + W_B03 + IX
 #define Y_B04    Y_B03

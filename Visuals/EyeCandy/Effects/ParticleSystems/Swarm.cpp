@@ -167,13 +167,15 @@ namespace Swarm
         // Perform a spectrum analysis of logarithmically spaced frequency bands.
         {
             const double NyquistFrequency = (double) SampleRate * 0.5;
+            const double MaximumFrequency = std::min(HiFrequency, NyquistFrequency);
 
             double MaximumEnergy = 0.;
 
             for (size_t i = 0; i < BandCount; ++i)
             {
                 const double Amount = (double) i / (double) (BandCount - 1.); // [0, 1]
-                const double CenterFrequency = 40. * std::pow(400., Amount);
+
+                const double CenterFrequency = LoFrequency * std::pow(MaximumFrequency / LoFrequency, Amount);
 
                 double Power = 0.;
 
@@ -187,13 +189,12 @@ namespace Swarm
                         const double Omega       = TwoPi * Frequency / (double) SampleRate;
                         const double Coefficient = 2. * std::cos(Omega);
 
-                        double q1 = 0.;
-                        double q2 = 0.;
+                        double q1 = 0., q2 = 0.;
 
                         // Run the Goertzel ecurrence over the windowed signal.
-                        for (double sample : Samples)
+                        for (double Sample : Samples)
                         {
-                            const double q0 = sample + Coefficient * q1 - q2;
+                            const double q0 = Sample + Coefficient * q1 - q2;
 
                             q2 = q1;
                             q1 = q0;

@@ -1,5 +1,5 @@
 
-/** $VER: Effects.h (2026.11.02) P. Stuer **/
+/** $VER: Effects.h (2026.11.04) P. Stuer **/
 
 #pragma once
 
@@ -65,7 +65,13 @@ namespace EyeCandy
         FlowerScope,
         HarmonicHarp,
 
+        DuffingOscillator,
+        ChuaCircuit,
+        VanDerPolOscillator,
+        GrayScottReactionDiffusion,
+        RotatingTunnel,
+
         Min = Waveform,
-        Max = HarmonicHarp,
+        Max = RotatingTunnel,
     };
 }

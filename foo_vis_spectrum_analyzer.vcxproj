@@ -235,7 +235,12 @@
     <ClInclude Include="Analyzers\Test\TestProcessor.h" />
     <ClInclude Include="Configuration\CommonPage.h" />
     <ClInclude Include="Configuration\CommonPageLayout.h" />
+    <ClInclude Include="Visuals\EyeCandy\Effects\DynamicSystems\ChuaCircuit.h" />
+    <ClInclude Include="Visuals\EyeCandy\Effects\DynamicSystems\DuffingOscillator.h" />
+    <ClInclude Include="Visuals\EyeCandy\Effects\DynamicSystems\VanDerPolOscillator.h" />
     <ClInclude Include="Visuals\EyeCandy\Effects\EffectProcessor.h" />
+    <ClInclude Include="Visuals\EyeCandy\Effects\Fields\GrayScottReactionDiffusion.h" />
+    <ClInclude Include="Visuals\EyeCandy\Effects\Fields\RotatingTunnel.h" />
     <ClInclude Include="Visuals\EyeCandy\Effects\Fields\Rotozoomer.h" />
     <ClInclude Include="Visuals\EyeCandy\Effects\Retro\DitherField.h" />
     <ClInclude Include="Visuals\EyeCandy\Effects\Retro\FlipDotMatrix.h" />
@@ -406,6 +411,9 @@
     <ClCompile Include="Configuration\MenuListBox.cpp" />
     <ClCompile Include="Tests.cpp" />
     <ClCompile Include="UIElementToolTips.cpp" />
+    <ClCompile Include="Visuals\EyeCandy\Effects\DynamicSystems\ChuaCircuit.cpp" />
+    <ClCompile Include="Visuals\EyeCandy\Effects\DynamicSystems\DuffingOscillator.cpp" />
+    <ClCompile Include="Visuals\EyeCandy\Effects\DynamicSystems\VanDerPolOscillator.cpp" />
     <ClCompile Include="Visuals\EyeCandy\Effects\EffectProcessor.cpp" />
     <ClCompile Include="Visuals\EyeCandy\Effects\DynamicSystems\AizawaAttractor.cpp" />
     <ClCompile Include="Visuals\EyeCandy\Effects\DynamicSystems\CliffordAttractor.cpp" />
@@ -420,8 +428,10 @@
     <ClCompile Include="Visuals\EyeCandy\Effects\Fields\Aurora.cpp" />
     <ClCompile Include="Visuals\EyeCandy\Effects\Fields\FieldEffect.cpp" />
     <ClCompile Include="Visuals\EyeCandy\Effects\Fields\FluidInk.cpp" />
+    <ClCompile Include="Visuals\EyeCandy\Effects\Fields\GrayScottReactionDiffusion.cpp" />
     <ClCompile Include="Visuals\EyeCandy\Effects\Fields\Metaballs.cpp" />
     <ClCompile Include="Visuals\EyeCandy\Effects\Fields\Plasma.cpp" />
+    <ClCompile Include="Visuals\EyeCandy\Effects\Fields\RotatingTunnel.cpp" />
     <ClCompile Include="Visuals\EyeCandy\Effects\Fields\Rotozoomer.cpp" />
     <ClCompile Include="Visuals\EyeCandy\Effects\ParticleSystems\AudioGalaxy.cpp" />
     <ClCompile Include="Visuals\EyeCandy\Effects\ParticleSystems\Fireflies.cpp" />

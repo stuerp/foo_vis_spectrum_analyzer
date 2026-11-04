@@ -332,7 +332,7 @@ namespace Monitor
             const double LeftRMS  = std::sqrt(SumLeftSquares  / (double) MaxFrames);
             const double RightRMS = std::sqrt(SumRightSquares / (double) MaxFrames);
 
-            // Negative values indicate left dominance; positive values indicate right dominance.
+            // Calculate the left/right channel balance in dB. Negative values indicate left dominance; positive values indicate right dominance. [-18, 18] dB
             _ChannelBalance = std::clamp(20. * std::log10(std::max(RightRMS, 0.000001) / std::max(LeftRMS, 0.000001)), -18., 18.);
         }
 
@@ -348,6 +348,7 @@ namespace Monitor
             _BassCorrelation = (BassCorrelationDenominator > Epsilon) ? std::clamp(SumBassCross / BassCorrelationDenominator, -1., 1.) : 0.;
         }
 
+        // Calulates the signal's crest factor (the difference between its peak level and average RMS level in dB).
         {
             _CrestFactor = (_RMS > Epsilon) ? std::clamp(20. * std::log10(std::max(_Peak / _RMS, 1.)), 0., 30.) : 0.;
         }

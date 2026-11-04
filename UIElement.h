@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.h (2026.11.02) P. Stuer **/
+/** $VER: UIElement.h (2026.11.04) P. Stuer **/
 
 #pragma once
 
@@ -27,7 +27,7 @@ public:
     uielement_t(uielement_t &&) = delete;
     uielement_t & operator=(uielement_t &&) = delete;
 
-    virtual ~uielement_t() = default;
+    virtual ~uielement_t() noexcept;
 
     #pragma region CWindowImpl
 
@@ -57,6 +57,10 @@ protected:
 
     void UpdateState(ConfigurationChanges settings) noexcept;
 
+    // Alternate fullscreen support
+    bool EnterFullScreen() noexcept;
+    void ExitFullScreen() noexcept;
+
     #pragma endregion
 
 private:
@@ -71,10 +75,15 @@ private:
     void OnPaint(CDCHandle dc) noexcept;
     void OnSize(UINT nType, CSize size) noexcept;
 
+    void OnKeyDown(UINT virtualKey, UINT repeatCount, UINT flags) noexcept;
+    void OnTimer(UINT_PTR timerId) noexcept;
+
     void OnLButtonDown(UINT nFlags, CPoint point) noexcept;
     void OnLButtonUp(UINT nFlags, CPoint point) noexcept;
     void OnLButtonDblClk(UINT nFlags, CPoint point) noexcept;
+
     LRESULT OnDPIChanged(UINT dpiX, UINT dpiY, PRECT newRect) noexcept;
+    void OnDisplayChange(UINT bitsPerPixel, CSize resolution) noexcept;
 
     void OnMouseMove(UINT, CPoint) noexcept;
     void OnMouseLeave() noexcept;
@@ -83,6 +92,7 @@ private:
 
     LRESULT OnConfigurationChanged(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept;
 
+private:
     #pragma endregion
 
     #pragma region play_callback methods
@@ -136,10 +146,15 @@ private:
 
         MSG_WM_CONTEXTMENU(OnContextMenu)
 
+        MSG_WM_KEYDOWN(OnKeyDown)
+
         MSG_WM_LBUTTONDOWN(OnLButtonDown)
         MSG_WM_LBUTTONUP(OnLButtonUp)
         MSG_WM_LBUTTONDBLCLK(OnLButtonDblClk)
+
         MSG_WM_DPICHANGED(OnDPIChanged)
+        MSG_WM_DISPLAYCHANGE(OnDisplayChange)
+        MSG_WM_TIMER(OnTimer)
 
         MSG_WM_MOUSEMOVE(OnMouseMove)   // Required for CToolTip
         MSG_WM_MOUSELEAVE(OnMouseLeave) // Required for tracking tooltip
@@ -150,6 +165,19 @@ private:
     END_MSG_MAP()
 
     #pragma endregion
+
+    void RestoreDetachedWindow() noexcept;
+    void StartFullScreenTransition(const RECT & startRect, const RECT & endRect, bool entering) noexcept;
+    void UpdateFullScreenTransition() noexcept;
+    void CompleteFullScreenExit() noexcept;
+
+    bool IsDetachedFullScreen() const noexcept
+    {
+        return _FullScreen.IsActive;
+    }
+
+    void MoveFullScreenToNextMonitor(int direction) noexcept;
+    void MoveFullScreenToMonitor(HMONITOR monitor) noexcept;
 
     #pragma endregion
 
@@ -198,11 +226,36 @@ protected:
 
     RECT _OldRect { };
 
-    bool _IsFullScreen { false };
-    bool _IsVisible { true };       // True if the component is visible.
-    bool _IsInitializing { true };
+    bool _IsVisible      = true; // True if the component is visible.
+    bool _IsInitializing = true;
 
     event_t _Event;
+
+    struct fullscreen_state_t
+    {
+        bool IsActive   = false;
+
+        HWND hParent   = NULL;
+        DWORD Style   = 0;
+        DWORD ExStyle = 0;
+        RECT OldRect { };
+
+        HMONITOR hMonitor = NULL;
+        std::wstring MonitorDeviceName;
+
+        bool TransitionActive   = false;
+        bool TransitionEntering = false;
+        RECT TransitionStartRect { };
+        RECT TransitionEndRect { };
+
+        std::chrono::steady_clock::time_point TransitionStartTime { };
+    };
+
+    fullscreen_state_t _FullScreen;
+
+    static constexpr UINT_PTR FullScreenTransitionTimerId   = 1000;
+    static constexpr UINT FullScreenTransitionTimerInterval = 15;
+    static constexpr auto FullScreenTransitionDuration      = std::chrono::milliseconds(250);
 
 private:
     #pragma region Accessed by UI and render thread
@@ -242,11 +295,20 @@ private:
 
     fb2k::CCoreDarkModeHooks _DarkMode;
 
+    struct monitor_t
+    {
+        HMONITOR Handle = NULL;
+        std::wstring DeviceName;
+        RECT Bounds { };
+        bool IsPrimary = false;
+    };
+
     #pragma endregion
 
     #pragma region Render thread
 
     UINT _DPI { 96 };
+
     double _DisplayRefreshRate = { 0. };
 
 #ifdef _DEBUG

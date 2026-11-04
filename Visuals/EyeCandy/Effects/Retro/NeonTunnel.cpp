@@ -158,7 +158,7 @@ namespace NeonTunnel
         // Calculate the logarithmic step once instead of calculating pow() for every band.
         const double CenterStep = std::pow(FrequencyRatio, 1. / (double) (FrequencyBandCount - 1));
 
-        double Center = 45.;
+        double Center = LoFrequency;
 
         for (size_t i = 0; i < FrequencyBandCount; ++i)
         {
@@ -182,18 +182,16 @@ namespace NeonTunnel
             {
                 Probe = std::clamp(Probe, LoFrequency, MaximumProbe);
 
-                // Goertzel-style detector
                 {
-                    // Recurrence coefficient
-                    const double Coefficient = 2. * std::cos(TwoPi * Probe / SampleRate);
+                    // Configure the Goertzel detector.
+                    const double Omega       = TwoPi * Probe / SampleRate;
+                    const double Coefficient = 2. * std::cos(Omega);
 
-                    double q1 = 0.;
-                    double q2 = 0.;
+                    double q1 = 0., q2 = 0.;
 
                     const double * Sample = Samples.data();
                     const double * SampleEnd = Sample + FrameCount;
 
-                    // Process all windowed samples.
                     while (Sample != SampleEnd)
                     {
                         const double q0 = *Sample++ + Coefficient * q1 - q2;
@@ -202,7 +200,7 @@ namespace NeonTunnel
                         q1 = q0;
                     }
 
-                    // Convert the recurrence to power.
+                    // Convert the detector state to power.
                     PowerSum += std::max(0., (q2 * q2) + (q1 * q1) - Coefficient * q1 * q2);
                 }
             }
@@ -964,12 +962,11 @@ namespace NeonTunnel
     }
 
     /// <summary>
-    /// 
+    /// Start the worker threads.
     /// </summary>
     void effect_t::StartWorkers()
     {
         const size_t HardwareThreads = std::max<size_t>(1, std::thread::hardware_concurrency());
-
         const size_t WorkerCount = std::clamp<size_t>(HardwareThreads > 1 ? HardwareThreads - 1 : 1, 1, _MaxWorkers);
 
         _Workers.reserve(WorkerCount);
@@ -1021,9 +1018,9 @@ namespace NeonTunnel
             {
                 std::unique_lock lock(_WorkerMutex);
 
-                _WorkerCondition.wait(lock, [this, &Generation]() noexcept
+                _WorkerCondition.wait(lock, [this, Generation]() noexcept
                 {
-                    return _IsStopping || _Generation != Generation;
+                    return _IsStopping || (_Generation != Generation);
                 });
 
                 if (_IsStopping)
@@ -1075,6 +1072,7 @@ namespace NeonTunnel
         }
 
         _WorkerCondition.notify_all();
+
         {
             std::unique_lock Lock(_WorkerMutex);
 

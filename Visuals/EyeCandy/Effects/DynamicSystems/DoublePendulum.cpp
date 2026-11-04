@@ -114,9 +114,9 @@ namespace DoublePendulum
         const double Width = Clamp(_SmoothedStereoWidth);
         const double Phase = Clamp(_PhaseEnergy);
 
-        _AudioOrbit = ExponentialSmoothing(_AudioOrbit, Width * 0.24,                   deltaTime, 3.5);
-        _AudioLift  = ExponentialSmoothing(_AudioLift, (Peak - RMS) * 0.18,             deltaTime, 5.);
-        _AudioScale = ExponentialSmoothing(_AudioScale, 1. + RMS * 0.08 + Peak * 0.025, deltaTime, 7.);
+        _AudioOrbit = ExponentialSmoothing(_AudioOrbit, Width * 0.24,                        deltaTime, 3.5);
+        _AudioLift  = ExponentialSmoothing(_AudioLift,  (Peak - RMS) * 0.18,                 deltaTime, 5.0);
+        _AudioScale = ExponentialSmoothing(_AudioScale, 1.0 + (RMS * 0.08) + (Peak * 0.025), deltaTime, 7.0);
 
         const double Time = _AnimationTime;
 
@@ -126,25 +126,25 @@ namespace DoublePendulum
         Object.Position = { 0., -0.15 + _AudioLift, 0. };
         Object.Rotation =
         {
-            0.24 + std::sin(Time * 0.19) * 0.06 + Phase * 0.06,
+            0.24 +                         std::sin(Time * 0.19) * 0.06 + Phase * 0.06,
             Time * (0.075 + RMS * 0.045) + std::sin(Time * 0.13) * 0.10,
-            std::sin(Time * 0.23) * (0.035 + Width * 0.08)
+                                           std::sin(Time * 0.23) * (0.035 + Width * 0.08)
         };
         Object.Scale = { _AudioScale, _AudioScale, _AudioScale };
 
-        const double Orbit = (Time * 0.035) + (_AudioOrbit * std::sin(Time * 0.31));
-        const double Radius = 6.8 - RMS * 0.35;
+        const double Orbit  = (Time * 0.035) + (_AudioOrbit * std::sin(Time * 0.31));
+        const double Radius = 6.8 - (RMS * 0.35);
 
         Camera.Position =
         {
-                  std::sin(Orbit)       * Radius,
-            1.2 + std::sin(Time * 0.11) * 0.35,
-                 -std::cos(Orbit)       * Radius
+                   std::sin(Orbit) * Radius,
+            1.2 + (std::sin(Time * 0.11) * 0.35),
+                  -std::cos(Orbit) * Radius
         };
         Camera.Target = { Object.Position.X, Object.Position.Y + 0.75, 0. };
         Camera.Up     = { 0., 1., 0. };
 
-        Projection.FieldOfView = 48. - Peak * 2.;
+        Projection.FieldOfView = 52. - (Peak * 2.);
     }
 
     /// <summary>
@@ -232,8 +232,8 @@ namespace DoublePendulum
         const auto Bob1  = Project(_Bob1World,  PreparedProjection);
         const auto Bob2  = Project(_Bob2World,  PreparedProjection);
 
-        const auto ArmColor = GetCurveColor(_AnimationTime * 0.035);
-        const auto BobColor = GetCurveColor(0.55 + _AnimationTime * 0.035);
+        const auto ArmColor = GetCurveColor(       (_AnimationTime * 0.035));
+        const auto BobColor = GetCurveColor(0.55 + (_AnimationTime * 0.035));
 
         if (Pivot.IsProjectable && Bob1.IsProjectable)
             DrawGlowLine(renderTarget, Pivot.Position, Bob1.Position, ArmColor, 0.80f, 1.15f);
@@ -274,14 +274,17 @@ namespace DoublePendulum
 
             if (Previous.IsProjectable && Current.IsProjectable)
             {
-                const double Amount    = (double) i / (double) (_SplinePoints.size() - 1);
+                const double Amount = (double) i / (double) (_SplinePoints.size() - 1);
+
+                const auto Color = GetCurveColor(Amount + (_AnimationTime * 0.025));
+
                 const double Depth     = 1. - (Previous.LinearDepth + Current.LinearDepth) * .5;
-                const double ViewDepth = (Previous.ViewDepth + Current.ViewDepth) * .5;
+                const double ViewDepth =      (Previous.ViewDepth   + Current.ViewDepth)   * .5;
 
                 const float Intensity = (float) (Energy * (0.52 + Depth * 0.48));
                 const float Thickness = std::clamp(6.8f / (float) std::max(ViewDepth, Projection.NearPlane), 0.50f, 1.90f);
 
-                DrawGlowLine(renderTarget, Previous.Position, Current.Position, GetCurveColor(Amount + _AnimationTime * 0.025), Intensity, Thickness);
+                DrawGlowLine(renderTarget, Previous.Position, Current.Position, Color, Intensity, Thickness);
             }
 
             Previous = Current;
@@ -301,6 +304,27 @@ namespace DoublePendulum
         SetBrush(color, intensity);
 
         renderTarget->FillEllipse(D2D1::Ellipse(center, std::max(0.5f, radius), std::max(0.5f, radius)), _Brush.Get());
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    effect_t::state_t effect_t::Integrate(state_t state, const field_t & field) noexcept
+    {
+        const double Step = field.Step;
+
+        const state_t k1 = Derive(state, field);
+        const state_t k2 = Derive({ state.Theta1 + k1.Theta1 * Step * .5, state.Omega1 + k1.Omega1 * Step * .5, state.Theta2 + k1.Theta2 * Step * .5, state.Omega2 + k1.Omega2 * Step * .5 }, field);
+        const state_t k3 = Derive({ state.Theta1 + k2.Theta1 * Step * .5, state.Omega1 + k2.Omega1 * Step * .5, state.Theta2 + k2.Theta2 * Step * .5, state.Omega2 + k2.Omega2 * Step * .5 }, field);
+        const state_t k4 = Derive({ state.Theta1 + k3.Theta1 * Step,      state.Omega1 + k3.Omega1 * Step,      state.Theta2 + k3.Theta2 * Step,      state.Omega2 + k3.Omega2 * Step },      field);
+
+        return
+        {
+            state.Theta1 + Step * (k1.Theta1 + 2. * k2.Theta1 + 2. * k3.Theta1 + k4.Theta1) / 6.,
+            state.Omega1 + Step * (k1.Omega1 + 2. * k2.Omega1 + 2. * k3.Omega1 + k4.Omega1) / 6.,
+            state.Theta2 + Step * (k1.Theta2 + 2. * k2.Theta2 + 2. * k3.Theta2 + k4.Theta2) / 6.,
+            state.Omega2 + Step * (k1.Omega2 + 2. * k2.Omega2 + 2. * k3.Omega2 + k4.Omega2) / 6.
+        };
     }
 
     /// <summary>
@@ -336,26 +360,5 @@ namespace DoublePendulum
         ) / Denominator2 - field.Damping * state.Omega2;
 
         return { state.Omega1, Acceleration1, state.Omega2, Acceleration2 };
-    }
-
-    /// <summary>
-    /// 
-    /// </summary>
-    effect_t::state_t effect_t::Integrate(state_t state, const field_t & field) noexcept
-    {
-        const double Step = field.Step;
-
-        const state_t k1 = Derive(state, field);
-        const state_t k2 = Derive({ state.Theta1 + k1.Theta1 * Step * .5, state.Omega1 + k1.Omega1 * Step * .5, state.Theta2 + k1.Theta2 * Step * .5, state.Omega2 + k1.Omega2 * Step * .5 }, field);
-        const state_t k3 = Derive({ state.Theta1 + k2.Theta1 * Step * .5, state.Omega1 + k2.Omega1 * Step * .5, state.Theta2 + k2.Theta2 * Step * .5, state.Omega2 + k2.Omega2 * Step * .5 }, field);
-        const state_t k4 = Derive({ state.Theta1 + k3.Theta1 * Step, state.Omega1 + k3.Omega1 * Step, state.Theta2 + k3.Theta2 * Step, state.Omega2 + k3.Omega2 * Step }, field);
-
-        return
-        {
-            state.Theta1 + Step * (k1.Theta1 + 2. * k2.Theta1 + 2. * k3.Theta1 + k4.Theta1) / 6.,
-            state.Omega1 + Step * (k1.Omega1 + 2. * k2.Omega1 + 2. * k3.Omega1 + k4.Omega1) / 6.,
-            state.Theta2 + Step * (k1.Theta2 + 2. * k2.Theta2 + 2. * k3.Theta2 + k4.Theta2) / 6.,
-            state.Omega2 + Step * (k1.Omega2 + 2. * k2.Omega2 + 2. * k3.Omega2 + k4.Omega2) / 6.
-        };
     }
 }

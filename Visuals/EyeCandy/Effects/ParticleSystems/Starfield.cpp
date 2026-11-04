@@ -467,9 +467,9 @@ namespace Starfield
         _WorkerCondition.notify_all();
 
         {
-            std::unique_lock lock(_WorkerMutex);
+            std::unique_lock Lock(_WorkerMutex);
 
-            _CompletionCondition.wait(lock, [this]() noexcept
+            _CompletionCondition.wait(Lock, [this]() noexcept
             {
                 return _PendingWorkers == 0;
             });
@@ -477,12 +477,11 @@ namespace Starfield
     }
 
     /// <summary>
-    /// 
+    /// Start the worker threads.
     /// </summary>
     void effect_t::StartWorkers()
     {
         const size_t HardwareThreads = std::max<size_t>(1, std::thread::hardware_concurrency());
-
         const size_t WorkerCount = std::clamp<size_t>(HardwareThreads > 1 ? HardwareThreads - 1 : 1, 1, _MaxWorkers);
 
         _Workers.reserve(WorkerCount);
@@ -542,9 +541,9 @@ namespace Starfield
             double ForwardSpeed;
 
             {
-                std::unique_lock lock(_WorkerMutex);
+                std::unique_lock Lock(_WorkerMutex);
 
-                _WorkerCondition.wait(lock, [this, &Generation]() noexcept
+                _WorkerCondition.wait(Lock, [this, Generation]() noexcept
                 {
                     return _IsStopping || (_Generation != Generation);
                 });

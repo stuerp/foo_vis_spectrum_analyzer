@@ -40,6 +40,8 @@ namespace Rotozoomer
         static constexpr size_t BandCount = 12;
 
         void AnalyzeAudio(const audio_chunk &);
+
+        void Prepare(double deltaTime) noexcept;
         void Update(double) noexcept;
 
         void RenderTexture() noexcept;

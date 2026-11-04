@@ -205,23 +205,27 @@ namespace VectorGrid
         const double NyquistFrequency = SampleRate * 0.5;
         const double CenterStep       = std::pow(FrequencyRatio, 1. / (double) (FrequencyBandCount - 1));
 
-        double Center = 40.; // Hz
+        double Center = LoFrequency; // Hz
 
         for (size_t i = 0; i < FrequencyBandCount; ++i)
         {
-            const double Frequency   = std::clamp(Center, LoFrequency, NyquistFrequency);
-            const double Coefficient = 2. * std::cos(TwoPi * Frequency / SampleRate);
+            const double Frequency = std::clamp(Center, LoFrequency, NyquistFrequency);
 
-            double q1 = 0.;
-            double q2 = 0.;
+            // Configure the Goertzel detector.
+            const double Omega       = TwoPi * Frequency / SampleRate;
+            const double Coefficient = 2. * std::cos(Omega);
+
+            double q1 = 0., q2 = 0.;
 
             for (size_t j = 0; j < FrameCount; ++j)
             {
                 const double q0 = Samples[j] + Coefficient * q1 - q2;
+
                 q2 = q1;
                 q1 = q0;
             }
 
+            // Convert the detector state to power.
             const double Power     = std::max(0., q1 * q1 + q2 * q2 - Coefficient * q1 * q2);
             const double Magnitude = std::sqrt(Power) / (double) FrameCount;
 
@@ -601,38 +605,38 @@ namespace VectorGrid
     }
 
     /// <summary>
-    /// 
+    /// Start the worker threads.
     /// </summary>
     void effect_t::StartWorkers()
     {
         const size_t HardwareThreads = std::max<size_t>(1, std::thread::hardware_concurrency());
-
         const size_t WorkerCount = std::clamp<size_t>(HardwareThreads > 1 ? HardwareThreads - 1 : 1, 1, _MaxWorkers);
 
         try
         {
-            for (size_t workerIndex = 0; workerIndex < WorkerCount; ++workerIndex)
+            for (size_t i = 0; i < WorkerCount; ++i)
             {
-                _Workers.emplace_back([this, workerIndex, WorkerCount]()
+                _Workers.emplace_back([this, i, WorkerCount]()
                 {
-                    size_t generation = 0;
+                    size_t Generation = 0;
+
                     std::unique_lock lock(_WorkerMutex);
 
                     for (;;)
                     {
-                        _WorkerCondition.wait(lock, [this, generation]()
+                        _WorkerCondition.wait(lock, [this, Generation]() noexcept
                         {
-                            return _IsStopping || _Generation != generation;
+                            return _IsStopping || _Generation != Generation;
                         });
 
                         if (_IsStopping)
                             return;
 
-                        generation = _Generation;
+                        Generation = _Generation;
 
                         lock.unlock();
 
-                        GenerateWork(workerIndex, WorkerCount);
+                        GenerateWork(i, WorkerCount);
 
                         lock.lock();
 
@@ -655,12 +659,14 @@ namespace VectorGrid
     {
         {
             const std::scoped_lock lock(_WorkerMutex);
+
             _IsStopping = true;
             ++_Generation;
         }
 
         _WorkerCondition.notify_all();
-        for (std::thread & worker : _Workers)
+
+        for (auto & worker : _Workers)
         {
             if (worker.joinable())
                 worker.join();

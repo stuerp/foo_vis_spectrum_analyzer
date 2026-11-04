@@ -1,15 +1,18 @@
 
-/** $VER: Effect.h (2026.11.02) P. Stuer - Base class for the Eye Candy effects. **/
+/** $VER: Effect.h (2026.11.03) P. Stuer - Base class for the Eye Candy effects. **/
 
 #include <pch.h>
 
 #include "Effect.h"
 
 #include "Effects/DynamicSystems/AizawaAttractor.h"
+#include "Effects/DynamicSystems/ChuaCircuit.h"
+#include "Effects/DynamicSystems/DuffingOscillator.h"
 #include "Effects/DynamicSystems/HalvorsenAttractor.h"
 #include "Effects/DynamicSystems/LorenzAttractor.h"
 #include "Effects/DynamicSystems/RosslerAttractor.h"
 #include "Effects/DynamicSystems/ThomasAttractor.h"
+#include "Effects/DynamicSystems/VanDerPolOscillator.h"
 
 #include "Effects/DynamicSystems/CliffordAttractor.h"
 #include "Effects/DynamicSystems/DeJongAttractor.h"
@@ -18,9 +21,11 @@
 
 #include "Effects/Fields/Aurora.h"
 #include "Effects/Fields/FluidInk.h"
+#include "Effects/Fields/GrayScottReactionDiffusion.h"
 #include "Effects/Fields/Metaballs.h"
 #include "Effects/Fields/Plasma.h"
 #include "Effects/Fields/RotoZoomer.h"
+#include "Effects/Fields/RotatingTunnel.h"
 
 #include "Effects/ParticleSystems/AudioGalaxy.h"
 #include "Effects/ParticleSystems/Fireflies.h"
@@ -60,20 +65,29 @@ std::unique_ptr<effect_t> effect_t::Create(Effect effect) noexcept
             return std::make_unique<Waveform::effect_t>();
 
         // Dynamic Systems
+        case Effect::AizawaAttractor:
+            return std::make_unique<AizawaAttractor::effect_t>();
+
+        case Effect::DuffingOscillator:
+            return std::make_unique<DuffingOscillator::effect_t>();
+
+        case Effect::ChuaCircuit:
+            return std::make_unique<ChuaCircuit::effect_t>();
+
+        case Effect::HalvorsenAttractor:
+            return std::make_unique<HalvorsenAttractor::effect_t>();
+
         case Effect::LorenzAttractor:
             return std::make_unique<LorenzAttractor::effect_t>();
 
         case Effect::RosslerAttractor:
             return std::make_unique<RosslerAttractor::effect_t>();
 
-        case Effect::AizawaAttractor:
-            return std::make_unique<AizawaAttractor::effect_t>();
-
-        case Effect::HalvorsenAttractor:
-            return std::make_unique<HalvorsenAttractor::effect_t>();
-
         case Effect::ThomasAttractor:
             return std::make_unique<ThomasAttractor::effect_t>();
+
+        case Effect::VanDerPolOscillator:
+            return std::make_unique<VanDerPolOscillator::effect_t>();
 
         case Effect::CliffordAttractor:
             return std::make_unique<CliffordAttractor::effect_t>();
@@ -96,6 +110,12 @@ std::unique_ptr<effect_t> effect_t::Create(Effect effect) noexcept
 
         case Effect::Metaballs:
             return std::make_unique<Metaballs::effect_t>();
+
+        case Effect::GrayScottReactionDiffusion:
+            return std::make_unique<GrayScottReactionDiffusion::effect_t>();
+
+        case Effect::RotatingTunnel:
+            return std::make_unique<RotatingTunnel::effect_t>();
 
         // Trails
         case Effect::LissajousTrails:

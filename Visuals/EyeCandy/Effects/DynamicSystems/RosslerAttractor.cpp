@@ -1,5 +1,5 @@
 
-/** $VER: RosslerAttractor.cpp (2026.10.22) https://en.wikipedia.org/wiki/R%C3%B6ssler_attractor */
+/** $VER: RosslerAttractor.cpp (2026.11.03) https://en.wikipedia.org/wiki/R%C3%B6ssler_attractor */
 
 #include <pch.h>
 
@@ -8,7 +8,6 @@
 #include <algorithm>
 #include <cmath>
 #include <format>
-#include <cstdint>
 #include <mutex>
 #include <thread>
 
@@ -29,8 +28,8 @@ namespace RosslerAttractor
     /// </summary>
     std::wstring effect_t::GetStatus() noexcept
     {
-        return std::format(L"Rössler Attractor, {} theme, {} quality, {} speed, {} brightness",
-            CurveThemes[_CurveThemeTo].Name, Qualities[(size_t) _Quality], Speeds[(size_t) _Speed], Brightnesses[(size_t) _Brightness]);
+        return std::format(L"Rössler Attractor, {} theme, {} quality, {} speed",
+            CurveThemes[_CurveThemeTo].Name, Qualities[(size_t) _Quality], Speeds[(size_t) _Speed]);
     }
 
     /// <summary>
@@ -128,13 +127,13 @@ namespace RosslerAttractor
             {
                 const double Amount = (double) i / (double) (_SplinePoints.size() - 1);
 
+                const auto Color = GetCurveColor(Amount + (_AnimationTime * 0.025));
+
                 const double Depth     = 1. - (Previous.LinearDepth + Current.LinearDepth) * 0.5;
                 const double ViewDepth =      (Previous.ViewDepth   + Current.ViewDepth)   * 0.5;
 
                 const float Intensity = (float) (Energy * (0.52 + (Depth * 0.48)));
                 const float Thickness = std::clamp(28.f / (float) std::max(ViewDepth, Projection.NearPlane), 0.55f, 2.20f);
-
-                const auto Color = GetCurveColor(Amount + (_AnimationTime * 0.025));
 
                 DrawGlowLine(renderTarget, Previous.Position, Current.Position, Color, Intensity, Thickness);
             }
@@ -144,16 +143,15 @@ namespace RosslerAttractor
     }
 
     /// <summary>
-    /// 
+    /// Start the worker threads.
     /// </summary>
     void effect_t::StartWorkers()
     {
         const size_t HardwareThreads = std::max<size_t>(1, std::thread::hardware_concurrency());
-
         const size_t WorkerCount = std::clamp<size_t>(HardwareThreads > 1 ? HardwareThreads - 1 : 1, 1, _MaxWorkers);
 
-        _WorkerRanges.resize(WorkerCount);
         _Workers.reserve(WorkerCount);
+        _WorkerRanges.resize(WorkerCount);
 
         try
         {
@@ -169,7 +167,8 @@ namespace RosslerAttractor
         }
         catch (...)
         {
-            StopWorkers(); throw;
+            StopWorkers();
+            throw;
         }
     }
 
@@ -190,7 +189,7 @@ namespace RosslerAttractor
         for (auto & Worker : _Workers)
         {
             if (Worker.joinable())
-                 Worker.join();
+                Worker.join();
         }
 
         _Workers.clear();
@@ -207,10 +206,13 @@ namespace RosslerAttractor
         for (;;)
         {
             field_t Field;
+
             {
-                std::unique_lock Lock(_WorkerMutex); _WorkerCondition.wait(Lock, [this, &Generation]
+                std::unique_lock Lock(_WorkerMutex);
+
+                _WorkerCondition.wait(Lock, [this, Generation]() noexcept
                 {
-                    return _IsStopping || _Generation != Generation;
+                    return _IsStopping || (_Generation != Generation);
                 });
 
                 if (_IsStopping)
@@ -222,6 +224,7 @@ namespace RosslerAttractor
             }
 
             GenerateRange(workerIndex, Field);
+
             {
                 const std::lock_guard Lock(_WorkerMutex);
 
@@ -242,7 +245,9 @@ namespace RosslerAttractor
 
         for (size_t i = Range.First; i < Range.Last; ++i)
         {
-            Point = Integrate(Point, field.Step, field.A, field.B, field.C); _Points[i] = Point;
+            Point = Integrate(Point, field.Step, field.A, field.B, field.C);
+
+            _Points[i] = Point;
         }
     }
 
@@ -256,23 +261,37 @@ namespace RosslerAttractor
         const double Width = Clamp(_SmoothedStereoWidth);
         const double Phase = Clamp(_PhaseEnergy);
 
-        _AudioOrbit = ExponentialSmoothing(_AudioOrbit, Width * .34, deltaTime, 3.5);
-        _AudioLift  = ExponentialSmoothing(_AudioLift, (Peak - RMS) * 2.2, deltaTime, 5.);
-        _AudioScale = ExponentialSmoothing(_AudioScale, 1. + RMS * .10 + Peak * .035, deltaTime, 7.);
+        _AudioOrbit = ExponentialSmoothing(_AudioOrbit, Width * 0.34,                        deltaTime, 3.5);
+        _AudioLift  = ExponentialSmoothing(_AudioLift,  (Peak - RMS) * 2.2,                  deltaTime, 5.0);
+        _AudioScale = ExponentialSmoothing(_AudioScale, 1.0 + (RMS * 0.10) + (Peak * 0.035), deltaTime, 7.0);
 
         const double Time = _AnimationTime;
 
-        World = {}; World.Scale = { 1., 1., 1. };
+        World = {};
+        World.Scale = { 1., 1., 1. };
 
-        Object.Position = { 0., -1. + _AudioLift, 0. };
-        Object.Rotation = { .43 + std::sin(Time * .19) * .08 + Phase * .10, Time * (.10 + RMS * .07) + std::sin(Time * .13) * .16, std::sin(Time * .23) * (.05 + Width * .15) };
+        Object.Position = { 0., -1.0 + _AudioLift, 0. };
+        Object.Rotation =
+        {
+            0.43 +                       std::sin(Time * 0.19) * 0.08 + (Phase * 0.10),
+            Time * (0.10 + RMS * 0.07) + std::sin(Time * 0.13) * 0.16,
+                                         std::sin(Time * 0.23) * (0.05 + Width * 0.15)
+        };
         Object.Scale = { _AudioScale, _AudioScale, _AudioScale };
 
-        const double Orbit = Time * .055 + _AudioOrbit * std::sin(Time * .31), Radius = 30. - RMS * 2.;
+        const double Orbit  = (Time * 0.055) + (_AudioOrbit * std::sin(Time * 0.31));
+        const double Radius = 30.0 - (RMS * 2.0);
 
-        Camera.Position = { std::sin(Orbit) * Radius, 3. + std::sin(Time * .11) * 1.8 + _AudioLift * .35, -std::cos(Orbit) * Radius };
-        Camera.Target = { Object.Position.X, Object.Position.Y, 5. };
-        Camera.Up = { 0., 1., 0. }; Projection.FieldOfView = 52. - Peak * 3.;
+        Camera.Position =
+        {
+                   std::sin(Orbit) * Radius,
+            3.0 + (std::sin(Time * 0.11) * 1.8) + (_AudioLift * 0.35),
+                  -std::cos(Orbit) * Radius
+        };
+        Camera.Target = { Object.Position.X, Object.Position.Y, 5.0 };
+        Camera.Up     = { 0., 1., 0. };
+
+        Projection.FieldOfView = 52. - (Peak * 3.);
     }
 
     /// <summary>
@@ -327,8 +346,11 @@ namespace RosslerAttractor
         }
 
         _WorkerCondition.notify_all();
+
         {
-            std::unique_lock Lock(_WorkerMutex); _CompletionCondition.wait(Lock, [this]
+            std::unique_lock Lock(_WorkerMutex);
+
+            _CompletionCondition.wait(Lock, [this]
             {
                 return _PendingWorkers == 0;
             });
@@ -347,21 +369,21 @@ namespace RosslerAttractor
     /// <summary>
     /// 
     /// </summary>
-    effect_t::point3d_t effect_t::Derive(point3d_t p, double a, double b, double c) noexcept
+    effect_t::point3d_t effect_t::Integrate(point3d_t p, double s, double a, double b, double c) noexcept
     {
-        return { -p.Y - p.Z, p.X + a * p.Y, b + p.Z * (p.X - c) };
+        const auto k1 = Derive(p, a, b, c);
+        const auto k2 = Derive({ p.X + k1.X * s * .5, p.Y + k1.Y * s * .5, p.Z + k1.Z * s * .5 }, a, b, c);
+        const auto k3 = Derive({ p.X + k2.X * s * .5, p.Y + k2.Y * s * .5, p.Z + k2.Z * s * .5 }, a, b, c);
+        const auto k4 = Derive({ p.X + k3.X * s,      p.Y + k3.Y * s,      p.Z + k3.Z * s },      a, b, c);
+
+        return { p.X + s * (k1.X + 2. * k2.X + 2. * k3.X + k4.X) / 6., p.Y + s * (k1.Y + 2. * k2.Y + 2. * k3.Y + k4.Y) / 6., p.Z + s * (k1.Z + 2. * k2.Z + 2. * k3.Z + k4.Z) / 6. };
     }
 
     /// <summary>
     /// 
     /// </summary>
-    effect_t::point3d_t effect_t::Integrate(point3d_t p, double s, double a, double b, double c) noexcept
+    effect_t::point3d_t effect_t::Derive(point3d_t p, double a, double b, double c) noexcept
     {
-        const auto k1 = Derive(p, a, b, c);
-        const auto k2 = Derive({ p.X + k1.X * s * .5,p.Y + k1.Y * s * .5,p.Z + k1.Z * s * .5 }, a, b, c);
-        const auto k3 = Derive({ p.X + k2.X * s * .5,p.Y + k2.Y * s * .5,p.Z + k2.Z * s * .5 }, a, b, c);
-        const auto k4 = Derive({ p.X + k3.X * s,p.Y + k3.Y * s,p.Z + k3.Z * s }, a, b, c);
-
-        return { p.X + s * (k1.X + 2. * k2.X + 2. * k3.X + k4.X) / 6., p.Y + s * (k1.Y + 2. * k2.Y + 2. * k3.Y + k4.Y) / 6., p.Z + s * (k1.Z + 2. * k2.Z + 2. * k3.Z + k4.Z) / 6. };
+        return { -p.Y - p.Z, p.X + a * p.Y, b + p.Z * (p.X - c) };
     }
 }

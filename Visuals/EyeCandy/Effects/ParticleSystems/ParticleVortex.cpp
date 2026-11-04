@@ -776,20 +776,21 @@ namespace ParticleVortex
     }
 
     /// <summary>
-    ///
+    /// Start the worker threads.
     /// </summary>
     void effect_t::StartWorkers()
     {
         const size_t HardwareThreads = std::max<size_t>(1, std::thread::hardware_concurrency());
-
         const size_t WorkerCount = std::clamp<size_t>(HardwareThreads > 1 ? HardwareThreads - 1 : 1, 1, _MaxWorkers);
 
         _Workers.reserve(WorkerCount);
 
         try
         {
-            for (size_t index = 0; index < WorkerCount; ++index)
+            for (size_t i = 0; i < WorkerCount; ++i)
+            {
                 _Workers.emplace_back(&effect_t::Worker, this);
+            }
         }
         catch (...)
         {
@@ -835,7 +836,10 @@ namespace ParticleVortex
             {
                 std::unique_lock lock(_WorkerMutex);
 
-                _WorkerCondition.wait(lock, [this, &Generation]() noexcept { return _IsStopping || _Generation != Generation; });
+                _WorkerCondition.wait(lock, [this, Generation]() noexcept
+                {
+                    return _IsStopping || (_Generation != Generation);
+                });
 
                 if (_IsStopping)
                     return;
@@ -891,7 +895,10 @@ namespace ParticleVortex
         {
             std::unique_lock Lock(_WorkerMutex);
 
-            _CompletionCondition.wait(Lock, [this]() noexcept { return _PendingWorkers == 0; });
+            _CompletionCondition.wait(Lock, [this]() noexcept
+            {
+                return _PendingWorkers == 0;
+            });
         }
     }
 

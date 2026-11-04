@@ -1,5 +1,5 @@
 
-/** $VER: EffectProcessor.cpp (2026.11.01) - Audio processor for Eye Candy effects **/
+/** $VER: EffectProcessor.cpp (2026.11.03) - Audio processor for Eye Candy effects **/
 
 #include <pch.h>
 
@@ -41,14 +41,16 @@ namespace EyeCandy
 
         const double ChannelScale = 1. / (double) ChannelCount;
 
-        double TotalEnergy  = 0.;
+        double TotalEnergy        = 0.;
 
         double BassEnergy         = 0.;
-        double MidEnergy     = 0.;
+        double MidEnergy          = 0.;
         double TrebleEnergy       = 0.;
 
         double LeftChannelEnergy  = 0.;
         double RightChannelEnergy = 0.;
+        double MidChannelEnergy   = 0.;
+        double SideChannelEnergy  = 0.;
 
         double PeakAmplitude      = 0.;
 
@@ -97,7 +99,13 @@ namespace EyeCandy
         {
             double Mono = 0.;
 
-            // Prcoess all samples in the frame.
+            double LeftSample  = 0.;
+            double RightSample = 0.;
+
+            double LeftWeight  = 0.;
+            double RightWeight = 0.;
+
+            // Process all samples in the frame.
             for (size_t j = 0; j < ChannelCount; ++j, ++Sample)
             {
                 const double ChannelSample       = (double) *Sample;
@@ -130,21 +138,41 @@ namespace EyeCandy
                 if (IsLeftChannel)
                 {
                     LeftChannelEnergy += ChannelSampleEnergy;
+                    LeftSample += ChannelSample;
+                    LeftWeight += 1.;
                 }
                 else
                 if (IsRightChannel)
                 {
                     RightChannelEnergy += ChannelSampleEnergy;
+                    RightSample += ChannelSample;
+                    RightWeight += 1.;
                 }
                 else
                 {
-                    // Center, LFE and unknown channels have no left/right bias.
+                    // Center, LFE and unknown channels are shared equally and therefore contribute to mid energy without creating artificial side energy.
                     const double SharedChannelEnergy = ChannelSampleEnergy * .5;
 
                     LeftChannelEnergy  += SharedChannelEnergy;
                     RightChannelEnergy += SharedChannelEnergy;
+
+                    LeftSample  += ChannelSample * .5;
+                    RightSample += ChannelSample * .5;
+
+                    LeftWeight  += .5;
+                    RightWeight += .5;
                 }
             }
+
+            // Form normalized left/right composites, then accumulate mid/side energy.
+            LeftSample  /= std::max(LeftWeight, Epsilon);
+            RightSample /= std::max(RightWeight, Epsilon);
+
+            const double MidSample  = (LeftSample + RightSample) * .5;
+            const double SideSample = (LeftSample - RightSample) * .5;
+
+            MidChannelEnergy  += MidSample  * MidSample;
+            SideChannelEnergy += SideSample * SideSample;
 
             // Analyze frequency content using a mono downmix.
             Mono *= ChannelScale;
@@ -175,8 +203,13 @@ namespace EyeCandy
         double NewTrebleEnergy = Clamp(std::sqrt(TrebleEnergy * FramesScale) * 8.5);
 
         // Energy balance ranges approximately from -1 for fully left to +1 for fully right.
-        double NewBalance  = (RightChannelEnergy - LeftChannelEnergy) / (LeftChannelEnergy + RightChannelEnergy + Epsilon);
-        double NewPeak     = Clamp(PeakAmplitude);
+        double NewBalance = (RightChannelEnergy - LeftChannelEnergy) / (LeftChannelEnergy + RightChannelEnergy + Epsilon);
+
+        const double MidRMS  = std::sqrt(MidChannelEnergy  * FramesScale);
+        const double SideRMS = std::sqrt(SideChannelEnergy * FramesScale);
+
+        double NewStereoWidth = Clamp(SideRMS / (MidRMS + SideRMS + Epsilon));
+        double NewPeak        = Clamp(PeakAmplitude);
 
         // Apply separate response speeds because each visual characteristic benefits from a different amount of motion and stability.
         _Loudness     = Interpolate(_Loudness,     NewLoudness,     deltaTime, 10);
@@ -186,6 +219,7 @@ namespace EyeCandy
         _TrebleEnergy = Interpolate(_TrebleEnergy, NewTrebleEnergy, deltaTime, 13);
 
         _Balance      = Interpolate(_Balance,      NewBalance,      deltaTime,  5);
+        _StereoWidth  = Interpolate(_StereoWidth,  NewStereoWidth,  deltaTime,  5.5);
 
         // PeakAmplitude tracks the largest absolute sample in the entire chunk. Unlike RMS loudness, this responds directly to sharp transients such as drum hits.
         // The smoothing logic gives peaks an immediate attack and an exponential release producing a stable peak-hold effect without hiding sudden transients.
@@ -206,6 +240,7 @@ namespace EyeCandy
         _TrebleEnergy *= std::exp(-3.0 * deltaTime);
 
         _Balance      *= std::exp(-2.0 * deltaTime);
+        _StereoWidth  *= std::exp(-2.2 * deltaTime);
         _Peak         *= std::exp(-2.8 * deltaTime);
     }
 }

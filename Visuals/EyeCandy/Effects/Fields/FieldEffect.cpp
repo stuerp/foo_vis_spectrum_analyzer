@@ -1,5 +1,5 @@
 
-/** $VER: FieldEffect.cpp (2026.11.01) - Base class for a field effect */
+/** $VER: FieldEffect.cpp (2026.11.04) - Base class for a field effect */
 
 #include <pch.h>
 

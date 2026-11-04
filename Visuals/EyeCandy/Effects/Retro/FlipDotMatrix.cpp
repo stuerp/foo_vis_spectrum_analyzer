@@ -138,7 +138,7 @@ namespace FlipDotMatrix
             }
         }
 
-        _RMS = std::sqrt(Sum / (double)MaxFrames);
+        _RMS = std::sqrt(Sum / (double) MaxFrames);
 
         _HasAudio = (_Peak > 1.e-5) || (_RMS > 1.e-6);
 
@@ -146,15 +146,19 @@ namespace FlipDotMatrix
             return;
 
         const double NyquistFrequency = (double) SampleRate * 0.5;
+        const double MaximumFrequency = std::min(HiFrequency, NyquistFrequency);
 
         double MaximumEnergy = 0.;
 
         for (size_t i = 0; i < BandCount; ++i)
         {
-            const double Amount = (double) i / (double) (BandCount - 1);
+            const double Amount = (double) i / (double) (BandCount - 1); // [0, 1]
 
-            const double Frequency   = std::clamp(40. * std::pow(400., Amount), LoFrequency, NyquistFrequency);
-            const double Coefficient = 2. * std::cos(TwoPi * Frequency / (double) SampleRate);
+            const double Frequency = LoFrequency * std::pow(MaximumFrequency / LoFrequency, Amount);
+
+            // Configure the Goertzel detector.
+            const double Omega       = TwoPi * Frequency / (double) SampleRate;
+            const double Coefficient = 2. * std::cos(Omega);
 
             double q1 = 0., q2 = 0.;
 
@@ -166,8 +170,9 @@ namespace FlipDotMatrix
                 q1 = q0;
             }
 
+            // Convert the detector state to power.
             const double Power = std::max(0., q2 * q2 + q1 * q1 - Coefficient * q1 * q2);
-            const double Magnitude = std::sqrt(Power) / (double)MaxFrames;
+            const double Magnitude = std::sqrt(Power) / (double) MaxFrames;
 
             _BandEnergy[i] = Clamp(std::log1p(Magnitude * 90.) / std::log1p(90.));
 
@@ -319,27 +324,30 @@ namespace FlipDotMatrix
 
         _WorkerCondition.notify_all();
 
-        std::unique_lock Lock(_WorkerMutex);
-
-        _CompletionCondition.wait(Lock, [this]() noexcept
         {
-            return _PendingWorkers == 0;
-        });
+            std::unique_lock Lock(_WorkerMutex);
+
+            _CompletionCondition.wait(Lock, [this]() noexcept
+            {
+                return _PendingWorkers == 0;
+            });
+        }
     }
 
     /// <summary>
-    /// 
+    /// Start the worker threads.
     /// </summary>
     void effect_t::StartWorkers()
     {
         const size_t HardwareThreads = std::max<size_t>(1, std::thread::hardware_concurrency());
-
         const size_t WorkerCount = std::clamp<size_t>(HardwareThreads > 1 ? HardwareThreads - 1 : 1, 1, _MaxWorkers);
 
         _Workers.reserve(WorkerCount);
 
         for (size_t i = 0; i < WorkerCount; ++i)
-            _Workers.emplace_back(&effect_t::WorkerLoop, this, i);
+        {
+            _Workers.emplace_back(&effect_t::Worker, this, i);
+        }
     }
 
     /// <summary>
@@ -348,7 +356,7 @@ namespace FlipDotMatrix
     void effect_t::StopWorkers() noexcept
     {
         {
-            std::lock_guard Lock(_WorkerMutex);
+            const std::lock_guard Lock(_WorkerMutex);
 
             _IsStopping = true;
             ++_Generation;
@@ -356,7 +364,7 @@ namespace FlipDotMatrix
 
         _WorkerCondition.notify_all();
 
-        for (std::thread & Worker : _Workers)
+        for (auto & Worker : _Workers)
         {
             if (Worker.joinable())
                 Worker.join();
@@ -368,7 +376,7 @@ namespace FlipDotMatrix
     /// <summary>
     /// 
     /// </summary>
-    void effect_t::WorkerLoop(size_t workerIndex) noexcept
+    void effect_t::Worker(size_t workerIndex) noexcept
     {
         size_t Generation = 0;
 
@@ -379,7 +387,7 @@ namespace FlipDotMatrix
 
                 _WorkerCondition.wait(Lock, [this, Generation]() noexcept
                 {
-                    return _IsStopping || _Generation != Generation;
+                    return _IsStopping || (_Generation != Generation);
                 });
 
                 if (_IsStopping)

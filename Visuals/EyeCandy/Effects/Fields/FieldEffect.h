@@ -1,5 +1,5 @@
 
-/** $VER: FieldEffect.h (2026.11.01) - Base class for a field effect */
+/** $VER: FieldEffect.h (2026.11.04) - Base class for a field effect */
 
 #pragma once
 
@@ -30,6 +30,14 @@ namespace Field
         double BassRed    =   .14;
         double MidGreen   =   .08;
         double TrebleBlue =   .12;
+
+        // Baseline HSL lightness. Appended to preserve all existing aggregate initializers.
+        double Lightness = .50;
+
+        inline double GetValue(double intensity) const noexcept
+        {
+            return std::clamp(Lightness * Brightness * std::max(0., intensity), 0., 1.);
+        }
 
         static constexpr size_t BuiltInCount = 30;
 
@@ -375,7 +383,8 @@ namespace Field
                 Lerp(a.TrebleHue,  b.TrebleHue),
                 Lerp(a.BassRed,    b.BassRed),
                 Lerp(a.MidGreen,   b.MidGreen),
-                Lerp(a.TrebleBlue, b.TrebleBlue)
+                Lerp(a.TrebleBlue, b.TrebleBlue),
+                Lerp(a.Lightness,  b.Lightness)
             };
         }
     };

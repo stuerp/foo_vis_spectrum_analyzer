@@ -213,6 +213,7 @@ namespace Metaballs
             _Work = Work;
 
             _NextRow.store(0, std::memory_order_relaxed);
+
             _PendingWorkers = _Workers.size();
             ++_Generation;
         }
@@ -276,12 +277,11 @@ namespace Metaballs
     }
 
     /// <summary>
-    /// Creates one field-generation worker per logical CPU core.
+    /// Start the worker threads.
     /// </summary>
     void effect_t::StartWorkers()
     {
         const size_t HardwareThreads = std::max<size_t>(1, std::thread::hardware_concurrency());
-
         const size_t WorkerCount = std::clamp<size_t>(HardwareThreads > 1 ? HardwareThreads - 1 : 1, 1, _MaxWorkers);
 
         _Workers.reserve(WorkerCount);
@@ -331,10 +331,11 @@ namespace Metaballs
         for (;;)
         {
             work_t Field;
+
             {
                 std::unique_lock Lock(_WorkerMutex);
 
-                _WorkerCondition.wait(Lock, [this, &Generation]() noexcept
+                _WorkerCondition.wait(Lock, [this, Generation]() noexcept
                 {
                     return _IsStopping || (_Generation != Generation);
                 });

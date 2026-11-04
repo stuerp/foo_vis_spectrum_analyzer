@@ -49,13 +49,14 @@ namespace DynamicSystem
     /// </summary>
     void effect_t::AnalyzeAudio(const audio_chunk & chunk)
     {
+        _HasAudio = false;
+
         _Peak        = 0.;
         _RMS         = 0.;
+
         _StereoWidth = 0.;
         _Correlation = 1.;
         _PhaseEnergy = 0.;
-
-        _HasAudio = false;
 
         if (chunk.is_empty())
             return;

@@ -883,7 +883,7 @@ HRESULT spectrogram_t::CreateColorDependentResources(ID2D1DeviceContext * device
     if (FAILED(hr))
         return hr;
 
-    hr = InitializeStyle(_TimeTextStyle, VisualElement::XAxisText, L"00:00");
+    hr = InitializeStyle(_TimeTextStyle, VisualElement::XAxisText, L"00:00:00");
 
     if (FAILED(hr))
         return hr;
@@ -1054,6 +1054,8 @@ void spectrogram_t::CreateLegend(ID2D1BitmapRenderTarget * renderTarget) const n
 void spectrogram_t::Initialize() noexcept
 {
     assert((_Size.width > 0.f) && (_Size.height > 0.f));
+
+    _TrackTime = _State._TrackTime;
 
     // Resize the legend bitmap.
     {

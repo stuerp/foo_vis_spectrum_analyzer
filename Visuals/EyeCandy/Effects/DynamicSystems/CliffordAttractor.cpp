@@ -226,8 +226,9 @@ namespace CliffordAttractor
             const double Normalized = Clamp(std::log1p((double) _Densities[i]) * _Exposure);
             const double Shaped     = std::pow(Normalized, 0.62);
 
+            const D2D1_COLOR_F Color = GetCurveColor((Shaped * 0.82) + (_AnimationTime * 0.025));
+
             const float Opacity = (float) Clamp(Shaped * BrightnessFactor * AudioBrightness);
-            const D2D1_COLOR_F Color = GetCurveColor(Shaped * 0.82 + _AnimationTime * 0.025);
 
             const auto ToByte = [](float Value) noexcept -> uint32_t
             {

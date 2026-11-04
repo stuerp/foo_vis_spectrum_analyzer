@@ -45,7 +45,7 @@ namespace FlipDotMatrix
         void RenderTexture() noexcept;
         void StartWorkers();
         void StopWorkers() noexcept;
-        void WorkerLoop(size_t) noexcept;
+        void Worker(size_t) noexcept;
         void RenderRows(UINT32, UINT32) noexcept;
 
     private:

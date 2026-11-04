@@ -103,7 +103,11 @@ To create the component first build the x86 configuration and next the x64 confi
 v0.14.0.0-alpha5, 2026-11-xx
 
 - New: Eye Candy effects: Rotozoomer, Dither Field, Flip Dot Matrix, Hidden-line Landscape, Interference Moiré, Flower Scope and Harmonic Harp.
-  - I really like how that last one turned out.
+  - I really like how the Harmonic Harp turned out.
+- New: Alternate full screen mode for DUI. It reuses the current window (and preset) instead of starting a second instance.
+  - Enable it using the configuration dialog on the Common page.
+  - Doubleclick to enter fullscreen mode. Doubleclick again or press Escape to exit.
+  - You can use the Page Up and Page Down key to move the window between monitors.
 
 You can read the full history [here](docs/History.md).
 

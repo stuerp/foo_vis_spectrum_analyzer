@@ -211,8 +211,12 @@ namespace HarmonicHarp
             {
                 const double ProbeAmount    = (double) Probe / 6.;
                 const double ProbeFrequency = LowerFrequency * std::pow(UpperFrequency / LowerFrequency, ProbeAmount);
+
                 const double Frequency      = std::clamp(ProbeFrequency, LoFrequency, NyquistFrequency);
-                const double Coefficient    = 2. * std::cos(TwoPi * Frequency / _SampleRate);
+
+                // Configure the Goertzel detector.
+                const double Omega       = TwoPi * Frequency / _SampleRate;
+                const double Coefficient = 2. * std::cos(Omega);
 
                 double q1 = 0., q2 = 0.;
 
@@ -224,6 +228,7 @@ namespace HarmonicHarp
                     q1 = q0;
                 }
 
+                // Convert the detector state to power.
                 const double Power  = std::max(0., q1 * q1 + q2 * q2 - Coefficient * q1 * q2);
                 const double Weight = 1. - std::abs(ProbeAmount * 2. - 1.) * .45;
 
@@ -377,12 +382,14 @@ namespace HarmonicHarp
 
         _WorkerCondition.notify_all();
 
-        std::unique_lock Lock(_WorkerMutex);
-
-        _CompletionCondition.wait(Lock, [this]() noexcept
         {
-            return _PendingWorkers == 0;
-        });
+            std::unique_lock Lock(_WorkerMutex);
+
+            _CompletionCondition.wait(Lock, [this]() noexcept
+            {
+                return _PendingWorkers == 0;
+            });
+        }
     }
 
     /// <summary>
@@ -435,12 +442,11 @@ namespace HarmonicHarp
     }
 
     /// <summary>
-    /// 
+    /// Start the worker threads.
     /// </summary>
     void effect_t::StartWorkers()
     {
         const size_t HardwareThreads = std::max<size_t>(1, std::thread::hardware_concurrency());
-
         const size_t WorkerCount = std::clamp<size_t>(HardwareThreads > 1 ? HardwareThreads - 1 : 1, 1, _MaxWorkers);
 
         _Workers.reserve(WorkerCount);
@@ -448,10 +454,12 @@ namespace HarmonicHarp
         try
         {
             for (size_t i = 0; i < WorkerCount; ++i)
+            {
                 _Workers.emplace_back([this]() noexcept
                 {
                     Worker();
                 });
+            }
         }
         catch (...)
         {
@@ -474,9 +482,11 @@ namespace HarmonicHarp
 
         _WorkerCondition.notify_all();
 
-        for (auto & WorkerThread : _Workers)
-            if (WorkerThread.joinable())
-                WorkerThread.join();
+        for (auto & Worker : _Workers)
+        {
+            if (Worker.joinable())
+                Worker.join();
+        }
 
         _Workers.clear();
     }
@@ -493,9 +503,9 @@ namespace HarmonicHarp
             {
                 std::unique_lock Lock(_WorkerMutex);
 
-                _WorkerCondition.wait(Lock, [this, &Generation]() noexcept
+                _WorkerCondition.wait(Lock, [this, Generation]() noexcept
                 {
-                    return _IsStopping || _Generation != Generation;
+                    return _IsStopping || (_Generation != Generation);
                 });
 
                 if (_IsStopping)
@@ -548,7 +558,7 @@ namespace HarmonicHarp
         Projection.FarPlane    = 4.;
 
         Camera.Target = { 0., 0., 1.6 };
-        Camera.Up = { 0., 1., 0. };
+        Camera.Up     = { 0., 1., 0.  };
 
         const auto PreparedProjection = ThreeD::Prepare();
 

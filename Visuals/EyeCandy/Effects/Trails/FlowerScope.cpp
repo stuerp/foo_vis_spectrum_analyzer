@@ -302,12 +302,14 @@ namespace FlowerScope
 
         _WorkerCondition.notify_all();
 
-        std::unique_lock Lock(_WorkerMutex);
-
-        _CompletionCondition.wait(Lock, [this]() noexcept
         {
-            return _PendingWorkers == 0;
-        });
+            std::unique_lock Lock(_WorkerMutex);
+
+            _CompletionCondition.wait(Lock, [this]() noexcept
+            {
+                return _PendingWorkers == 0;
+            });
+        }
     }
 
     /// <summary>
@@ -471,18 +473,19 @@ namespace FlowerScope
     }
 
     /// <summary>
-    /// 
+    /// Start the worker threads.
     /// </summary>
     void effect_t::StartWorkers()
     {
         const size_t HardwareThreads = std::max<size_t>(1, std::thread::hardware_concurrency());
-
         const size_t WorkerCount = std::clamp<size_t>(HardwareThreads > 1 ? HardwareThreads - 1 : 1, 1, _MaxWorkers);
 
         _Workers.reserve(WorkerCount);
 
         for (size_t i = 0; i < WorkerCount; ++i)
+        {
             _Workers.emplace_back(&effect_t::Worker, this, i);
+        }
     }
 
     /// <summary>
@@ -491,7 +494,7 @@ namespace FlowerScope
     void effect_t::StopWorkers() noexcept
     {
         {
-            std::lock_guard Lock(_WorkerMutex);
+            const std::lock_guard Lock(_WorkerMutex);
 
             _IsStopping = true;
             ++_Generation;
@@ -499,9 +502,11 @@ namespace FlowerScope
 
         _WorkerCondition.notify_all();
 
-        for (std::thread & Worker : _Workers)
+        for (auto & Worker : _Workers)
+        {
             if (Worker.joinable())
                 Worker.join();
+        }
 
         _Workers.clear();
     }
@@ -520,7 +525,7 @@ namespace FlowerScope
 
                 _WorkerCondition.wait(Lock, [this, Generation]() noexcept
                 {
-                    return _IsStopping || _Generation != Generation;
+                    return _IsStopping || (_Generation != Generation);
                 });
 
                 if (_IsStopping)
