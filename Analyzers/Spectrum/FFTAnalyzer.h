@@ -1,5 +1,5 @@
 
-/** $VER: FFTAnalyzer.h (2026.10.31) P. Stuer **/
+/** $VER: FFTAnalyzer.h (2026.11.04) P. Stuer **/
 
 #pragma once
 
@@ -85,7 +85,7 @@ private:
     /// </summary>
     double BinIndexToHz(size_t index) const noexcept
     {
-        return (double) ((size_t) (index * _SampleRate) / _FFTSize);
+        return (double) (index * _SampleRate) / (double) _FFTSize;
     }
 
 private:

@@ -1,5 +1,5 @@
 
-/** $VER: UIElementRendering.cpp (2026.11.04) P. Stuer - UIElement methods that run on the render thread. **/
+/** $VER: UIElementRendering.cpp (2026.11.01) P. Stuer - UIElement methods that run on the render thread. **/
 
 #include "pch.h"
 
@@ -18,18 +18,13 @@
 
 #include "Log.h"
 
-#include <dwmapi.h>
-
 #pragma comment(lib, "dxgi")
 #pragma comment(lib, "dxguid")
 #pragma comment(lib, "dcomp")
-#pragma comment(lib, "dwmapi")
 
 #pragma hdrstop
 
 static bool GetAudioChunk(audio_chunk & chunk, uint32_t sampleRate = 44100, uint32_t frameCount = 1024) noexcept;
-static bool HasVisiblePixels(HWND hWnd) noexcept;
-static bool IsFullyCoveredByTopLevelWindow(HWND hWnd) noexcept;
 
 /// <summary>
 /// Render thread procedure.
@@ -38,84 +33,28 @@ void uielement_t::RenderThreadProc() noexcept
 {
     msc::chrono_t Chrono;
 
-    // A hidden element may not receive a notification when a sibling starts or stops covering it. Probe occasionally, but do not run the frame scheduler.
-    constexpr DWORD HiddenProbeInterval = 250;
+    const int64_t SleepTime = Chrono.MicrosecondsToTicks(_RenderState._SleepTime);
 
-    int64_t Now           = Chrono.Now();
-    int64_t MaxFrameTime  = Chrono.SecondsToTicks(1. / (double) std::max<int64_t>(_RenderState._TargetRefreshRate, 1));
+    int64_t Now = Chrono.Now();
+
+    int64_t MaxFrameTime  = Chrono.SecondsToTicks(1. / (double) _RenderState._TargetRefreshRate);
     int64_t NextFrameTime = Now + MaxFrameTime;
 
-    bool WasRenderable = false;
-    bool FirstProbe    = true;
-
-    Log.AtDebug().Write("Render thread started: Target %d fps / Max. frame time %d ticks", _RenderState._TargetRefreshRate, MaxFrameTime);
+    Log.AtDebug().Write("Render thread started: Target %d fps / Max. frame time %d ticks",  _RenderState._TargetRefreshRate, MaxFrameTime);
 
     for (;;)
     {
-        bool HaveArtworkColorsChanged = false;
-
-        // Enter dormant mode before the normal frame wait.
-        if (!WasRenderable)
-        {
-            if (!FirstProbe)
-            {
-                if (::WaitForSingleObject(_hStopRendering, HiddenProbeInterval) == WAIT_OBJECT_0)
-                    return;
-            }
-
-            FirstProbe = false;
-
-            const bool CanWindowRender = HasVisiblePixels(m_hWnd) && ((_hParent == nullptr) || !::IsIconic(_hParent));
-
-            bool IsRenderable = false;
-
-            if (_CriticalSection.TryEnter())
-            {
-                ProcessEvents();
-
-                IsRenderable = CanWindowRender && !_IsFrozen;
-
-                if (_IsConfigurationChanged)
-                {
-                    _UIState._ArtworkDominantColor = _RenderState._ArtworkDominantColor;
-                    _UIState._ArtworkGradientStops = _RenderState._ArtworkGradientStops;
-
-                    _IsConfigurationChanged = false;
-                    HaveArtworkColorsChanged = true;
-                }
-
-                if (IsRenderable)
-                {
-                    // Do not process the full hidden interval as one sliding analysis window when the element becomes visible again.
-                    _IsAnalysisTimeInitialized = false;
-
-                    MaxFrameTime  = Chrono.SecondsToTicks(1. / (double) std::max<int64_t>(_RenderState._TargetRefreshRate, 1));
-                    NextFrameTime = Chrono.Now() + MaxFrameTime;
-
-                    WasRenderable = true;
-                }
-
-                _CriticalSection.Leave();
-            }
-
-            if (HaveArtworkColorsChanged)
-                NotifyDialog(CC_COLORS);
-
-            if (!WasRenderable)
-                continue;
-        }
-
         // Wait for the presentation time of the frame.
         {
             Now = Chrono.Now();
 
-            const int64_t SleepTime = Chrono.MicrosecondsToTicks(_RenderState._SleepTime);
             const int64_t Elapsed = NextFrameTime - Now;
 
             // Coarse delay
             if (Elapsed > SleepTime)
             {
                 const int64_t Milliseconds = Chrono.TicksToMilliseconds(Elapsed);
+
                 const DWORD TimeOut = (Milliseconds > 1) ? (DWORD) (Milliseconds - 1) : 0;
 
                 if (::WaitForSingleObject(_hStopRendering, TimeOut) == WAIT_OBJECT_0)
@@ -124,38 +63,28 @@ void uielement_t::RenderThreadProc() noexcept
                 continue;
             }
 
-            // Fine delay. YieldProcessor reduces the impact of the remaining active-mode spin without changing the existing timing model.
+            // Fine delay (Ugly busy wait)
             while (Chrono.Now() < NextFrameTime)
             {
                 if (::WaitForSingleObject(_hStopRendering, 0) == WAIT_OBJECT_0)
                     return;
-
-                YieldProcessor();
             }
         }
 
-        HaveArtworkColorsChanged = false;
-
-        // Recheck after waiting. The host may have hidden or covered the element while this frame was pending.
-        const bool CanWindowRender = HasVisiblePixels(m_hWnd) && ((_hParent == nullptr) || !::IsIconic(_hParent));
+        bool HaveArtworkColorsChanged = false;
 
         if (_CriticalSection.TryEnter())
         {
             ProcessEvents();
 
-            const bool IsRenderable = CanWindowRender && !_IsFrozen;
-
-            if (IsRenderable)
+            if (!(!IsWindowVisible() || ::IsIconic(_hParent) || _IsFrozen))
             {
                 _FrameCounter.NewFrame();
-                ProcessAudio();
-                Render();
 
-                // Peak animation is visual work and does not need to run while the element is hidden, minimized, or frozen.
-                Animate(Chrono.Now());
+                ProcessAudio();
+
+                Render();
             }
-            else
-                WasRenderable = false;
 
             if (_IsConfigurationChanged)
             {
@@ -163,29 +92,38 @@ void uielement_t::RenderThreadProc() noexcept
                 _UIState._ArtworkGradientStops = _RenderState._ArtworkGradientStops;
 
                 _IsConfigurationChanged = false;
+
                 HaveArtworkColorsChanged = true;
             }
+
+            // Continue to animate the peak values unless the parent window is minized.
+            if (!_IsFrozen)
+                Animate(Chrono.Now());
 
             _CriticalSection.Leave();
         }
 
         // Notify the configuration dialog about the changed artwork colors.
         if (HaveArtworkColorsChanged)
+        {
             NotifyDialog(CC_COLORS);
 
-        if (!WasRenderable)
-            continue;
+            HaveArtworkColorsChanged = false;
+        }
 
         // Determine the presentation time of the next frame.
-        MaxFrameTime = Chrono.SecondsToTicks(1. / (double) std::max<int64_t>(_RenderState._TargetRefreshRate, 1));
-        NextFrameTime += MaxFrameTime;
+        {
+            MaxFrameTime = Chrono.SecondsToTicks(1. / (double) _RenderState._TargetRefreshRate);
+            NextFrameTime += MaxFrameTime;
 
-        const int64_t Latency = Chrono.Now() - NextFrameTime;
+            const int64_t Latency = Chrono.Now() - NextFrameTime;
 
-        if (Latency > MaxFrameTime * 3)
-            NextFrameTime = Chrono.Now() + MaxFrameTime;
+            if (Latency > MaxFrameTime * 3)
+                NextFrameTime = Chrono.Now() + MaxFrameTime;
+        }
     }
 }
+
 /// <summary>
 /// Allows the rendering thread to react to events captured in or generated by the UI thread.
 /// </summary>
@@ -1078,180 +1016,6 @@ void uielement_t::RenderDebug() noexcept
     std::wstring Text = msc::FormatText(L"%.2fs", _RenderState._PreviousPlaybackTime);
 
     _D2DDeviceContext->DrawText(Text.c_str(), (UINT) Text.size(), TextFormat.Get(), Rect, _DebugBrush.Get(), D2D1_DRAW_TEXT_OPTIONS_NONE);
-}
-
-/// <summary>
-/// Returns true when the element window has at least one drawable and visible pixel after child/sibling clipping and top-level-window occlusion.
-/// </summary>
-static bool HasVisiblePixels(HWND hWnd) noexcept
-{
-    if ((hWnd == NULL) || !::IsWindow(hWnd) || !::IsWindowVisible(hWnd))
-        return false;
-
-    RECT ClientRect {};
-
-    if (!::GetClientRect(hWnd, &ClientRect) || ::IsRectEmpty(&ClientRect))
-        return false;
-
-    // This catches child and sibling clipping within the same window tree.
-    HDC hDC = ::GetDCEx(hWnd, nullptr, DCX_CACHE | DCX_CLIPSIBLINGS | DCX_CLIPCHILDREN);
-
-    if (hDC != NULL)
-    {
-        RECT ClipBox {};
-
-        const int RegionType = ::GetClipBox(hDC, &ClipBox);
-
-        ::ReleaseDC(hWnd, hDC);
-
-        if (RegionType == ERROR || RegionType == NULLREGION || ::IsRectEmpty(&ClipBox))
-            return false;
-    }
-
-    // DWM composition means GetClipBox does not account for unrelated top-level windows. Perform a desktop z-order subtraction for that case.
-    return !IsFullyCoveredByTopLevelWindow(hWnd);
-}
-
-/// <summary>
-/// Returns true if opaque top-level windows above the element's root window completely cover the element's client rectangle.
-/// </summary>
-static bool IsFullyCoveredByTopLevelWindow(HWND hWnd) noexcept
-{
-    if ((hWnd == NULL) || !::IsWindow(hWnd))
-        return false;
-
-    RECT VisibleRect {};
-
-    if (!::GetClientRect(hWnd, &VisibleRect) || ::IsRectEmpty(&VisibleRect))
-        return true;
-
-    POINT Points[2] =
-    {
-        { VisibleRect.left,  VisibleRect.top    },
-        { VisibleRect.right, VisibleRect.bottom }
-    };
-
-    ::SetLastError(ERROR_SUCCESS);
-
-    if (::MapWindowPoints(hWnd, HWND_DESKTOP, Points, 2) == 0 && ::GetLastError() != ERROR_SUCCESS)
-        return false;
-
-    VisibleRect = { Points[0].x, Points[0].y, Points[1].x, Points[1].y };
-
-    // Clip the child rectangle to every ancestor client rectangle. This handles scrollable containers and hosts that clip children without hiding them.
-    for (HWND hParent = ::GetParent(hWnd); hParent != nullptr; hParent = ::GetParent(hParent))
-    {
-        RECT ParentRect {};
-
-        if (!::GetClientRect(hParent, &ParentRect))
-            break;
-
-        POINT ParentPoints[2] =
-        {
-            { ParentRect.left,  ParentRect.top    },
-            { ParentRect.right, ParentRect.bottom }
-        };
-
-        ::SetLastError(ERROR_SUCCESS);
-
-        if (::MapWindowPoints(hParent, HWND_DESKTOP, ParentPoints, 2) == 0 && ::GetLastError() != ERROR_SUCCESS)
-            break;
-
-        ParentRect = { ParentPoints[0].x, ParentPoints[0].y, ParentPoints[1].x, ParentPoints[1].y };
-
-        RECT Intersection {};
-
-        if (!::IntersectRect(&Intersection, &VisibleRect, &ParentRect))
-            return true;
-
-        VisibleRect = Intersection;
-    }
-
-    HRGN hRemainingRegion = ::CreateRectRgnIndirect(&VisibleRect);
-
-    if (hRemainingRegion == NULL)
-        return false;
-
-    const HWND RootWindow = ::GetAncestor(hWnd, GA_ROOT);
-
-    // GetTopWindow(nullptr) starts at the top of the desktop z-order. Every top-level window encountered before RootWindow is above this component.
-    for (HWND hCoveringWindow = ::GetTopWindow(nullptr); hCoveringWindow != nullptr && hCoveringWindow != RootWindow; hCoveringWindow = ::GetWindow(hCoveringWindow, GW_HWNDNEXT))
-    {
-        if (!::IsWindowVisible(hCoveringWindow) || ::IsIconic(hCoveringWindow))
-            continue;
-
-        const LONG_PTR ExtendedStyle = ::GetWindowLongPtr(hCoveringWindow, GWL_EXSTYLE);
-
-        // WS_EX_TRANSPARENT and WS_EX_LAYERED windows may have transparent or per-pixel-alpha areas. Ignoring them avoids false suspension.
-        if ((ExtendedStyle & (WS_EX_TRANSPARENT | WS_EX_LAYERED)) != 0)
-            continue;
-
-        BOOL IsCloaked = FALSE;
-
-        const HRESULT hr = ::DwmGetWindowAttribute(hCoveringWindow, DWMWA_CLOAKED, &IsCloaked, sizeof(IsCloaked));
-
-        if (SUCCEEDED(hr) && IsCloaked)
-            continue;
-
-        RECT CoveringRect {};
-
-        if (FAILED(::DwmGetWindowAttribute(hCoveringWindow, DWMWA_EXTENDED_FRAME_BOUNDS, &CoveringRect, sizeof(CoveringRect))))
-        {
-            if (!::GetWindowRect(hCoveringWindow, &CoveringRect))
-                continue;
-        }
-
-        RECT Intersection{};
-
-        if (!::IntersectRect(&Intersection, &VisibleRect, &CoveringRect))
-            continue;
-
-        HRGN hCoveringRegion = ::CreateRectRgn(0, 0, 0, 0);
-
-        if (hCoveringRegion == nullptr)
-            continue;
-
-        const int RegionType = ::GetWindowRgn(hCoveringWindow, hCoveringRegion);
-
-        if (RegionType == ERROR)
-        {
-            ::SetRectRgn(hCoveringRegion, CoveringRect.left, CoveringRect.top, CoveringRect.right, CoveringRect.bottom);
-        }
-        else
-        if (RegionType == NULLREGION)
-        {
-            ::DeleteObject(hCoveringRegion);
-            continue;
-        }
-        else
-        {
-            // GetWindowRgn returns coordinates relative to GetWindowRect, not the DWM extended frame bounds used for the rectangle fallback.
-            RECT WindowRect{};
-
-            if (!::GetWindowRect(hCoveringWindow, &WindowRect))
-            {
-                ::DeleteObject(hCoveringRegion);
-                continue;
-            }
-
-            ::OffsetRgn(hCoveringRegion, WindowRect.left, WindowRect.top);
-        }
-
-        const int RemainingType = ::CombineRgn(hRemainingRegion, hRemainingRegion, hCoveringRegion, RGN_DIFF);
-
-        ::DeleteObject(hCoveringRegion);
-
-        if (RemainingType == NULLREGION)
-        {
-            ::DeleteObject(hRemainingRegion);
-
-            return true;
-        }
-    }
-
-    ::DeleteObject(hRemainingRegion);
-
-    return false;
 }
 
 #endif

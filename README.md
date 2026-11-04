@@ -108,6 +108,7 @@ v0.14.0.0-alpha5, 2026-11-xx
   - Enable it using the configuration dialog on the Common page.
   - Doubleclick to enter fullscreen mode. Doubleclick again or press Escape to exit.
   - You can use the Page Up and Page Down key to move the window between monitors.
+- Fixed: The input ring buffer did not handle non-radix 2 FFT's correctly.
 
 You can read the full history [here](docs/History.md).
 

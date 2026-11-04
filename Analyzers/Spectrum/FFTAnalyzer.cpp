@@ -1,5 +1,5 @@
 
-/** $VER: FFTAnalyzer.cpp (2026.10.28) P. Stuer **/
+/** $VER: FFTAnalyzer.cpp (2026.11.04) P. Stuer **/
 
 #include "pch.h"
 
@@ -90,23 +90,32 @@ bool fft_analyzer_t::AnalyzeAudio(const audio_sample * frameData, size_t frameCo
 /// </summary>
 void fft_analyzer_t::Add(const audio_sample * samples, size_t frameCount, uint32_t selectedChannels) noexcept
 {
-    if (samples == nullptr)
+    if ((samples == nullptr) || (frameCount == 0))
         return;
-
-    const size_t SampleCount = frameCount * _ChannelCount;
 
     audio_sample * const Mono = _InputRing.data();
 
     const auto Size = _InputRing.size();
 
-    for (size_t i = 0; i < SampleCount; i += _ChannelCount)
+    if (frameCount > Size)
+    {
+        const auto FramesToSkip = frameCount - Size;
+
+        _Next = (_Next + (frameCount % Size)) % Size;
+
+        samples += FramesToSkip * (size_t) _ChannelCount;
+
+        frameCount = Size;
+    }
+
+    for (size_t i = 0; i < frameCount; ++i)
     {
         // Downmix the selected channels to mono before adding the sample to the input ring buffer.
-        Mono[_Next] = Downmix(&samples[i], selectedChannels);
+        Mono[_Next] = Downmix(samples, selectedChannels);
 
-        ++_Next;
+        samples += _ChannelCount;
 
-        if (_Next == Size)
+        if (++_Next == Size)
             _Next = 0;
     }
 }
@@ -116,6 +125,9 @@ void fft_analyzer_t::Add(const audio_sample * samples, size_t frameCount, uint32
 /// </summary>
 void fft_analyzer_t::Transform() noexcept
 {
+    if (_InputRing.empty() || _Samples.empty() || _Coefficients.empty())
+        return;
+
     double Norm = 0.;
 
     // Fill the FFT buffer from the input ring buffer with Time domain data, apply the windowing function and determine the norm.
