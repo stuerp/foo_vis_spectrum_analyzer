@@ -1,5 +1,5 @@
 
-/** $VER: Oscilloscope.cpp (2026.10.29) P. Stuer - Implements an oscilloscope. **/
+/** $VER: Oscilloscope.cpp (2026.11.05) P. Stuer - Implements an oscilloscope. **/
 
 #include <pch.h>
 
@@ -195,7 +195,7 @@ void oscilloscope_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 
         // Draw the composite buffer to the window.
         {
-            const D2D1_MATRIX_3X2_F Translate = D2D1::Matrix3x2F::Translation(XOffset, 0.f);
+            const D2D1_MATRIX_3X2_F Translate = D2D1::Matrix3x2F::Translation(_Rect.left + XOffset, _Rect.top);
 
             deviceContext->SetTransform(Translate);
 
@@ -250,10 +250,12 @@ HRESULT oscilloscope_t::CreateDeviceSpecificResources(ID2D1DeviceContext * devic
     if (FAILED(hr))
         return hr;
 
+    auto & StyleManager = _GraphOptions->_UseLocalStyles ? _GraphOptions->_StyleManager : _State._StyleManager;
+
     // The font style is created prescaled to counter the Scale transform in the command list.
     if (_XAxisTextStyle._Brush == nullptr)
     {
-        _XAxisTextStyle = *_State._StyleManager.GetStyle(VisualElement::XAxisText);
+        _XAxisTextStyle = *StyleManager.GetStyle(VisualElement::XAxisText);
 
         _XAxisTextStyle.SetColor(&_State);
 
@@ -266,7 +268,7 @@ HRESULT oscilloscope_t::CreateDeviceSpecificResources(ID2D1DeviceContext * devic
     // The font style is created prescaled to counter the Scale transform in the command list.
     if (_YAxisTextStyle._Brush == nullptr)
     {
-        _YAxisTextStyle = *_State._StyleManager.GetStyle(VisualElement::YAxisText);
+        _YAxisTextStyle = *StyleManager.GetStyle(VisualElement::YAxisText);
 
         _YAxisTextStyle.SetColor(&_State);
 

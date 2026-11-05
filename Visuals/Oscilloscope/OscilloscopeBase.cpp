@@ -1,5 +1,5 @@
 
-/** $VER: OscilloscopeBase.cpp (2026.10.29) P. Stuer - Implements a base class for an oscilloscope. **/
+/** $VER: OscilloscopeBase.cpp (2026.11.05) P. Stuer - Implements a base class for an oscilloscope. **/
 
 #include <pch.h>
 
@@ -149,39 +149,41 @@ HRESULT oscilloscope_base_t::CreateSizeDependentResources(ID2D1DeviceContext * d
 
     HRESULT hr = S_OK;
 
-    const auto CreateStyle = [this, deviceContext](style_t & style, VisualElement element) noexcept -> HRESULT
+    auto & StyleManager = _GraphOptions->_UseLocalStyles ? _GraphOptions->_StyleManager : _State._StyleManager;
+
+    const auto InitializeStyle = [this, deviceContext, &StyleManager](style_t & style, VisualElement element) noexcept -> HRESULT
     {
         if (style._Brush != nullptr)
             return S_OK;
 
-        style = *_State._StyleManager.GetStyle(element);
+        style = *StyleManager.GetStyle(element);
 
         style.SetColor(&_State);
 
         return style.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
     };
 
-    hr = CreateStyle(_SignalLineStyle, VisualElement::Signal);
+    hr = InitializeStyle(_SignalLineStyle, VisualElement::Signal);
 
     if (FAILED(hr))
         return hr;
 
-    hr = CreateStyle(_XAxisLineStyle, VisualElement::XAxisLine);
+    hr = InitializeStyle(_XAxisLineStyle, VisualElement::XAxisLine);
 
     if (FAILED(hr))
         return hr;
 
-    hr = CreateStyle(_YAxisLineStyle, VisualElement::YAxisLine);
+    hr = InitializeStyle(_YAxisLineStyle, VisualElement::YAxisLine);
 
     if (FAILED(hr))
         return hr;
 
-    hr = CreateStyle(_HorizontalGridLineStyle, VisualElement::HorizontalGridLine);
+    hr = InitializeStyle(_HorizontalGridLineStyle, VisualElement::HorizontalGridLine);
 
     if (FAILED(hr))
         return hr;
 
-    hr = CreateStyle(_VerticalGridLineStyle, VisualElement::VerticalGridLine);
+    hr = InitializeStyle(_VerticalGridLineStyle, VisualElement::VerticalGridLine);
 
     if (FAILED(hr))
         return hr;

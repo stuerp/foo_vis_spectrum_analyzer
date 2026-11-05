@@ -1,5 +1,5 @@
 
-/** $VER: OscilloscopeXY.cpp (2026.10.29) P. Stuer - Implements an oscilloscope in X-Y mode. **/
+/** $VER: OscilloscopeXY.cpp (2026.11.05) P. Stuer - Implements an oscilloscope in X-Y mode. **/
 
 #include <pch.h>
 
@@ -190,9 +190,11 @@ HRESULT oscilloscope_xy_t::CreateDeviceSpecificResources(ID2D1DeviceContext * de
     if (FAILED(hr))
         return hr;
 
+    auto & StyleManager = _GraphOptions->_UseLocalStyles ? _GraphOptions->_StyleManager : _State._StyleManager;
+
     if (_XAxisTextStyle._Brush == nullptr)
     {
-        _XAxisTextStyle = *_State._StyleManager.GetStyle(VisualElement::XAxisText);
+        _XAxisTextStyle = *StyleManager.GetStyle(VisualElement::XAxisText);
 
         _XAxisTextStyle.SetColor(&_State);
 
@@ -205,7 +207,7 @@ HRESULT oscilloscope_xy_t::CreateDeviceSpecificResources(ID2D1DeviceContext * de
 
     if (_YAxisTextStyle._Brush == nullptr)
     {
-        _YAxisTextStyle = *_State._StyleManager.GetStyle(VisualElement::YAxisText);
+        _YAxisTextStyle = *StyleManager.GetStyle(VisualElement::YAxisText);
 
         _YAxisTextStyle.SetColor(&_State);
 

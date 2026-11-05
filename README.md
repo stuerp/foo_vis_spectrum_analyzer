@@ -110,9 +110,11 @@ v0.14.0.0-alpha5, 2026-11-xx
 - New: Eye Candy effects: Rotozoomer, Dither Field, Flip Dot Matrix, Hidden-line Landscape, Interference Moiré, Flower Scope and Harmonic Harp.
   - I really like how the Harmonic Harp effect turned out.
 - Improved: Goniometer Mono and Triband modes react better to the color changes of the Signal style.
+- Improved: Oscilloscope now supports local styles.
 - Changed: Various little tweaks and corrections to the peak marker animation.
 - Fixed: The input ring buffer did not handle non-radix 2 FFT's correctly.
 - Fixed: Static content did not always respond to color changes.
+- Fixed: Oscilloscope did behave in a multiple graph scenario.
 
 You can read the full history [here](docs/History.md).
 
