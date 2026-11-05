@@ -243,7 +243,7 @@ void frequencies_page_t::InitializeControls() noexcept
 void frequencies_page_t::UpdateControls() noexcept
 {
     const bool IsPeakMeter    = (_State->_VisualizationType == VisualizationType::PeakMeter);
-    const bool IsBalanceMeter   = (_State->_VisualizationType == VisualizationType::BalanceMeter);
+    const bool IsBalanceMeter = (_State->_VisualizationType == VisualizationType::BalanceMeter);
     const bool IsOscilloscope = (_State->_VisualizationType == VisualizationType::Oscilloscope);
     const bool IsBitMeter     = (_State->_VisualizationType == VisualizationType::BitMeter);
     const bool IsTester       = (_State->_VisualizationType == VisualizationType::Tester);

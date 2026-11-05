@@ -248,7 +248,7 @@ void graphs_page_t::UpdateControls() noexcept
     const bool IsSpectrogram  = (_State->_VisualizationType == VisualizationType::Spectrogram);
 
     const bool IsPeakMeter    = (_State->_VisualizationType == VisualizationType::PeakMeter);
-    const bool IsBalanceMeter   = (_State->_VisualizationType == VisualizationType::BalanceMeter);
+    const bool IsBalanceMeter = (_State->_VisualizationType == VisualizationType::BalanceMeter);
 
     const bool IsOscilloscope = (_State->_VisualizationType == VisualizationType::Oscilloscope);
     const bool IsGoniometer   = (_State->_VisualizationType == VisualizationType::Goniometer);

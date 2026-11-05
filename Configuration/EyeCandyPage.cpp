@@ -1,5 +1,5 @@
 
-/** $VER: EyeCandyPage.cpp (2026.10.21) P. Stuer - Implements a configuration dialog page. **/
+/** $VER: EyeCandyPage.cpp (2026.11.05) P. Stuer - Implements a configuration dialog page. **/
 
 #include "pch.h"
 
@@ -99,11 +99,32 @@ void eye_candy_page_t::InitializeControls() noexcept
         w.SetCurSel((int) _State->_EffectDensity);
     }
 
-    UpdateEffect();
+    UpdateControls();
 }
 
 /// <summary>
-/// Updates the controls of the page.
+/// Updates the controls of this page.
+/// </summary>
+void eye_candy_page_t::UpdateControls() noexcept
+{
+    UpdateEffect();
+
+    const bool IsEyeCandy = (_State->_VisualizationType == VisualizationType::EyeCandy);
+
+    for (const auto & Iter :
+    {
+        IDC_EFFECT_CATEGORY,
+        IDC_EFFECT,
+        IDC_EFFECT_QUALITY,
+        IDC_EFFECT_SPEED,
+        IDC_EFFECT_BRIGHTNESS,
+        IDC_EFFECT_DENSITY,
+    })
+        GetDlgItem(Iter).EnableWindow(IsEyeCandy);
+}
+
+/// <summary>
+/// Updates the Effects combobox.
 /// </summary>
 void eye_candy_page_t::UpdateEffect() noexcept
 {
@@ -205,15 +226,6 @@ void eye_candy_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
         default:
             return;
 
-        case IDC_PRESETS_ROOT:
-        {
-            _State->_PresetsDirectoryPath = Text;
-
-            FillPresetListBox();
-
-            return;
-        }
-
         case IDC_PRESET_NAME:
         {
             UpdateControls();
@@ -251,54 +263,6 @@ void eye_candy_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
     {
         default:
             return;
-
-        case IDC_PRESETS_ROOT_SELECT:
-        {
-            pfc::string DirectoryPath = pfc::utf8FromWide(_State->_PresetsDirectoryPath.c_str());
-
-            if (::uBrowseForFolder(m_hWnd, "Locate preset files...", DirectoryPath))
-            {
-                _State->_PresetsDirectoryPath = pfc::wideFromUTF8(DirectoryPath);
-
-                pfc::wstringLite w = pfc::wideFromUTF8(DirectoryPath);
-
-                SetDlgItemTextW(IDC_PRESETS_ROOT, pfc::wideFromUTF8(DirectoryPath));
-
-                FillPresetListBox();
-            }
-            break;
-        }
-
-        case IDC_PRESET_LOAD:
-        {
-            WCHAR PresetName[MAX_PATH] = { };
-
-            GetDlgItemTextW(IDC_PRESET_NAME, PresetName, _countof(PresetName));
-
-            GetPreset(PresetName);
-            FillPresetListBox();
-
-            _IsInitializing = true;
-
-            UpdateControls();
-
-            _IsInitializing = false;
-
-            NotifyParent(ConfigurationChanges::All);
-            break;
-        }
-
-        case IDC_PRESET_SAVE:
-        {
-            WCHAR PresetName[MAX_PATH] = { };
-
-            GetDlgItemTextW(IDC_PRESET_NAME, PresetName, _countof(PresetName));
-
-            PresetManager::Save(_State->_PresetsDirectoryPath, PresetName, _State);
-
-            FillPresetListBox();
-            break;
-        }
 
         case IDC_PRESET_DELETE:
         {

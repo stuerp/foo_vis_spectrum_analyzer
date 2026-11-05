@@ -47,7 +47,7 @@ public:
 
 private:
     void InitializeControls() noexcept override;
-    void UpdateControls() noexcept override { };
+    void UpdateControls() noexcept override;
     void TerminateControls() noexcept override { };
 
     void UpdateEffect() noexcept;
