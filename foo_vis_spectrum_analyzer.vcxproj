@@ -230,6 +230,7 @@
     <ClInclude Include="Analyzers\Oscilloscope\Downmixer.h" />
     <ClInclude Include="Analyzers\Oscilloscope\Downsampler.h" />
     <ClInclude Include="Analyzers\Spectrum\FrequencyScaler.h" />
+    <ClInclude Include="Analyzers\Spectrum\PeakDetector.h" />
     <ClInclude Include="Analyzers\Spectrum\SpectrumProcessor.h" />
     <ClInclude Include="Analyzers\Spectrum\SWIFTAnalyzer.h" />
     <ClInclude Include="Analyzers\Test\TestProcessor.h" />
@@ -380,6 +381,7 @@
     <ClCompile Include="Analyzers\Decimator.cpp" />
     <ClCompile Include="Analyzers\Oscilloscope\Downmixer.cpp" />
     <ClCompile Include="Analyzers\Oscilloscope\Downsampler.cpp" />
+    <ClCompile Include="Analyzers\Spectrum\PeakDetector.cpp" />
     <ClCompile Include="Analyzers\Spectrum\SpectrumProcessor.cpp" />
     <ClCompile Include="Analyzers\Spectrum\SWIFTAnalyzer.cpp" />
     <ClCompile Include="Analyzers\Test\TestProcessor.cpp" />

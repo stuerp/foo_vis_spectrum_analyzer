@@ -1,5 +1,5 @@
 
-/** $VER: CommonPage.cpp (2026.11.04) P. Stuer - Implements a configuration dialog page. **/
+/** $VER: CommonPage.cpp (2026.11.05) P. Stuer - Implements a configuration dialog page. **/
 
 #include "pch.h"
 
@@ -250,8 +250,8 @@ void common_page_t::UpdateControls() noexcept
     GetDlgItem(IDC_ALLOW_UPSCALING).EnableWindow(SupportsArtworkOnBackground && _State->_ShowArtworkOnBackground && (_State->_FitMode != FitMode::Free));
 
     // Diagnostics
-    GetDlgItem(IDC_SHOW_WINDOW_FUNCTION).EnableWindow(IsSpectrum);
-    GetDlgItem(IDC_SHOW_WEIGHING_FUNCTION).EnableWindow(IsSpectrum);
+    GetDlgItem(IDC_SHOW_WINDOW_FUNCTION)  .EnableWindow(IsSpectrum);
+    GetDlgItem(IDC_SHOW_WEIGHING_FUNCTION).EnableWindow(IsSpectrum && (_State->_WeightingType != WeightingType::None));
 }
 
 /// <summary>

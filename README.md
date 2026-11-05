@@ -102,6 +102,8 @@ To create the component first build the x86 configuration and next the x64 confi
 
 v0.14.0.0-alpha5, 2026-11-xx
 
+- New: Peak detector. It identifies the strongest local maxima in the current frequency spectrum. (*EXPERIMENTAL*)
+  - Requesting feedback from the community. What is the best way to show the peaks? Is extra information required?
 - New: Alternate full screen mode for DUI. It reuses the current window (and preset) instead of starting a second instance.
   - Enable it using the configuration dialog on the Common page.
   - Double click the left mouse button to enter fullscreen mode. Doubleclick again or press Escape to exit.

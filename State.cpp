@@ -117,8 +117,10 @@ void state_t::Reset() noexcept
     _Transpose = 0;
 
     _ScalingFunction = ScalingFunction::Logarithmic;
-    _SkewFactor = 0.0;
-    _Bandwidth = 0.5;
+    _SkewFactor      = 0.0;
+    _Bandwidth       = 0.5;
+
+    _RenderPeaks     = false;
 
     // Filters
     _WeightingType = WeightingType::None;
@@ -441,15 +443,17 @@ state_t & state_t::operator=(const state_t & other) noexcept
         _HiFrequency           = other._HiFrequency;
 
         // Note range
-        _LoNote = other._LoNote;
-        _HiNote = other._HiNote;
-        _BandsPerOctave = other._BandsPerOctave;
-        _TuningPitch = other._TuningPitch;
-        _Transpose = other._Transpose;
+        _LoNote                 = other._LoNote;
+        _HiNote                 = other._HiNote;
+        _BandsPerOctave         = other._BandsPerOctave;
+        _TuningPitch            = other._TuningPitch;
+        _Transpose              = other._Transpose;
 
-        _ScalingFunction = other._ScalingFunction;
-        _SkewFactor = other._SkewFactor;
-        _Bandwidth = other._Bandwidth;
+        _ScalingFunction        = other._ScalingFunction;
+        _SkewFactor             = other._SkewFactor;
+        _Bandwidth              = other._Bandwidth;
+
+        _RenderPeaks            = other._RenderPeaks;
 
     #pragma endregion
 

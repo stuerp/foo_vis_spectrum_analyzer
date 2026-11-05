@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.h (2026.10.28) P. Stuer -  Implements a spectrum analyzer visualization **/
+/** $VER: Spectrum.h (2026.11.05) P. Stuer -  Implements a spectrum analyzer visualization **/
 
 #pragma once
 
@@ -69,6 +69,8 @@ private:
 
     void RenderNyquistFrequencyMarker(ID2D1DeviceContext * deviceContext) const noexcept;
 
+    void RenderPeaks(ID2D1DeviceContext * deviceContext) noexcept;
+
     void RenderDiagnostics(ID2D1DeviceContext * deviceContext) const noexcept;
 
     HRESULT CreateOpacityMask(ID2D1DeviceContext * deviceContext) noexcept;
@@ -113,6 +115,7 @@ private:
 
     // Device-dependent resources
     ComPtr<ID2D1SolidColorBrush> _DebugBrush;
+    ComPtr<ID2D1SolidColorBrush> _PeakBrush;
     ComPtr<ID2D1Bitmap> _OpacityMask;
 
     style_t _BarAreaStyle;

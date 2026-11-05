@@ -86,6 +86,9 @@ void spectrum_t::Render(ID2D1DeviceContext * deviceContext) noexcept
             if (_IsLast && _NyquistMarkerStyle.IsEnabled())
                 RenderNyquistFrequencyMarker(deviceContext);
 
+            if (_State._RenderPeaks)
+                RenderPeaks(deviceContext);
+
             ResetTransform(deviceContext);
 
             RenderDiagnostics(deviceContext);
@@ -589,6 +592,35 @@ void spectrum_t::RenderNyquistFrequencyMarker(ID2D1DeviceContext * deviceContext
 }
 
 /// <summary>
+/// Renders the peak frequencies in the spectrum.
+/// </summary>
+void spectrum_t::RenderPeaks(ID2D1DeviceContext * deviceContext) noexcept
+{
+    auto t = _ClientSize.width / (float) _Processor->FrequencyBands.size();
+
+    // Use the full width of the graph?
+    if (_GraphOptions->_HorizontalAlignment != HorizontalAlignment::Fit)
+        t = std::floor(t);
+
+    const float BarWidth      = std::max(t, 2.f); // In DIP
+    const float SpectrumWidth = BarWidth * (float) _Processor->FrequencyBands.size();
+    const float BandWidth     = std::max((_ClientSize.width / (float) (_Processor->FrequencyBands.size() - 1)), 1.f);
+    const float HOffset       = GetHOffset(_GraphOptions->_HorizontalAlignment, _ClientSize.width - SpectrumWidth) + (BandWidth / 2.f);
+
+    const float Radius = BarWidth / 2.f;
+
+    for (const auto & Peak : _Processor->Peaks)
+    {
+        float x = HOffset + ((float) Peak.BandIndex * BarWidth);
+        float y = std::min((float) (Peak.Value * _ClientSize.height), _ClientSize.height);
+
+        D2D1_POINT_2F Center = { x, y  };
+
+        deviceContext->FillEllipse(D2D1::Ellipse(Center, Radius, Radius), _PeakBrush.Get());
+    }
+}
+
+/// <summary>
 /// Renders diagnostics information.
 /// </summary>
 void spectrum_t::RenderDiagnostics(ID2D1DeviceContext * deviceContext) const noexcept
@@ -721,6 +753,9 @@ HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCon
         (void) deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), _DebugBrush.GetAddressOf());
 #endif
 
+    if (_PeakBrush == nullptr)
+        (void) deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), _PeakBrush.GetAddressOf());
+
     if (_State._ColorsHaveChanged || _State._SizeHasChanged)
     {
         DeleteColorDependentResources();
@@ -757,7 +792,11 @@ void spectrum_t::DeleteDeviceSpecificResources() noexcept
     DeleteColorDependentResources();
     DeleteSizeDependentResources();
 
+    _PeakBrush.Reset();
+
+#ifdef _DEBUG
     _DebugBrush.Reset();
+#endif
 }
 
 /// <summary>

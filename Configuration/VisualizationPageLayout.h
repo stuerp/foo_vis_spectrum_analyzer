@@ -78,7 +78,7 @@
     #pragma endregion
 
     // Checkbox: Reset on track change
-    #define W_A58    104
+    #define W_A58    106
     #define H_A58    H_CHB
     #define X_A58    X_A53
     #define Y_A58    Y_A54 + H_A54 + IY

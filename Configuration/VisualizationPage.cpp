@@ -19,7 +19,7 @@ BOOL visualization_page_t::OnInitDialog(CWindow w, LPARAM lParam) noexcept
         { IDC_PEAK_MODE, "Determines how to display the peak values." },
         { IDC_HOLD_DURATION, "Determines how long the peak values are held before they fall in seconds." },
         { IDC_FALL_SPEED, "Determines the fall speed of the peak value in dB/s." },
-        { IDC_RESET_PEAKS, "Resets the peaks on track change." },
+        { IDC_RESET_PEAKS, "Enable to resets the peaks on a track change. Useful when you have set the hold duration to 0 which will keep the peaks visible at their maximum value." },
 
         { IDC_LED_MODE, "Renders the spectrum bars Peak/RMS and Balance/Correlation meters as LEDs." },
         { IDC_LED_SIZE, "Specifies the size of a LED in pixels." },

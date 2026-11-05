@@ -1,5 +1,5 @@
 
-/** $VER: SpectrumProcessor.cpp (2026.10.28) P. Stuer - Implements an audio processor for the test visualization. **/
+/** $VER: SpectrumProcessor.cpp (2026.11.05) P. Stuer - Implements an audio processor for the spectrum visualizations. **/
 
 #include <pch.h>
 
@@ -127,6 +127,19 @@ namespace Spectrum
         }
 
         // From here on frequency_band_t::Value is guaranteed to be in the range [0, 1].
+
+        Peak::detector_t PeakDetector
+        {
+            .MaxPeakCount           = 10,
+            .MinValue               = 0.05,
+            .MinValueDifference     = 0.02,
+            .BandSpan               = 4,
+            .MinFrequencyDifference = 25.0,
+            .InterpolateFrequency   = true
+        };
+
+        if (_State._RenderPeaks)
+            Peaks = PeakDetector.Process(std::span<const frequency_band_t> { FrequencyBands });
 /*
     {
         for (auto & fb : FrequencyBands)

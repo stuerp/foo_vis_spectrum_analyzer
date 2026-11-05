@@ -241,6 +241,8 @@ public:
         double _SkewFactor;                                             // [0, 1], Affects any adjustable frequency scaling functions like hyperbolic sine and nth root. Higher values means more linear spectrum (in the case of Avee Player's frequency distribution, exactly linear when this parameter is 1)
         double _Bandwidth;                                              // [0, 64], Distance between low and high frequency boundaries for each band, More useful for constant-Q/variable-Q transforms and Mel/triangular filterbank energies (higher values smooths out the spectrum and reduces the visual noise) than bandpower mode.
 
+        bool _RenderPeaks;                                              // True if the peak frequencies of a spectrum should be rendered.
+
     #pragma endregion
 
     #pragma region Filters

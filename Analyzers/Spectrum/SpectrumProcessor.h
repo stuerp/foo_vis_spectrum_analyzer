@@ -8,6 +8,7 @@
 
 #include "Analyzer.h"
 #include "FrequencyBand.h"
+#include "PeakDetector.h"
 #include "WindowFunctions.h"
 
 #include <sdk/audio_chunk.h>
@@ -64,6 +65,8 @@ public:
     double NyquistFrequency = 0.;
 
     std::unique_ptr<window_function_t> WindowFunction;
+
+    std::vector<Peak::result_t> Peaks;
 
 private:
     std::unique_ptr<analyzer_t> _Analyzer;

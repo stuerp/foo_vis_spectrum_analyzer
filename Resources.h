@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2026.11.04) P. Stuer **/
+/** $VER: Resources.h (2026.11.05) P. Stuer **/
 
 #pragma once
 
@@ -201,6 +201,8 @@
 
 #define IDC_BANDWIDTH                   2232
 #define IDC_BANDWIDTH_SPIN              2234
+
+#define IDC_RENDER_PEAKS                2236
 
 #pragma endregion
 
