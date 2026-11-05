@@ -169,9 +169,10 @@ HRESULT tester_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceConte
 
     if (_State._ColorsHaveChanged || _State._SizeHasChanged)
     {
-        DeleteColorDependentResources();
+        RecalculateSizeDependentParameters();
 
-        Initialize();
+        // Recreate the color resources. Gradient brushes also need the correct size.
+        DeleteColorDependentResources();
 
         hr = CreateColorDependentResources(deviceContext);
 
@@ -180,6 +181,7 @@ HRESULT tester_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceConte
 
         if (_State._SizeHasChanged)
         {
+            // Recreate the size-dependent resources.
             DeleteSizeDependentResources();
 
             hr = CreateSizeDependentResources(deviceContext);
@@ -238,7 +240,7 @@ void tester_t::DeleteColorDependentResources() noexcept
 /// <summary>
 /// Recalculates parameters that are render target and size-sensitive.
 /// </summary>
-void tester_t::Initialize() noexcept
+void tester_t::RecalculateSizeDependentParameters() noexcept
 {
 }
 

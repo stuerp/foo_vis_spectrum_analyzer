@@ -56,7 +56,7 @@ private:
 
     const D2D1_RECT_F & GetClientRect() const noexcept { return _ClientRect; }
 
-    void Initialize() noexcept;
+    void RecalculateSizeDependentParameters() noexcept;
 
     void RenderBars(ID2D1DeviceContext * deviceContext) noexcept;
     void RenderBar(ID2D1DeviceContext * deviceContext, D2D1_RECT_F & rect, const style_t & areaStyle, const style_t & topStyle, double value, double opacity) noexcept;

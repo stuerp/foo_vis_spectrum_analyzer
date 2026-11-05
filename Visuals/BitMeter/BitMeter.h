@@ -45,7 +45,7 @@ public:
     void Configure(graph_options_t * options, audio_processor_t * processor, bool isFirst, bool isLast) noexcept override final;
 
 private:
-    HRESULT CreateDeviceSpecificResources(_In_ ID2D1DeviceContext * deviceContext) noexcept;
+    HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept;
     void DeleteDeviceSpecificResources() noexcept;
 
     HRESULT CreateSizeDependentResources(ID2D1DeviceContext * deviceContext) noexcept;

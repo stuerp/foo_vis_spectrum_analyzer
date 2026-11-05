@@ -243,7 +243,7 @@ HRESULT x_axis_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceConte
     {
         DeleteColorDependentResources();
 
-        Initialize();
+        RecalculateSizeDependentParameters();
 
         hr = CreateColorDependentResources(deviceContext, styleManager);
 
@@ -332,7 +332,7 @@ void x_axis_t::DeleteColorDependentResources() noexcept
 /// <summary>
 /// Recalculates parameters that are render target and size-sensitive.
 /// </summary>
-void x_axis_t::Initialize() noexcept
+void x_axis_t::RecalculateSizeDependentParameters() noexcept
 {
     assert((_Size.width > 0.f) && (_Size.height > 0.f));
 

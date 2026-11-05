@@ -47,7 +47,7 @@ private:
     HRESULT CreateColorDependentResources(ID2D1DeviceContext * deviceContext) noexcept;
     void DeleteColorDependentResources() noexcept;
 
-    void Initialize() noexcept;
+    void RecalculateSizeDependentParameters() noexcept;
 
 private:
     processor_t * _Processor;
