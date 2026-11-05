@@ -123,7 +123,7 @@ void processor_t::Process(const audio_chunk & chunk) noexcept
 /// <summary>
 /// 
 /// </summary>
-void processor_t::UpdatePeaks(bool isStopped) noexcept
+void processor_t::AnimatePeaks(bool isStopped) noexcept
 {
     if (isStopped)
         _Chunk.reset();

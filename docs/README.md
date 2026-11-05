@@ -245,7 +245,7 @@ This visualization uses the following settings:
 
 ##### Goniometer
 
-The goniometer is a specialized version of the oscilloscope in X/Y mode. It uses points instead of lines. The input signal can be filtered into a woofer, mid and tweeter frequency band.
+The goniometer is a specialized version of the oscilloscope in X/Y mode. It uses points instead of lines. The input signal can be filtered into a bass, mid and treble frequency band.
 
 ![Screenshot](assets/Goniometer.png?raw=true "Screenshot")
 
@@ -282,7 +282,7 @@ If, while playing a track, not all of the bits of the mantissa are used that may
 
 Some visualizations can display indicators for the peak values. The following settings determine how those peak indicators are animated.
 
-Set the visualization type to **Bars**, **Peak / RMS** or **Balance / Correlation** to enable these settings.
+Set the visualization type to **Bars**, **Curve**, **Radial Bars**, **Radial Curve**, **Peak / RMS** or **Balance / Correlation** to enable these settings.
 
 `Peak mode`
 
@@ -297,13 +297,13 @@ Determines how the peak indicators behave:
 | Fade Out    | Peaks gradually fade             |
 | Fading AIMP | Combination of AIMP and Fade Out |
 
-`Hold time`
+`Hold duration`
 
 Specifies how long a peak value will be held steady before it starts falling (in seconds).
 
-`Fall rate`
+`Fall speed`
 
-Specifies the rate at which the peak value decreases towards 0 (in dB/s).
+Specifies the rate at which the peak value decreases towards 0 (in dB/s). In peak modes that used fading this setting controls the speed of the fade.
 
 `Reset on track change`
 
@@ -916,6 +916,14 @@ Prevents the mirror image of the spectrum (anything above the Nyquist frequency)
 
 Enable this option to continue visualization when playback is paused.
 
+`Alternate fullscreen mode`
+
+The Default User Interface (DUI) starts a second instance of the component when entering fullscreen mode. This second instance has its own settings which means you have to configure it seperately
+or load the same preset as used in the non-fullscreen version.
+
+Enable this setting to only use one instance. In fullscreen mode you can use the Page Up and Page Down key to switch between monitors. Press the Escape key or doubleclick the left mousebutton to
+exit fullscreen mode.
+
 #### Artwork group
 
 Some visualizations can use artwork to display on the background or to use as a source for a color list. The artwork can come from the playing track or from file location.
@@ -1286,7 +1294,8 @@ Deletes the currently selected preset.
 
 **Q:** Why does the fullscreen version of the component not respect my settings when using DUI?
 
-**A:** In DUI the fullscreen version of the component is a completely new instance with its own settings. You have to configure it separately.
+**A:** The Default User Interface (DUI) starts a second instance of the component when entering fullscreen mode. This second instance has its own settings which means you have to configure it seperately
+or load the same preset as used in the non-fullscreen version. Enable the `Alternate fullscreen mode` to change that behavior.
 
 **Q:** What do the letters of the channel names mean?
 

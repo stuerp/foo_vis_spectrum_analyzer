@@ -87,7 +87,7 @@ void audio_processor_t::Process(const audio_chunk & chunk) noexcept
 /// <summary>
 /// 
 /// </summary>
-void audio_processor_t::UpdatePeaks(bool isStopped) noexcept
+void audio_processor_t::AnimatePeaks(bool isStopped) noexcept
 {
 }
 

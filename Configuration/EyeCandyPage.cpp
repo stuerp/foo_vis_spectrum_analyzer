@@ -127,7 +127,7 @@ void eye_candy_page_t::UpdateEffect() noexcept
 /// </summary>
 void eye_candy_page_t::OnSelectionChanged(UINT notificationCode, int id, CWindow w) noexcept
 {
-    auto ChangedSettings = ConfigurationChanges::RenderLoop;
+    auto ChangedSettings = ConfigurationChanges::Renderer;
 
     auto cb = (CComboBox) w;
 

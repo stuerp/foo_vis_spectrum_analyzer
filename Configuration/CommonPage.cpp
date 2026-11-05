@@ -456,7 +456,7 @@ void common_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
         {
             _State->_ShowToolTipsAlways = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
 
-            ChangedSettings = ConfigurationChanges::RenderLoop;
+            ChangedSettings = ConfigurationChanges::Renderer;
             break;
         }
 
@@ -470,7 +470,7 @@ void common_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
         {
             _State->_VisualizeDuringPause = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
 
-            ChangedSettings = ConfigurationChanges::RenderLoop;
+            ChangedSettings = ConfigurationChanges::Renderer;
             break;
         }
 
@@ -487,7 +487,7 @@ void common_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
 
             UpdateControls();
 
-            ChangedSettings = ConfigurationChanges::RenderLoop;
+            ChangedSettings = ConfigurationChanges::Renderer;
             break;
         }
 

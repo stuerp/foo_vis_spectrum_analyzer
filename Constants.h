@@ -1,5 +1,5 @@
 
-/** $VER: Constants.h (2026.11.04) P. Stuer **/
+/** $VER: Constants.h (2026.11.05) P. Stuer **/
 
 #pragma once
 
@@ -108,32 +108,32 @@ enum class FitMode
 };
 
 // Visualization
-inline constexpr double MinHoldTime =   0.; // s
-inline constexpr double MaxHoldTime =   5.; // s
+inline constexpr double MinHoldDuration =   0.; // s
+inline constexpr double MaxHoldDuration =   5.; // s
 
-inline constexpr double MinFallRate =   0.; // dB/s
-inline constexpr double MaxFallRate = 120.; // dB/s
+inline constexpr double MinFallSpeed    =   0.; // dB/s
+inline constexpr double MaxFallSpeed    = 240.; // dB/s
 
-inline constexpr FLOAT MinLEDSize =  0.f;   // DIPs
-inline constexpr FLOAT MaxLEDSize = 32.f;   // DIPs
+inline constexpr FLOAT MinLEDSize       =  0.f;   // DIPs
+inline constexpr FLOAT MaxLEDSize       = 32.f;   // DIPs
 
-inline constexpr FLOAT MinLEDGap =  0.f;    // DIPs
-inline constexpr FLOAT MaxLEDGap = 32.f;    // DIPs
+inline constexpr FLOAT MinLEDGap        =  0.f;    // DIPs
+inline constexpr FLOAT MaxLEDGap        = 32.f;    // DIPs
 
-inline constexpr double MinRMSWindow = 0.;  // s
-inline constexpr double MaxRMSWindow = 3.;  // s
+inline constexpr double MinRMSWindow    = 0.;  // s
+inline constexpr double MaxRMSWindow    = 3.;  // s
 
-inline constexpr FLOAT MinBarGap =   0.f;   // DIPs
-inline constexpr FLOAT MaxBarGap = std::numeric_limits<FLOAT>::max(); // DIPs
+inline constexpr FLOAT MinBarGap        =   0.f;   // DIPs
+inline constexpr FLOAT MaxBarGap        = std::numeric_limits<FLOAT>::max(); // DIPs
 
-inline constexpr FLOAT MinBarSize =   0.f;  // DIPs
-inline constexpr FLOAT MaxBarSize = std::numeric_limits<FLOAT>::max(); // DIPs
+inline constexpr FLOAT MinBarSize       =   0.f;  // DIPs
+inline constexpr FLOAT MaxBarSize       = std::numeric_limits<FLOAT>::max(); // DIPs
 
-inline constexpr double MinInnerRadius =   0.;  // DIPs
-inline constexpr double MaxInnerRadius = 100.;  // DIPs
+inline constexpr double MinInnerRadius  =   0.;  // DIPs
+inline constexpr double MaxInnerRadius  = 100.;  // DIPs
 
-inline constexpr double MinOuterRadius =   0.;  // DIPs
-inline constexpr double MaxOuterRadius = 100.;  // DIPs
+inline constexpr double MinOuterRadius  =   0.;  // DIPs
+inline constexpr double MaxOuterRadius  = 100.;  // DIPs
 
 inline constexpr double MinAngularVelocity = -360.; // Degrees
 inline constexpr double MaxAngularVelocity =  360.; // Degrees
@@ -435,7 +435,7 @@ enum class VisualElement : uint32_t
     BarLeftRightIndicator       = 30,
     BarMidSideIndicator         = 31,
 
-    Signal                  = 32,
+    Signal                      = 32,
 
     BarSign                     = 35,
     BarMantissa                 = 36,
@@ -853,7 +853,7 @@ enum class ConfigurationChanges : uint32_t
 {
     None = 0u,
 
-    RenderLoop          = 1 << 0, // Configuration change impacts the behavior of the render loop.
+    Renderer            = 1 << 0, // Configuration change impacts the behavior of the renderer.
     Layout              = 1 << 1, // Configuration change impacts the layout of the visualization.
 
     RefreshRate         = 1 << 2,

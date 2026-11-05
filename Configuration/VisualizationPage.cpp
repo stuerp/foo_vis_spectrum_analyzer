@@ -1,5 +1,5 @@
 
-/** $VER: VisualizationPage.cpp (2026.10.07) P. Stuer - Implements a configuration dialog page. **/
+/** $VER: VisualizationPage.cpp (2026.11.05) P. Stuer - Implements a configuration dialog page. **/
 
 #include "pch.h"
 
@@ -17,8 +17,8 @@ BOOL visualization_page_t::OnInitDialog(CWindow w, LPARAM lParam) noexcept
         { IDC_VISUALIZATION, "Selects the type of visualization." },
 
         { IDC_PEAK_MODE, "Determines how to display the peak values." },
-        { IDC_HOLD_TIME, "Determines how long the peak values are held before they fall in seconds." },
-        { IDC_FALL_RATE, "Determines the fall rate of the peak value in dB/s." },
+        { IDC_HOLD_DURATION, "Determines how long the peak values are held before they fall in seconds." },
+        { IDC_FALL_SPEED, "Determines the fall speed of the peak value in dB/s." },
         { IDC_RESET_PEAKS, "Resets the peaks on track change." },
 
         { IDC_LED_MODE, "Renders the spectrum bars Peak/RMS and Balance/Correlation meters as LEDs." },
@@ -110,8 +110,8 @@ void visualization_page_t::InitializeControls() noexcept
 
         w.SetCurSel((int) _State->_PeakMode);
 
-        SetDouble(IDC_HOLD_TIME, _State->_HoldTime, 0, 1);
-        SetDouble(IDC_FALL_RATE, _State->_FallRate, 0, 1);
+        SetDouble(IDC_HOLD_DURATION, _State->_HoldDuration, 0, 1);
+        SetDouble(IDC_FALL_SPEED, _State->_FallSpeed, 0, 1);
 
         SendDlgItemMessageW(IDC_RESET_PEAKS, BM_SETCHECK, _State->_ResetPeaksOnTrackChange);
     }
@@ -264,7 +264,7 @@ void visualization_page_t::UpdateControls() noexcept
 
     const bool IsSpectrogram  = (_State->_VisualizationType == VisualizationType::Spectrogram);
     const bool IsPeakMeter    = (_State->_VisualizationType == VisualizationType::PeakMeter);
-    const bool IsBalanceMeter   = (_State->_VisualizationType == VisualizationType::BalanceMeter);
+    const bool IsBalanceMeter = (_State->_VisualizationType == VisualizationType::BalanceMeter);
     const bool IsOscilloscope = (_State->_VisualizationType == VisualizationType::Oscilloscope);
     const bool IsBitMeter     = (_State->_VisualizationType == VisualizationType::BitMeter);
     const bool IsGoniometer   = (_State->_VisualizationType == VisualizationType::Goniometer);
@@ -279,8 +279,8 @@ void visualization_page_t::UpdateControls() noexcept
     // Peak Indicators
     GetDlgItem(IDC_PEAK_MODE)               .EnableWindow(HasPeaks);
 
-    GetDlgItem(IDC_HOLD_TIME)               .EnableWindow(HasPeaks && (_State->_PeakMode != PeakMode::None));
-    GetDlgItem(IDC_FALL_RATE)               .EnableWindow(HasPeaks && (_State->_PeakMode != PeakMode::None));
+    GetDlgItem(IDC_HOLD_DURATION)           .EnableWindow(HasPeaks                     && (_State->_PeakMode != PeakMode::None));
+    GetDlgItem(IDC_FALL_SPEED)              .EnableWindow((HasPeaks || IsBalanceMeter) && (_State->_PeakMode != PeakMode::None));
 
     GetDlgItem(IDC_RESET_PEAKS)             .EnableWindow(HasPeaks);
 
@@ -393,6 +393,8 @@ void visualization_page_t::OnSelectionChanged(UINT notificationCode, int id, CWi
             _State->_PeakMode = (PeakMode) SelectedIndex;
 
             UpdateControls();
+            ChangedSettings = ConfigurationChanges::Renderer;
+
             break;
         }
 
@@ -429,29 +431,22 @@ void visualization_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
         default:
             return;
 
-        // Bit Meter
-        case IDC_BITS_PER_INTEGER:
-        {
-            if (!SetProperty(_State->_BitsPerInteger, std::clamp((uint8_t) ::_wtoi(Text), MinBitsPerInteger, MaxBitsPerInteger)))
-                return;
-
-            break;
-        }
-
         // Peak indicator
-        case IDC_HOLD_TIME:
+        case IDC_HOLD_DURATION:
         {
-            if (!SetProperty(_State->_HoldTime, std::clamp(::_wtof(Text), MinHoldTime, MaxHoldTime)))
+            if (!SetProperty(_State->_HoldDuration, std::clamp(::_wtof(Text), MinHoldDuration, MaxHoldDuration)))
                 return;
 
+            ChangedSettings = ConfigurationChanges::Renderer;
             break;
         }
 
-        case IDC_FALL_RATE:
+        case IDC_FALL_SPEED:
         {
-            if (!SetProperty(_State->_FallRate, std::clamp(::_wtof(Text), MinFallRate, MaxFallRate)))
+            if (!SetProperty(_State->_FallSpeed, std::clamp(::_wtof(Text), MinFallSpeed, MaxFallSpeed)))
                 return;
 
+            ChangedSettings = ConfigurationChanges::Renderer;
             break;
         }
 
@@ -517,6 +512,15 @@ void visualization_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
         case IDC_MAX_BAR_SIZE:
         {
             if (!SetProperty(_State->_MaxBarSize, std::clamp((FLOAT) ::_wtof(Text), MinBarSize, MaxBarSize)))
+                return;
+
+            break;
+        }
+
+        // Bit Meter
+        case IDC_BITS_PER_INTEGER:
+        {
+            if (!SetProperty(_State->_BitsPerInteger, std::clamp((uint8_t) ::_wtoi(Text), MinBitsPerInteger, MaxBitsPerInteger)))
                 return;
 
             break;
@@ -625,15 +629,19 @@ void visualization_page_t::OnEditLostFocus(UINT code, int id, CWindow) noexcept
             return;
 
         // Peak indicator
-        case IDC_HOLD_TIME:
+        case IDC_HOLD_DURATION:
         {
-            SetDouble(id, _State->_HoldTime, 0, 1);
+            SetDouble(id, _State->_HoldDuration, 0, 1);
+
+            ChangedSettings = ConfigurationChanges::Renderer;
             break;
         }
 
-        case IDC_FALL_RATE:
+        case IDC_FALL_SPEED:
         {
-            SetDouble(id, _State->_FallRate, 0, 1);
+            SetDouble(id, _State->_FallSpeed, 0, 1);
+
+            ChangedSettings = ConfigurationChanges::Renderer;
             break;
         }
 

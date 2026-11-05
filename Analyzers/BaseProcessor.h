@@ -1,5 +1,5 @@
 
-/** $VER: BaseProcessor.h (2026.11.04) P. Stuer **/
+/** $VER: BaseProcessor.h (2026.11.05) P. Stuer **/
 
 #pragma once
 
@@ -20,6 +20,33 @@ struct measurement_t
     std::wstring ChannelName;
 };
 
+enum class ResetOptions
+{
+    Value = 1 << 0,
+    Peak  = 1 << 1,
+
+    All   = Value | Peak
+};
+
+template <typename Enum> constexpr auto ToUnderlying(Enum value) noexcept
+{
+    static_assert(std::is_enum_v<Enum>);
+
+    return static_cast<std::underlying_type_t<Enum>>(value);
+}
+
+constexpr bool IsSet(ResetOptions options, ResetOptions flag) noexcept
+{
+    return (ToUnderlying(options) & ToUnderlying(flag)) != 0;
+}
+
+constexpr bool has_all_flags(ResetOptions options, ResetOptions flags) noexcept
+{
+    const auto Flags = ToUnderlying(flags);
+
+    return (ToUnderlying(options) & Flags) == Flags;
+}
+
 /// <summary>
 /// Represents the analysis of the sample data.
 /// </summary>
@@ -38,10 +65,10 @@ public:
 
     virtual void Configure(const graph_options_t * options) noexcept;
     virtual void Process(const audio_chunk & chunk) noexcept;
+    virtual void AnimatePeaks(bool isStopped) noexcept;
     virtual void Reset() noexcept;
-    virtual void UpdatePeaks(bool isStopped) noexcept;
-    virtual void ResetPeaks() noexcept { }
-    virtual void ResetPeakHoldTimes() noexcept { }
+
+    virtual void ResetMeasurements(ResetOptions options = ResetOptions::All) noexcept { }
 
     static std::unique_ptr<audio_processor_t> Create(state_t & state) noexcept;
 

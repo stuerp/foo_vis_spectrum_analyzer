@@ -378,20 +378,13 @@
 
 #pragma region Visualization
 
-#define IDC_VISUALIZATION_LBL           7100
-#define IDC_VISUALIZATION               7102
+#define IDC_VISUALIZATION               7100
 
 // Peak Indicators
-#define IDC_PEAK_MODE_LBL               7108
 #define IDC_PEAK_MODE                   7110
-
-#define IDC_HOLD_TIME_LBL               7112
-#define IDC_HOLD_TIME                   7114
-
-#define IDC_ACCELERATION_LBL            7116
-#define IDC_FALL_RATE                   7118
-
-#define IDC_RESET_PEAKS                 7119
+#define IDC_HOLD_DURATION               7112
+#define IDC_FALL_SPEED                  7114
+#define IDC_RESET_PEAKS                 7116
 
 // LEDs
 #define IDC_LED_MODE                    7122

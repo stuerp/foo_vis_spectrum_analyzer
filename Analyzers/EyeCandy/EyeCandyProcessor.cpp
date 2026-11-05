@@ -36,7 +36,7 @@ namespace EyeCandy
     /// <summary>
     /// 
     /// </summary>
-    void processor_t::UpdatePeaks(bool isStopped) noexcept
+    void processor_t::AnimatePeaks(bool isStopped) noexcept
     {
     }
 }

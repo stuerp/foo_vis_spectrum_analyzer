@@ -1,5 +1,5 @@
 
-/** $VER: MeteringProcessor.h (2026.11.01) P. Stuer - Implements an audio processor for the metering visualizations. **/
+/** $VER: MeteringProcessor.h (2026.11.05) P. Stuer - Implements an audio processor for the metering visualizations. **/
 
 #pragma once
 
@@ -20,8 +20,8 @@ struct measurement_t : ::measurement_t
 {
     measurement_t(Channels channel, const WCHAR * channelName) noexcept : ::measurement_t(channel, channelName)
     {
-        HoldTime = 0.;
-        FallRate = 0.;
+        HoldDuration = 0.;
+        FallSpeed = 0.;
         Opacity  = 1.;
 
         RMSTotal = 0.;
@@ -35,8 +35,8 @@ struct measurement_t : ::measurement_t
     }
 
     // User settings
-    double HoldTime;            // Peak hold time, in seconds [0, 2]
-    double FallRate;            // Peak fall rate, in dB/s [0, 240]
+    double HoldDuration;            // Peak hold time, in seconds [0, 2]
+    double FallSpeed;            // Peak fall rate, in dB/s [0, 240]
     double Opacity;             // [0, 1]
 
     // Measurements
@@ -67,11 +67,12 @@ public:
     void Configure(const graph_options_t * options) noexcept override final;
     void Reset() noexcept override final;
     void Process(const audio_chunk & chunk) noexcept override final;
-    void UpdatePeaks(bool isStopped) noexcept override final;
+    void AnimatePeaks(bool isStopped) noexcept override final;
+
+    void ResetMeasurements(ResetOptions options) noexcept override final;
 
 private:
     void InitializeMeasurements(uint32_t channelMask) noexcept;
-    void ResetMeasurements() noexcept;
     void ResetRMSDependentValues() noexcept;
 
     double NormalizeLLevelValue(double level) const noexcept

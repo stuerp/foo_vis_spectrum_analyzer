@@ -143,11 +143,11 @@ void uielement_t::ProcessEvents() noexcept
 
         _IsAnalysisTimeInitialized = false;
 
-        if (_RenderState._ResetPeaksOnTrackChange)
-        {
-            for (auto & Graph : _Grid)
-                Graph->_Processor->ResetPeaks();
-        }
+        // Reset the measurements before starting a new track.
+        const auto Options = _RenderState._ResetPeaksOnTrackChange ? ResetOptions::All : ResetOptions::Value;
+
+        for (auto & Graph : _Grid)
+            Graph->_Processor->ResetMeasurements(Options);
 
         _RenderState._IsPaused = false;
 
@@ -167,20 +167,12 @@ void uielement_t::ProcessEvents() noexcept
     {
         _RenderState._PreviousPlaybackTime = 0.;
         _RenderState._TrackTime            = 0.;
-/*
+
+        // Reset the measurements when playback stops.
+        const auto Options = _RenderState._ResetPeaksOnTrackChange ? ResetOptions::All : ResetOptions::Value;
+
         for (auto & Graph : _Grid)
-            Graph->Initialize();
-*/
-        if (_RenderState._ResetPeaksOnTrackChange)
-        {
-            for (auto & Graph : _Grid)
-                Graph->_Processor->ResetPeaks();
-        }
-        else
-        {
-            for (auto & Graph : _Grid)
-                Graph->_Processor->ResetPeakHoldTimes();
-        }
+            Graph->_Processor->ResetMeasurements(Options);
 
         _RenderState._IsPaused = false;
     }
@@ -504,7 +496,7 @@ void uielement_t::Animate() noexcept
     const bool IsStopped = (_RenderState._PreviousPlaybackTime == 0.);
 
     for (auto & Item : _Grid)
-        Item->_Processor->UpdatePeaks(IsStopped);
+        Item->_Processor->AnimatePeaks(IsStopped);
 }
 
 /// <summary>

@@ -673,7 +673,7 @@ void uielement_t::UpdateState(ConfigurationChanges configurationChanges) noexcep
             }
 
             case ConfigurationChanges::None:
-            case ConfigurationChanges::RenderLoop:
+            case ConfigurationChanges::Renderer:
             case ConfigurationChanges::RefreshRate:
             case ConfigurationChanges::Oscilloscope:
             case ConfigurationChanges::Artwork:

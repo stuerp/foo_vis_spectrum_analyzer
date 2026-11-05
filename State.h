@@ -68,8 +68,8 @@ public:
         #pragma region Peaks
 
             PeakMode _PeakMode;
-            double _HoldTime;                                           // Peak hold time, in seconds
-            double _FallRate;                                           // Peak fall rate, in dB/s
+            double _HoldDuration;                                       // Peak hold duraction, in seconds
+            double _FallSpeed;                                          // Peak fall speed, in dB/s
             bool _ResetPeaksOnTrackChange;                              // Reset peaks on track change.
 
         #pragma endregion

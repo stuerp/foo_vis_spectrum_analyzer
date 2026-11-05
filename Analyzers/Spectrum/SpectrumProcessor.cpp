@@ -66,10 +66,7 @@ namespace Spectrum
         if (WindowFunction)
             WindowFunction.reset();
 
-        for (auto & fb : FrequencyBands)
-            fb.Value = 0.;
-
-        ResetPeaks();
+        ResetMeasurements(ResetOptions::All);
     }
 
     /// <summary>
@@ -144,7 +141,8 @@ namespace Spectrum
     /// <summary>
     /// Updates the peak values.
     /// </summary>
-    void processor_t::UpdatePeaks([[maybe_unused]] bool isStopped) noexcept
+#ifdef v2
+    void processor_t::AnimatePeaks(bool) noexcept
     {
         assert(_Options);
 
@@ -152,36 +150,21 @@ namespace Spectrum
 
         _Chrono.Reset();
 
-        if (!std::isfinite(DeltaTime) || DeltaTime <= 0.)
-            return;
-
         const double AmplitudeRange = _Options->_AmplitudeHi - _Options->_AmplitudeLo;
 
-        if (!std::isfinite(AmplitudeRange) || AmplitudeRange <= 0.)
-            return;
-
-        const double HoldDuration = std::max(_State._HoldTime, 0.);
-
-        // Convert dB/s into normalized amplitude units per second.
-        const double FallSpeed = _State._FallRate / AmplitudeRange;
+        const double HoldTime = _State._HoldDuration;// * (double) _State._TargetRefreshRate;
+        const double FallRate = (_State._FallSpeed != 0) ? msc::Map(DeltaTime, 0., AmplitudeRange / _State._FallSpeed, 0., 1.) : 0.;
 
         const bool IsAIMP = (_State._PeakMode == PeakMode::AIMP) || (_State._PeakMode == PeakMode::FadingAIMP);
 
-        constexpr double GravityRampTime = 0.25;
-
-        const double GravityAcceleration = (GravityRampTime > 0.) ? FallSpeed / GravityRampTime : 0.;
-
         for (auto & fb : FrequencyBands)
         {
-            if (fb.Value > fb.PeakValue)
+            if (fb.Value >= fb.PeakValue)
             {
-                // Initialize a new peak value.
-                const double PeakDifference = fb.Value - fb.PeakValue;
-
                 if (IsAIMP)
-                    fb.HoldTime = std::min(fb.HoldTime + (PeakDifference * HoldDuration), HoldDuration); // In seconds
+                    fb.HoldTime += (fb.Value - fb.PeakValue) * HoldTime;
                 else
-                    fb.HoldTime = HoldDuration;
+                    fb.HoldTime = HoldTime;
 
                 fb.PeakValue = fb.Value;
                 fb.FallRate  = 0.;
@@ -193,122 +176,221 @@ namespace Spectrum
             if (fb.PeakValue <= 0.)
                 continue;
 
+            {
+                if (fb.HoldTime > 0.)
+                {
+                    if (IsAIMP)
+                        fb.PeakValue += (fb.HoldTime - std::max(fb.HoldTime - 1., 0.)) / HoldTime;
+
+                    fb.HoldTime--;
+
+                    if (IsAIMP)
+                        fb.HoldTime = std::min(fb.HoldTime, HoldTime);
+                }
+                else
+                {
+                    switch (_State._PeakMode)
+                    {
+                        default:
+
+                        case PeakMode::None:
+                            break;
+
+                        case PeakMode::Classic:
+                        {
+                            constexpr double FallAcceleration = 0.1;
+
+                            fb.FallRate  = std::min(fb.FallRate + FallAcceleration, FallRate);
+                            fb.PeakValue -= fb.FallRate;
+                            break;
+                        }
+
+                        case PeakMode::Gravity:
+                        {
+                            fb.FallRate += FallRate;
+                            fb.PeakValue -= fb.FallRate;
+                            break;
+                        }
+
+                        case PeakMode::FadeOut:
+                        {
+                            fb.FallRate += FallRate;
+
+                            fb.Opacity -= fb.FallRate;
+
+                            if (fb.Opacity <= 0.)
+                                fb.PeakValue = fb.Value;
+                            break;
+                        }
+
+                        case PeakMode::AIMP:
+                        {
+                            fb.FallRate  = FallRate * (1. + (int) (fb.PeakValue < 0.5));
+                            fb.PeakValue -= fb.FallRate;
+                            break;
+                        }
+
+                        case PeakMode::FadingAIMP:
+                        {
+                            fb.FallRate  = FallRate * (1. + (int) (fb.PeakValue < 0.5));
+                            fb.PeakValue -= fb.FallRate;
+
+                            fb.Opacity -= fb.FallRate;
+
+                            if (fb.Opacity <= 0.)
+                                fb.PeakValue = fb.Value;
+                            break;
+                        }
+                    }
+                }
+
+                fb.PeakValue = std::clamp(fb.PeakValue, fb.Value, 1.);
+                fb.Opacity   = std::clamp(fb.Opacity,   0.,       1.);
+            }
+        }
+    }
+#else
+    void processor_t::AnimatePeaks(bool) noexcept
+    {
+        assert(_Options);
+
+        const double DeltaTime = _Chrono.Elapsed();
+
+        _Chrono.Reset();
+
+        constexpr double GravityRampTime = 0.125; // 125 ms. Determine how quickly a peak marker accelerates to the requested fall speed. Lower values mean faster acceleration.
+
+        const double AmplitudeRange      = _Options->_AmplitudeHi - _Options->_AmplitudeLo; // In dB
+        const double HoldDuration        = std::max(_State._HoldDuration, 0.);              // In seconds
+        const double FallSpeed           = _State._FallSpeed / AmplitudeRange;              // In normalized amplitude units per second
+        const double GravityAcceleration = FallSpeed / GravityRampTime;                     // In normalized amplitude units per second squared
+
+        const bool IsAIMP = (_State._PeakMode == PeakMode::AIMP) || (_State._PeakMode == PeakMode::FadingAIMP);
+
+        for (auto & fb : FrequencyBands)
+        {
+            if (fb.Value > fb.PeakValue)
+            {
+                // Initialize a new peak value.
+                const double PeakDifference = fb.Value - fb.PeakValue;
+
+                if (IsAIMP)
+                    fb.HoldDuration = std::min(fb.HoldDuration + (PeakDifference * HoldDuration), HoldDuration); // In seconds
+                else
+                    fb.HoldDuration = HoldDuration;
+
+                fb.PeakValue = fb.Value;
+                fb.FallSpeed = 0.;
+                fb.Opacity   = 1.;
+
+                continue;
+            }
+
+            if (fb.PeakValue <= 0.)
+                continue;
+
             double RemainingTime = DeltaTime;
 
-            if (fb.HoldTime > 0.)
+            if (fb.HoldDuration > 0.)
             {
-                const double HeldTime = std::min(fb.HoldTime, RemainingTime);
+                const double HeldTime = std::min(fb.HoldDuration, RemainingTime);
 
-                if (IsAIMP && HoldDuration > 0.)
+                if (IsAIMP && (HoldDuration > 0.))
                     fb.PeakValue += HeldTime / HoldDuration;
 
-                fb.HoldTime -= HeldTime;
-
+                fb.HoldDuration   -= HeldTime;
                 RemainingTime -= HeldTime;
             }
 
-            if (RemainingTime > 0. && fb.HoldTime <= 0.)
+            if ((RemainingTime > 0.) && (fb.HoldDuration <= 0.))
             {
                 switch (_State._PeakMode)
                 {
                     default:
                     case PeakMode::None:
                     {
-                        fb.PeakValue = fb.Value;
-                        fb.HoldTime  = 0.0;
-                        fb.FallRate  = 0.0;
-                        fb.Opacity   = 0.0;
+                        fb.PeakValue    = fb.Value;
+                        fb.HoldDuration = 0.;
+                        fb.FallSpeed    = 0.;
+                        fb.Opacity      = 0.;
                         break;
                     }
 
                     case PeakMode::Classic:
                     {
-                        fb.FallRate   = FallSpeed; // In normalized units/s
-                        fb.PeakValue -= fb.FallRate * RemainingTime;
+                        fb.FallSpeed  = FallSpeed; // In normalized units/s
+                        fb.PeakValue -= fb.FallSpeed * RemainingTime;
                         break;
                     }
 
                     case PeakMode::Gravity:
                     {
-                        fb.PeakValue -= (fb.FallRate * RemainingTime) + (GravityAcceleration * RemainingTime * RemainingTime / 2.);
-                        fb.FallRate  += GravityAcceleration * RemainingTime;
+                        // Distance while accelerating: d = v0 * t + 0.5 *a * t^2
+                        fb.PeakValue -= (fb.FallSpeed * RemainingTime) + (GravityAcceleration * RemainingTime * RemainingTime / 2.);
+                        fb.FallSpeed += GravityAcceleration * RemainingTime;
                         break;
                     }
 
+                    // The peak marker remains stationary and fades away at a rate derived from the amplitude range and the fall speed.
                     case PeakMode::FadeOut:
                     {
-                        fb.PeakValue -= fb.FallRate * RemainingTime;
-                        fb.Opacity -= FallSpeed * RemainingTime;
+                        fb.Opacity -= FallSpeed * RemainingTime; // Fade time-based
 
                         if (fb.Opacity <= 0.)
-                        {
                             fb.PeakValue = fb.Value;
-                            fb.Opacity   = 0.;
-                            fb.FallRate  = 0.;
-                        }
 
                         break;
                     }
 
                     case PeakMode::AIMP:
                     {
-                        const double SpeedMultiplier = (fb.PeakValue < 0.5) ? 2. : 1.;
+                        const double SpeedMultiplier = (fb.PeakValue < 0.5) ? 2. : 1.; // Double the speed when falling below 50%
 
-                        fb.FallRate   = FallSpeed * SpeedMultiplier;
-                        fb.PeakValue -= fb.FallRate * RemainingTime;
+                        fb.FallSpeed  = FallSpeed * SpeedMultiplier;
+
+                        const double Distance = fb.FallSpeed * RemainingTime;
+
+                        fb.PeakValue -= Distance;
                         break;
                     }
 
                     case PeakMode::FadingAIMP:
                     {
-                        const double SpeedMultiplier = (fb.PeakValue < 0.5) ? 2. : 1.;
+                        const double SpeedMultiplier = (fb.PeakValue < 0.5) ? 2. : 1.; // Double the speed when falling below 50%
 
-                        fb.FallRate = FallSpeed * SpeedMultiplier;
+                        fb.FallSpeed = FallSpeed * SpeedMultiplier;
 
-                        const double Distance = fb.FallRate * RemainingTime;
+                        const double Distance = fb.FallSpeed * RemainingTime;
 
                         fb.PeakValue -= Distance;
-                        fb.Opacity   -= Distance;
+                        fb.Opacity   -= Distance; // Fade at the requested movement rate
 
                         if (fb.Opacity <= 0.)
-                        {
                             fb.PeakValue = fb.Value;
-                            fb.Opacity   = 0.;
-                            fb.FallRate  = 0.;
-                        }
 
                         break;
                     }
                 }
             }
 
-            fb.Opacity   = std::clamp(fb.Opacity,   0.,       1.);
             fb.PeakValue = std::clamp(fb.PeakValue, fb.Value, 1.);
+            fb.Opacity   = std::clamp(fb.Opacity,   0.,       1.);
         }
     }
+#endif
 
     /// <summary>
-    /// Resets the FFT peaks.
+    /// Selectively resets the measurements of this processor.
     /// </summary>
-    void processor_t::ResetPeaks() noexcept
+    void processor_t::ResetMeasurements(ResetOptions options) noexcept
     {
         for (auto & fb : FrequencyBands)
         {
-            fb.PeakValue = 0.;
-            fb.FallRate  = 0.;
-            fb.Opacity   = 1.;
-        }
-    }
+            if (IsSet(options, ResetOptions::Value))
+                fb.Value = 0.;
 
-    /// <summary>
-    /// 
-    /// </summary>
-    void processor_t::ResetPeakHoldTimes() noexcept
-    {
-        for (auto & fb : FrequencyBands)
-        {
-            fb.Value    = 0.;
-            fb.HoldTime = 0.;
+            if (IsSet(options, ResetOptions::Peak))
+                fb.PeakValue = 0.;
         }
     }
 

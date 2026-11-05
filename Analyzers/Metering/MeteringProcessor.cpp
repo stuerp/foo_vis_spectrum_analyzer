@@ -1,5 +1,5 @@
 
-/** $VER: MeteringProcessor.cpp (2026.11.01) P. Stuer - Implements an audio processor for the metering visualization. **/
+/** $VER: MeteringProcessor.cpp (2026.11.05) P. Stuer - Implements an audio processor for the metering visualization. **/
 
 #include <pch.h>
 
@@ -25,7 +25,7 @@ namespace Metering
 
         // Peak/RMS Meter
         {
-            ResetMeasurements();
+            ResetMeasurements(ResetOptions::Value);
             ResetRMSDependentValues();
 
             InitializeMeasurements((uint32_t) Channels::ConfigStereo);
@@ -222,21 +222,24 @@ namespace Metering
     /// <summary>
     /// Updates the peak values.
     /// </summary>
-    void processor_t::UpdatePeaks(bool isStopped) noexcept
+#ifdef v1
+    void processor_t::AnimatePeaks(bool isStopped) noexcept
     {
         assert(_Options);
 
         const double DeltaTime = _Chrono.Elapsed();
 
-        const double AmplitudeRange = _Options->_AmplitudeHi - _Options->_AmplitudeLo;
-
-        const double HoldTime = _State._HoldTime * (double) _State._TargetRefreshRate;
-        const double FallRate = (_State._FallRate != 0) ? msc::Map(DeltaTime, 0., AmplitudeRange / _State._FallRate, 0., 1.) : 0.;
-
-        const bool IsAIMP = (_State._PeakMode == PeakMode::AIMP) || (_State._PeakMode == PeakMode::FadingAIMP);
+        _Chrono.Reset();
 
         if (_State._VisualizationType == VisualizationType::PeakMeter)
         {
+            const double AmplitudeRange = _Options->_AmplitudeHi - _Options->_AmplitudeLo;
+
+            const double HoldTime = _State._HoldDuration * (double) _State._TargetRefreshRate;
+            const double FallRate = (_State._FallSpeed != 0) ? msc::Map(DeltaTime, 0., AmplitudeRange / _State._FallSpeed, 0., 1.) : 0.;
+
+            const bool IsAIMP = (_State._PeakMode == PeakMode::AIMP) || (_State._PeakMode == PeakMode::FadingAIMP);
+
             // Animate the smoothed peak and RMS values.
             for (auto & m : _Measurements)
             {
@@ -321,28 +324,180 @@ namespace Metering
             }
         }
         else
-        if (_State._VisualizationType == VisualizationType::BalanceMeter)
+        if ((_State._VisualizationType == VisualizationType::BalanceMeter) && isStopped)
         {
-            if (isStopped)
-            {
-                const double Delta = 0.005;
+            const double Delta = 0.005;
 
-                if (_Balance > 0.5)
-                    _Balance = std::clamp(_Balance - Delta, 0.5, 1.0);
-                else
-                if (_Balance < 0.5)
-                    _Balance = std::clamp(_Balance + Delta, 0.0, 0.5);
+            if (_Balance > 0.5)
+                _Balance = std::clamp(_Balance - Delta, 0.5, 1.0);
+            else
+            if (_Balance < 0.5)
+                _Balance = std::clamp(_Balance + Delta, 0.0, 0.5);
 
-                if (_Phase > 0.5)
-                    _Phase = std::clamp(_Phase - Delta, 0.5, 1.0);
-                else
-                if (_Phase < 0.5)
-                    _Phase = std::clamp(_Phase + Delta, 0.0, 0.5);
-            }
+            if (_Phase > 0.5)
+                _Phase = std::clamp(_Phase - Delta, 0.5, 1.0);
+            else
+            if (_Phase < 0.5)
+                _Phase = std::clamp(_Phase + Delta, 0.0, 0.5);
         }
+    }
+#else
+    void processor_t::AnimatePeaks(bool isStopped) noexcept
+    {
+        assert(_Options);
+
+        const double DeltaTime = _Chrono.Elapsed();
 
         _Chrono.Reset();
+
+        constexpr double GravityRampTime = 0.125; // In seconds
+
+        const double AmplitudeRange      = _Options->_AmplitudeHi - _Options->_AmplitudeLo;  // In dB
+        const double HoldDuration        = std::max(_State._HoldDuration, 0.);               // In seconds
+        const double FallSpeed           = std::max(_State._FallSpeed, 0.) / AmplitudeRange; // In normalized units per second
+        const double GravityAcceleration = FallSpeed / GravityRampTime;                      // In normalized units per second squared
+
+        if (_State._VisualizationType == VisualizationType::PeakMeter)
+        {
+            const bool IsAIMP = (_State._PeakMode == PeakMode::AIMP) || (_State._PeakMode == PeakMode::FadingAIMP);
+
+            for (auto & m : _Measurements)
+            {
+                if (m.NormalizedPeak > m.MaxNormalizedPeak)
+                {
+                    // Initialize a new peak.
+                    const double PeakDifference = m.NormalizedPeak - m.MaxNormalizedPeak;
+
+                    if (IsAIMP)
+                        m.HoldDuration = std::min(m.HoldDuration + PeakDifference * HoldDuration, HoldDuration);
+                    else
+                        m.HoldDuration = HoldDuration;
+
+                    m.MaxNormalizedPeak = m.NormalizedPeak;
+                    m.FallSpeed         = 0.;
+                    m.Opacity           = 1.;
+
+                    continue;
+                }
+
+                double RemainingTime = DeltaTime;
+
+                // Process the hold period in seconds.
+                if (m.HoldDuration > 0.)
+                {
+                    const double HeldTime = std::min(m.HoldDuration, RemainingTime);
+
+                    if (IsAIMP && (HoldDuration > 0.))
+                        m.MaxNormalizedPeak += HeldTime / HoldDuration;
+
+                    m.HoldDuration -= HeldTime;
+                    RemainingTime  -= HeldTime;
+                }
+
+                if ((RemainingTime > 0.) && (m.HoldDuration <= 0.))
+                {
+                    switch (_State._PeakMode)
+                    {
+                        default:
+                        case PeakMode::None:
+                        {
+                            m.MaxNormalizedPeak = m.NormalizedPeak;
+                            m.HoldDuration          = 0.;
+                            m.FallSpeed          = 0.;
+                            m.Opacity           = 0.;
+                            break;
+                        }
+
+                        case PeakMode::Classic:
+                        {
+                            m.FallSpeed = FallSpeed;
+
+                            m.MaxNormalizedPeak -= m.FallSpeed * RemainingTime;
+
+                            break;
+                        }
+
+                        case PeakMode::Gravity:
+                        {
+                            // Distance while accelerating: d = v0 * t + 0.5 *a * t^2
+                            m.MaxNormalizedPeak -= (m.FallSpeed * RemainingTime) + (GravityAcceleration * RemainingTime * RemainingTime / 2.);
+                            m.FallSpeed         += GravityAcceleration * RemainingTime;
+                            break;
+                        }
+
+                        // The peak marker remains stationary and fades.
+                        case PeakMode::FadeOut:
+                        {
+                            m.Opacity -= FallSpeed * RemainingTime;
+
+                            if (m.Opacity <= 0.)
+                            {
+                                m.MaxNormalizedPeak = m.NormalizedPeak;
+                                m.FallSpeed         = 0.;
+                                m.Opacity           = 0.;
+                            }
+
+                            break;
+                        }
+
+                        case PeakMode::AIMP:
+                        {
+                            const double SpeedMultiplier = (m.MaxNormalizedPeak < 0.5) ? 2. : 1.;
+
+                            m.FallSpeed = FallSpeed * SpeedMultiplier;
+
+                            const double Distance = m.FallSpeed * RemainingTime;
+
+                            m.MaxNormalizedPeak -= Distance;
+                            break;
+                        }
+
+                        case PeakMode::FadingAIMP:
+                        {
+                            const double SpeedMultiplier = (m.MaxNormalizedPeak < 0.5) ? 2. : 1.;
+
+                            m.FallSpeed = FallSpeed * SpeedMultiplier;
+
+                            const double Distance = m.FallSpeed * RemainingTime;
+
+                            m.MaxNormalizedPeak -= Distance;
+                            m.Opacity           -= Distance;
+
+                            if (m.Opacity <= 0.)
+                            {
+                                m.MaxNormalizedPeak = m.NormalizedPeak;
+                                m.FallSpeed         = 0.;
+                                m.Opacity           = 0.;
+                            }
+
+                            break;
+                        }
+                    }
+                }
+
+                m.MaxNormalizedPeak = std::clamp(m.MaxNormalizedPeak, m.NormalizedPeak, 1.);
+                m.Opacity           = std::clamp(m.Opacity, 0., 1.);
+            }
+        }
+        else
+        if ((_State._VisualizationType == VisualizationType::BalanceMeter) && isStopped)
+        {
+            const double Distance = FallSpeed * DeltaTime;
+
+            if (_Balance > 0.5)
+                _Balance = std::max(_Balance - Distance, 0.5);
+            else
+            if (_Balance < 0.5)
+                _Balance = std::min(_Balance + Distance, 0.5);
+
+            if (_Phase > 0.5)
+                _Phase = std::max(_Phase - Distance, 0.5);
+            else
+            if (_Phase < 0.5)
+                _Phase = std::min(_Phase + Distance, 0.5);
+        }
     }
+#endif
 
     /// <summary>
     /// Initializes the peak measurements before processing an audio chunk.
@@ -387,8 +542,11 @@ namespace Metering
     /// <summary>
     /// Resets the measurements.
     /// </summary>
-    void processor_t::ResetMeasurements() noexcept
+    void processor_t::ResetMeasurements(ResetOptions options) noexcept
     {
+        if (!IsSet(options, ResetOptions::Value))
+            return;
+
         for (auto & m : _Measurements)
         {
             m.Peak =

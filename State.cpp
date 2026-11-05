@@ -1,5 +1,5 @@
 
-/** $VER: State.cpp (2026.11.04) P. Stuer **/
+/** $VER: State.cpp (2026.11.05) P. Stuer **/
 
 #include "pch.h"
 #include "State.h"
@@ -268,9 +268,9 @@ void state_t::Reset() noexcept
 
     _HorizontalGradient_Deprecated = false;
 
-    _PeakMode = PeakMode::Classic;
-    _HoldTime = .5; // s
-    _FallRate = 20; // dB/s
+    _PeakMode                = PeakMode::Classic;
+    _HoldDuration                = .5; // s
+    _FallSpeed               = 20; // dB/s
     _ResetPeaksOnTrackChange = false;
 
     // Radial Bars
@@ -579,9 +579,9 @@ state_t & state_t::operator=(const state_t & other) noexcept
 
 //  _HorizontalGradient_Deprecated = other._HorizontalGradient_Deprecated;
 
-    _PeakMode = other._PeakMode;
-    _HoldTime = other._HoldTime;
-    _FallRate = other._FallRate;
+    _PeakMode                = other._PeakMode;
+    _HoldDuration                = other._HoldDuration;
+    _FallSpeed               = other._FallSpeed;
     _ResetPeaksOnTrackChange = other._ResetPeaksOnTrackChange;
 
     // Radial Bars
@@ -760,13 +760,13 @@ void state_t::Read(stream_reader * stream, size_t size, abort_callback & abortHa
         stream->read(&_DrawBandBackground_Deprecated, sizeof(_DrawBandBackground_Deprecated), abortHandler);
 
         stream->read(&_PeakMode, sizeof(_PeakMode), abortHandler);
-        stream->read(&_HoldTime, sizeof(_HoldTime), abortHandler);
-        stream->read(&_FallRate, sizeof(_FallRate), abortHandler);
+        stream->read(&_HoldDuration, sizeof(_HoldDuration), abortHandler);
+        stream->read(&_FallSpeed, sizeof(_FallSpeed), abortHandler);
 
         if (Version < 36)
         {
-            _HoldTime = msc::Map(_HoldTime, 0., 120., MinHoldTime, MaxHoldTime);
-            _FallRate = msc::Map(_FallRate, 0.,   2., MinFallRate, MaxFallRate);
+            _HoldDuration = msc::Map(_HoldDuration, 0., 120., MinHoldDuration, MaxHoldDuration);
+            _FallSpeed    = msc::Map(_FallSpeed,    0.,   2., MinFallSpeed,    MaxFallSpeed);
         }
 
     #pragma endregion
@@ -1177,8 +1177,8 @@ void state_t::Write(stream_writer * stream, abort_callback & abortHandler, bool 
         stream->write(&_DrawBandBackground_Deprecated, sizeof(_DrawBandBackground_Deprecated), abortHandler);
 
         stream->write(&_PeakMode, sizeof(_PeakMode), abortHandler);
-        stream->write(&_HoldTime, sizeof(_HoldTime), abortHandler);
-        stream->write(&_FallRate, sizeof(_FallRate), abortHandler);
+        stream->write(&_HoldDuration, sizeof(_HoldDuration), abortHandler);
+        stream->write(&_FallSpeed, sizeof(_FallSpeed), abortHandler);
 
         #pragma endregion
 
@@ -1473,18 +1473,18 @@ void state_t::FromJSON(const char * data, size_t size, bool isPreset)
 
     const auto & PeakIndicators = Object.value("peakIndicators", json::object());
     {
-        _PeakMode = std::clamp(PeakIndicators.value("mode",     _PeakMode), PeakMode::Min, PeakMode::Max);
-        _HoldTime = std::clamp(PeakIndicators.value("holdTime", _HoldTime), MinHoldTime, MaxHoldTime);
+        _PeakMode     = std::clamp(PeakIndicators.value("mode",     _PeakMode), PeakMode::Min, PeakMode::Max);
+        _HoldDuration = std::clamp(PeakIndicators.value("holdTime", _HoldDuration), MinHoldDuration, MaxHoldDuration);
 
         if (SchemaVersion < 2)
         {
-            _FallRate = PeakIndicators.value("acceleration", _FallRate);
+            _FallSpeed = PeakIndicators.value("acceleration", _FallSpeed);
 
-            _HoldTime = msc::Map(_HoldTime, 0., 120., MinHoldTime, MaxHoldTime);
-            _FallRate = msc::Map(_FallRate, 0.,   2., MinFallRate, MaxFallRate);
+            _HoldDuration = msc::Map(_HoldDuration, 0., 120., MinHoldDuration, MaxHoldDuration);
+            _FallSpeed    = msc::Map(_FallSpeed,    0.,   2., MinFallSpeed,    MaxFallSpeed);
         }
         else
-            _FallRate = std::clamp(PeakIndicators.value("fallRate", _FallRate), MinFallRate, MaxFallRate);
+            _FallSpeed = std::clamp(PeakIndicators.value("fallRate", _FallSpeed), MinFallSpeed, MaxFallSpeed);
 
         _ResetPeaksOnTrackChange = PeakIndicators.value("resetOnTrackChange", _ResetPeaksOnTrackChange);
     }
@@ -1795,8 +1795,8 @@ json state_t::ToJSON(bool isPreset) const
             "peakIndicators", json::object
             ({
                 { "mode", _PeakMode },
-                { "holdTime", _HoldTime },
-                { "fallRate", _FallRate },
+                { "holdTime", _HoldDuration },
+                { "fallRate", _FallSpeed },
                 { "resetOnTrackChange", _ResetPeaksOnTrackChange },
             })
         ),

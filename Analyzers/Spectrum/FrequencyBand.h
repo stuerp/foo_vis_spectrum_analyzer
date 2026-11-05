@@ -15,23 +15,23 @@
 
 struct frequency_band_t
 {
-    frequency_band_t() noexcept : Magnitude(), Value(), PeakValue(), Low(), Center(), High(), HoldTime(), FallRate(), Opacity(1.) { }
+    frequency_band_t() noexcept : Magnitude(), Value(), PeakValue(), Low(), Center(), High(), HoldDuration(), FallSpeed(), Opacity(1.) { }
 
-    frequency_band_t(double l, double c, double h) noexcept : Magnitude(), Value(), PeakValue(), Low(l), Center(c), High(h), HoldTime(), FallRate(), Opacity(1.) { }
+    frequency_band_t(double l, double c, double h) noexcept : Magnitude(), Value(), PeakValue(), Low(l), Center(c), High(h), HoldDuration(), FallSpeed(), Opacity(1.) { }
 
-    double Magnitude;   // The aggregated magnitude (Power) for this frequency band.
+    double Magnitude;       // The aggregated magnitude (Power) for this frequency band.
 
-    double Value;       // [0, 1], Normalized magnitude / power
-    double PeakValue;   // [0, 1], Peak normalized magnitude / power
+    double Value;           // [0, 1], Normalized magnitude / power
+    double PeakValue;       // [0, 1], Peak normalized magnitude / power
 
-    double Low;         // Hz, Low frequency of this band
-    double Center;      // Hz, Center frequency of this band
-    double High;        // Hz, High frequency of this band
+    double Low;             // Hz, Low frequency of this band
+    double Center;          // Hz, Center frequency of this band
+    double High;            // Hz, High frequency of this band
 
-    double HoldTime;    // Time to hold the current peak value (in s)
-    double FallRate;    // Rate at which the current peak value decays (in dB/s)
+    double HoldDuration;    // Time to hold the current peak value (in s)
+    double FallSpeed;       // Rate at which the current peak value decays (in dB/s)
 
-    double Opacity;     // [0, 1], Opacity used to draw the peak normalized magnitude / power indicator
+    double Opacity;         // [0, 1], Opacity used to draw the peak normalized magnitude / power indicator
 
     WCHAR Label[32];
     bool HasDarkBackground;
