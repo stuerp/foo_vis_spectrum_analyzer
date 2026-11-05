@@ -106,6 +106,7 @@ v0.14.0.0-alpha5, 2026-11-xx
   - Enable it using the configuration dialog on the Common page.
   - Double click the left mouse button to enter fullscreen mode. Doubleclick again or press Escape to exit.
   - You can use the Page Up and Page Down key to move the window between monitors.
+- New: Don't render anything to reduce CPU usage when component window is completely covered.
 - New: Balance / Correlation Meter uses the Fall Speed setting instead of a fixed decay speed.
 - New: Eye Candy effects: Rotozoomer, Dither Field, Flip Dot Matrix, Hidden-line Landscape, Interference Moiré, Flower Scope and Harmonic Harp.
   - I really like how the Harmonic Harp effect turned out.

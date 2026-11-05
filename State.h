@@ -61,6 +61,7 @@ public:
 #endif
 
     int64_t _SleepTime;                                                 // Number of μs that the render thread is put to sleep to yield to the UI thread.
+    int64_t _ProbeTime;                                                 // Number of μs between probes to detect is the window is fully covered.
 
     bool _ShowFrameCounter;
     bool _UseHardwareRendering;                                         // Obsolete

@@ -45,8 +45,9 @@ void state_t::Reset() noexcept
     _Bounds = { };
     _PageIndex = 0;
 
-    _TargetRefreshRate = 60; // Hz
-    _SleepTime = 200; // μs
+    _TargetRefreshRate  = 60;       // Hz
+    _SleepTime          = 200;      // μs
+    _ProbeTime          = 500'000;  // μs
 
     _UseHardwareRendering = true;
     _UseAntialiasing = true;
