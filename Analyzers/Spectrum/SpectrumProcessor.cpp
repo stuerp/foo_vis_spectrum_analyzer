@@ -237,6 +237,7 @@ namespace Spectrum
 
                     case PeakMode::FadeOut:
                     {
+                        fb.PeakValue -= fb.FallRate * RemainingTime;
                         fb.Opacity -= FallSpeed * RemainingTime;
 
                         if (fb.Opacity <= 0.)
