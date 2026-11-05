@@ -635,7 +635,7 @@ void uielement_t::UpdateState(ConfigurationChanges configurationChanges) noexcep
 
                 // Create the graphs.
                 {
-                    const bool OverlapGraphs = _RenderState._OverlapGraphs && ((_RenderState._VisualizationType == VisualizationType::Bars) || (_RenderState._VisualizationType == VisualizationType::Curve) || (_RenderState._VisualizationType == VisualizationType::RadialBars) || (_RenderState._VisualizationType == VisualizationType::RadialCurve));
+                    const bool OverlapGraphs = _RenderState.OverlapGraphs();
 
                     _Grid.Initialize(_RenderState._GridRowCount, _RenderState._GridColumnCount, _RenderState._VerticalLayout, OverlapGraphs);
 

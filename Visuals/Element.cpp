@@ -57,7 +57,7 @@ void element_t::ResetTransform(ID2D1DeviceContext * deviceContext) const noexcep
 }
 
 /// <summary>
-/// Returns true of the specified rectangle overlap vertically (while ignoring the horizontal position).
+/// Returns true of the specified rectangles overlap vertically (while ignoring the horizontal position).
 /// </summary>
 bool element_t::IsOverlappingHorizontally(const D2D1_RECT_F & a, const D2D1_RECT_F & b) noexcept
 {
@@ -65,7 +65,7 @@ bool element_t::IsOverlappingHorizontally(const D2D1_RECT_F & a, const D2D1_RECT
 }
 
 /// <summary>
-/// Returns true of the specified rectangle overlap vertically (while ignoring the horizontal position).
+/// Returns true of the specified rectangles overlap vertically (while ignoring the horizontal position).
 /// </summary>
 bool element_t::IsOverlappingVertically(const D2D1_RECT_F & a, const D2D1_RECT_F & b) noexcept
 {

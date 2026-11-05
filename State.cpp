@@ -217,10 +217,10 @@ void state_t::Reset() noexcept
 
     _GraphOptions.push_back(graph_options_t(L"Stereo"));
 
-    _GridRowCount = 1;
+    _GridRowCount    = 1;
     _GridColumnCount = 1;
-    _VerticalLayout = false;
-    _OverlapGraphs = false;
+    _VerticalLayout  = false;
+    _OverlapGraphs   = false;
 
     _ChannelOrder =
     {
@@ -552,12 +552,12 @@ state_t & state_t::operator=(const state_t & other) noexcept
 
     #pragma region Graphs
 
-    _GraphOptions = other._GraphOptions;
+    _GraphOptions    = other._GraphOptions;
 
-    _GridRowCount = other._GridRowCount;
+    _GridRowCount    = other._GridRowCount;
     _GridColumnCount = other._GridColumnCount;
-    _VerticalLayout = other._VerticalLayout;
-    _OverlapGraphs = other._OverlapGraphs;
+    _VerticalLayout  = other._VerticalLayout;
+    _OverlapGraphs   = other._OverlapGraphs;
 
     _ChannelOrder = other._ChannelOrder;
 

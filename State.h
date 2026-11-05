@@ -1,5 +1,5 @@
 
-/** $VER: State.h (2026.11.04) P. Stuer **/
+/** $VER: State.h (2026.11.05) P. Stuer **/
 
 #pragma once
 
@@ -41,6 +41,13 @@ public:
     bool IsSpectrumAnalyzer() const noexcept;
     bool IsSlidingWindowTransform() const noexcept;
     bool IsOscilloscope() const noexcept;
+
+    bool OverlapGraphs() const noexcept
+    {
+        return _OverlapGraphs && ((_VisualizationType == VisualizationType::Bars) || (_VisualizationType == VisualizationType::Curve) ||
+                                  (_VisualizationType == VisualizationType::RadialBars) || (_VisualizationType == VisualizationType::RadialCurve) ||
+                                  (_VisualizationType == VisualizationType::Oscilloscope));
+    }
 
 public:
     // Configuration Dialog

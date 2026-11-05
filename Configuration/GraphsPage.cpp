@@ -303,7 +303,7 @@ void graphs_page_t::UpdateControls() noexcept
 
     /* Overlap graphs **/
 
-    const bool SupportsOverlapGraphs = (_State->_GraphOptions.size() > 1) && !(IsPeakMeter || IsBalanceMeter || IsOscilloscope || IsGoniometer || IsBitMeter);
+    const bool SupportsOverlapGraphs = (_State->_GraphOptions.size() > 1) && !(IsPeakMeter || IsBalanceMeter || IsGoniometer || IsBitMeter);
 
     GetDlgItem(IDC_OVERLAP_GRAPHS).EnableWindow(SupportsOverlapGraphs);
 

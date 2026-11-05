@@ -77,19 +77,15 @@ void oscilloscope_t::Configure(graph_options_t * options, audio_processor_t * pr
 /// </summary>
 void oscilloscope_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 {
+    // Bail out if no audio is playing. We need the channel count and configuration to draw the axes.
+    if (_Processor->_Chunk.is_empty())
+        return;
+
+    if (_GraphOptions->HasXAxis() && (_ChunkDuration != _Processor->_Chunk.get_duration()))
     {
-        const size_t FrameCount     = _Processor->_Chunk.get_sample_count();     // get_sample_count() actually returns the number of frames.
-        const uint32_t ChannelCount = _Processor->_Chunk.get_channel_count();
+        _StaticContext.Reset();
 
-        // Bail out if no audio is playing. We need the channel count and configuration to draw the axes.
-        if ((FrameCount == 0) || (ChannelCount == 0))
-            return;
-
-        if (_GraphOptions->HasXAxis() && (_ChunkDuration != _Processor->_Chunk.get_duration()))
-        {
-            _StaticContext.Reset();
-            _AxesCount = 0;
-        }
+        _AxesCount = 0;
     }
 
     HRESULT hr = CreateDeviceSpecificResources(deviceContext);
@@ -190,6 +186,10 @@ void oscilloscope_t::Render(ID2D1DeviceContext * deviceContext) noexcept
     {
         // Draw the static content.
         {
+            const D2D1_MATRIX_3X2_F Translate = D2D1::Matrix3x2F::Translation(_Rect.left, _Rect.top);
+
+            deviceContext->SetTransform(Translate);
+
             deviceContext->DrawImage(_StaticContext.Get());
         }
 
