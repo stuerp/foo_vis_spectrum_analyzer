@@ -163,7 +163,7 @@ namespace Spectrum
         const double HoldDuration = std::max(_State._HoldTime, 0.);
 
         // Convert dB/s into normalized amplitude units per second.
-        const double FallSpeed = (_State._FallRate > 0.) ? _State._FallRate / AmplitudeRange : 0.;
+        const double FallSpeed = _State._FallRate / AmplitudeRange;
 
         const bool IsAIMP = (_State._PeakMode == PeakMode::AIMP) || (_State._PeakMode == PeakMode::FadingAIMP);
 
@@ -173,18 +173,15 @@ namespace Spectrum
 
         for (auto & fb : FrequencyBands)
         {
-            if (fb.Value >= fb.PeakValue)
+            if (fb.Value > fb.PeakValue)
             {
+                // Initialize a new peak value.
                 const double PeakDifference = fb.Value - fb.PeakValue;
 
                 if (IsAIMP)
-                {
-                    fb.HoldTime = std::min(fb.HoldTime + PeakDifference * HoldDuration, HoldDuration); // In seconds
-                }
+                    fb.HoldTime = std::min(fb.HoldTime + (PeakDifference * HoldDuration), HoldDuration); // In seconds
                 else
-                {
                     fb.HoldTime = HoldDuration;
-                }
 
                 fb.PeakValue = fb.Value;
                 fb.FallRate  = 0.;
@@ -192,6 +189,9 @@ namespace Spectrum
 
                 continue;
             }
+
+            if (fb.PeakValue <= 0.)
+                continue;
 
             double RemainingTime = DeltaTime;
 
@@ -213,7 +213,13 @@ namespace Spectrum
                 {
                     default:
                     case PeakMode::None:
+                    {
+                        fb.PeakValue = fb.Value;
+                        fb.HoldTime  = 0.0;
+                        fb.FallRate  = 0.0;
+                        fb.Opacity   = 0.0;
                         break;
+                    }
 
                     case PeakMode::Classic:
                     {
@@ -224,7 +230,7 @@ namespace Spectrum
 
                     case PeakMode::Gravity:
                     {
-                        fb.PeakValue -= fb.FallRate * RemainingTime + 0.5 * GravityAcceleration * RemainingTime * RemainingTime;
+                        fb.PeakValue -= (fb.FallRate * RemainingTime) + (GravityAcceleration * RemainingTime * RemainingTime / 2.);
                         fb.FallRate  += GravityAcceleration * RemainingTime;
                         break;
                     }
