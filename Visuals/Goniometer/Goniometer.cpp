@@ -1,5 +1,5 @@
 
-/** $VER: Goniometer.cpp (2026.11.04) P. Stuer - Implements a goniometer. **/
+/** $VER: Goniometer.cpp (2026.11.06) P. Stuer - Implements a goniometer. **/
 
 #include <pch.h>
 
@@ -43,7 +43,7 @@ void goniometer_t::Move(const D2D1_RECT_F & rect) noexcept
 {
     InitializeMetrics(rect);
 
-    _TranslationMatrix = D2D1::Matrix3x2F::Translation(_CenterX, _CenterY);
+    _TranslationMatrix = D2D1::Matrix3x2F::Translation(_Rect.left + _CenterX, _Rect.top + _CenterY);
 }
 
 /// <summary>
@@ -295,9 +295,11 @@ HRESULT goniometer_t::CreateSizeDependentResources(ID2D1DeviceContext * deviceCo
 
     HRESULT hr = S_OK;
 
+    auto & StyleManager = _GraphOptions->_UseLocalStyles ? _GraphOptions->_StyleManager : _State._StyleManager;
+
     if (_SignalStyle._Brush == nullptr)
     {
-        _SignalStyle = *_State._StyleManager.GetStyle(VisualElement::Signal);
+        _SignalStyle = *StyleManager.GetStyle(VisualElement::Signal);
 
         _SignalStyle.SetColor(&_State);
 
@@ -358,7 +360,7 @@ HRESULT goniometer_t::CreateSizeDependentResources(ID2D1DeviceContext * deviceCo
 
     if (_StaticLinesStyle._Brush == nullptr)
     {
-        _StaticLinesStyle = *_State._StyleManager.GetStyle(VisualElement::StaticLines);
+        _StaticLinesStyle = *StyleManager.GetStyle(VisualElement::StaticLines);
 
         _StaticLinesStyle.SetColor(&_State);
 
@@ -371,7 +373,7 @@ HRESULT goniometer_t::CreateSizeDependentResources(ID2D1DeviceContext * deviceCo
 
     if (_StaticTextStyle._Brush == nullptr)
     {
-        _StaticTextStyle = *_State._StyleManager.GetStyle(VisualElement::StaticText);
+        _StaticTextStyle = *StyleManager.GetStyle(VisualElement::StaticText);
 
         _StaticTextStyle.SetColor(&_State);
 
@@ -399,8 +401,8 @@ HRESULT goniometer_t::CreateSizeDependentResources(ID2D1DeviceContext * deviceCo
             D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED) // Required for alpha transparency. Otherwise use D2D1_ALPHA_MODE_IGNORE.
         );
 
-        const FLOAT x = (_Size.width  - _Side) / 2.f;
-        const FLOAT y = (_Size.height - _Side) / 2.f;
+        const FLOAT x = _Rect.left + (_Size.width  - _Side) / 2.f;
+        const FLOAT y = _Rect.top  + (_Size.height - _Side) / 2.f;
 
         _DestinationRectangle = { x, y, x + _Side, y + _Side };
 

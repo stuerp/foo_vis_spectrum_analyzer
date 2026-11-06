@@ -247,7 +247,7 @@ void graphs_page_t::UpdateControls() noexcept
     const bool IsCurve        = (_State->_VisualizationType == VisualizationType::Curve);
     const bool IsSpectrogram  = (_State->_VisualizationType == VisualizationType::Spectrogram);
 
-    const bool IsPeakMeter    = (_State->_VisualizationType == VisualizationType::PeakMeter);
+//  const bool IsPeakMeter    = (_State->_VisualizationType == VisualizationType::PeakMeter);
     const bool IsBalanceMeter = (_State->_VisualizationType == VisualizationType::BalanceMeter);
 
     const bool IsOscilloscope = (_State->_VisualizationType == VisualizationType::Oscilloscope);
@@ -303,9 +303,9 @@ void graphs_page_t::UpdateControls() noexcept
 
     /* Overlap graphs **/
 
-    const bool SupportsOverlapGraphs = (_State->_GraphOptions.size() > 1) && !(IsPeakMeter || IsBalanceMeter || IsGoniometer || IsBitMeter);
+    const bool SupportsGraphOverlap = (_State->_GraphOptions.size() > 1) && _State->SupportsOverlappingGraphs();
 
-    GetDlgItem(IDC_OVERLAP_GRAPHS).EnableWindow(SupportsOverlapGraphs);
+    GetDlgItem(IDC_OVERLAP_GRAPHS).EnableWindow(SupportsGraphOverlap);
 
     /* Graph settings */
 

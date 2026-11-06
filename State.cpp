@@ -1,5 +1,5 @@
 
-/** $VER: State.cpp (2026.11.05) P. Stuer **/
+/** $VER: State.cpp (2026.11.06) P. Stuer **/
 
 #include "pch.h"
 #include "State.h"
@@ -2364,6 +2364,24 @@ bool state_t::IsSlidingWindowTransform() const noexcept
 bool state_t::IsOscilloscope() const noexcept
 {
     return (_VisualizationType == VisualizationType::Oscilloscope);
+}
+
+/// <summary>
+/// Returns true if overlapping graphs are supported.
+/// </summary>
+bool state_t::SupportsOverlappingGraphs() const noexcept
+{
+    return ((_VisualizationType == VisualizationType::Bars) || (_VisualizationType == VisualizationType::Curve) ||
+            (_VisualizationType == VisualizationType::RadialBars) || (_VisualizationType == VisualizationType::RadialCurve) ||
+            (_VisualizationType == VisualizationType::Oscilloscope) || (_VisualizationType == VisualizationType::Goniometer));
+}
+
+/// <summary>
+/// Returns true if graphs can overlap.
+/// </summary>
+bool state_t::OverlapGraphs() const noexcept
+{
+    return _OverlapGraphs && SupportsOverlappingGraphs();
 }
 
 cfg_int CfgLogLevel({ 0xf06c6211, 0x1617, 0x41ac, { 0xaf, 0xbe, 0x7f, 0xb3, 0xda, 0xef, 0x6, 0x69 } }, DefaultCfgLogLevel);
