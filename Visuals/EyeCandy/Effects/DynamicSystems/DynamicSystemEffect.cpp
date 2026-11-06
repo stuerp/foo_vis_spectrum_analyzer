@@ -221,7 +221,7 @@ namespace DynamicSystem
             const double ViewDepth = (ProjectedOrigin.ViewDepth + ProjectedEnd.ViewDepth) * 0.5;
             const float Thickness  = std::clamp(58.f / (float) std::max(ViewDepth, Projection.NearPlane), 0.75f, 1.85f);
 
-            DrawGlowLine(renderTarget, ProjectedOrigin.Position, ProjectedEnd.Position, D2D1::ColorF(Axis.Color), Intensity, Thickness);
+            DrawLine(renderTarget, ProjectedOrigin.Position, ProjectedEnd.Position, D2D1::ColorF(Axis.Color), Intensity, Thickness);
         }
     }
 
