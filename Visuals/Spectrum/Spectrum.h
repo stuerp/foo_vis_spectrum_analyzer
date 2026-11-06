@@ -135,6 +135,8 @@ private:
     style_t _WindowFunctionStyle;
     style_t _WeighingFunctionStyle;
 
+    style_t _TextStyle;
+
     static constexpr double Pi    = std::numbers::pi;
     static constexpr double TwoPi = 2. * Pi;
     static constexpr double Pi2   = Pi * 0.5;

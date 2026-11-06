@@ -23,7 +23,7 @@ namespace Peak
 
         Candidates.reserve(frequencyBands.size() / 4);
 
-        for (std::size_t i = 1; i + 1 < frequencyBands.size(); ++i)
+        for (size_t i = 1; i + 1 < frequencyBands.size(); ++i)
         {
             const auto & Left   = frequencyBands[i - 1];
             const auto & Center = frequencyBands[i];
@@ -37,9 +37,9 @@ namespace Peak
             if (!IsLocalMaximum)
                 continue;
 
-            const double Difference = DetermineDifference(frequencyBands, i, BandSpan);
+            const double Prominence = DetermineProminence(frequencyBands, i, BandSpan);
 
-            if (Difference < MinValueDifference)
+            if (Prominence < MinProminence)
                 continue;
 
             double Frequency = Center.Center;
@@ -52,31 +52,32 @@ namespace Peak
                 .BandIndex  = i,
                 .Value      = Center.Value,
                 .Frequency  = Frequency,
-                .Difference = Difference
+                .Prominence = Prominence
             });
         }
 
-        // Process strongest candidates first. When two candidates belong to the same band span, the stronger one is therefore retained.
+        // Sort the candidates in descending order of importance.
         std::ranges::sort(Candidates, [](const result_t & a, const result_t & b)
         {
             if (a.Value != b.Value)
                 return a.Value > b.Value;
 
-            if (a.Difference != b.Difference)
-                return a.Difference > b.Difference;
+            if (a.Prominence != b.Prominence)
+                return a.Prominence > b.Prominence;
 
             return a.Frequency < b.Frequency;
         });
 
+        // Process the candidates in descending order of importance. Retain the top candidates that are spaced apart far enough.
         std::vector<result_t> Result;
 
         Result.reserve(std::min(MaxPeakCount, Candidates.size()));
 
         for (const auto & Candidate : Candidates)
         {
-            const bool IsFarEnough = std::ranges::all_of(Result, [&](const result_t & accepted)
+            const bool IsFarEnough = std::ranges::all_of(Result, [&](const result_t & acceptedResult)
             {
-                return IsFarEnoughFrom(Candidate, accepted);
+                return IsFarEnoughFrom(Candidate, acceptedResult);
             });
 
             if (!IsFarEnough)
@@ -88,7 +89,7 @@ namespace Peak
                 break;
         }
 
-        // Return the result sorted by increasing band index.
+        // Return the result sorted by increasing band index for optimal rendering.
         std::ranges::sort(Result, {}, &result_t::BandIndex);
 
         return Result;
@@ -97,19 +98,19 @@ namespace Peak
     /// <summary>
     /// Determines the value difference of the specified frequency.
     /// </summary>
-    inline double detector_t::DetermineDifference(std::span<const frequency_band_t> bands, std::size_t bandIndex, std::size_t bandSpan) noexcept
+    inline double detector_t::DetermineProminence(std::span<const frequency_band_t> bands, size_t bandIndex, size_t bandSpan) const noexcept
     {
-        const auto Left  = std::max<size_t>(0,                bandIndex - bandSpan);
+        const auto Left  = (size_t) std::max<int64_t>(0,               (int64_t) bandIndex - (int64_t) bandSpan);
         const auto Right = std::min<size_t>(bands.size() - 1, bandIndex + bandSpan);
 
         double LeftMin = bands[bandIndex].Value;
 
-        for (std::size_t i = Left; i < bandIndex; ++i)
+        for (size_t i = Left; i < bandIndex; ++i)
             LeftMin = std::min(LeftMin, bands[i].Value);
 
         double RightMin = bands[bandIndex].Value;
 
-        for (std::size_t i = bandIndex + 1; i <= Right; ++i)
+        for (size_t i = bandIndex + 1; i <= Right; ++i)
             RightMin = std::min(RightMin, bands[i].Value);
 
         const double Min = std::max(LeftMin, RightMin);
@@ -120,7 +121,7 @@ namespace Peak
     /// <summary>
     /// 
     /// </summary>
-    inline double detector_t::InterpolatePeakFrequency(const frequency_band_t & left, const frequency_band_t & center, const frequency_band_t & right) noexcept
+    inline double detector_t::InterpolatePeakFrequency(const frequency_band_t & left, const frequency_band_t & center, const frequency_band_t & right) const noexcept
     {
         const double y0 = left.Value;
         const double y1 = center.Value;
@@ -128,7 +129,7 @@ namespace Peak
 
         const double Value = y0 - (y1 * 2.) + y2;
 
-        if (!std::isfinite(Value) || std::abs(Value) <= std::numeric_limits<double>::epsilon())
+        if (!std::isfinite(Value) || (std::abs(Value) <= std::numeric_limits<double>::epsilon()))
             return center.Center;
 
         const double Offset = std::clamp((y0 - y2) * 0.5 / Value, -1., 1.);
@@ -146,11 +147,11 @@ namespace Peak
     /// <summary>
     /// Returns true if the peak is far enough from the last accepted peak.
     /// </summary>
-    inline bool detector_t::IsFarEnoughFrom(const result_t & candidate, const result_t & lastAccepted) noexcept
+    inline bool detector_t::IsFarEnoughFrom(const result_t & candidate, const result_t & accepted) const noexcept
     {
-        const double FrequencyDelta = std::abs(candidate.Frequency - lastAccepted.Frequency);
+        const double FrequencyDelta = std::abs(candidate.Frequency - accepted.Frequency);
 
-        if ((MinFrequencyDifference > 0.) && (FrequencyDelta < MinFrequencyDifference))
+        if ((MinFrequencySpacing > 0.) && (FrequencyDelta < MinFrequencySpacing))
             return false;
 
         return true;

@@ -243,12 +243,12 @@ HRESULT x_axis_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceConte
     {
         DeleteColorDependentResources();
 
-        RecalculateSizeDependentParameters();
-
         hr = CreateColorDependentResources(deviceContext, styleManager);
 
         if (FAILED(hr))
             return hr;
+
+        RecalculateSizeDependentParameters();
 
         if (_State._SizeHasChanged)
         {
@@ -271,21 +271,6 @@ void x_axis_t::DeleteDeviceSpecificResources() noexcept
 {
     DeleteColorDependentResources();
     DeleteSizeDependentResources();
-}
-
-/// <summary>
-/// Creates the resources that depend on the size of the render target.
-/// </summary>
-HRESULT x_axis_t::CreateSizeDependentResources(ID2D1DeviceContext * deviceContext, style_manager_t & styleManager) noexcept
-{
-    return S_OK;
-}
-
-/// <summary>
-/// Deletes the resources that depend on the size of the render target.
-/// </summary>
-void x_axis_t::DeleteSizeDependentResources() noexcept
-{
 }
 
 /// <summary>
@@ -327,6 +312,21 @@ void x_axis_t::DeleteColorDependentResources() noexcept
 {
     _TextStyle.DeleteDeviceSpecificResources();
     _LineStyle.DeleteDeviceSpecificResources();
+}
+
+/// <summary>
+/// Creates the resources that depend on the size of the render target.
+/// </summary>
+HRESULT x_axis_t::CreateSizeDependentResources(ID2D1DeviceContext * deviceContext, style_manager_t & styleManager) noexcept
+{
+    return S_OK;
+}
+
+/// <summary>
+/// Deletes the resources that depend on the size of the render target.
+/// </summary>
+void x_axis_t::DeleteSizeDependentResources() noexcept
+{
 }
 
 /// <summary>

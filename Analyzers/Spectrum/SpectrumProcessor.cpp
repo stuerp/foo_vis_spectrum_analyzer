@@ -132,9 +132,9 @@ namespace Spectrum
         {
             .MaxPeakCount           = 10,
             .MinValue               = 0.05,
-            .MinValueDifference     = 0.02,
+            .MinProminence     = 0.02,
             .BandSpan               = 4,
-            .MinFrequencyDifference = 25.0,
+            .MinFrequencySpacing = 25.0,
             .InterpolateFrequency   = true
         };
 
@@ -405,6 +405,9 @@ namespace Spectrum
             if (IsSet(options, ResetOptions::Peak))
                 fb.PeakValue = 0.;
         }
+
+        if (IsSet(options, ResetOptions::Value))
+            Peaks.clear();
     }
 
     /// <summary>

@@ -1663,6 +1663,8 @@ void state_t::FromJSON(const char * data, size_t size, bool isPreset)
         _ScalingFunction        = std::clamp(Frequencies.value("scalingFunction",   _ScalingFunction),          ScalingFunction::Min,       ScalingFunction::Max);
         _SkewFactor             = std::clamp(Frequencies.value("skewFactor",        _SkewFactor),               MinSkewFactor,              MaxSkewFactor);
         _Bandwidth              = std::clamp(Frequencies.value("bandwidth",         _Bandwidth),                MinBandwidth,               MaxBandwidth);
+
+        _RenderPeaks            = Frequencies.value("renderPeaks", _RenderPeaks);
     }
 
     // Acoustic Filters
@@ -1999,6 +2001,8 @@ json state_t::ToJSON(bool isPreset) const
                 { "scalingFunction", _ScalingFunction },
                 { "skewFactor", _SkewFactor },
                 { "bandwidth", _Bandwidth },
+
+                { "renderPeaks", _RenderPeaks },
             })
         ),
 

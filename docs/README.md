@@ -1017,12 +1017,16 @@ Enable this setting to stack the graphs vertically instead of horizontally.
 
 Select to draw the graphs overlapped instead of stacked horizontally or vertically.
 
+The visualizations will be drawn over each other so it is up to you to disable any styles in the top visualization to allow the bottom visualization to remain visible. See `Use local styles`.
+
 > [!Note]
-> Only supported by the bar, curve, radial bar and radial curve visualization.
+> This mode is not supported by all visualizations.
 
 `Use local styles`
 
-Enable this setting to use local styles. A local style is tied to a graph. Each grah can have its own local style.
+Enable this setting to use local styles. A local style is tied to a graph. Each graph can have its own local style.
+
+Use this feature in combination with `Overlap graphs` to disable the background of a visualization or give each signal its own style.
 
 `Description`
 

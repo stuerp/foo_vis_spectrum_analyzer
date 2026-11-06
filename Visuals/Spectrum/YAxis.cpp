@@ -95,12 +95,12 @@ HRESULT y_axis_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceConte
     {
         DeleteColorDependentResources();
 
-        RecalculateSizeDependentParameters();
-
         hr = CreateColorDependentResources(deviceContext, styleManager);
 
         if (FAILED(hr))
             return hr;
+
+        RecalculateSizeDependentParameters();
 
         if (_State._SizeHasChanged)
         {
