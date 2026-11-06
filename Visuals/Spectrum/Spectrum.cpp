@@ -594,6 +594,7 @@ void spectrum_t::RenderNyquistFrequencyMarker(ID2D1DeviceContext * deviceContext
 /// <summary>
 /// Renders the peak frequencies in the spectrum.
 /// </summary>
+#ifdef v1
 void spectrum_t::RenderPeaks(ID2D1DeviceContext * deviceContext) noexcept
 {
 /*
@@ -684,7 +685,104 @@ void spectrum_t::RenderPeaks(ID2D1DeviceContext * deviceContext) noexcept
         }
     }
 }
+#else
+void spectrum_t::RenderPeaks(ID2D1DeviceContext* deviceContext) noexcept
+{
+/*
+    // Test data
+    _Processor->Peaks.clear();
 
+    _Processor->Peaks.push_back( { 0, 0.5, _State._LoFrequency, 0. });
+    _Processor->Peaks.push_back( { _Processor->FrequencyBands.size() - 1, 0.5, _State._HiFrequency, 0. });
+*/
+    const auto BandCount = _Processor->FrequencyBands.size();
+
+    const bool IsBars  = _State._VisualizationType == VisualizationType::Bars;
+    const bool IsCurve = _State._VisualizationType == VisualizationType::Curve;
+
+    if (!IsBars && !IsCurve)
+        return;
+
+    D2D1_MATRIX_3X2_F OriginalTransform {};
+
+    deviceContext->GetTransform(&OriginalTransform);
+
+    const D2D1::Matrix3x2F Transform { OriginalTransform._11, OriginalTransform._12, OriginalTransform._21, OriginalTransform._22, OriginalTransform._31, OriginalTransform._32 };
+
+    deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+
+    const bool FlipHorizontally = _GraphOptions->_FlipHorizontally;
+    const bool FlipVertically   = _GraphOptions->_FlipVertically;
+
+    _TextStyle.SetHorizontalAlignment(FlipHorizontally ? DWRITE_TEXT_ALIGNMENT_TRAILING  : DWRITE_TEXT_ALIGNMENT_LEADING);
+    _TextStyle.SetVerticalAlignment  (FlipVertically   ? DWRITE_PARAGRAPH_ALIGNMENT_NEAR : DWRITE_PARAGRAPH_ALIGNMENT_FAR);
+
+    const float Width      = _ClientSize.width;
+    const float Height     = _ClientSize.height;
+
+    float BandWidth = Width / (float) BandCount;
+    float XOffset   = 0.f;
+
+    if (IsBars)
+    {
+        if (_GraphOptions->_HorizontalAlignment != HorizontalAlignment::Fit)
+            BandWidth = std::floor(BandWidth);
+
+        BandWidth = std::max(BandWidth, 2.f);
+
+        const float SpectrumWidth = BandWidth * (float) BandCount;
+
+        XOffset = GetHOffset(_GraphOptions->_HorizontalAlignment, Width - SpectrumWidth) + (BandWidth / 2.f);
+    }
+
+    const float Radius      = BandWidth / 2.f;
+    const float LabelOffset = BandWidth;
+
+    const D2D1_POINT_2F LabelDirection
+    {
+        FlipHorizontally ? -1.f :  1.f,
+        FlipVertically   ?  1.f : -1.f
+    };
+
+    const auto DrawLabel = [&](std::size_t bandIndex, D2D1_POINT_2F center)
+    {
+        if (bandIndex >= BandCount)
+            return;
+
+        const auto & fb = _Processor->FrequencyBands[bandIndex];
+
+        const auto Anchor = Transform.TransformPoint(center);
+
+        const auto LabelStart = D2D1::Point2F(Anchor.x + LabelOffset * LabelDirection.x, Anchor.y + LabelOffset * LabelDirection.y);
+        const auto LabelEnd   = D2D1::Point2F(Anchor.x + 100.f       * LabelDirection.x, Anchor.y + 100.f       * LabelDirection.y);
+
+        const D2D1_RECT_F Bounds { std::min(LabelStart.x, LabelEnd.x), std::min(LabelStart.y, LabelEnd.y), std::max(LabelStart.x, LabelEnd.x), std::max(LabelStart.y, LabelEnd.y) };
+
+        deviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
+
+        deviceContext->DrawTextW(fb.Label, (UINT32) std::wcslen(fb.Label), _TextStyle._TextFormat.Get(), Bounds, _TextStyle._Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_NONE);
+
+        deviceContext->SetTransform(OriginalTransform);
+    };
+
+    for (const auto & Peak : _Processor->Peaks)
+    {
+        if (Peak.BandIndex >= BandCount)
+            continue;
+
+        const float BandIndex = (float) Peak.BandIndex;
+
+        const float x = IsBars ? XOffset + BandIndex * BandWidth : (BandIndex + 0.5f) * BandWidth;
+        const float y = std::min((float) (Peak.Value * Height), Height);
+
+        const auto Center = D2D1::Point2F(x, y);
+
+        deviceContext->FillEllipse(D2D1::Ellipse(Center, Radius, Radius), _PeakBrush.Get());
+
+        DrawLabel(Peak.BandIndex, Center);
+    }
+}
+#endif
 /// <summary>
 /// Renders diagnostics information.
 /// </summary>
