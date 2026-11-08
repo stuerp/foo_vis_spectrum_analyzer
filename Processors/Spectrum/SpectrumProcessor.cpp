@@ -130,12 +130,12 @@ namespace Spectrum
 
         Peak::detector_t PeakDetector
         {
-            .MaxPeakCount           = 10,
-            .MinValue               = 0.05,
-            .MinProminence     = 0.02,
-            .BandSpan               = 4,
-            .MinFrequencySpacing = 25.0,
-            .InterpolateFrequency   = true
+            .MaxPeakCount         = 10,
+            .MinValue             = 0.05,
+            .MinProminence        = 0.02,
+            .BandSpan             = 4,
+            .MinFrequencySpacing  = 25.0,
+            .InterpolateFrequency = true
         };
 
         if (_State._RenderPeaks)
@@ -311,8 +311,8 @@ namespace Spectrum
                 if (IsAIMP && (HoldDuration > 0.))
                     fb.PeakValue += HeldTime / HoldDuration;
 
-                fb.HoldDuration   -= HeldTime;
-                RemainingTime -= HeldTime;
+                fb.HoldDuration -= HeldTime;
+                RemainingTime   -= HeldTime;
             }
 
             if ((RemainingTime > 0.) && (fb.HoldDuration <= 0.))

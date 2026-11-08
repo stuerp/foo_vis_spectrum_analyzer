@@ -1,5 +1,5 @@
 
-/** $VER: FFTAnalyzer.cpp (2026.11.04) P. Stuer **/
+/** $VER: FFTAnalyzer.cpp (2026.11.08) P. Stuer **/
 
 #include "pch.h"
 
@@ -195,52 +195,40 @@ void fft_analyzer_t::Transform() noexcept
 /// <summary>
 /// Maps complex FFT coefficients onto frequency-band magnitudes.
 /// </summary>
-void fft_analyzer_t::MapCoefficients(frequency_bands_t & freqBands) noexcept
+void fft_analyzer_t::MapCoefficients(frequency_bands_t & frequencyBands) noexcept
 {
     if (_Coefficients.empty() || (_SampleRate == 0))
     {
-        for (frequency_band_t & fb : freqBands)
+        for (auto & fb : frequencyBands)
             fb.Magnitude = 0.;
 
         return;
     }
 
     const auto AggregationMethod      = _State._AggregationMethod;
+    const bool IsSum                  = (AggregationMethod == AggregationMethod::Sum) || (AggregationMethod == AggregationMethod::RMSSum);
+    const bool IsRMS                  = (AggregationMethod == AggregationMethod::RMS) || (AggregationMethod == AggregationMethod::RMSSum);
     const bool SmoothLowerFrequencies = _State._SmoothLowerFrequencies;
-    const bool SmoothGainTransition   = _State._SmoothGainTransition && (AggregationMethod == AggregationMethod::Sum || AggregationMethod == AggregationMethod::RMSSum);
+    const bool SmoothGainTransition   = _State._SmoothGainTransition && IsSum;
     const auto KernelSize             = _State._KernelSize;
-
-    const bool IsRMS = (AggregationMethod == AggregationMethod::RMS) || (AggregationMethod == AggregationMethod::RMSSum);
-
-    const auto MaxPositiveBinIndex = _FFTSize / 2; // Corresponds to the Nyquist bin for even FFT sizes.
-    const auto NyquistBinIndex     = (double) _FFTSize / 2.;
 
     // Create the aggregator. It returns the aggregate magnitude of the specified bins.
     auto Aggregate = aggregator_t::Create(AggregationMethod, _FFTSize, SmoothGainTransition);
 
     // Determine the aggregated magnitude for each frequency band.
-    for (frequency_band_t & fb : freqBands)
+    for (auto & fb : frequencyBands)
     {
-        assert((fb.Low <= fb.Center) && (fb.Center <= fb.High));
+        assert(fb.Low <= fb.Center); assert(fb.Center <= fb.High);
 
         const auto LoBin = HzToBinIndex(fb.Low);
         const auto HiBin = HzToBinIndex(fb.High);
-
-        double BandGain = 1.;
-
-        if (SmoothGainTransition)
-        {
-            const double WidthInBins = std::max(HiBin - LoBin, 0.);
-
-            BandGain = IsRMS ? std::sqrt(1. + WidthInBins) : std::hypot(1., WidthInBins);
-        }
 
         // Determine the first and last complete bin to aggregate.
         auto FirstBin = (ptrdiff_t) (SmoothLowerFrequencies ? std::round(LoBin) + 1. : std::ceil (LoBin));
         auto LastBin  = (ptrdiff_t) (SmoothLowerFrequencies ? std::round(HiBin) - 1. : std::floor(HiBin));
 
-        FirstBin = std::clamp(FirstBin, (ptrdiff_t) 0, (ptrdiff_t) (MaxPositiveBinIndex));
-        LastBin  = std::clamp(LastBin,  (ptrdiff_t) 0, (ptrdiff_t) (MaxPositiveBinIndex));
+        FirstBin = std::max<ptrdiff_t>(FirstBin, 0);
+        LastBin  = std::min<ptrdiff_t>(LastBin,  (ptrdiff_t) _FFTSize - 1);
 
         if (FirstBin <= LastBin)
         {
@@ -248,16 +236,22 @@ void fft_analyzer_t::MapCoefficients(frequency_bands_t & freqBands) noexcept
 
             const double Magnitude = (*Aggregate)(_Coefficients, RequestedBins, (size_t) FirstBin, _FFTSize);
 
+            double BandGain = 1.;
+
+            if (SmoothGainTransition)
+            {
+                const double WidthInBins = std::clamp(1. + HiBin - LoBin, 1., (double) RequestedBins);
+
+                BandGain = IsRMS ? std::sqrt(WidthInBins) : WidthInBins;
+            }
+
             fb.Magnitude = Magnitude *  BandGain;
         }
         else
         {
             const double BinIndex = HzToBinIndex(fb.Center);
 
-            if ((BinIndex >= 0.) && (BinIndex <= (double) NyquistBinIndex))
-                fb.Magnitude = Interpolate(_Coefficients, BinIndex, KernelSize) * BandGain;
-            else
-                fb.Magnitude = 0.;
+            fb.Magnitude = Interpolate(_Coefficients, BinIndex, KernelSize);
         }
     }
 }
@@ -266,32 +260,25 @@ void fft_analyzer_t::MapCoefficients(frequency_bands_t & freqBands) noexcept
 /// Maps FFT power-spectrum coefficients using a triangular filter bank. Assumes the frequency bands are spaced on the Mel scale.
 /// </summary>
 /// <ref>https://en.wikipedia.org/wiki/Mel-frequency_cepstrum</ref>
-void fft_analyzer_t::MapCoefficientsUsingTFB(frequency_bands_t & freqBands) const noexcept
+void fft_analyzer_t::MapCoefficientsUsingTFB(frequency_bands_t & frequencyBands) const noexcept
 {
     if (_Coefficients.empty() || (_SampleRate == 0))
     {
-        for (frequency_band_t & fb : freqBands)
+        for (auto & fb : frequencyBands)
             fb.Magnitude = 0.;
 
         return;
     }
 
-    const double NyquistBinIndex = (double) (_FFTSize / 2);
-
-    for (frequency_band_t& fb : freqBands)
+    for (auto & fb : frequencyBands)
     {
-        assert(fb.Low    <= fb.Center);
-        assert(fb.Center <= fb.High);
+        assert(fb.Low <= fb.Center); assert(fb.Center <= fb.High);
 
         fb.Magnitude = 0.;
 
-        if (fb.High < 0. || fb.Low > NyquistFrequency)
-            continue;
-
-        const double LoBin  = std::clamp(HzToBinIndex(fb.Low),    0.,    NyquistBinIndex);
-        const double MidBin = std::clamp(HzToBinIndex(fb.Center), LoBin, NyquistBinIndex);
-
-        const double HiBin = std::clamp(HzToBinIndex(fb.High), MidBin, NyquistBinIndex);
+        const double LoBin  = std::max(HzToBinIndex(fb.Low),    0.);
+        const double MidBin =          HzToBinIndex(fb.Center);
+        const double HiBin  = std::min(HzToBinIndex(fb.High), (double) (_FFTSize - 1));
 
         if (!(LoBin < MidBin && MidBin < HiBin))
         {
@@ -324,11 +311,11 @@ void fft_analyzer_t::MapCoefficientsUsingTFB(frequency_bands_t & freqBands) cons
 /// <summary>
 /// Maps FFT power-spectrum coefficients onto the frequency bands. (Brown-Puckette)
 /// <ref>https://en.wikipedia.org/wiki/Pitch_detection_algorithm</ref>
-void fft_analyzer_t::MapCoefficientsUsingBP(frequency_bands_t & freqBands) const noexcept
+void fft_analyzer_t::MapCoefficientsUsingBP(frequency_bands_t & frequencyBands) const noexcept
 {
     if (_Coefficients.empty() || (_SampleRate == 0) || (_State._BandwidthCap <= 0.) || (_State._BandwidthAmount <= 0.))
     {
-        for (frequency_band_t & fb : freqBands)
+        for (auto & fb : frequencyBands)
             fb.Magnitude = 0.;
 
         return;
@@ -338,12 +325,11 @@ void fft_analyzer_t::MapCoefficientsUsingBP(frequency_bands_t & freqBands) const
     const double HzToBin = FFTSize / (double) _SampleRate;
     const double BinToHz = (double) _SampleRate / FFTSize; // Frequency resolution
 
-    for (frequency_band_t & fb : freqBands)
+    for (auto & fb : frequencyBands)
     {
-        fb.Magnitude = 0.;
+        assert(fb.Low <= fb.Center); assert(fb.Center <= fb.High);
 
-        if (fb.Center < 0. || fb.Center > NyquistFrequency)
-            continue;
+        fb.Magnitude = 0.;
 
         double re = 0.;
         double im = 0.;
@@ -399,11 +385,11 @@ void fft_analyzer_t::MapCoefficientsUsingBP(frequency_bands_t & freqBands) const
 /// <summary>
 /// Maps FFT power-spectrum coefficients into logarithmic frequency bands using Gaussian frequency-domain weighting. (Continuous Wavelet Transform approximation)
 /// </summary>
-void fft_analyzer_t::MapCoefficientsUsingGaussianFilter(frequency_bands_t & freqBands) const noexcept
+void fft_analyzer_t::MapCoefficientsUsingGaussianFilter(frequency_bands_t & frequencyBands) const noexcept
 {
     if (_Coefficients.empty() || !(_SampleRate > 0.))
     {
-        for (frequency_band_t & fb : freqBands)
+        for (frequency_band_t & fb : frequencyBands)
             fb.Magnitude = 0.;
 
         return;
@@ -414,14 +400,11 @@ void fft_analyzer_t::MapCoefficientsUsingGaussianFilter(frequency_bands_t & freq
     const double BinToHz         = (double) _SampleRate / FFTSize;
 
     // Map the linear FFT bins into logarithmically spaced "scales".
-    for (frequency_band_t & fb : freqBands)
+    for (frequency_band_t & fb : frequencyBands)
     {
-        assert(fb.Low < fb.High);
+        assert(fb.Low <= fb.Center); assert(fb.Center <= fb.High);
 
         fb.Magnitude = 0.;
-
-        if (fb.High < 0. || fb.Low > NyquistFrequency)
-            continue;
 
         const double BandWidth = 4. / (fb.High - fb.Low);
 

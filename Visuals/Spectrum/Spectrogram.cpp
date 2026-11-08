@@ -1,5 +1,5 @@
 
-/** $VER: Spectrogram.cpp (2026.11.01) P. Stuer - Represents a spectrum analysis as a 2D heat map **/
+/** $VER: Spectrogram.cpp (2026.11.08) P. Stuer - Represents a spectrum analysis as a 2D heat map **/
 
 #include "pch.h"
 
@@ -28,7 +28,9 @@ spectrogram_t::~spectrogram_t()
 void spectrogram_t::Configure(graph_options_t * options, audio_processor_t * processor, bool isFirst, bool isLast) noexcept
 {
     _GraphOptions = options;
-    _Processor = (processor_t *) processor;
+    _Processor    = (processor_t *) processor;
+    _IsFirst      = isFirst;
+    _IsLast       = isLast;
 
     Reset();
 
@@ -53,14 +55,6 @@ void spectrogram_t::Render(ID2D1DeviceContext * deviceContext) noexcept
     if (FAILED(hr))
         return;
 
-    // Get the DPI metrics for the complete render pass.
-    _Bitmap->GetDpi(&_DPIX, &_DPIY);
-
-    const D2D1_SIZE_U BitmapPixelSize = _Bitmap->GetPixelSize();
-
-    const FLOAT BitmapWidth  = (FLOAT) BitmapPixelSize.width  * 96.f / _DPIX;
-    const FLOAT BitmapHeight = (FLOAT) BitmapPixelSize.height * 96.f / _DPIY;
-
     // Update the offscreen bitmap.
     RenderSpectrum(_BitmapRenderTarget.Get());
 
@@ -72,27 +66,30 @@ void spectrogram_t::Render(ID2D1DeviceContext * deviceContext) noexcept
             // Draw the offscreen bitmap.
             if (!_State._IsPaused || _State._VisualizeDuringPause)
             {
+
+                D2D1_MATRIX_3X2_F Transform;
+
+                deviceContext->GetTransform(&Transform);
+
                 SetTransform(deviceContext, _BitmapRect);
 
                 if (_State._IsScrollingSpectrogram)
                 {
-                    // Render the new lines.
-                    const FLOAT PixelWidth = 96.f / _DPIX;
-                    const FLOAT SplitX = std::min(_X + PixelWidth, BitmapWidth);
+                    const FLOAT SplitX = std::min(_X + _PixelWidth, _BitmapWidth);
 
-                    const FLOAT DstWidth = _BitmapSize.width * (BitmapWidth - SplitX) / BitmapWidth;
+                    const FLOAT DstWidth = _BitmapSize.width * (_BitmapWidth - SplitX) / _BitmapWidth;
 
-                    if (SplitX < BitmapWidth)
+                    if (SplitX < _BitmapWidth)
                     {
-                        const auto Src = D2D1_RECT_F(SplitX, 0.f, BitmapWidth, BitmapHeight);
-                        const auto Dst = D2D1_RECT_F(   0.f, 0.f, DstWidth,    _BitmapSize.height);
+                        const auto Src = D2D1_RECT_F(SplitX, 0.f, _BitmapWidth, _BitmapHeight);
+                        const auto Dst = D2D1_RECT_F(   0.f, 0.f, DstWidth,     _BitmapSize.height);
 
                         deviceContext->DrawBitmap(_Bitmap.Get(), &Dst, _SpectrogramStyle._Opacity, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR, &Src);
                     }
 
                     if (SplitX > 0.f)
                     {
-                        const auto Src = D2D1_RECT_F(     0.f, 0.f, SplitX,            BitmapHeight);
+                        const auto Src = D2D1_RECT_F(     0.f, 0.f, SplitX,            _BitmapHeight);
                         const auto Dst = D2D1_RECT_F(DstWidth, 0.f, _BitmapSize.width, _BitmapSize.height);
 
                         deviceContext->DrawBitmap(_Bitmap.Get(), &Dst, _SpectrogramStyle._Opacity, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR, &Src);
@@ -105,7 +102,7 @@ void spectrogram_t::Render(ID2D1DeviceContext * deviceContext) noexcept
                     deviceContext->DrawBitmap(_Bitmap.Get(), &r, _SpectrogramStyle._Opacity, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR);
                 }
 
-                ResetTransform(deviceContext);
+                deviceContext->SetTransform(Transform);
             }
 
             // Draw the Time axis.
@@ -155,15 +152,13 @@ void spectrogram_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 
                 if (_State._IsScrollingSpectrogram)
                 {
-                    // Render the new lines.
-                    const FLOAT PixelHeight = 96.f / _DPIY;
-                    const FLOAT SplitY = std::min(_Y + PixelHeight, BitmapHeight);
+                    const FLOAT SplitY = std::min(_Y + _PixelHeight, _BitmapHeight);
 
-                    const FLOAT DstHeight = _BitmapSize.height * (BitmapHeight - SplitY) / BitmapHeight;
+                    const FLOAT DstHeight = _BitmapSize.height * (_BitmapHeight - SplitY) / _BitmapHeight;
 
-                    if (SplitY < BitmapHeight)
+                    if (SplitY < _BitmapHeight)
                     {
-                        const auto Src = D2D1_RECT_F(0.f, SplitY, BitmapWidth,       BitmapHeight);
+                        const auto Src = D2D1_RECT_F(0.f, SplitY, _BitmapWidth,      _BitmapHeight);
                         const auto Dst = D2D1_RECT_F(0.f,    0.f, _BitmapSize.width, DstHeight);
 
                         deviceContext->DrawBitmap(_Bitmap.Get(), &Dst, _SpectrogramStyle._Opacity, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR, &Src);
@@ -172,7 +167,7 @@ void spectrogram_t::Render(ID2D1DeviceContext * deviceContext) noexcept
                     // Render the old lines.
                     if (SplitY > 0.f)
                     {
-                        const auto Src = D2D1_RECT_F(0.f,       0.f, BitmapWidth,       SplitY);
+                        const auto Src = D2D1_RECT_F(0.f,       0.f, _BitmapWidth,       SplitY);
                         const auto Dst = D2D1_RECT_F(0.f, DstHeight, _BitmapSize.width, _BitmapSize.height);
 
                         deviceContext->DrawBitmap(_Bitmap.Get(), &Dst, _SpectrogramStyle._Opacity, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR, &Src);
@@ -234,15 +229,11 @@ void spectrogram_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 
     if (_State._PreviousPlaybackTime != _PlaybackTime) // Not paused
     {
-        const D2D1_SIZE_U PixelSize = _Bitmap->GetPixelSize();
-
         if (_State._IsHorizontalSpectrogram)
         {
-            const FLOAT PixelWidth = 96.f / _DPIX;
+            UINT32 PixelX = (UINT32) std::lround(_X / _PixelWidth) + 1;
 
-            UINT32 PixelX = (UINT32) std::lround(_X / PixelWidth) + 1;
-
-            if (PixelX >= PixelSize.width)
+            if (PixelX >= _BitmapPixelSize.width)
             {
                 PixelX = 0;
 
@@ -250,15 +241,13 @@ void spectrogram_t::Render(ID2D1DeviceContext * deviceContext) noexcept
                     _TimeLabels.clear();
             }
 
-            _X = (FLOAT) PixelX * PixelWidth;
+            _X = (FLOAT) PixelX * _PixelWidth;
         }
         else
         {
-            const FLOAT PixelHeight = 96.f / _DPIY;
+            UINT32 PixelY = (UINT32) std::lround(_Y / _PixelHeight) + 1;
 
-            UINT32 PixelY = (UINT32) std::lround(_Y / PixelHeight) + 1;
-
-            if (PixelY >= PixelSize.height)
+            if (PixelY >= _BitmapPixelSize.height)
             {
                 PixelY = 0;
 
@@ -266,7 +255,7 @@ void spectrogram_t::Render(ID2D1DeviceContext * deviceContext) noexcept
                     _TimeLabels.clear();
             }
 
-            _Y = (FLOAT) PixelY * PixelHeight;
+            _Y = (FLOAT) PixelY * _PixelHeight;
         }
 
         _PlaybackTime = _State._PreviousPlaybackTime;
@@ -422,19 +411,16 @@ bool spectrogram_t::RenderSpectrum(ID2D1BitmapRenderTarget * renderTarget) noexc
 
     renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
 
-    const D2D1_SIZE_U BitmapPixelSize = renderTarget->GetPixelSize();
-
-    const FLOAT BitmapWidth  = (FLOAT) BitmapPixelSize.width  * 96.f / _DPIX;
-    const FLOAT BitmapHeight = (FLOAT) BitmapPixelSize.height * 96.f / _DPIY;
-
     ID2D1Brush * SpectrogramBrush = _SpectrogramStyle._Brush.Get();
 
     if (IsHorizontalSpectrogram)
     {
         // Draw the next spectrogram line.
         {
-            const FLOAT Bandwidth  = BitmapHeight / (FLOAT) Bands.size();
-            const FLOAT PixelWidth = 96.f / _DPIX;
+            const FLOAT Bandwidth = _BitmapHeight / (FLOAT) Bands.size();
+
+            const FLOAT x1 = _X;
+            const FLOAT x2 = std::min(_X + _PixelWidth, _BitmapWidth);
 
             FLOAT y1 = 0.f;
             FLOAT y2 = Bandwidth;
@@ -446,7 +432,7 @@ bool spectrogram_t::RenderSpectrum(ID2D1BitmapRenderTarget * renderTarget) noexc
 
                 _SpectrogramStyle.SetBrushColor(fb.Value);
 
-                renderTarget->FillRectangle({ _X, y1, std::min(_X + PixelWidth, BitmapWidth), y2 }, SpectrogramBrush);
+                renderTarget->FillRectangle({ x1, y1, x2, y2 }, SpectrogramBrush);
 
                 y1  = y2;
                 y2 += Bandwidth;
@@ -457,13 +443,15 @@ bool spectrogram_t::RenderSpectrum(ID2D1BitmapRenderTarget * renderTarget) noexc
     {
         // Draw the next spectrogram line.
         {
-            const FLOAT Bandwidth   = _State._UseSpectrumBarMetrics ? std::max(std::floor(BitmapWidth / (FLOAT) Bands.size()), 2.f) : BitmapWidth / (FLOAT) Bands.size();
-            const FLOAT PixelHeight = 96.f / _DPIY;
+            const FLOAT Bandwidth = _State._UseSpectrumBarMetrics ? std::max(std::floor(_BitmapWidth / (FLOAT) Bands.size()), 2.f) : _BitmapWidth / (FLOAT) Bands.size();
 
             const FLOAT SpectrumWidth = Bandwidth * (FLOAT) Bands.size();
 
-            FLOAT x1 = _State._UseSpectrumBarMetrics ? (BitmapWidth - SpectrumWidth) / 2.f : 0.f;
+            FLOAT x1 = _State._UseSpectrumBarMetrics ? (_BitmapWidth - SpectrumWidth) / 2.f : 0.f;
             FLOAT x2 = x1 + Bandwidth;
+
+            const FLOAT y1 = _Y;
+            const FLOAT y2 = std::min(_Y + _PixelHeight, _BitmapHeight);
 
             for (const auto & fb : Bands)
             {
@@ -472,7 +460,7 @@ bool spectrogram_t::RenderSpectrum(ID2D1BitmapRenderTarget * renderTarget) noexc
 
                 _SpectrogramStyle.SetBrushColor(fb.Value);
 
-                renderTarget->FillRectangle({ x1, _Y, x2, std::min(_Y + PixelHeight, BitmapHeight) }, SpectrogramBrush);
+                renderTarget->FillRectangle({ x1, y1, x2, y2 }, SpectrogramBrush);
 
                 x1  = x2;
                 x2 += Bandwidth;
@@ -497,14 +485,14 @@ bool spectrogram_t::RenderSpectrum(ID2D1BitmapRenderTarget * renderTarget) noexc
     {
         if (IsHorizontalSpectrogram)
         {
-            const FLOAT dx = (FlipHorizontally ? 1.f : -1.f) * (96.f / _DPIX); // Move the labels 1 physical pixel to the left or to the right.
+            const FLOAT dx = (FlipHorizontally ? 1.f : -1.f) * _PixelWidth; // Move the labels 1 physical pixel to the left or to the right.
 
             for (auto & Label : _TimeLabels)
                 Label.X += dx;
         }
         else
         {
-            const FLOAT dy = (FlipVertically ? -1.f : 1.f) * (96.f / _DPIY); // Move the labels 1 physical pixel upwards or downwards.
+            const FLOAT dy = (FlipVertically ? -1.f : 1.f) * _PixelHeight; // Move the labels 1 physical pixel upwards or downwards.
 
             for (auto & Label : _TimeLabels)
                 Label.Y += dy;
@@ -580,24 +568,17 @@ void spectrogram_t::RenderNyquistFrequencyMarker(ID2D1BitmapRenderTarget * rende
     // The position of the Nyquist marker is calculated at the exact frequency and may not align with the center frequency of spectrum bar.
     const double Scale = ScaleFrequency(_Processor->NyquistFrequency, _State._ScalingFunction, _State._SkewFactor);
 
-    const D2D1_SIZE_U BitmapPixelSize = renderTarget->GetPixelSize();
-
-    const FLOAT BitmapWidth  = (FLOAT) BitmapPixelSize.width  * 96.f / _DPIX;
-    const FLOAT BitmapHeight = (FLOAT) BitmapPixelSize.height * 96.f / _DPIY;
-
     if (_State._IsHorizontalSpectrogram)
     {
-        const FLOAT y = msc::Map(Scale, MinScale, MaxScale, 0.f, BitmapHeight);
-        const FLOAT PixelWidth = 96.f / _DPIX;
+        const FLOAT y = msc::Map(Scale, MinScale, MaxScale, 0.f, _BitmapHeight);
 
-        renderTarget->FillRectangle(D2D1_RECT_F(_X, y, std::min(_X + PixelWidth, BitmapWidth), y + _NyquistMarkerStyle._Thickness), _NyquistMarkerStyle._Brush.Get());
+        renderTarget->FillRectangle(D2D1_RECT_F(_X, y, std::min(_X + _PixelWidth, _BitmapWidth), y + _NyquistMarkerStyle._Thickness), _NyquistMarkerStyle._Brush.Get());
     }
     else
     {
-        const FLOAT x = msc::Map(Scale, MinScale, MaxScale, 0.f, BitmapWidth);
-        const FLOAT PixelHeight = 96.f / _DPIY;
+        const FLOAT x = msc::Map(Scale, MinScale, MaxScale, 0.f, _BitmapWidth);
 
-        renderTarget->FillRectangle(D2D1_RECT_F(x, _Y, x + _NyquistMarkerStyle._Thickness, std::min(_Y + PixelHeight, BitmapHeight)), _NyquistMarkerStyle._Brush.Get());
+        renderTarget->FillRectangle(D2D1_RECT_F(x, _Y, x + _NyquistMarkerStyle._Thickness, std::min(_Y + _PixelHeight, _BitmapHeight)), _NyquistMarkerStyle._Brush.Get());
     }
 }
 
@@ -755,17 +736,12 @@ HRESULT spectrogram_t::CreateDeviceSpecificResources(ID2D1DeviceContext * device
 
     if (_BitmapRenderTarget != nullptr)
     {
-        FLOAT DeviceDPIX = 96.f;
-        FLOAT DeviceDPIY = 96.f;
+        FLOAT DPIX = 96.f;
+        FLOAT DPIY = 96.f;
 
-        deviceContext->GetDpi(&DeviceDPIX, &DeviceDPIY);
+        deviceContext->GetDpi(&DPIX, &DPIY);
 
-        FLOAT BitmapDPIX = 96.f;
-        FLOAT BitmapDPIY = 96.f;
-
-        _BitmapRenderTarget->GetDpi(&BitmapDPIX, &BitmapDPIY);
-
-        HasDPIChanged = (std::abs(DeviceDPIX - BitmapDPIX) > std::numeric_limits<FLOAT>::epsilon()) || (std::abs(DeviceDPIY - BitmapDPIY) > std::numeric_limits<FLOAT>::epsilon());
+        HasDPIChanged = (DPIX != _DPIX) || (DPIY != _DPIY);
     }
 
 #ifdef _DEBUG
@@ -791,7 +767,7 @@ HRESULT spectrogram_t::CreateDeviceSpecificResources(ID2D1DeviceContext * device
         if (FAILED(hr))
             return hr;
 
-        if (_State._SizeHasChanged)
+        if (_State._SizeHasChanged || HasDPIChanged)
         {
             DeleteSizeDependentResources();
 
@@ -827,24 +803,41 @@ HRESULT spectrogram_t::CreateSizeDependentResources(ID2D1DeviceContext * deviceC
     {
         if (_BitmapRenderTarget == nullptr)
         {
-            HRESULT hr = deviceContext->CreateCompatibleRenderTarget(_BitmapSize, _BitmapRenderTarget.GetAddressOf()); // Bitmap size in DIPs.
+            deviceContext->GetDpi(&_DPIX, &_DPIY);
+
+            _PixelWidth   = 96.f / _DPIX;
+            _PixelHeight  = 96.f / _DPIY;
+
+            const D2D1_SIZE_F DIPSize   = D2D1::SizeF(_BitmapSize.width, _BitmapSize.height);
+            const D2D1_SIZE_U PixelSize = D2D1::SizeU((UINT32) std::ceil(_BitmapSize.width * _DPIX / 96.f), (UINT32) std::ceil(_BitmapSize.height * _DPIY / 96.f));
+
+            HRESULT hr = deviceContext->CreateCompatibleRenderTarget(DIPSize, PixelSize, _BitmapRenderTarget.GetAddressOf());
 
             if (FAILED(hr))
                 return hr;
+
+            _BitmapRenderTarget->SetDpi(_DPIX, _DPIY);
         }
 
         if (_Bitmap == nullptr)
         {
             _BitmapRenderTarget->BeginDraw();
-            _BitmapRenderTarget->Clear(); // Transparent
-            _BitmapRenderTarget->EndDraw();
 
             _BitmapRenderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
+
+            _BitmapRenderTarget->Clear(); // Transparent
+
+            _BitmapRenderTarget->EndDraw();
 
             HRESULT hr = _BitmapRenderTarget->GetBitmap(_Bitmap.GetAddressOf());
 
             if (FAILED(hr))
                 return hr;
+
+            _BitmapPixelSize = _Bitmap->GetPixelSize();
+
+            _BitmapWidth  = (FLOAT) _BitmapPixelSize.width  * _PixelWidth;  // In DIPs
+            _BitmapHeight = (FLOAT) _BitmapPixelSize.height * _PixelHeight; // In DIPs
         }
     }
 
@@ -1055,6 +1048,7 @@ void spectrogram_t::CreateLegend(ID2D1BitmapRenderTarget * renderTarget) const n
 /// <summary>
 /// Initialize the metrics of this instance.
 /// </summary>
+#ifdef v1
 void spectrogram_t::Initialize() noexcept
 {
     assert((_Size.width > 0.f) && (_Size.height > 0.f));
@@ -1312,6 +1306,275 @@ void spectrogram_t::Initialize() noexcept
 
                     Anchor = &_FreqLabels[i];
                 }
+            }
+        }
+    }
+}
+#endif
+void spectrogram_t::Initialize() noexcept
+{
+    assert((_Size.width > 0.f) && (_Size.height > 0.f));
+
+    _TrackTime = _State._TrackTime;
+
+    // Resize the legend bitmap.
+    {
+        if (_State._IsHorizontalSpectrogram)
+        {
+            const FLOAT w = GradientSize + _FreqTextStyle._Width;
+
+            _LegendRect = { _Rect.right - 8.f - w - 8.f - 4.f, _Rect.top, _Rect.right, _Rect.bottom };
+        }
+        else
+        {
+            const FLOAT h = GradientSize + _FreqTextStyle._Height;
+
+            _LegendRect = { _Rect.left + 8.f, _Rect.bottom - 8.f - h - 8.f, _Rect.right - 8.f, _Rect.bottom };
+        }
+
+        _LegendSize = { _LegendRect.right - _LegendRect.left, _LegendRect.bottom - _LegendRect.top };
+    }
+
+    // Resize the offscreen bitmap. Compensate for the axes and the legend.
+    {
+        _BitmapRect = _Rect;
+
+        if (_State._SpectrogramLegend)
+        {
+            if (_State._IsHorizontalSpectrogram)
+                _BitmapRect.right -= (_LegendRect.right - _LegendRect.left);
+            else
+                _BitmapRect.bottom -= (_LegendRect.bottom - _LegendRect.top);
+        }
+
+        if (_State._IsHorizontalSpectrogram)
+        {
+            if (_GraphOptions->_YAxisLeft)
+                _BitmapRect.left += _FreqTextStyle._Width;
+
+            if (_GraphOptions->_YAxisRight)
+                _BitmapRect.right -= _FreqTextStyle._Width;
+
+            if (_GraphOptions->_XAxisTop)
+                _BitmapRect.top += _TimeTextStyle._Height;
+
+            if (_GraphOptions->_XAxisBottom)
+                _BitmapRect.bottom -= _TimeTextStyle._Height;
+        }
+        else
+        {
+            if (_GraphOptions->_YAxisLeft)
+                _BitmapRect.left += _TimeTextStyle._Width;
+
+            if (_GraphOptions->_YAxisRight)
+                _BitmapRect.right -= _TimeTextStyle._Width;
+
+            if (_GraphOptions->_XAxisTop)
+                _BitmapRect.top += _FreqTextStyle._Height;
+
+            if (_GraphOptions->_XAxisBottom)
+                _BitmapRect.bottom -= _FreqTextStyle._Height;
+        }
+
+        _BitmapSize = { _BitmapRect.right - _BitmapRect.left, _BitmapRect.bottom - _BitmapRect.top };
+    }
+
+    assert((_BitmapSize.width > 0.f) && (_BitmapSize.height > 0.f));
+
+    const size_t FrequencyBandCount = _Processor->FrequencyBands.size();
+
+    const FLOAT Bandwidth = (FrequencyBandCount != 0)
+        ? std::max(std::floor(_BitmapSize.width / (FLOAT) FrequencyBandCount), 2.f)
+        : 0.f; // In DIP
+
+    const FLOAT SpectrumWidth = Bandwidth * (FLOAT) FrequencyBandCount;
+
+    // Resize the offscreen bitmap. Compensate for the spectrum bar rounding.
+    {
+        if (_State._UseSpectrumBarMetrics && !_State._IsHorizontalSpectrogram && (FrequencyBandCount != 0))
+        {
+            const FLOAT dx = (_BitmapSize.width - SpectrumWidth) / 2.f;
+
+            _BitmapRect.left  += dx;
+            _BitmapRect.right -= dx;
+
+            _BitmapSize = { _BitmapRect.right - _BitmapRect.left, _BitmapRect.bottom - _BitmapRect.top };
+        }
+    }
+
+    // Resize the frequency axis.
+    {
+        const double MinScale = ScaleFrequency(_LoFrequency, _State._ScalingFunction, _State._SkewFactor);
+        const double MaxScale = ScaleFrequency(_HiFrequency, _State._ScalingFunction, _State._SkewFactor);
+
+        rect_t Rect = { };
+
+        if (_State._IsHorizontalSpectrogram)
+        {
+            for (auto & Label : _FreqLabels)
+            {
+                const double Scale = ScaleFrequency(Label.Frequency, _State._ScalingFunction, _State._SkewFactor);
+
+                const FLOAT y = msc::Map(Scale, MinScale, MaxScale, 0.f, std::max(_BitmapSize.height - 1.f, 0.f));
+
+                if (!_GraphOptions->_FlipVertically)
+                    Label.Tick = _BitmapRect.bottom - y;
+                else
+                    Label.Tick = _BitmapRect.top + y;
+
+                Rect.y1 = Label.Tick - (_FreqTextStyle._Height / 2.f);
+                Rect.y2 = Rect.y1 + _FreqTextStyle._Height;
+
+                // Keep the tick at the mapped frequency while moving the text rectangle into the viewport when a label is centered on its top or bottom edge.
+                if (Rect.y1 < _BitmapRect.top)
+                {
+                    Rect.y2 += _BitmapRect.top - Rect.y1;
+                    Rect.y1  = _BitmapRect.top;
+                }
+                else
+                if (Rect.y2 > _BitmapRect.bottom)
+                {
+                    Rect.y1 -= Rect.y2 - _BitmapRect.bottom;
+                    Rect.y2  = _BitmapRect.bottom;
+                }
+
+                // Left axis
+                Label.Rect1 = Rect;
+
+                Label.Rect1.left  = _Rect.left;
+                Label.Rect1.right = _BitmapRect.left - (TickSize + 1.f);
+
+                // Right axis
+                Label.Rect2 = Rect;
+
+                Label.Rect2.left  = _BitmapRect.right + TickSize + 1.f;
+                Label.Rect2.right = _Rect.right;
+
+                Label.IsHidden = (Label.Tick < _BitmapRect.top) || (Label.Tick > _BitmapRect.bottom);
+/*
+                Label.IsHidden = (Rect.y2 < _BitmapRect.top) || (Rect.y1 > _BitmapRect.bottom);
+
+                Label.Tick = (Label.Rect1.bottom + Label.Rect1.top) / 2.f;
+*/
+            }
+
+            if (_FreqLabels.size() > 2)
+            {
+                #define NotesMode (_GraphOptions->_XAxisMode == XAxisMode::Notes)
+
+                const freq_label_t * Anchor = &_FreqLabels[0];
+
+                // Determine which labels should be hidden.
+                for (size_t i = 1; i < _FreqLabels.size() - 1; ++i)
+                {
+                    if (_FreqLabels[i].IsHidden)
+                        continue;
+
+                    // Don't render the label if it overlaps with the anchor label.
+                    if (IsOverlappingVertically(_FreqLabels[i].Rect1, Anchor->Rect1))
+                    {
+                        _FreqLabels[i].IsHidden = true;
+                        continue;
+                    }
+
+                    // Don't render the label if it overlaps with the next label and that label is a major label.
+                    if (IsOverlappingVertically(_FreqLabels[i].Rect1, _FreqLabels[i + 1].Rect1) && (NotesMode && !_FreqLabels[i + 1].IsMinor))
+                    {
+                        _FreqLabels[i].IsHidden = true;
+                        continue;
+                    }
+
+                    Anchor = &_FreqLabels[i];
+                }
+
+                // Hide the next to last label if it overlaps with the last one.
+                const size_t i = _FreqLabels.size() - 1;
+
+                _FreqLabels[i - 1].IsHidden = IsOverlappingVertically(_FreqLabels[i - 1].Rect1, _FreqLabels[i].Rect1);
+
+                #undef NotesMode
+            }
+        }
+        else
+        {
+            for (auto & Label : _FreqLabels)
+            {
+                const double Scale = ScaleFrequency(Label.Frequency, _State._ScalingFunction, _State._SkewFactor);
+
+                const FLOAT x = msc::Map(Scale, MinScale, MaxScale, 0.f, _BitmapSize.width);
+
+                {
+                    ComPtr<IDWriteTextLayout> TextLayout;
+
+                    HRESULT hr = DirectWriteFactory::Get()->CreateTextLayout(Label.Text.c_str(), (UINT) Label.Text.size(), _FreqTextStyle._TextFormat.Get(), _Size.width, _Size.height, TextLayout.GetAddressOf());
+
+                    if (SUCCEEDED(hr))
+                    {
+                        DWRITE_TEXT_METRICS TextMetrics = { };
+
+                        hr = TextLayout->GetMetrics(&TextMetrics);
+
+                        if (SUCCEEDED(hr))
+                        {
+                            if (!_GraphOptions->_FlipHorizontally)
+                            {
+                                Rect.x1 = _BitmapRect.left + x - (TextMetrics.width / 2.f);
+                                Rect.x2 = Rect.x1 + TextMetrics.width;
+                            }
+                            else
+                            {
+                                Rect.x2 = _BitmapRect.right - x + (TextMetrics.width / 2.f);
+                                Rect.x1 = Rect.x2 - TextMetrics.width;
+                            }
+                        }
+                    }
+                }
+
+                // Top axis
+                Label.Rect1 = Rect;
+
+                Label.Rect1.top    = _Rect.top;
+                Label.Rect1.bottom = _BitmapRect.top;
+
+                // Bottom axis
+                Label.Rect2 = Rect;
+
+                Label.Rect2.top    = _BitmapRect.bottom;
+                Label.Rect2.bottom = _Rect.bottom;
+
+                Label.IsHidden = (Rect.x2 < _BitmapRect.left) || (Rect.x1 > _BitmapRect.right);
+            }
+
+            if (_FreqLabels.size() > 2)
+            {
+                #define NotesMode (_GraphOptions->_XAxisMode == XAxisMode::Notes)
+
+                const freq_label_t * Anchor = &_FreqLabels[0];
+
+                // Determine which labels should be hidden.
+                for (size_t i = 1; i < _FreqLabels.size() - 1; ++i)
+                {
+                    if (_FreqLabels[i].IsHidden)
+                        continue;
+
+                    // Don't render the label if it overlaps with the anchor label.
+                    if (IsOverlappingHorizontally(_FreqLabels[i].Rect1, Anchor->Rect1))
+                    {
+                        _FreqLabels[i].IsHidden = true;
+                        continue;
+                    }
+
+                    // Don't render the label if it overlaps with the next label and that label is a major label.
+                    if (IsOverlappingHorizontally(_FreqLabels[i].Rect1, _FreqLabels[i + 1].Rect1) && (NotesMode && !_FreqLabels[i + 1].IsMinor))
+                    {
+                        _FreqLabels[i].IsHidden = true;
+                        continue;
+                    }
+
+                    Anchor = &_FreqLabels[i];
+                }
+
+                #undef NotesMode
             }
         }
     }

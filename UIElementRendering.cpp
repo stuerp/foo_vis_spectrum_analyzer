@@ -749,7 +749,7 @@ HRESULT uielement_t::CreateDeviceSpecificResources() noexcept
             if (FAILED(hr))
                 return hr;
 
-            GetDPI(m_hWnd, _DPI);
+            hr = GetDPI(m_hWnd, _DPI);
 
             if (FAILED(hr))
                 return hr;

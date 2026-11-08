@@ -19,8 +19,8 @@
 void graph_t::Configure(graph_options_t * options, bool isFirst, bool isLast) noexcept
 {
     _GraphOptions = options;
-    _IsFirst = isFirst;
-    _IsLast = isLast;
+    _IsFirst      = isFirst;
+    _IsLast       = isLast;
 
     _Description = options->_Description;
 

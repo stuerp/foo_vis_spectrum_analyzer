@@ -1,5 +1,5 @@
 
-/** $VER: StylesPage.cpp (2026.10.05) P. Stuer - Implements a configuration dialog page. **/
+/** $VER: StylesPage.cpp (2026.11.08) P. Stuer - Implements a configuration dialog page. **/
 
 #include "pch.h"
 
@@ -793,6 +793,7 @@ LRESULT styles_page_t::OnChanged(LPNMHDR nmhd) noexcept
         {
             style_t * const Style = _StyleManager->GetStyle(_ActiveStyles[_SelectedStyle]);
 
+            // Get the colors from the dialog.
             std::vector<D2D1_COLOR_F> Colors;
 
             {
@@ -812,7 +813,7 @@ LRESULT styles_page_t::OnChanged(LPNMHDR nmhd) noexcept
             }
             else
             {
-                assert(Colors.size() == Style->_CustomGradient.size());
+                Style->_CustomGradient = gradient_t::ConvertFormat(Style->_CurrentGradientStops);
 
                 // Update the custom gradient with the current colors.
                 for (size_t i = 0; i < Colors.size(); ++i)

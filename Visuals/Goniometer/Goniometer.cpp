@@ -27,6 +27,8 @@ void goniometer_t::Configure(graph_options_t * options, audio_processor_t * proc
 {
     _GraphOptions = options;
     _Processor    = (processor_t *) processor;
+    _IsFirst      = isFirst;
+    _IsLast       = isLast;
 
     _SpriteDestinations.resize(0);
     _SpriteSources     .resize(0);

@@ -25,6 +25,8 @@ void peak_meter_t::Configure(graph_options_t * options, audio_processor_t * proc
 {
     _GraphOptions = options;
     _Processor    = (processor_t *) processor;
+    _IsFirst      = isFirst;
+    _IsLast       = isLast;
 
     Reset();
 
@@ -262,9 +264,11 @@ void peak_meter_t::DeleteColorDependentResources() noexcept
 /// </summary>
 HRESULT peak_meter_t::CreateOpacityMask(ID2D1DeviceContext * deviceContext) noexcept
 {
+    D2D1_SIZE_F Size = deviceContext->GetSize();
+
     ComPtr<ID2D1BitmapRenderTarget> RenderTarget;
 
-    HRESULT hr = deviceContext->CreateCompatibleRenderTarget(D2D1::SizeF(_Size.width, _Size.height), RenderTarget.GetAddressOf());
+    HRESULT hr = deviceContext->CreateCompatibleRenderTarget(Size, RenderTarget.GetAddressOf());
 
     if (FAILED(hr))
         return hr;

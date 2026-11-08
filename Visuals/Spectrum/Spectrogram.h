@@ -1,5 +1,5 @@
 
-/** $VER: Spectrogram.h (2026.11.01) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
+/** $VER: Spectrogram.h (2026.11.08) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
 
 #pragma once
 
@@ -89,21 +89,12 @@ private:
 private:
     processor_t * _Processor;
 
-    D2D1_RECT_F _BitmapRect { };
-    D2D1_SIZE_F _BitmapSize { };
+    double _PlaybackTime = 0.;
+    double _TrackTime    = 0.;
+    bool _RequestErase   = false;
 
-    D2D1_RECT_F _LegendRect { };
-    D2D1_SIZE_F _LegendSize { };
-
-    FLOAT _X { 0.f };
-    FLOAT _Y { 0.f };
-
-    double _PlaybackTime { 0. };
-    double _TrackTime { 0. };
-    bool _RequestErase { false };
-
-    double _LoFrequency { 0. };
-    double _HiFrequency { 0. };
+    double _LoFrequency  = 0.;
+    double _HiFrequency  = 0.;
 
     struct time_label_t
     {
@@ -144,9 +135,27 @@ private:
     std::vector<freq_label_t> _FreqLabels;
 
 private:
+    FLOAT _X = 0.f;
+    FLOAT _Y = 0.f;
+
     FLOAT _DPIX = 96.f;
     FLOAT _DPIY = 96.f;
 
+    D2D1_RECT_F _BitmapRect { }; // In pixels
+    D2D1_SIZE_F _BitmapSize { }; // In pixels
+
+    D2D1_RECT_F _LegendRect { }; // In pixels
+    D2D1_SIZE_F _LegendSize { }; // In pixels
+
+    D2D1_SIZE_U _BitmapPixelSize; // In pixels
+
+    FLOAT _BitmapWidth  = 0.f; // In DIPs
+    FLOAT _BitmapHeight = 0.f; // In DIPs
+
+    FLOAT _PixelWidth   = 0.f; // In DIPs, one physical pixel
+    FLOAT _PixelHeight  = 0.f; // In DIPs, one physical pixel
+
+private:
     ComPtr<ID2D1BitmapRenderTarget> _BitmapRenderTarget;
     ComPtr<ID2D1Bitmap> _Bitmap;
 
@@ -157,6 +166,7 @@ private:
     ComPtr<ID2D1SolidColorBrush> _DebugBrush;
 #endif
 
+private:
     style_t _SpectrogramStyle;
     style_t _GradientStyle;
 

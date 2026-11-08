@@ -31,7 +31,6 @@ void spectrum_t::Configure(graph_options_t * options, audio_processor_t * proces
 {
     _GraphOptions = options;
     _Processor    = (processor_t *) processor;
-
     _IsFirst      = isFirst;
     _IsLast       = isLast;
 
@@ -1198,39 +1197,39 @@ void spectrum_t::DeleteColorDependentResources() noexcept
 /// </summary>
 HRESULT spectrum_t::CreateOpacityMask(ID2D1DeviceContext * deviceContext) noexcept
 {
-    ComPtr<ID2D1BitmapRenderTarget> rt;
+    ComPtr<ID2D1BitmapRenderTarget> RenderTarget;
 
-    HRESULT hr = deviceContext->CreateCompatibleRenderTarget(D2D1::SizeF(1.f, _ClientSize.height), rt.GetAddressOf());
+    HRESULT hr = deviceContext->CreateCompatibleRenderTarget(D2D1::SizeF(1.f, _ClientSize.height), RenderTarget.GetAddressOf());
 
     if (FAILED(hr))
         return hr;
 
     ComPtr<ID2D1SolidColorBrush> Brush;
     {
-        hr = rt->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Black), Brush.GetAddressOf());
+        hr = RenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Black), Brush.GetAddressOf());
 
         if (FAILED(hr))
             return hr;
     }
 
-    rt->BeginDraw();
+    RenderTarget->BeginDraw();
 
-    rt->Clear(); // Transparent
+    RenderTarget->Clear(); // Transparent
 
     if (_LEDSize > 0.f)
     {
-        rt->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
+        RenderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
 
         for (FLOAT y = 0.f; y < _ClientSize.height; y += _LEDSize)
-            rt->FillRectangle(D2D1::RectF(0.f, y, 1.f, y + _State._LEDLight), Brush.Get());
+            RenderTarget->FillRectangle(D2D1::RectF(0.f, y, 1.f, y + _State._LEDLight), Brush.Get());
     }
 
-    hr = rt->EndDraw();
+    hr = RenderTarget->EndDraw();
 
     if (FAILED(hr))
         return hr;
 
-    hr = rt->GetBitmap(_OpacityMask.GetAddressOf());
+    hr = RenderTarget->GetBitmap(_OpacityMask.GetAddressOf());
 
     return hr;
 }

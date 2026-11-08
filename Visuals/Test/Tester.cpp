@@ -25,6 +25,8 @@ void tester_t::Configure(graph_options_t * options, audio_processor_t * processo
 {
     _GraphOptions = options;
     _Processor    = (processor_t *) processor;
+    _IsFirst      = isFirst;
+    _IsLast       = isLast;
 
     Reset();
 

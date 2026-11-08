@@ -37,6 +37,8 @@ void oscilloscope_xy_t::Configure(graph_options_t * options, audio_processor_t *
 {
     _GraphOptions = options;
     _Processor    = (processor_t *) processor;
+    _IsFirst      = isFirst;
+    _IsLast       = isLast;
 
     _SquareBitmaps = true;
 

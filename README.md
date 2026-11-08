@@ -100,22 +100,9 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.14.0.0-alpha5, 2026-11-06
+v0.14.0.0-alpha6, 2026-11-xx
 
-- New: Peak detector. It identifies the strongest local maxima in the current frequency spectrum. (*EXPERIMENTAL*)
-- New: Alternate full screen mode for DUI. It reuses the current window (and preset) instead of starting a second instance.
-  - Enable it using the configuration dialog on the Common page.
-  - Double click the left mouse button to enter fullscreen mode. Doubleclick again or press Escape to exit.
-  - You can use the Page Up and Page Down key to move the window between monitors.
-- New: Don't render anything to reduce CPU usage when component window is completely covered.
-- New: Balance / Correlation Meter uses the Fall Speed setting instead of a fixed decay speed.
-- New: Eye Candy effects: Rotozoomer, Dither Field, Flip Dot Matrix, Hidden-line Landscape, Interference Moiré, Flower Scope and Harmonic Harp.
-- Improved: Goniometer Mono and Triband modes react better to the color changes of the Signal style.
-- Improved: Oscilloscope and Goniometer now supports local styles and Overlap mode.
-- Changed: Various little tweaks and corrections to the peak marker animation.
-- Fixed: The input ring buffer did not handle non-radix 2 FFT's correctly.
-- Fixed: Static content did not always respond to color changes.
-- Fixed: Oscilloscope and Goniometer did not position themselves correctly in a multiple graph scenario.
+- 
 
 You can read the full history [here](docs/History.md).
 

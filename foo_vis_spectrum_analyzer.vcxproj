@@ -91,7 +91,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_USE_MATH_DEFINES;_DEBUG;_USRDLL;WIN32;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)..\3rdParty\columns_ui_sdk;$(SolutionDir)..\3rdParty\WTL10_10320\Include;$(SolutionDir)..\sdk;$(SolutionDir)..\sdk\foobar2000;$(SolutionDir)..\sdk\foobar2000\shared;$(ProjectDir);$(ProjectDir)3rdParty\ProjectNayuki;$(ProjectDir)3rdParty\pocketfft;$(ProjectDir)3rdParty\libmsc\include;$(ProjectDir)3rdParty\json\single_include;$(ProjectDir)Analyzers;$(ProjectDir)Analyzers\Bitmeter;$(ProjectDir)Analyzers\Goniometer;$(ProjectDir)Analyzers\EyeCandy;$(ProjectDir)Analyzers\Metering;$(ProjectDir)Analyzers\Oscilloscope;$(ProjectDir)Analyzers\Spectrum;$(ProjectDir)Analyzers\Test;$(ProjectDir)Configuration;$(ProjectDir)Visuals;$(ProjectDir)Visuals\BitMeter;$(ProjectDir)Visuals\EyeCandy;$(ProjectDir)Visuals\EyeCandy\Effects;$(ProjectDir)Visuals\Goniometer;$(ProjectDir)Visuals\Metering;$(ProjectDir)Visuals\Oscilloscope;$(ProjectDir)Visuals\Spectrum;$(ProjectDir)Visuals\Test;$(ProjectDir)Windows</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\3rdParty\columns_ui_sdk;$(SolutionDir)..\3rdParty\WTL10_10320\Include;$(SolutionDir)..\sdk;$(SolutionDir)..\sdk\foobar2000;$(SolutionDir)..\sdk\foobar2000\shared;$(ProjectDir);$(ProjectDir)3rdParty\ProjectNayuki;$(ProjectDir)3rdParty\pocketfft;$(ProjectDir)3rdParty\libmsc\include;$(ProjectDir)3rdParty\json\single_include;$(ProjectDir)Configuration;$(ProjectDir)Processors;$(ProjectDir)Processors\Bitmeter;$(ProjectDir)Processors\Goniometer;$(ProjectDir)Processors\EyeCandy;$(ProjectDir)Processors\Metering;$(ProjectDir)Processors\Oscilloscope;$(ProjectDir)Processors\Spectrum;$(ProjectDir)Processors\Test;$(ProjectDir)Visuals;$(ProjectDir)Visuals\BitMeter;$(ProjectDir)Visuals\EyeCandy;$(ProjectDir)Visuals\EyeCandy\Effects;$(ProjectDir)Visuals\Goniometer;$(ProjectDir)Visuals\Metering;$(ProjectDir)Visuals\Oscilloscope;$(ProjectDir)Visuals\Spectrum;$(ProjectDir)Visuals\Test;$(ProjectDir)Windows</AdditionalIncludeDirectories>
       <TreatAngleIncludeAsExternal>true</TreatAngleIncludeAsExternal>
       <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
       <DisableAnalyzeExternal>true</DisableAnalyzeExternal>
@@ -119,7 +119,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_USE_MATH_DEFINES;NDEBUG;_USRDLL;WIN32;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)..\3rdParty\columns_ui_sdk;$(SolutionDir)..\3rdParty\WTL10_10320\Include;$(SolutionDir)..\sdk;$(SolutionDir)..\sdk\foobar2000;$(SolutionDir)..\sdk\foobar2000\shared;$(ProjectDir);$(ProjectDir)3rdParty\ProjectNayuki;$(ProjectDir)3rdParty\pocketfft;$(ProjectDir)3rdParty\libmsc\include;$(ProjectDir)3rdParty\json\single_include;$(ProjectDir)Analyzers;$(ProjectDir)Analyzers\Bitmeter;$(ProjectDir)Analyzers\Goniometer;$(ProjectDir)Analyzers\EyeCandy;$(ProjectDir)Analyzers\Metering;$(ProjectDir)Analyzers\Oscilloscope;$(ProjectDir)Analyzers\Spectrum;$(ProjectDir)Analyzers\Test;$(ProjectDir)Configuration;$(ProjectDir)Visuals;$(ProjectDir)Visuals\BitMeter;$(ProjectDir)Visuals\EyeCandy;$(ProjectDir)Visuals\EyeCandy\Effects;$(ProjectDir)Visuals\Goniometer;$(ProjectDir)Visuals\Metering;$(ProjectDir)Visuals\Oscilloscope;$(ProjectDir)Visuals\Spectrum;$(ProjectDir)Visuals\Test;$(ProjectDir)Windows</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\3rdParty\columns_ui_sdk;$(SolutionDir)..\3rdParty\WTL10_10320\Include;$(SolutionDir)..\sdk;$(SolutionDir)..\sdk\foobar2000;$(SolutionDir)..\sdk\foobar2000\shared;$(ProjectDir);$(ProjectDir)3rdParty\ProjectNayuki;$(ProjectDir)3rdParty\pocketfft;$(ProjectDir)3rdParty\libmsc\include;$(ProjectDir)3rdParty\json\single_include;$(ProjectDir)Configuration;$(ProjectDir)Processors;$(ProjectDir)Processors\Bitmeter;$(ProjectDir)Processors\Goniometer;$(ProjectDir)Processors\EyeCandy;$(ProjectDir)Processors\Metering;$(ProjectDir)Processors\Oscilloscope;$(ProjectDir)Processors\Spectrum;$(ProjectDir)Processors\Test;$(ProjectDir)Visuals;$(ProjectDir)Visuals\BitMeter;$(ProjectDir)Visuals\EyeCandy;$(ProjectDir)Visuals\EyeCandy\Effects;$(ProjectDir)Visuals\Goniometer;$(ProjectDir)Visuals\Metering;$(ProjectDir)Visuals\Oscilloscope;$(ProjectDir)Visuals\Spectrum;$(ProjectDir)Visuals\Test;$(ProjectDir)Windows</AdditionalIncludeDirectories>
       <TreatAngleIncludeAsExternal>true</TreatAngleIncludeAsExternal>
       <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
       <DisableAnalyzeExternal>true</DisableAnalyzeExternal>
@@ -156,7 +156,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_USE_MATH_DEFINES;_DEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)..\3rdParty\columns_ui_sdk;$(SolutionDir)..\3rdParty\WTL10_10320\Include;$(SolutionDir)..\sdk;$(SolutionDir)..\sdk\foobar2000;$(SolutionDir)..\sdk\foobar2000\shared;$(ProjectDir);$(ProjectDir)3rdParty\ProjectNayuki;$(ProjectDir)3rdParty\pocketfft;$(ProjectDir)3rdParty\libmsc\include;$(ProjectDir)3rdParty\json\single_include;$(ProjectDir)Analyzers;$(ProjectDir)Analyzers\Bitmeter;$(ProjectDir)Analyzers\Goniometer;$(ProjectDir)Analyzers\EyeCandy;$(ProjectDir)Analyzers\Metering;$(ProjectDir)Analyzers\Oscilloscope;$(ProjectDir)Analyzers\Spectrum;$(ProjectDir)Analyzers\Test;$(ProjectDir)Configuration;$(ProjectDir)Visuals;$(ProjectDir)Visuals\BitMeter;$(ProjectDir)Visuals\EyeCandy;$(ProjectDir)Visuals\EyeCandy\Effects;$(ProjectDir)Visuals\Goniometer;$(ProjectDir)Visuals\Metering;$(ProjectDir)Visuals\Oscilloscope;$(ProjectDir)Visuals\Spectrum;$(ProjectDir)Visuals\Test;$(ProjectDir)Windows</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\3rdParty\columns_ui_sdk;$(SolutionDir)..\3rdParty\WTL10_10320\Include;$(SolutionDir)..\sdk;$(SolutionDir)..\sdk\foobar2000;$(SolutionDir)..\sdk\foobar2000\shared;$(ProjectDir);$(ProjectDir)3rdParty\ProjectNayuki;$(ProjectDir)3rdParty\pocketfft;$(ProjectDir)3rdParty\libmsc\include;$(ProjectDir)3rdParty\json\single_include;$(ProjectDir)Configuration;$(ProjectDir)Processors;$(ProjectDir)Processors\Bitmeter;$(ProjectDir)Processors\Goniometer;$(ProjectDir)Processors\EyeCandy;$(ProjectDir)Processors\Metering;$(ProjectDir)Processors\Oscilloscope;$(ProjectDir)Processors\Spectrum;$(ProjectDir)Processors\Test;$(ProjectDir)Visuals;$(ProjectDir)Visuals\BitMeter;$(ProjectDir)Visuals\EyeCandy;$(ProjectDir)Visuals\EyeCandy\Effects;$(ProjectDir)Visuals\Goniometer;$(ProjectDir)Visuals\Metering;$(ProjectDir)Visuals\Oscilloscope;$(ProjectDir)Visuals\Spectrum;$(ProjectDir)Visuals\Test;$(ProjectDir)Windows</AdditionalIncludeDirectories>
       <TreatAngleIncludeAsExternal>true</TreatAngleIncludeAsExternal>
       <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
       <DisableAnalyzeExternal>true</DisableAnalyzeExternal>
@@ -184,7 +184,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_USE_MATH_DEFINES;NDEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)..\3rdParty\columns_ui_sdk;$(SolutionDir)..\3rdParty\WTL10_10320\Include;$(SolutionDir)..\sdk;$(SolutionDir)..\sdk\foobar2000;$(SolutionDir)..\sdk\foobar2000\shared;$(ProjectDir);$(ProjectDir)3rdParty\ProjectNayuki;$(ProjectDir)3rdParty\pocketfft;$(ProjectDir)3rdParty\libmsc\include;$(ProjectDir)3rdParty\json\single_include;$(ProjectDir)Analyzers;$(ProjectDir)Analyzers\Bitmeter;$(ProjectDir)Analyzers\Goniometer;$(ProjectDir)Analyzers\EyeCandy;$(ProjectDir)Analyzers\Metering;$(ProjectDir)Analyzers\Oscilloscope;$(ProjectDir)Analyzers\Spectrum;$(ProjectDir)Analyzers\Test;$(ProjectDir)Configuration;$(ProjectDir)Visuals;$(ProjectDir)Visuals\BitMeter;$(ProjectDir)Visuals\EyeCandy;$(ProjectDir)Visuals\EyeCandy\Effects;$(ProjectDir)Visuals\Goniometer;$(ProjectDir)Visuals\Metering;$(ProjectDir)Visuals\Oscilloscope;$(ProjectDir)Visuals\Spectrum;$(ProjectDir)Visuals\Test;$(ProjectDir)Windows</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\3rdParty\columns_ui_sdk;$(SolutionDir)..\3rdParty\WTL10_10320\Include;$(SolutionDir)..\sdk;$(SolutionDir)..\sdk\foobar2000;$(SolutionDir)..\sdk\foobar2000\shared;$(ProjectDir);$(ProjectDir)3rdParty\ProjectNayuki;$(ProjectDir)3rdParty\pocketfft;$(ProjectDir)3rdParty\libmsc\include;$(ProjectDir)3rdParty\json\single_include;$(ProjectDir)Configuration;$(ProjectDir)Processors;$(ProjectDir)Processors\Bitmeter;$(ProjectDir)Processors\Goniometer;$(ProjectDir)Processors\EyeCandy;$(ProjectDir)Processors\Metering;$(ProjectDir)Processors\Oscilloscope;$(ProjectDir)Processors\Spectrum;$(ProjectDir)Processors\Test;$(ProjectDir)Visuals;$(ProjectDir)Visuals\BitMeter;$(ProjectDir)Visuals\EyeCandy;$(ProjectDir)Visuals\EyeCandy\Effects;$(ProjectDir)Visuals\Goniometer;$(ProjectDir)Visuals\Metering;$(ProjectDir)Visuals\Oscilloscope;$(ProjectDir)Visuals\Spectrum;$(ProjectDir)Visuals\Test;$(ProjectDir)Windows</AdditionalIncludeDirectories>
       <TreatAngleIncludeAsExternal>true</TreatAngleIncludeAsExternal>
       <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
       <DisableAnalyzeExternal>true</DisableAnalyzeExternal>
@@ -218,22 +218,22 @@
     <ClInclude Include="3rdParty\json\single_include\nlohmann\json.hpp" />
     <ClInclude Include="3rdParty\pocketfft\pocketfft_hdronly.h" />
     <ClInclude Include="3rdParty\ProjectNayuki\FftComplex.hpp" />
-    <ClInclude Include="Analyzers\Spectrum\Aggregator.h" />
-    <ClInclude Include="Analyzers\Bitmeter\BitmeterProcessor.h" />
-    <ClInclude Include="Analyzers\EyeCandy\EyeCandyProcessor.h" />
-    <ClInclude Include="Analyzers\Metering\MeteringProcessor.h" />
-    <ClInclude Include="Analyzers\Oscilloscope\OscilloscopeProcessor.h" />
-    <ClInclude Include="Analyzers\Spectrum\AnalogStyleAnalyzer.h" />
-    <ClInclude Include="Analyzers\BaseProcessor.h" />
-    <ClInclude Include="Analyzers\Spectrum\CompositeFFTAnalyzer.h" />
-    <ClInclude Include="Analyzers\Goniometer\CrossoverFilter.h" />
-    <ClInclude Include="Analyzers\Oscilloscope\Downmixer.h" />
-    <ClInclude Include="Analyzers\Oscilloscope\Downsampler.h" />
-    <ClInclude Include="Analyzers\Spectrum\FrequencyScaler.h" />
-    <ClInclude Include="Analyzers\Spectrum\PeakDetector.h" />
-    <ClInclude Include="Analyzers\Spectrum\SpectrumProcessor.h" />
-    <ClInclude Include="Analyzers\Spectrum\SWIFTAnalyzer.h" />
-    <ClInclude Include="Analyzers\Test\TestProcessor.h" />
+    <ClInclude Include="Processors\Spectrum\Aggregator.h" />
+    <ClInclude Include="Processors\Bitmeter\BitmeterProcessor.h" />
+    <ClInclude Include="Processors\EyeCandy\EyeCandyProcessor.h" />
+    <ClInclude Include="Processors\Metering\MeteringProcessor.h" />
+    <ClInclude Include="Processors\Oscilloscope\OscilloscopeProcessor.h" />
+    <ClInclude Include="Processors\Spectrum\AnalogStyleAnalyzer.h" />
+    <ClInclude Include="Processors\BaseProcessor.h" />
+    <ClInclude Include="Processors\Spectrum\CompositeFFTAnalyzer.h" />
+    <ClInclude Include="Processors\Goniometer\CrossoverFilter.h" />
+    <ClInclude Include="Processors\Oscilloscope\Downmixer.h" />
+    <ClInclude Include="Processors\Oscilloscope\Downsampler.h" />
+    <ClInclude Include="Processors\Spectrum\FrequencyScaler.h" />
+    <ClInclude Include="Processors\Spectrum\PeakDetector.h" />
+    <ClInclude Include="Processors\Spectrum\SpectrumProcessor.h" />
+    <ClInclude Include="Processors\Spectrum\SWIFTAnalyzer.h" />
+    <ClInclude Include="Processors\Test\TestProcessor.h" />
     <ClInclude Include="Configuration\CommonPage.h" />
     <ClInclude Include="Configuration\CommonPageLayout.h" />
     <ClInclude Include="Visuals\EyeCandy\Effects\DynamicSystems\ChuaCircuit.h" />
@@ -276,7 +276,7 @@
     <ClInclude Include="CustomTitleFormatHook.h" />
     <ClInclude Include="MemoryStream.h" />
     <ClInclude Include="Visuals\BitMeter\BitMeter.h" />
-    <ClInclude Include="Analyzers\Decimator.h" />
+    <ClInclude Include="Processors\Decimator.h" />
     <ClInclude Include="Visuals\Test\D3DTester.h" />
     <ClInclude Include="Visuals\EyeCandy\Effects\DynamicSystems\AizawaAttractor.h" />
     <ClInclude Include="Visuals\EyeCandy\Effects\DynamicSystems\CliffordAttractor.h" />
@@ -315,7 +315,7 @@
     <ClInclude Include="Visuals\Metering\PeakMeterParts.h" />
     <ClInclude Include="Visuals\RenderContext.h" />
     <ClInclude Include="Visuals\Spectrum\Spectrogram.h" />
-    <ClInclude Include="Analyzers\Goniometer\GoniometerProcessor.h" />
+    <ClInclude Include="Processors\Goniometer\GoniometerProcessor.h" />
     <ClInclude Include="Visuals\Goniometer\Goniometer.h" />
     <ClInclude Include="Visuals\Test\Tester.h" />
     <ClInclude Include="Visuals\Visualization.h" />
@@ -333,7 +333,7 @@
     <ClInclude Include="Visuals\GraphOptions.h" />
     <ClInclude Include="State.h" />
     <ClInclude Include="Configuration\OwnerDrawnListBox.h" />
-    <ClInclude Include="Analyzers\Spectrum\CQTAnalyzer.h" />
+    <ClInclude Include="Processors\Spectrum\CQTAnalyzer.h" />
     <ClInclude Include="Visuals\Artwork.h" />
     <ClInclude Include="Visuals\Element.h" />
     <ClInclude Include="Visuals\Grid.h" />
@@ -345,7 +345,7 @@
     <ClInclude Include="Windows\Direct2D.h" />
     <ClInclude Include="Windows\DirectWrite.h" />
     <ClInclude Include="pch.h" />
-    <ClInclude Include="Analyzers\Spectrum\FrequencyBand.h" />
+    <ClInclude Include="Processors\Spectrum\FrequencyBand.h" />
     <ClInclude Include="Log.h" />
     <ClInclude Include="Windows\Raster.h" />
     <ClInclude Include="Visuals\Spectrum\BezierSpline.h" />
@@ -356,12 +356,12 @@
     <ClInclude Include="Visuals\RingBuffer.h" />
     <ClInclude Include="Visuals\Spectrum\Spectrum.h" />
     <ClInclude Include="CUIElement.h" />
-    <ClInclude Include="Analyzers\Spectrum\FFTAnalyzer.h" />
+    <ClInclude Include="Processors\Spectrum\FFTAnalyzer.h" />
     <ClInclude Include="DUIElement.h" />
     <ClInclude Include="UIElement.h" />
     <ClInclude Include="Support.h" />
-    <ClInclude Include="Analyzers\Spectrum\Analyzer.h" />
-    <ClInclude Include="Analyzers\Spectrum\WindowFunctions.h" />
+    <ClInclude Include="Processors\Spectrum\Analyzer.h" />
+    <ClInclude Include="Processors\Spectrum\WindowFunctions.h" />
     <ClInclude Include="Visuals\Spectrum\XAxis.h" />
     <ClInclude Include="Visuals\Spectrum\YAxis.h" />
     <ClInclude Include="Windows\Theme.h" />
@@ -369,22 +369,22 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="3rdParty\ProjectNayuki\FftComplex.cpp" />
-    <ClCompile Include="Analyzers\Bitmeter\BitmeterProcessor.cpp" />
-    <ClCompile Include="Analyzers\EyeCandy\EyeCandyProcessor.cpp" />
-    <ClCompile Include="Analyzers\Metering\MeteringProcessor.cpp" />
-    <ClCompile Include="Analyzers\Oscilloscope\OscilloscopeProcessor.cpp" />
-    <ClCompile Include="Analyzers\Spectrum\AnalogStyleAnalyzer.cpp" />
-    <ClCompile Include="Analyzers\BaseProcessor.cpp" />
-    <ClCompile Include="Analyzers\Spectrum\CompositeFFTAnalyzer.cpp" />
-    <ClCompile Include="Analyzers\Spectrum\CQTAnalyzer.cpp" />
-    <ClCompile Include="Analyzers\Goniometer\CrossoverFilter.cpp" />
-    <ClCompile Include="Analyzers\Decimator.cpp" />
-    <ClCompile Include="Analyzers\Oscilloscope\Downmixer.cpp" />
-    <ClCompile Include="Analyzers\Oscilloscope\Downsampler.cpp" />
-    <ClCompile Include="Analyzers\Spectrum\PeakDetector.cpp" />
-    <ClCompile Include="Analyzers\Spectrum\SpectrumProcessor.cpp" />
-    <ClCompile Include="Analyzers\Spectrum\SWIFTAnalyzer.cpp" />
-    <ClCompile Include="Analyzers\Test\TestProcessor.cpp" />
+    <ClCompile Include="Processors\Bitmeter\BitmeterProcessor.cpp" />
+    <ClCompile Include="Processors\EyeCandy\EyeCandyProcessor.cpp" />
+    <ClCompile Include="Processors\Metering\MeteringProcessor.cpp" />
+    <ClCompile Include="Processors\Oscilloscope\OscilloscopeProcessor.cpp" />
+    <ClCompile Include="Processors\Spectrum\AnalogStyleAnalyzer.cpp" />
+    <ClCompile Include="Processors\BaseProcessor.cpp" />
+    <ClCompile Include="Processors\Spectrum\CompositeFFTAnalyzer.cpp" />
+    <ClCompile Include="Processors\Spectrum\CQTAnalyzer.cpp" />
+    <ClCompile Include="Processors\Goniometer\CrossoverFilter.cpp" />
+    <ClCompile Include="Processors\Decimator.cpp" />
+    <ClCompile Include="Processors\Oscilloscope\Downmixer.cpp" />
+    <ClCompile Include="Processors\Oscilloscope\Downsampler.cpp" />
+    <ClCompile Include="Processors\Spectrum\PeakDetector.cpp" />
+    <ClCompile Include="Processors\Spectrum\SpectrumProcessor.cpp" />
+    <ClCompile Include="Processors\Spectrum\SWIFTAnalyzer.cpp" />
+    <ClCompile Include="Processors\Test\TestProcessor.cpp" />
     <ClCompile Include="Configuration\CommonPage.cpp" />
     <ClCompile Include="Configuration\EyeCandyPage.cpp" />
     <ClCompile Include="Configuration\FiltersPage.cpp" />
@@ -478,7 +478,7 @@
     <ClCompile Include="Visuals\Metering\PeakMeter.cpp" />
     <ClCompile Include="Visuals\Metering\PeakMeterParts.cpp" />
     <ClCompile Include="Visuals\Spectrum\Spectrogram.cpp" />
-    <ClCompile Include="Analyzers\Goniometer\GoniometerProcessor.cpp" />
+    <ClCompile Include="Processors\Goniometer\GoniometerProcessor.cpp" />
     <ClCompile Include="Visuals\Goniometer\Goniometer.cpp" />
     <ClCompile Include="Visuals\Style.cpp" />
     <ClCompile Include="Visuals\StyleManager.cpp" />
@@ -493,7 +493,7 @@
     <ClCompile Include="Windows\DXGI.cpp" />
     <ClCompile Include="Windows\Raster.cpp" />
     <ClCompile Include="UIElementRendering.cpp" />
-    <ClCompile Include="Analyzers\Spectrum\FFTAnalyzer.cpp" />
+    <ClCompile Include="Processors\Spectrum\FFTAnalyzer.cpp" />
     <ClCompile Include="Visuals\Spectrum\BezierSpline.cpp" />
     <ClCompile Include="Visuals\FrameCounter.cpp" />
     <ClCompile Include="Visuals\Graph.cpp" />
@@ -546,7 +546,7 @@
     <None Include=".gitattributes" />
     <None Include=".gitignore" />
     <None Include="Build-FB2KComponent.ps1" />
-    <None Include="Analyzers\Spectrum\FFT.h" />
+    <None Include="Processors\Spectrum\FFT.h" />
     <None Include="cpp.hint" />
     <None Include="docs\EffectsGallery.md" />
     <None Include="docs\Gallery.md" />

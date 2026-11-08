@@ -37,7 +37,9 @@ void oscilloscope_t::Move(const D2D1_RECT_F & rect) noexcept
 void oscilloscope_t::Configure(graph_options_t * options, audio_processor_t * processor, bool isFirst, bool isLast) noexcept
 {
     _GraphOptions = options;
-    _Processor = (processor_t *) processor;
+    _Processor    = (processor_t *) processor;
+    _IsFirst      = isFirst;
+    _IsLast       = isLast;
 
     _SquareBitmaps = false;
 

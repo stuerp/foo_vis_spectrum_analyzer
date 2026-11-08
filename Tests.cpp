@@ -5,7 +5,7 @@
 
 #ifdef _DEBUG
 
-#include "Analyzers/Spectrum/SpectrumProcessor.h"
+#include "Spectrum/SpectrumProcessor.h"
 #include "FrequencyScaler.h"
 #include "WindowFunctions.h"
 #include "Log.h"

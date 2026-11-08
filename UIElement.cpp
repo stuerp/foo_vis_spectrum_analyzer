@@ -644,9 +644,12 @@ void uielement_t::UpdateState(ConfigurationChanges configurationChanges) noexcep
                     for (auto & Options : _RenderState._GraphOptions)
                     {
                         auto * Graph = new graph_t(_RenderState, _RenderContext);
-
+/*
                         const bool IsFirst = !OverlapGraphs || (OverlapGraphs && (i == 0));
                         const bool IsLast  = !OverlapGraphs || (OverlapGraphs && (i == _RenderState._GraphOptions.size() - 1));
+*/
+                        const bool IsFirst = (i == 0);
+                        const bool IsLast  = (i == _RenderState._GraphOptions.size() - 1);
 
                         Graph->Configure(&Options, IsFirst, IsLast);
 
