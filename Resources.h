@@ -255,12 +255,13 @@
 #define IDC_SUPPRESS_MIRROR_IMAGE       6072
 #define IDC_VISUALIZE_DURING_PAUSE      6074
 #define IDC_ALT_FULLSCREEN              6076
+#define IDC_ALT_FULLSCREEN_ANIMATION    6078
 
 #pragma endregion
 
 #pragma region Artwork
 
-#define IDC_ARTWORK                     6078
+#define IDC_ARTWORK                     6080
 
 #define IDC_ARTWORK_BACKGROUND          6082
 

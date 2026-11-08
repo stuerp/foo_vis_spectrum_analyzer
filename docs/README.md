@@ -924,6 +924,10 @@ or load the same preset as used in the non-fullscreen version.
 Enable this setting to only use one instance. In fullscreen mode you can use the Page Up and Page Down key to switch between monitors. Press the Escape key or doubleclick the left mousebutton to
 exit fullscreen mode.
 
+`Animate fullscreen transition`
+
+Enable this setting to animate the transition to fullscreen mode and back.
+
 #### Artwork group
 
 Some visualizations can use artwork to display on the background or to use as a source for a color list. The artwork can come from the playing track or from file location.

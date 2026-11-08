@@ -46,8 +46,6 @@ public:
     // visualization_t
     void Configure(graph_options_t * options, audio_processor_t * analysis, bool isFirst, bool isLast) noexcept override final;
 
-    const D2D1_RECT_F & GetClientRect() const noexcept { return _BitmapRect; }
-
 private:
     bool RenderSpectrum(ID2D1BitmapRenderTarget * renderTarget) noexcept;
     void RenderNyquistFrequencyMarker(ID2D1BitmapRenderTarget * renderTarget) const noexcept;
@@ -91,7 +89,6 @@ private:
 
     double _PlaybackTime = 0.;
     double _TrackTime    = 0.;
-    bool _RequestErase   = false;
 
     double _LoFrequency  = 0.;
     double _HiFrequency  = 0.;

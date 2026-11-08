@@ -1,5 +1,5 @@
 
-/** $VER: CommonPage.cpp (2026.11.05) P. Stuer - Implements a configuration dialog page. **/
+/** $VER: CommonPage.cpp (2026.11.08) P. Stuer - Implements a configuration dialog page. **/
 
 #include "pch.h"
 
@@ -22,6 +22,7 @@ BOOL common_page_t::OnInitDialog(CWindow w, LPARAM lParam) noexcept
         { IDC_SUPPRESS_MIRROR_IMAGE, "Prevents the mirror image of the spectrum (anything above the Nyquist frequency) from being rendered." },
         { IDC_VISUALIZE_DURING_PAUSE, "Continue visualization when playback is paused." },
         { IDC_ALT_FULLSCREEN, "Enable to reuse the current component window instead of opening a second instance when going fullscreen." },
+        { IDC_ALT_FULLSCREEN_ANIMATION, "Enable to animate the fullscreen transition." },
 
         // Artwork
         { IDC_NUM_ARTWORK_COLORS, "Max. number of colors to select from the artwork. The colors can be used in a dynamic gradient." },
@@ -78,6 +79,7 @@ void common_page_t::InitializeControls() noexcept
         SendDlgItemMessageW(IDC_SUPPRESS_MIRROR_IMAGE, BM_SETCHECK, _State->_SuppressMirrorImage);
         SendDlgItemMessageW(IDC_VISUALIZE_DURING_PAUSE, BM_SETCHECK, _State->_VisualizeDuringPause);
         SendDlgItemMessageW(IDC_ALT_FULLSCREEN, BM_SETCHECK, _State->_AltFullscreen);
+        SendDlgItemMessageW(IDC_ALT_FULLSCREEN_ANIMATION, BM_SETCHECK, _State->_AltFullscreenAnimation);
     }
 
     // Artwork
@@ -229,6 +231,8 @@ void common_page_t::UpdateControls() noexcept
 
     for (const auto Id : { IDC_SMOOTHING_METHOD, IDC_SHOW_TOOLTIPS, IDC_SUPPRESS_MIRROR_IMAGE })
         GetDlgItem(Id).EnableWindow(SupportsFFT);
+
+    GetDlgItem(IDC_ALT_FULLSCREEN_ANIMATION).EnableWindow(_State->_AltFullscreen);
 
     // Smoothing
     GetDlgItem(IDC_SMOOTHING_FACTOR).EnableWindow(SupportsFFT && (_State->_SmoothingMethod != SmoothingMethod::None));
@@ -477,6 +481,15 @@ void common_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
         case IDC_ALT_FULLSCREEN:
         {
             _State->_AltFullscreen = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+
+            UpdateControls();
+
+            return;
+        }
+
+        case IDC_ALT_FULLSCREEN_ANIMATION:
+        {
+            _State->_AltFullscreenAnimation = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
 
             return;
         }

@@ -1,5 +1,5 @@
 
-/** $VER: State.cpp (2026.11.06) P. Stuer **/
+/** $VER: State.cpp (2026.11.08) P. Stuer **/
 
 #include "pch.h"
 #include "State.h"
@@ -189,10 +189,11 @@ void state_t::Reset() noexcept
 
     _CustomGradientStops_Deprecated = gradient_t::GetBuiltIn(ColorScheme::Custom);
 
-    _ShowToolTipsAlways   = true;
-    _SuppressMirrorImage  = true;
-    _VisualizeDuringPause = true;
-    _AltFullscreen        = false;
+    _ShowToolTipsAlways     = true;
+    _SuppressMirrorImage    = true;
+    _VisualizeDuringPause   = true;
+    _AltFullscreen          = false;
+    _AltFullscreenAnimation = true;
 
     // Artwork
     _NumArtworkColors = 10;
@@ -526,10 +527,11 @@ state_t & state_t::operator=(const state_t & other) noexcept
 //      _GradientStops = other._GradientStops;                  // Deprecated
 //      _CustomGradientStops_Deprecated = other._CustomGradientStops_Deprecated;
 
-        _ShowToolTipsAlways   = other._ShowToolTipsAlways;
-        _SuppressMirrorImage  = other._SuppressMirrorImage;
-        _VisualizeDuringPause = other._VisualizeDuringPause;
-        _AltFullscreen        = other._AltFullscreen;
+        _ShowToolTipsAlways     = other._ShowToolTipsAlways;
+        _SuppressMirrorImage    = other._SuppressMirrorImage;
+        _VisualizeDuringPause   = other._VisualizeDuringPause;
+        _AltFullscreen          = other._AltFullscreen;
+        _AltFullscreenAnimation = other._AltFullscreenAnimation;
 
         // Artwork
         _NumArtworkColors = other._NumArtworkColors;
@@ -1702,6 +1704,7 @@ void state_t::FromJSON(const char * data, size_t size, bool isPreset)
     _SuppressMirrorImage    = Object.value("suppressMirrorImage",                   _SuppressMirrorImage);
     _VisualizeDuringPause   = Object.value("visualizeDuringPause",                  _VisualizeDuringPause);
     _AltFullscreen          = Object.value("alternateFullscreenMode",               _AltFullscreen);
+    _AltFullscreenAnimation = Object.value("alternateFullscreenModeAnimation",      _AltFullscreenAnimation);
 
     // Artwork
     const auto & Artwork = Object.value("artwork", json::object());
@@ -2037,13 +2040,14 @@ json state_t::ToJSON(bool isPreset) const
         ), 
 
         // Common
-        { "smoothingMethod",      _SmoothingMethod },
-        { "smoothingFactor",      _SmoothingFactor },
+        { "smoothingMethod",                    _SmoothingMethod },
+        { "smoothingFactor",                    _SmoothingFactor },
 
-        { "showToolTipsAlways",   _ShowToolTipsAlways },
-        { "suppressMirrorImage",  _SuppressMirrorImage },
-        { "visualizeDuringPause", _VisualizeDuringPause },
-        { "alternateFullscreenMode", _AltFullscreen},
+        { "showToolTipsAlways",                 _ShowToolTipsAlways },
+        { "suppressMirrorImage",                _SuppressMirrorImage },
+        { "visualizeDuringPause",               _VisualizeDuringPause },
+        { "alternateFullscreenMode",            _AltFullscreen },
+        { "alternateFullscreenModeAnimation",   _AltFullscreenAnimation },
 
         json::object_t::value_type
         (

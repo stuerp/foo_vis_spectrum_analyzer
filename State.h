@@ -1,5 +1,5 @@
 
-/** $VER: State.h (2026.11.06) P. Stuer **/
+/** $VER: State.h (2026.11.08) P. Stuer **/
 
 #pragma once
 
@@ -131,7 +131,7 @@ public:
             FLOAT _Rotation;
             bool _HasPhosphorDecay;
             FLOAT _BlurSigma;
-            FLOAT _Afterglow;                                         // ms
+            FLOAT _Afterglow;                                           // ms
             uint32_t _FrameCount;
             bool _Downmix;                                              // Downmix the input audio to mono.
             bool _ZeroCrossingTrigger;                                  // Use a zero-crossing trigger.
@@ -271,6 +271,7 @@ public:
         bool _SuppressMirrorImage;                                      // True if the mirror image of the spectrum is not rendered.
         bool _VisualizeDuringPause;                                     // True if visualization should continue when playback is paused.
         bool _AltFullscreen;                                            // True if the alternate fullscreen mode is enabled.
+        bool _AltFullscreenAnimation;                                   // True if the transition to fullscreen mode should be animated.
 
     #pragma endregion
 

@@ -644,12 +644,9 @@ void uielement_t::UpdateState(ConfigurationChanges configurationChanges) noexcep
                     for (auto & Options : _RenderState._GraphOptions)
                     {
                         auto * Graph = new graph_t(_RenderState, _RenderContext);
-/*
+
                         const bool IsFirst = !OverlapGraphs || (OverlapGraphs && (i == 0));
                         const bool IsLast  = !OverlapGraphs || (OverlapGraphs && (i == _RenderState._GraphOptions.size() - 1));
-*/
-                        const bool IsFirst = (i == 0);
-                        const bool IsLast  = (i == _RenderState._GraphOptions.size() - 1);
 
                         Graph->Configure(&Options, IsFirst, IsLast);
 
@@ -957,31 +954,34 @@ void uielement_t::UpdateFullScreenTransition() noexcept
     if (!_FullScreen.TransitionActive)
         return;
 
-    const auto Elapsed = std::chrono::steady_clock::now() - _FullScreen.TransitionStartTime;
-
-    float Progress = std::chrono::duration<float>(Elapsed).count() / std::chrono::duration<float>(FullScreenTransitionDuration).count();
-
-    Progress = std::clamp(Progress, 0.f, 1.f);
-
-    const float EasedProgress = Progress * Progress * (3.f - (2.f * Progress));
-
-    const auto Interpolate = [](LONG start, LONG end, float amount) noexcept
+    if (_UIState._AltFullscreenAnimation)
     {
-        return start + (LONG) std::lround((float) (end - start) * amount);
-    };
+        const auto Elapsed = std::chrono::steady_clock::now() - _FullScreen.TransitionStartTime;
 
-    RECT CurrentRect
-    {
-        Interpolate(_FullScreen.TransitionStartRect.left,   _FullScreen.TransitionEndRect.left,   EasedProgress),
-        Interpolate(_FullScreen.TransitionStartRect.top,    _FullScreen.TransitionEndRect.top,    EasedProgress),
-        Interpolate(_FullScreen.TransitionStartRect.right,  _FullScreen.TransitionEndRect.right,  EasedProgress),
-        Interpolate(_FullScreen.TransitionStartRect.bottom, _FullScreen.TransitionEndRect.bottom, EasedProgress)
-    };
+        float Progress = std::chrono::duration<float>(Elapsed).count() / std::chrono::duration<float>(FullScreenTransitionDuration).count();
 
-    ::SetWindowPos(m_hWnd, HWND_TOP, CurrentRect.left, CurrentRect.top, std::max(1L, CurrentRect.right - CurrentRect.left), std::max(1L, CurrentRect.bottom - CurrentRect.top), SWP_NOACTIVATE | SWP_NOOWNERZORDER | SWP_SHOWWINDOW);
+        Progress = std::clamp(Progress, 0.f, 1.f);
 
-    if (Progress < 1.0f)
-        return;
+        const float EasedProgress = Progress * Progress * (3.f - (2.f * Progress));
+
+        const auto Interpolate = [](LONG start, LONG end, float amount) noexcept
+        {
+            return start + (LONG) std::lround((float) (end - start) * amount);
+        };
+
+        RECT CurrentRect
+        {
+            Interpolate(_FullScreen.TransitionStartRect.left,   _FullScreen.TransitionEndRect.left,   EasedProgress),
+            Interpolate(_FullScreen.TransitionStartRect.top,    _FullScreen.TransitionEndRect.top,    EasedProgress),
+            Interpolate(_FullScreen.TransitionStartRect.right,  _FullScreen.TransitionEndRect.right,  EasedProgress),
+            Interpolate(_FullScreen.TransitionStartRect.bottom, _FullScreen.TransitionEndRect.bottom, EasedProgress)
+        };
+
+        ::SetWindowPos(m_hWnd, HWND_TOP, CurrentRect.left, CurrentRect.top, std::max(1L, CurrentRect.right - CurrentRect.left), std::max(1L, CurrentRect.bottom - CurrentRect.top), SWP_NOACTIVATE | SWP_NOOWNERZORDER | SWP_SHOWWINDOW);
+
+        if (Progress < 1.0f)
+            return;
+    }
 
     ::KillTimer(m_hWnd, FullScreenTransitionTimerId);
 
