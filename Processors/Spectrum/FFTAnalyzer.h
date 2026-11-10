@@ -1,5 +1,5 @@
 
-/** $VER: FFTAnalyzer.h (2026.11.04) P. Stuer **/
+/** $VER: FFTAnalyzer.h (2026.11.10) P. Stuer **/
 
 #pragma once
 
@@ -48,6 +48,7 @@ public:
 private:
     void Add(const audio_sample * samples, size_t count, uint32_t channels) noexcept;
     void Transform() noexcept;
+    void Reassign(double norm) noexcept;
 
     void MapCoefficients(frequency_bands_t & freqBands) noexcept;
     void MapCoefficientsUsingTFB(frequency_bands_t & freqBands) const noexcept;
@@ -55,6 +56,7 @@ private:
     void MapCoefficientsUsingGaussianFilter(frequency_bands_t & freqBands) const noexcept;
 
     double Interpolate(const std::vector<std::complex<double>> & fftCoeffs, double value, int kernelSize) const noexcept;
+    void Reassign() noexcept;
 
     /// <summary>
     /// Gets the band index of the specified frequency.
@@ -100,6 +102,14 @@ private:
     std::vector<std::complex<double>> _Coefficients;
 
     const window_function_t & _BrownPucketteKernel;
+
+    // Reassignment sharpening
+    fft_t _DerivativeFFT;
+
+    std::vector<std::complex<double>> _DerivativeSamples;
+    std::vector<std::complex<double>> _DerivativeCoefficients;
+    std::vector<std::complex<double>> _ReassignedCoefficients;
+    std::vector<double> _ReassignedPower;
 
     static constexpr double Pi    = std::numbers::pi;
     static constexpr double TwoPi = 2. * Pi;

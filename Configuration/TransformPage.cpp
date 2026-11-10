@@ -1,5 +1,5 @@
 
-/** $VER: TransformPage.cpp (2026.10.31) P. Stuer - Implements a configuration dialog page. **/
+/** $VER: TransformPage.cpp (2026.11.10) P. Stuer - Implements a configuration dialog page. **/
 
 #include "pch.h"
 
@@ -50,6 +50,7 @@ BOOL transform_page_t::OnInitDialog(CWindow w, LPARAM lParam) noexcept
 
         { IDC_SMOOTH_LOWER_FREQUENCIES, "When enabled, the bandpower part only gets used when number of FFT bins to sum for each band is at least two or more." },
         { IDC_SMOOTH_GAIN_TRANSITION, "Smooths the frequency slope of the aggregation modes." },
+        { IDC_REASSIGNMENT_SHARPENING, "Produces a sharper spectrum by relocating energy to a bin that represents more accurately the frequency at the cost of extra processing." },
 
         { IDC_KERNEL_SIZE, "Determines the size of the Lanczos kernel. The kernel is used to create a smooth transition between the FFT coefficients resulting in a visual pleasing result." },
 
@@ -154,6 +155,7 @@ void transform_page_t::InitializeControls() noexcept
     {
         SendDlgItemMessageW(IDC_SMOOTH_LOWER_FREQUENCIES, BM_SETCHECK, _State->_SmoothLowerFrequencies);
         SendDlgItemMessageW(IDC_SMOOTH_GAIN_TRANSITION, BM_SETCHECK, _State->_SmoothGainTransition);
+        SendDlgItemMessageW(IDC_REASSIGNMENT_SHARPENING, BM_SETCHECK, _State->_UseReassignmentSharpening);
     }
 
     {
@@ -261,7 +263,7 @@ void transform_page_t::UpdateControls() noexcept
 
     const bool SupportsTransform = !(IsPeakMeter || IsBalanceMeter || IsOscilloscope || IsBitMeter || IsTester);
 
-    const bool IsFFT = (_State->_TransformMethod == TransformMethod::FFT)   || (_State->_TransformMethod == TransformMethod::CompositeFFT);
+    const bool IsFFT = (_State->_TransformMethod == TransformMethod::FFT) || (_State->_TransformMethod == TransformMethod::CompositeFFT);
     const bool IsIIR = _State->IsSlidingWindowTransform();
 
     if (SupportsTransform)
@@ -287,6 +289,8 @@ void transform_page_t::UpdateControls() noexcept
 
             for (const auto & Iter : { IDC_NUM_BINS, IDC_HOP_SIZE_FRACTION, IDC_AGGREGATION_METHOD, IDC_SMOOTH_LOWER_FREQUENCIES, IDC_SMOOTH_GAIN_TRANSITION, IDC_KERNEL_SIZE })
                 GetDlgItem(Iter).EnableWindow(IsStandard);
+
+            GetDlgItem(IDC_REASSIGNMENT_SHARPENING).EnableWindow(IsFFT && (_State->_MappingMethod == CoefficientMapping::Standard));
         }
 
         // Brown-Puckette CQT
@@ -315,7 +319,7 @@ void transform_page_t::UpdateControls() noexcept
             IDC_WINDOW_FUNCTION, IDC_WINDOW_PARAMETER, IDC_WINDOW_SKEW, IDC_REACTION_ALIGNMENT,
             IDC_HOP_SIZE_FRACTION,
             IDC_MAPPING_METHOD, IDC_AGGREGATION_METHOD,
-            IDC_SMOOTH_LOWER_FREQUENCIES, IDC_SMOOTH_GAIN_TRANSITION,
+            IDC_SMOOTH_LOWER_FREQUENCIES, IDC_SMOOTH_GAIN_TRANSITION, IDC_REASSIGNMENT_SHARPENING,
             IDC_KERNEL_SIZE, IDC_KERNEL_SIZE_SPIN,
             IDC_BW_OFFSET, IDC_BW_CAP, IDC_BW_AMOUNT, IDC_GRANULAR_BW,
             IDC_KERNEL_SHAPE, IDC_KERNEL_SHAPE_PARAMETER, IDC_KERNEL_ASYMMETRY,
@@ -683,12 +687,24 @@ void transform_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
         case IDC_SMOOTH_LOWER_FREQUENCIES:
         {
             _State->_SmoothLowerFrequencies = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+
+            ChangedSettings = ConfigurationChanges::Renderer;
             break;
         }
 
         case IDC_SMOOTH_GAIN_TRANSITION:
         {
             _State->_SmoothGainTransition = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+
+            ChangedSettings = ConfigurationChanges::Renderer;
+            break;
+        }
+
+        case IDC_REASSIGNMENT_SHARPENING:
+        {
+            _State->_UseReassignmentSharpening = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+
+            ChangedSettings = ConfigurationChanges::Renderer;
             break;
         }
 

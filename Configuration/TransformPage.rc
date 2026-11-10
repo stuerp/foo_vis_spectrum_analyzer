@@ -1,5 +1,5 @@
 
-/** $VER: TransformPage.rc (2026.10.29) P. Stuer **/
+/** $VER: TransformPage.rc (2026.11.10) P. Stuer **/
 
 #include "Resources.h"
 
@@ -52,6 +52,7 @@ style DS_SETFONT | DS_CONTROL | WS_CHILD | WS_CLIPCHILDREN
 
         control         "Smooth lower frequencies", IDC_SMOOTH_LOWER_FREQUENCIES, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_A43, Y_A43, W_A43, H_A43
         control         "Smooth gain transition",   IDC_SMOOTH_GAIN_TRANSITION,   "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_A44, Y_A44, W_A44, H_A44
+        control         "Reassignment sharpening",  IDC_REASSIGNMENT_SHARPENING,  "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_A45, Y_A45, W_A45, H_A45
 
         rtext           "Lanczos kernel:"           IDC_STATIC,                     X_A39, Y_A39 + 2, W_A39, H_A39
         edittext                                    IDC_KERNEL_SIZE,                X_A40, Y_A40,     W_A40, H_A40, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP

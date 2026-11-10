@@ -169,39 +169,43 @@
     #define X_A16    X_A15 + W_A15 + IX
     #define Y_A16    Y_A15
 
-/** Smooth lower frequencies **/
+/** Checkbox: Smooth lower frequencies **/
 
-    // Checkbox
     #define W_A43    100
     #define H_A43    H_CHB
     #define X_A43    X_A15
     #define Y_A43    Y_A16 + H_A16 + IY
-    #pragma endregion
 
-    #pragma region Smooth gain transition
-    // Checkbox
+/** Checkbox: Smooth gain transition **/
+
     #define W_A44    100
     #define H_A44    H_CHB
     #define X_A44    X_A43
     #define Y_A44    Y_A43 + H_A43 + IY
-    #pragma endregion
 
-    #pragma region Lanczos Kernel
+/** Checkbox: Reassignment sharpening **/
+
+    #define W_A45    100
+    #define H_A45    H_CHB
+    #define X_A45    X_A44
+    #define Y_A45    Y_A44 + H_A44 + IY
+
+/** Lanczos Kernel **/
+
     // Label
     #define W_A39    64
     #define H_A39    H_LBL
     #define X_A39    X_A15
-    #define Y_A39    Y_A44 + H_A44 + IY
+    #define Y_A39    Y_A45 + H_A45 + IY
 
     // Textbox
     #define W_A40    30
     #define H_A40    H_TBX
     #define X_A40    X_A39 + W_A39 + IX
     #define Y_A40    Y_A39
-    #pragma endregion
 
 #define W_B00   W_B05
-#define H_B00   11 + H_A04 + IY + H_A59 + IY + H_A81 + IY + H_A16 + IY + H_A43 + IY + H_A66 + IY + H_A44 + IY + H_A40 + 7
+#define H_B00   11 + H_A04 + IY + H_A59 + IY + H_A81 + IY + H_A16 + IY + H_A43 + IY + H_A66 + IY + H_A44+ IY + H_A45 + IY + H_A40 + 7
 #pragma endregion
 
 #pragma region Brown-Puckette CQT

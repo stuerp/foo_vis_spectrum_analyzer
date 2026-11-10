@@ -1,5 +1,5 @@
 
-/** $VER: FFTAnalyzer.cpp (2026.11.08) P. Stuer **/
+/** $VER: FFTAnalyzer.cpp (2026.11.10) P. Stuer **/
 
 #include "pch.h"
 
@@ -24,6 +24,14 @@ fft_analyzer_t::fft_analyzer_t(const state_t & state, size_t fftSize, uint32_t s
 
     _Samples.resize(_FFTSize);
     _Coefficients.resize(_FFTSize);
+
+    // Initialize the buffers used for frequency reassignment.
+    _DerivativeFFT.Initialize(_FFTSize);
+
+    _DerivativeSamples.resize(_FFTSize);
+    _DerivativeCoefficients.resize(_FFTSize);
+    _ReassignedCoefficients.resize(_FFTSize);
+    _ReassignedPower.resize((_FFTSize / 2) + 1);
 }
 
 /// <summary>
@@ -141,7 +149,8 @@ void fft_analyzer_t::Transform() noexcept
 
         for (auto & Iter : _Samples)
         {
-            const double WindowFactor = WindowFunction(msc::Map(j, (size_t) 0, _FFTSize - 1, -1., 1.));
+            const double x = msc::Map(j, (size_t) 0, _FFTSize - 1, -1., 1.);
+            const double WindowFactor = WindowFunction(x);
 
             Iter = std::complex<double>(Sample[i] * WindowFactor, 0.);
 
@@ -162,6 +171,7 @@ void fft_analyzer_t::Transform() noexcept
     if (std::abs(Norm) <= MinimumNorm)
     {
         std::fill(_Coefficients.begin(), _Coefficients.end(), std::complex<double>{});
+        std::fill(_ReassignedCoefficients.begin(), _ReassignedCoefficients.end(), std::complex<double>{});
 
         return;
     }
@@ -186,10 +196,142 @@ void fft_analyzer_t::Transform() noexcept
     }
 
     // Correct the DC and the Nyquist bins because they do not have a mirror frequency. Effectively normalization factor 1/N.
+    {
     _Coefficients.front() *= 0.5;           // DC bin
 
     if ((_FFTSize % 2) == 0)
         _Coefficients[_FFTSize / 2] *= 0.5; // Nyquist bin
+    }
+
+    if (_State._UseReassignmentSharpening && (_State._MappingMethod == CoefficientMapping::Standard))
+        Reassign(Norm);
+}
+
+/// <summary>
+/// Reassigns each positive-frequency coefficient to its local center of energy. This should result in a sharper spectrum
+/// </summary>
+void fft_analyzer_t::Reassign(double norm) noexcept
+{
+    // Fill the FFT buffer from the input ring buffer with Time domain data. The derivative window is calculated in the normalized [-1, 1] domain used by WindowFunction().
+    {
+        const auto Size = _InputRing.size();
+
+        size_t i = _Next;
+
+        const audio_sample * const Sample = _InputRing.data();
+        const double Step = 2. / (double) (_FFTSize - 1);
+
+        for (size_t j = 0; j < _FFTSize; ++j)
+        {
+            const double x = msc::Map(j, (size_t) 0, _FFTSize - 1, -1., 1.);
+            const double WindowFactor = WindowFunction(x);
+
+            double DerivativeWindowFactor;
+
+            if (j == 0)
+                DerivativeWindowFactor = (WindowFunction(x + Step) - WindowFactor) / Step;
+            else
+            if (j + 1 == _FFTSize)
+                DerivativeWindowFactor = (WindowFactor - WindowFunction(x - Step)) / Step;
+            else
+                DerivativeWindowFactor = (WindowFunction(x + Step) - WindowFunction(x - Step)) / (2. * Step);
+
+            _DerivativeSamples[j] = std::complex<double>(Sample[i] * DerivativeWindowFactor, 0.);
+
+            if (++i == Size)
+                i = 0;
+        }
+    }
+
+    // Normalize the samples (Time domain data).
+    {
+        const double Factor = (double) _FFTSize / norm;
+
+        for (auto & Sample : _DerivativeSamples)
+            Sample *= Factor;
+    }
+
+    // Transform the data from the Time domain to the Frequency domain.
+    _DerivativeFFT.Transform(_DerivativeSamples, _DerivativeCoefficients);
+
+    // Normalize the coefficients (Frequency domain data).
+    {
+        const double Factor = 2. / (double) _FFTSize;
+
+        for (auto & Coefficient : _DerivativeCoefficients)
+            Coefficient *= Factor;
+    }
+
+    // Correct the DC and the Nyquist bins because they do not have a mirror frequency. Effectively normalization factor 1/N.
+    _DerivativeCoefficients.front() *= 0.5;
+
+    if ((_FFTSize % 2) == 0)
+        _DerivativeCoefficients[_FFTSize / 2] *= 0.5;
+
+    // Move each frequency bin's energy toward a more accurate frequency location.
+    {
+        const size_t BinCount = (_FFTSize / 2) + 1;
+
+        // Find the strongest bin.
+        double MaximumPower = 0.;
+
+        for (size_t i = 0; i < BinCount; ++i)
+            MaximumPower = std::max(MaximumPower, std::norm(_Coefficients[i]));
+
+        // Stop processing if we're looking at silence.
+        if (MaximumPower == 0.)
+        {
+            std::fill(_ReassignedCoefficients.begin(), _ReassignedCoefficients.end(), std::complex<double>{});
+            return;
+        }
+
+        constexpr double MinimumRelativePower = 1e-10;      // -100 dB relative to the frame maximum.
+        constexpr double MaximumCorrection = 8.;            // In bins. Maximum number of bins to move.
+
+        const double MinimumPower = MaximumPower * MinimumRelativePower;
+        const double CorrectionScale = (double) _FFTSize / (Pi * (double) (_FFTSize - 1));
+
+        // Clear the buffer that will receive the relocated energy.
+        std::fill(_ReassignedPower.begin(), _ReassignedPower.end(), 0.);
+
+        // Process each bin.
+        for (size_t i = 0; i < BinCount; ++i)
+        {
+            const double Power = std::norm(_Coefficients[i]);
+
+            if (Power < MinimumPower)
+                continue;
+
+            // Estimate where the energy belongs.
+            const auto Ratio = _DerivativeCoefficients[i] * std::conj(_Coefficients[i]) / Power;
+
+            // Calculate the bin displacement.
+            double Correction = std::imag(Ratio) * CorrectionScale;
+
+            if (!std::isfinite(Correction) || (std::abs(Correction) > MaximumCorrection))
+                Correction = 0.;
+
+            const double Destination = std::clamp((double) i + Correction, 0., (double) (BinCount - 1));
+
+            // Split the energy between neighboring bins.
+            const size_t LoBin = (size_t) std::floor(Destination);
+            const size_t HiBin = std::min(LoBin + 1, BinCount - 1);
+            const double Fraction = Destination - (double) LoBin;
+
+            _ReassignedPower[LoBin] += Power * (1. - Fraction);
+            _ReassignedPower[HiBin] += Power * Fraction;
+        }
+
+        // Convert power back to magnitude.
+        for (size_t i = 0; i < BinCount; ++i)
+            _ReassignedCoefficients[i] = std::complex<double>(std::sqrt(_ReassignedPower[i]), 0.);
+
+        // Recreate the mirrored negative-frequency half from the positive half.
+        const size_t LastPositiveBin = ((_FFTSize % 2) == 0) ? (BinCount - 1) : BinCount;
+
+        for (size_t i = 1; i < LastPositiveBin; ++i)
+            _ReassignedCoefficients[_FFTSize - i] = std::conj(_ReassignedCoefficients[i]);
+    }
 }
 
 /// <summary>
@@ -197,7 +339,9 @@ void fft_analyzer_t::Transform() noexcept
 /// </summary>
 void fft_analyzer_t::MapCoefficients(frequency_bands_t & frequencyBands) noexcept
 {
-    if (_Coefficients.empty() || (_SampleRate == 0))
+    const auto & Coefficients = _State._UseReassignmentSharpening ? _ReassignedCoefficients : _Coefficients;
+
+    if (Coefficients.empty() || (_SampleRate == 0))
     {
         for (auto & fb : frequencyBands)
             fb.Magnitude = 0.;
@@ -234,7 +378,7 @@ void fft_analyzer_t::MapCoefficients(frequency_bands_t & frequencyBands) noexcep
         {
             const auto RequestedBins = (size_t) (LastBin - FirstBin + 1);
 
-            const double Magnitude = (*Aggregate)(_Coefficients, RequestedBins, (size_t) FirstBin, _FFTSize);
+            const double Magnitude = (*Aggregate)(Coefficients, RequestedBins, (size_t) FirstBin, _FFTSize);
 
             double BandGain = 1.;
 
@@ -251,7 +395,7 @@ void fft_analyzer_t::MapCoefficients(frequency_bands_t & frequencyBands) noexcep
         {
             const double BinIndex = HzToBinIndex(fb.Center);
 
-            fb.Magnitude = Interpolate(_Coefficients, BinIndex, KernelSize);
+            fb.Magnitude = Interpolate(Coefficients, BinIndex, KernelSize);
         }
     }
 }

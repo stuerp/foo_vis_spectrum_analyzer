@@ -1,5 +1,5 @@
 
-/** $VER: State.cpp (2026.11.08) P. Stuer **/
+/** $VER: State.cpp (2026.11.10) P. Stuer **/
 
 #include "pch.h"
 #include "State.h"
@@ -136,20 +136,21 @@ void state_t::Reset() noexcept
 
     _WeightingAmount = 0.;
 
-    static constexpr double Woofer  =  220.; // Hz
-    static constexpr double Tweeter = 2500.; // Hz
+    static constexpr double Bass    =  220.; // Hz
+    static constexpr double Trebble = 2500.; // Hz
 
     _CrossoverMode = crossover::Mode::LinkwitzRiley4;
-    _LowBand       = Woofer;
-    _HighBand      = Tweeter;
+    _LowBand       = Bass;
+    _HighBand      = Trebble;
 
     _SmoothingMethod = SmoothingMethod::Average;
     _SmoothingFactor = 0.5;
 
-    _KernelSize             = 32;
-    _AggregationMethod      = AggregationMethod::Maximum;
-    _SmoothLowerFrequencies = true;
-    _SmoothGainTransition   = true;
+    _KernelSize                = 32;
+    _AggregationMethod         = AggregationMethod::Maximum;
+    _SmoothLowerFrequencies    = true;
+    _SmoothGainTransition      = true;
+    _UseReassignmentSharpening = false;
 
     // Rendering parameters
     _BackColor_Deprecated = D2D1::ColorF(D2D1::ColorF::Black);                  // Deprecated
@@ -387,17 +388,18 @@ state_t & state_t::operator=(const state_t & other) noexcept
 
     #pragma region FFT
 
-        _FFTMode         = other._FFTMode;
-        _FFTCustom       = other._FFTCustom;
-        _FFTDuration     = other._FFTDuration;
-        _HopSizeFraction = other._HopSizeFraction;
+        _FFTMode                   = other._FFTMode;
+        _FFTCustom                 = other._FFTCustom;
+        _FFTDuration               = other._FFTDuration;
+        _HopSizeFraction           = other._HopSizeFraction;
 
-        _KernelSize             = other._KernelSize;
-        _AggregationMethod      = other._AggregationMethod;
-        _SmoothLowerFrequencies = other._SmoothLowerFrequencies;
-        _SmoothGainTransition   = other._SmoothGainTransition;
+        _KernelSize                = other._KernelSize;
+        _AggregationMethod         = other._AggregationMethod;
+        _SmoothLowerFrequencies    = other._SmoothLowerFrequencies;
+        _SmoothGainTransition      = other._SmoothGainTransition;
+        _UseReassignmentSharpening = other._UseReassignmentSharpening;
 
-        _MappingMethod = other._MappingMethod;
+        _MappingMethod             = other._MappingMethod;
 
         #pragma region Brown-Puckette CQT
 
@@ -1605,10 +1607,11 @@ void state_t::FromJSON(const char * data, size_t size, bool isPreset)
         _FFTDuration            = std::clamp(Transform.value("duration",          _FFTDuration),            MinFFTDuration,             MaxFFTDuration);
         _HopSizeFraction        = std::clamp(Transform.value("hopSizeFraction",   _HopSizeFraction),        MinHopSizeFraction,         MaxHopSizeFraction);
 
-        _AggregationMethod      = std::clamp(Transform.value("aggregationMethod", _AggregationMethod),      AggregationMethod::Min,     AggregationMethod::Max);
-        _MappingMethod          = std::clamp(Transform.value("mapping",           _MappingMethod),          CoefficientMapping::Min,    CoefficientMapping::Max);
-        _SmoothLowerFrequencies = Transform.value("smoothLowerFrequencies",       _SmoothLowerFrequencies);
-        _SmoothGainTransition   = Transform.value("smoothGainTransition",         _SmoothGainTransition);
+        _AggregationMethod         = std::clamp(Transform.value("aggregationMethod", _AggregationMethod),      AggregationMethod::Min,     AggregationMethod::Max);
+        _MappingMethod             = std::clamp(Transform.value("mapping",           _MappingMethod),          CoefficientMapping::Min,    CoefficientMapping::Max);
+        _SmoothLowerFrequencies    = Transform.value("smoothLowerFrequencies",       _SmoothLowerFrequencies);
+        _SmoothGainTransition      = Transform.value("smoothGainTransition",         _SmoothGainTransition);
+        _UseReassignmentSharpening = Transform.value("reassignmentSharpening",       _UseReassignmentSharpening);
 
         _KernelSize             = std::clamp(Transform.value("kernelSize",        _KernelSize),             MinKernelSize,              MaxKernelSize);
     }
@@ -1945,6 +1948,7 @@ json state_t::ToJSON(bool isPreset) const
                 { "mapping", _MappingMethod },
                 { "smoothLowerFrequencies", _SmoothLowerFrequencies },
                 { "smoothGainTransition", _SmoothGainTransition },
+                { "reassignmentSharpening", _UseReassignmentSharpening },
 
                 { "kernelSize", _KernelSize },
 

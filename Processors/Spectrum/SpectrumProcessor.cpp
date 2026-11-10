@@ -154,115 +154,6 @@ namespace Spectrum
     /// <summary>
     /// Updates the peak values.
     /// </summary>
-#ifdef v2
-    void processor_t::AnimatePeaks(bool) noexcept
-    {
-        assert(_Options);
-
-        const double DeltaTime = _Chrono.Elapsed();
-
-        _Chrono.Reset();
-
-        const double AmplitudeRange = _Options->_AmplitudeHi - _Options->_AmplitudeLo;
-
-        const double HoldTime = _State._HoldDuration;// * (double) _State._TargetRefreshRate;
-        const double FallRate = (_State._FallSpeed != 0) ? msc::Map(DeltaTime, 0., AmplitudeRange / _State._FallSpeed, 0., 1.) : 0.;
-
-        const bool IsAIMP = (_State._PeakMode == PeakMode::AIMP) || (_State._PeakMode == PeakMode::FadingAIMP);
-
-        for (auto & fb : FrequencyBands)
-        {
-            if (fb.Value >= fb.PeakValue)
-            {
-                if (IsAIMP)
-                    fb.HoldTime += (fb.Value - fb.PeakValue) * HoldTime;
-                else
-                    fb.HoldTime = HoldTime;
-
-                fb.PeakValue = fb.Value;
-                fb.FallRate  = 0.;
-                fb.Opacity   = 1.;
-
-                continue;
-            }
-
-            if (fb.PeakValue <= 0.)
-                continue;
-
-            {
-                if (fb.HoldTime > 0.)
-                {
-                    if (IsAIMP)
-                        fb.PeakValue += (fb.HoldTime - std::max(fb.HoldTime - 1., 0.)) / HoldTime;
-
-                    fb.HoldTime--;
-
-                    if (IsAIMP)
-                        fb.HoldTime = std::min(fb.HoldTime, HoldTime);
-                }
-                else
-                {
-                    switch (_State._PeakMode)
-                    {
-                        default:
-
-                        case PeakMode::None:
-                            break;
-
-                        case PeakMode::Classic:
-                        {
-                            constexpr double FallAcceleration = 0.1;
-
-                            fb.FallRate  = std::min(fb.FallRate + FallAcceleration, FallRate);
-                            fb.PeakValue -= fb.FallRate;
-                            break;
-                        }
-
-                        case PeakMode::Gravity:
-                        {
-                            fb.FallRate += FallRate;
-                            fb.PeakValue -= fb.FallRate;
-                            break;
-                        }
-
-                        case PeakMode::FadeOut:
-                        {
-                            fb.FallRate += FallRate;
-
-                            fb.Opacity -= fb.FallRate;
-
-                            if (fb.Opacity <= 0.)
-                                fb.PeakValue = fb.Value;
-                            break;
-                        }
-
-                        case PeakMode::AIMP:
-                        {
-                            fb.FallRate  = FallRate * (1. + (int) (fb.PeakValue < 0.5));
-                            fb.PeakValue -= fb.FallRate;
-                            break;
-                        }
-
-                        case PeakMode::FadingAIMP:
-                        {
-                            fb.FallRate  = FallRate * (1. + (int) (fb.PeakValue < 0.5));
-                            fb.PeakValue -= fb.FallRate;
-
-                            fb.Opacity -= fb.FallRate;
-
-                            if (fb.Opacity <= 0.)
-                                fb.PeakValue = fb.Value;
-                            break;
-                        }
-                    }
-                }
-
-                fb.PeakValue = std::clamp(fb.PeakValue, fb.Value, 1.);
-                fb.Opacity   = std::clamp(fb.Opacity,   0.,       1.);
-            }
-        }
-    }
-#else
     void processor_t::AnimatePeaks(bool) noexcept
     {
         assert(_Options);
@@ -338,7 +229,7 @@ namespace Spectrum
 
                     case PeakMode::Gravity:
                     {
-                        // Distance while accelerating: d = v0 * t + 0.5 *a * t^2
+                        // Distance while accelerating: d = (v0 * t) + (a * t^2 / 2)
                         fb.PeakValue -= (fb.FallSpeed * RemainingTime) + (GravityAcceleration * RemainingTime * RemainingTime / 2.);
                         fb.FallSpeed += GravityAcceleration * RemainingTime;
                         break;
@@ -390,7 +281,6 @@ namespace Spectrum
             fb.Opacity   = std::clamp(fb.Opacity,   0.,       1.);
         }
     }
-#endif
 
     /// <summary>
     /// Selectively resets the measurements of this processor.

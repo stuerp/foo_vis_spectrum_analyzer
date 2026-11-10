@@ -102,7 +102,10 @@ To create the component first build the x86 configuration and next the x64 confi
 
 v0.14.0.0-alpha6, 2026-11-xx
 
-- 
+- New: [Reassignment sharpening](https://en.wikipedia.org/wiki/Reassignment_method). [Github Issue 63](https://github.com/stuerp/foo_vis_spectrum_analyzer/issues/63).
+  - Produces a sharper spectrum by relocating energy to a bin that represents more accurately the frequency at the cost of extra processing.
+  - Works for an FFT and Composite FFT using Standard coefficient mapping.
+  - Disabled by default.
 
 You can read the full history [here](docs/History.md).
 
