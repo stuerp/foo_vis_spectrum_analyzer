@@ -142,8 +142,7 @@ namespace NeonTunnel
     private:
         std::vector<ring_t> _Rings;
         std::vector<projected_ring_t> _ProjectedRings;
-
-        std::atomic<size_t> _NextRing { 0 };
+        std::atomic<size_t> _NextRing = 0;
 
         double _TunnelRotation       = 0.;
 

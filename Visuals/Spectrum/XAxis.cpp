@@ -206,7 +206,7 @@ void x_axis_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 
     deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
 
-    FLOAT Opacity = _TextStyle._Brush->GetOpacity();
+    FLOAT Opacity = _TextStyle.Brush->GetOpacity();
 
     _TextStyle.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
 
@@ -214,22 +214,22 @@ void x_axis_t::Render(ID2D1DeviceContext * deviceContext) noexcept
     {
         // Draw the vertical grid line.
         if (_LineStyle.IsEnabled())
-            deviceContext->DrawLine(Iter.PointT, Iter.PointB, _LineStyle._Brush.Get(), _LineStyle._Thickness, nullptr);
+            deviceContext->DrawLine(Iter.PointT, Iter.PointB, _LineStyle.Brush.Get(), _LineStyle._Thickness, nullptr);
 
         // Draw the text.
         if (!Iter.IsHidden && _TextStyle.IsEnabled() && (_GraphOptions->_XAxisMode != XAxisMode::None))
         {
-            _TextStyle._Brush->SetOpacity(Iter.IsDimmed && (_GraphOptions->_XAxisMode == XAxisMode::Notes) ? Opacity * .5f : Opacity);
+            _TextStyle.Brush->SetOpacity(Iter.IsDimmed && (_GraphOptions->_XAxisMode == XAxisMode::Notes) ? Opacity * .5f : Opacity);
 
             if (_GraphOptions->_XAxisTop)
-                deviceContext->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle._TextFormat.Get(), Iter.RectT, _TextStyle._Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                deviceContext->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle.TextFormat.Get(), Iter.RectT, _TextStyle.Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
 
             if (_GraphOptions->_XAxisBottom)
-                deviceContext->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle._TextFormat.Get(), Iter.RectB, _TextStyle._Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                deviceContext->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle.TextFormat.Get(), Iter.RectB, _TextStyle.Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
         }
     }
 
-    _TextStyle._Brush->SetOpacity(Opacity);
+    _TextStyle.Brush->SetOpacity(Opacity);
 }
 
 #pragma region DirectX
@@ -280,7 +280,7 @@ void x_axis_t::DeleteDeviceSpecificResources() noexcept
 /// </summary>
 HRESULT x_axis_t::CreateColorDependentResources(ID2D1DeviceContext * deviceContext, style_manager_t & styleManager) noexcept
 {
-    if (_LineStyle._Brush == nullptr)
+    if (_LineStyle.Brush == nullptr)
     {
         _LineStyle = *styleManager.GetStyle(VisualElement::VerticalGridLine);
 
@@ -292,7 +292,7 @@ HRESULT x_axis_t::CreateColorDependentResources(ID2D1DeviceContext * deviceConte
             return hr;
     }
 
-    if (_TextStyle._Brush == nullptr)
+    if (_TextStyle.Brush == nullptr)
     {
         _TextStyle = *styleManager.GetStyle(VisualElement::XAxisText);
 
@@ -352,8 +352,8 @@ void x_axis_t::RecalculateSizeDependentParameters() noexcept
     const FLOAT x1 = !_GraphOptions->_FlipHorizontally ? _Rect.left  + HOffset : _Rect.right - HOffset;
     const FLOAT x2 = !_GraphOptions->_FlipHorizontally ? _Rect.right - HOffset : _Rect.left  + HOffset;
 
-    const FLOAT yt = _Rect.top    + (_GraphOptions->_XAxisTop    ? _TextStyle._Height : 0.f); // Top axis
-    const FLOAT yb = _Rect.bottom - (_GraphOptions->_XAxisBottom ? _TextStyle._Height : 0.f); // Bottom axis
+    const FLOAT yt = _Rect.top    + (_GraphOptions->_XAxisTop    ? _TextStyle.Height : 0.f); // Top axis
+    const FLOAT yb = _Rect.bottom - (_GraphOptions->_XAxisBottom ? _TextStyle.Height : 0.f); // Bottom axis
 
     const double MinScale = ScaleFrequency(_LoFrequency, _State._ScalingFunction, _State._SkewFactor);
     const double MaxScale = ScaleFrequency(_HiFrequency, _State._ScalingFunction, _State._SkewFactor);
@@ -380,7 +380,7 @@ void x_axis_t::RecalculateSizeDependentParameters() noexcept
         {
             ComPtr<IDWriteTextLayout> TextLayout;
 
-            HRESULT hr = DirectWriteFactory::Get()->CreateTextLayout(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle._TextFormat.Get(), _Size.width, _Size.height, TextLayout.GetAddressOf());
+            HRESULT hr = DirectWriteFactory::Get()->CreateTextLayout(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle.TextFormat.Get(), _Size.width, _Size.height, TextLayout.GetAddressOf());
 
             if (SUCCEEDED(hr))
             {

@@ -15,6 +15,9 @@ namespace Waveform
     /// </summary>
     void effect_t::Render(ID2D1RenderTarget * renderTarget, double deltaTime, audio_chunk & chunk) noexcept
     {
+        if (chunk.is_empty() || (_Width == 0.f))
+            return;
+
         HRESULT hr = CreateDeviceDependentResources(renderTarget);
 
         if (FAILED(hr))
@@ -36,12 +39,10 @@ namespace Waveform
             }
         }
 
-        const size_t FrameCount  = chunk.get_sample_count();
-        const size_t ChannelCount = chunk.get_channel_count();
-        const audio_sample * Data = chunk.get_data();
+        const audio_sample * const Frames = chunk.get_data();
 
-        if ((Data == nullptr) || (FrameCount == 0) || (ChannelCount == 0) || (_Width == 0.f))
-            return;
+        const auto FrameCount   = chunk.get_sample_count();
+        const auto ChannelCount = chunk.get_channel_count();
 
         // Convert a frame to mono.
         const auto ToMono = [ChannelCount](const audio_sample * Frame) noexcept -> audio_sample
@@ -71,11 +72,11 @@ namespace Waveform
                 // There are more pixels than frames. Reuse the nearest frame.
                 const size_t FrameIndex = std::min(BeginFrame, FrameCount - 1);
 
-                Mono = ToMono(Data + (FrameIndex * ChannelCount));
+                Mono = ToMono(Frames + (FrameIndex * ChannelCount));
             }
             else
             {
-                const audio_sample * Frame = Data + (BeginFrame * ChannelCount);
+                const audio_sample * Frame = Frames + (BeginFrame * ChannelCount);
 
                 // Average all frames that belong to this horizontal pixel.
                 for (size_t i = BeginFrame; i < EndFrame; ++i, Frame += ChannelCount)

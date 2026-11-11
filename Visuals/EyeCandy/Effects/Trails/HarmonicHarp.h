@@ -79,10 +79,8 @@ namespace HarmonicHarp
         void DeleteDeviceDependentResources() noexcept;
 
     private:
-        std::array<string_t, StringCount> _Strings{ };
-        std::atomic<size_t> _NextString { 0 };
-
-        std::vector<double> _Samples;
+        std::array<string_t, StringCount> _Strings;
+        std::atomic<size_t> _NextString = 0;
 
         double _SampleRate        = 44'100.;
         double _BeatEnvelope      = 0.;
@@ -104,7 +102,5 @@ namespace HarmonicHarp
 
     private:
         ComPtr<ID2D1SolidColorBrush> _Brush;
-        ComPtr<ID2D1BitmapRenderTarget> _BackBufferRenderTarget;
-        ComPtr<ID2D1Bitmap> _BackBuffer;
     };
 }

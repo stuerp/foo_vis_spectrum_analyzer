@@ -1,5 +1,5 @@
 
-/** $VER: Spectrogram.h (2026.11.08) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
+/** $VER: Spectrogram.h (2026.11.11) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
 
 #pragma once
 

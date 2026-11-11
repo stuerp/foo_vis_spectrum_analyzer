@@ -48,7 +48,7 @@ public:
 
     FLOAT GetTextWidth() const noexcept
     {
-        return _TextStyle._Width;
+        return _TextStyle.Width;
     }
 
 private:

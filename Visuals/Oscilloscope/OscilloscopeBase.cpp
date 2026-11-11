@@ -153,7 +153,7 @@ HRESULT oscilloscope_base_t::CreateSizeDependentResources(ID2D1DeviceContext * d
 
     const auto InitializeStyle = [this, deviceContext, &StyleManager](style_t & style, VisualElement element) noexcept -> HRESULT
     {
-        if (style._Brush != nullptr)
+        if (style.Brush != nullptr)
             return S_OK;
 
         style = *StyleManager.GetStyle(element);

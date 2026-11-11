@@ -38,9 +38,6 @@ namespace ParticleVortex
         std::wstring GetStatus() noexcept override final;
 
     private:
-        static constexpr size_t FrequencyBandCount = 12;
-        static constexpr size_t BytesPerPixel = sizeof(uint32_t);
-
         struct particle_t
         {
             D2D1_POINT_2F Position {};
@@ -102,39 +99,15 @@ namespace ParticleVortex
 
     private:
         std::vector<particle_t> _Particles;
+        std::atomic<size_t> _NextParticle = 0;
 
-        std::atomic<size_t> _NextParticle { 0 };
         double _ParticleDeltaTime = 0.;
 
-        std::array<center_t, FrequencyBandCount> _Centers {};
-
-        std::array<double, FrequencyBandCount> _BandEnergy {};
-        std::array<double, FrequencyBandCount> _SmoothedBandEnergy {};
-        std::array<double, FrequencyBandCount> _PreviousBandEnergy {};
-
-        double _SmoothedPeak = 0.;
-        double _SmoothedRMS  = 0.;
-
-        double _BassEnergy   = 0.;
-        double _MidEnergy    = 0.;
-        double _TrebleEnergy = 0.;
-
-        double _SpectralFlux = 0.;
-        double _SmoothedFlux = 0.;
-
     private:
-        static constexpr double TransitionInterval = 3.; // seconds
-
-        double _TransitionTime = 1.;
-
-        double _NextTransitionTime = TransitionInterval;
-        size_t _NextThemeIndex = 0;
+        std::array<center_t, BandCount> _Centers {};
 
     private:
         ComPtr<ID2D1SolidColorBrush> _Brush;
         ComPtr<ID2D1StrokeStyle> _StrokeStyle;
-
-        ComPtr<ID2D1BitmapRenderTarget> _BackBufferRenderTarget;
-        ComPtr<ID2D1Bitmap> _BackBuffer;
     };
 }

@@ -1,5 +1,5 @@
 
-/** $VER: HarmonicHarp.cpp (2026.11.02) **/
+/** $VER: HarmonicHarp.cpp (2026.11.08) **/
 
 #include <pch.h>
 
@@ -17,6 +17,9 @@ namespace HarmonicHarp
     effect_t::effect_t()
     {
         StartWorkers();
+
+        _MousePitch = 0. * Pi / 180.;
+        _MouseYaw   = 0.;
     }
 
     effect_t::~effect_t()
@@ -42,15 +45,15 @@ namespace HarmonicHarp
         Projection.LensOffsetX = 0.;
         Projection.LensOffsetY = 0.;
         Projection.FieldOfView = 52.;
-        Projection.NearPlane   = .05;
-        Projection.FarPlane    = 4.;
+        Projection.NearPlane   = 0.05;
+        Projection.FarPlane    = 4.00;
 
         World  = { };
         Camera = { };
         Object = { };
 
         Camera.Target = { 0., 0., 1.6 };
-        Camera.Up     = { 0., 1., 0. };
+        Camera.Up     = { 0., 1., 0.0 };
 
         _BeatEnvelope      = 0.;
         _PreviousRMS       = 0.;
@@ -58,21 +61,22 @@ namespace HarmonicHarp
         _SceneJumpVelocity = 0.;
 
         _ZoomFieldOfView = 52.;
-
+/*
         _MousePitch = 25. * Pi / 180.;
         _MouseYaw   = 0.;
-
+*/
         _DragStartPitch = _MousePitch;
         _DragStartYaw   = _MouseYaw;
 
         _DragStartX = 0;
         _DragStartY = 0;
         _IsDragging = false;
-        _Hue        = .56;
+
+        _Hue = .56;
 
         for (size_t i = 0; i < StringCount; ++i)
         {
-            const double Amount = (double) i / (double) (StringCount - 1);
+            const double Amount = (double) i / (double) (StringCount - 1); // [0, 1]
 
             _Strings[i].Frequency      = LoFrequency * std::pow(FrequencyRatio, Amount);
             _Strings[i].Energy         = 0.;
@@ -114,9 +118,11 @@ namespace HarmonicHarp
             }
         }
 
-        renderTarget->DrawBitmap(_BackBuffer.Get(), _Rectangle);
+        {
+            renderTarget->DrawBitmap(_BackBuffer.Get(), _ViewPort);
 
-        RenderScanlines(renderTarget);
+            RenderScanlines(renderTarget);
+        }
     }
 
     /// <summary>
@@ -155,19 +161,23 @@ namespace HarmonicHarp
             return;
         }
 
-        const size_t FrameCount   = chunk.get_sample_count();
-        const size_t ChannelCount = chunk.get_channel_count();
+        const auto FrameCount   = chunk.get_sample_count();
+        const auto ChannelCount = chunk.get_channel_count();
 
         _SampleRate = (double) chunk.get_sample_rate();
 
-        const size_t MaxFrames = std::min<size_t>(FrameCount, 2048);
+        // Analyze only the most recent frames of the chunk.
+        const auto MaxFrames = std::min<size_t>(FrameCount, 2048);
 
         if (MaxFrames < 32)
             return;
 
-        _Samples.resize(MaxFrames);
+        if (_Samples.size() < MaxFrames)
+            _Samples.resize(MaxFrames);
 
-        const audio_sample * Frames = chunk.get_data() + ((FrameCount - MaxFrames) * ChannelCount);
+        auto Samples = std::span<double>(_Samples.data(), MaxFrames);
+
+        const audio_sample * const Frames = chunk.get_data() + ((FrameCount - MaxFrames) * ChannelCount);
 
         double Sum = 0.;
 
@@ -182,7 +192,7 @@ namespace HarmonicHarp
 
             const double Window = 0.5 - 0.5 * std::cos(TwoPi * (double) i / ((double) MaxFrames - 1.));
 
-            _Samples[i] = Mono * Window;
+            Samples[i] = Mono * Window;
 
             _Peak = std::max(_Peak, std::abs(Mono));
 
@@ -220,7 +230,7 @@ namespace HarmonicHarp
 
                 double q1 = 0., q2 = 0.;
 
-                for (double Sample : _Samples)
+                for (double Sample : Samples)
                 {
                     const double q0 = Sample + Coefficient * q1 - q2;
 
@@ -236,7 +246,7 @@ namespace HarmonicHarp
                 WeightSum         += Weight;
             }
 
-            const double Amount                    = (double) i / (double) (StringCount - 1);
+            const double Amount                    = (double) i / (double) (StringCount - 1); // [0, 1]
             const double HighFrequencyCompensation = 1. + std::pow(Amount, 1.35) * 2.15;
             const double Magnitude                 = WeightedMagnitude / std::max(WeightSum, 1.e-9) / (double) MaxFrames;
 
@@ -257,7 +267,21 @@ namespace HarmonicHarp
     /// </summary>
     void effect_t::Update(double deltaTime) noexcept
     {
-        const double SpeedFactor = (_Speed == Speed::Slow) ? .6 : (_Speed == Speed::Fast) ? 1.6 : 1.;
+        const double SpeedFactor = [&]() noexcept
+        {
+            switch (_Speed)
+            {
+                case Speed::Slow:
+                    return 0.55;
+
+                default:
+                case Speed::Normal:
+                    return 1.0;
+
+                case Speed::Fast:
+                    return 1.75;
+            }
+        }();
 
         _AnimationTime += deltaTime * SpeedFactor;
 
@@ -287,7 +311,7 @@ namespace HarmonicHarp
         _SceneJumpVelocity += (-_SceneJump * 38. - _SceneJumpVelocity * 10.) * deltaTime;
         _SceneJump         += _SceneJumpVelocity * deltaTime;
 
-        _Hue = Fraction(_Hue + deltaTime * (.006 + _SmoothedTreble * .018));
+        _Hue = Fraction(_Hue + deltaTime * (.006 + _SmoothedTrebleLevel * .018));
 
         _SmoothedPeak = ExponentialSmoothing(_SmoothedPeak, _Peak, deltaTime, _Peak > _SmoothedPeak ? 24. : 5.);
         _SmoothedRMS = ExponentialSmoothing(_SmoothedRMS, _RMS, deltaTime, _RMS > _SmoothedRMS ? 16. : 4.);
@@ -322,10 +346,10 @@ namespace HarmonicHarp
 
         if (IsLeftButtonDown && !_IsDragging)
         {
-            _IsDragging = true;
-            _DragStartX = CursorPosition.x;
-            _DragStartY = CursorPosition.y;
-            _DragStartYaw = _MouseYaw;
+            _IsDragging     = true;
+            _DragStartX     = CursorPosition.x;
+            _DragStartY     = CursorPosition.y;
+            _DragStartYaw   = _MouseYaw;
             _DragStartPitch = _MousePitch;
         }
         else
@@ -399,7 +423,7 @@ namespace HarmonicHarp
     {
         auto & String = _Strings[index];
 
-        const double Amount = (double) index / (double) (StringCount - 1);
+        const double Amount = (double) index / (double) (StringCount - 1); // [0, 1]
 
         const double Density         = Amount + .04 * std::sin(Amount * Pi) * (1. - 2. * Amount);
         const double BaseX           = Lerp(-.82, .82, Density);
@@ -543,7 +567,7 @@ namespace HarmonicHarp
         _Brush->SetColor(D2D1::ColorF(.002f, .003f, .008f, (float) Clamp(1. - Decay)));
         _Brush->SetOpacity(1.f);
 
-        renderTarget->FillRectangle(_Rectangle, _Brush.Get());
+        renderTarget->FillRectangle(_ViewPort, _Brush.Get());
     }
 
     /// <summary>

@@ -1,5 +1,5 @@
 
-/** $VER: Fireworks.cpp (2026.10.19) **/
+/** $VER: Fireworks.cpp (2026.11.07) **/
 
 #include <pch.h>
 
@@ -88,11 +88,13 @@ namespace Fireworks
             }
         }
 
-        renderTarget->DrawBitmap(_BackBuffer.Get(), _Rectangle);
+        {
+            renderTarget->DrawBitmap(_BackBuffer.Get(), _ViewPort);
 
-        // Draw after compositing so previous flare positions do not become separate dots in the persistent back buffer.
-        if (_HasAudio)
-            RenderFlareHeads(renderTarget);
+            // Draw after compositing so previous flare positions do not become separate dots in the persistent back buffer.
+            if (_HasAudio)
+                RenderFlareHeads(renderTarget);
+        }
     }
 
     /// <summary>
@@ -100,49 +102,52 @@ namespace Fireworks
     /// </summary>
     void effect_t::AnalyzeAudio(const audio_chunk & chunk)
     {
+        _HasAudio = false;
+
         _Peak         = 0.;
         _RMS          = 0.;
         _SpectralFlux = 0.;
 
-        _BandEnergy.fill(0.);
-
-        _HasAudio = false;
-
         if (chunk.is_empty())
+        {
+            for (auto & Band : _Bands)
+                Band.Energy = 0.;
+
             return;
+        }
 
-        const audio_sample * Frames = chunk.get_data();
-
-        const size_t SampleCount  = chunk.get_sample_count();
-        const size_t ChannelCount = chunk.get_channel_count();
-        const double SampleRate   = (double) chunk.get_sample_rate();
-
-        // Analyze only the most recent 1536 sample frames.
         constexpr size_t MaximumFrameCount = 1536;
 
-        const size_t FrameCount = std::min<size_t>(SampleCount, MaximumFrameCount);
+        const audio_sample * const Frames = chunk.get_data();
 
-        if (FrameCount < 32)
+        const auto FrameCount   = chunk.get_sample_count();
+        const auto ChannelCount = chunk.get_channel_count();
+        const auto SampleRate   = (double) chunk.get_sample_rate();
+
+        // Analyze only the most recent frames of the chunk.
+        const auto MaxFrames = std::min<size_t>(FrameCount, MaximumFrameCount);
+
+        if (MaxFrames < 32)
             return;
 
         std::array<double, MaximumFrameCount> Samples;
 
         double SquaredSum = 0.;
 
-        const size_t FirstFrame = SampleCount - FrameCount;
-        const audio_sample * Frame = Frames + FirstFrame * ChannelCount;
+        const size_t FirstFrame = FrameCount - MaxFrames;
+        const audio_sample * Frame = Frames + (FirstFrame * ChannelCount);
 
         const double InverseChannelCount = 1.0 / (double) ChannelCount;
 
         // Prepares an efficient Hann-window generator.
-        const double WindowStep = TwoPi / (double) (FrameCount - 1);
+        const double WindowStep = TwoPi / (double) (MaxFrames - 1);
         const double WindowCos  = std::cos(WindowStep);
         const double WindowSin  = std::sin(WindowStep);
 
         double CurrentCos = 1.;
         double CurrentSin = 0.;
 
-        for (size_t FrameIndex = 0; FrameIndex < FrameCount; ++FrameIndex)
+        for (size_t FrameIndex = 0; FrameIndex < MaxFrames; ++FrameIndex)
         {
             double Mono = 0.0;
 
@@ -168,7 +173,7 @@ namespace Fireworks
 
             // Advance the Hann oscillator.
             {
-                const double NextCosine = CurrentCos * WindowCos - CurrentSin * WindowSin;
+                const double NextCosine = (CurrentCos * WindowCos) - (CurrentSin * WindowSin);
 
                 CurrentSin = (CurrentSin * WindowCos) + (CurrentCos * WindowSin);
                 CurrentCos = NextCosine;
@@ -177,106 +182,132 @@ namespace Fireworks
             Frame += ChannelCount;
         }
 
-        _RMS = std::sqrt(SquaredSum / (double) FrameCount);
+        _RMS = std::sqrt(SquaredSum / (double) MaxFrames);
 
         _HasAudio = (_Peak > 1.0e-5) || (_RMS > 1.0e-6);
 
         if (!_HasAudio)
             return;
 
-        const double NyquistFrequency = SampleRate * 0.5;
-        const double InverseBandCount = 1. / (double) (FrequencyBandCount - 1);
-
-        // Allocate the filter state.
-        std::array<double, FrequencyBandCount> Coefficients;        // Goertzel-style resonators
-        std::array<double, FrequencyBandCount> Previous1 {};
-        std::array<double, FrequencyBandCount> Previous2 {};
-
-        // Select logarithmically spaced center frequencies. More bands are allocated to lower frequencies.
-        for (size_t Band = 0; Band < FrequencyBandCount; ++Band)
+        // Perform a spectrum analysis of logarithmically spaced frequency bands.
         {
-            const double Amount = (double) Band * InverseBandCount; // [0, 1]
+            const double NyquistFrequency = SampleRate * 0.5;
 
-            const double CenterFrequency = LoFrequency * std::pow(FrequencyRatio, Amount);
-            const double Frequency       = std::clamp(CenterFrequency, LoFrequency, NyquistFrequency);
+            // Allocate the filter state.
+            std::array<double, BandCount> Coefficients;        // Goertzel-style resonators
+            std::array<double, BandCount> Previous1 {};
+            std::array<double, BandCount> Previous2 {};
 
-            Coefficients[Band] = 2. * std::cos(TwoPi * Frequency / SampleRate);
-        }
-
-        // Run all frequency filters (bank of second-order Goertzel-style filters)
-        for (size_t FrameIndex = 0; FrameIndex < FrameCount; ++FrameIndex)
-        {
-            const double Sample = Samples[FrameIndex];
-
-            for (size_t Band = 0; Band < FrequencyBandCount; ++Band)
+            // Select logarithmically spaced center frequencies. More bands are allocated to lower frequencies.
+            for (size_t i = 0; i < BandCount; ++i)
             {
-                const double Current = Sample + Coefficients[Band] * Previous1[Band] - Previous2[Band];
+                const double BandAmount = (double) i * InverseBandCount; // [0, 1]
 
-                Previous2[Band] = Previous1[Band];
-                Previous1[Band] = Current;
+                const double CenterFrequency = LoFrequency * std::pow(FrequencyRatio, BandAmount);
+                const double Frequency       = std::clamp(CenterFrequency, LoFrequency, NyquistFrequency);
+
+                Coefficients[i] = 2. * std::cos(TwoPi * Frequency / SampleRate);
+            }
+
+            // Run all frequency filters (bank of second-order Goertzel-style filters)
+            for (size_t FrameIndex = 0; FrameIndex < MaxFrames; ++FrameIndex)
+            {
+                const double Sample = Samples[FrameIndex];
+
+                for (size_t Band = 0; Band < BandCount; ++Band)
+                {
+                    const double Current = Sample + Coefficients[Band] * Previous1[Band] - Previous2[Band];
+
+                    Previous2[Band] = Previous1[Band];
+                    Previous1[Band] = Current;
+                }
+            }
+
+            // Convert the filter states into magnitudes.
+            const double InverseFrameCount = 1. / (double) MaxFrames;
+
+            constexpr double TuningConstant = 100.;
+            const double LogarithmicScale  = 1. / std::log1p(TuningConstant);
+
+            double MaximumEnergy = 0.;
+
+            for (size_t i = 0; i < BandCount; ++i)
+            {
+                const double BandAmount = (double) i * InverseBandCount; // [0, 1]
+                const double Coefficient = Coefficients[i];
+
+                const double BandPower = std::max(0.0, (Previous2[i] * Previous2[i]) + (Previous1[i] * Previous1[i]) - (Coefficient * Previous1[i] * Previous2[i]));
+
+                const double Magnitude = std::sqrt(BandPower) * InverseFrameCount;
+
+                // Compress (logarithmic) and shape the band energy. Perform high-frequency weighting: 0.90 for the lowest band, 1.50 for the highest band.
+                _Bands[i].Energy = Clamp(std::log1p(Magnitude * TuningConstant) * LogarithmicScale * Lerp(0.90, 1.50, BandAmount));
+
+                // Track the highest frequency band energy.
+                MaximumEnergy = std::max(MaximumEnergy, _Bands[i].Energy);
+            }
+
+            // Normalize the spectrum.
+            if (MaximumEnergy > 1.0e-5)
+            {
+                const auto Normalization = 1. / std::max(0.30, MaximumEnergy);
+
+                for (auto & Band : _Bands)
+                    Band.Energy = Clamp(Band.Energy * Normalization);
             }
         }
 
-        // Convert the filter states into magnitudes.
-        const double InverseFrameCount = 1. / (double) FrameCount;
-        const double LogarithmicScale  = 1. / std::log1p(100.);
-
-        double MaximumEnergy = 0.;
-
-        for (size_t Band = 0; Band < FrequencyBandCount; ++Band)
+        // Calculate the half-wave rectified spectral flux. It responds when spectral energy increases such as during drum hits, note attacks, sudden treble bursts and new musical events.
         {
-            const double Amount      = (double) Band * InverseBandCount;
-            const double Coefficient = Coefficients[Band];
+            _SpectralFlux = 0.;
 
-            const double Power     = std::max(0.0, Previous2[Band] * Previous2[Band] + Previous1[Band] * Previous1[Band] - Coefficient * Previous1[Band] * Previous2[Band]);
-            const double Magnitude = std::sqrt(Power) * InverseFrameCount;
-
-            // Compress and shape the band energy. Slightly suppress low bands and increasingly boosts high bands.
-            _BandEnergy[Band] = Clamp(std::log1p(Magnitude * 100.0) * LogarithmicScale * Lerp(0.90, 1.50, Amount));
-
-            MaximumEnergy = std::max(MaximumEnergy, _BandEnergy[Band]);
-        }
-
-        // Normalize the spectrum.
-        if (MaximumEnergy > 1.0e-5)
-        {
-            const double Normalization = 1. / std::max(0.3, MaximumEnergy);
-
-            for (auto & Energy : _BandEnergy)
-                Energy = Clamp(Energy * Normalization);
-        }
-
-        // Calculate the spectral flux.
-        {
-            for (size_t Band = 0; Band < FrequencyBandCount; ++Band)
+            for (auto & Band : _Bands)
             {
-                _SpectralFlux += std::max(0., _BandEnergy[Band] - _PreviousBandEnergy[Band]);
+                _SpectralFlux += std::max(0., Band.Energy - Band.PreviousEnergy);
 
-                _PreviousBandEnergy[Band] = _BandEnergy[Band]; // Remember the band energy for the next chunk.
+                Band.PreviousEnergy = Band.Energy; // Remember the band energy for the next chunk.
             }
 
-            _SpectralFlux = Clamp(_SpectralFlux / (double) FrequencyBandCount * 4.); // Boost the spectral flux artificially by 4 to make it react more strongly.
+            _SpectralFlux = Clamp(_SpectralFlux / (double) BandCount * 5.5); // Boost the spectral flux artificially to make it react more strongly.
         }
     }
 
     /// <summary>
-    /// 
+    /// Prepares the visual parameters.
     /// </summary>
     void effect_t::Update(double deltaTime)
     {
-        const double SpeedFactor    = (_Speed == EyeCandy::Speed::Slow) ? 0.65 : (_Speed == EyeCandy::Speed::Fast) ? 1.55 : 1.0;
+        const double SpeedFactor = [&]() noexcept
+        {
+            switch (_Speed)
+            {
+                case Speed::Slow:
+                    return 0.65;
+
+                default:
+                case Speed::Normal:
+                    return 1.0;
+
+                case Speed::Fast:
+                    return 1.55;
+            }
+        }();
+
         const double AnimationDelta = deltaTime * SpeedFactor;
 
         _AnimationTime += AnimationDelta;
 
-        _SmoothedPeak         = ExponentialSmoothing(_SmoothedPeak,         _Peak,         deltaTime, (_Peak         > _SmoothedPeak)         ? 36.f : 7.f);
-        _SmoothedRMS          = ExponentialSmoothing(_SmoothedRMS,          _RMS,          deltaTime, (_RMS          > _SmoothedRMS)          ? 24.f : 5.f);
-        _SmoothedSpectralFlux = ExponentialSmoothing(_SmoothedSpectralFlux, _SpectralFlux, deltaTime, (_SpectralFlux > _SmoothedSpectralFlux) ? 42.f : 8.f);
-
-        for (size_t i = 0; i < FrequencyBandCount; ++i)
         {
-            _SmoothedBandEnergy[i] = ExponentialSmoothing(_SmoothedBandEnergy[i], _HasAudio ? _BandEnergy[i] : 0.f, deltaTime, 18.f);
-            _BandCooldown[i]       = std::max(0., _BandCooldown[i] - AnimationDelta);
+            _SmoothedPeak         = ExponentialSmoothing(_SmoothedPeak,         _Peak,         deltaTime, (_Peak         > _SmoothedPeak)         ? 36. : 7.);
+            _SmoothedRMS          = ExponentialSmoothing(_SmoothedRMS,          _RMS,          deltaTime, (_RMS          > _SmoothedRMS)          ? 24. : 5.);
+
+            _SmoothedSpectralFlux = ExponentialSmoothing(_SmoothedSpectralFlux, _SpectralFlux, deltaTime, (_SpectralFlux > _SmoothedSpectralFlux) ? 42. : 8.);
+
+            for (size_t i = 0; i < BandCount; ++i)
+            {
+                _Bands[i].SmoothedEnergy = ExponentialSmoothing(_Bands[i].SmoothedEnergy, _Bands[i].Energy, deltaTime, 18.);
+                _BandCooldown[i]         = std::max(0., _BandCooldown[i] - AnimationDelta);
+            }
         }
 
         _BassCooldown = std::max(0., _BassCooldown - AnimationDelta);
@@ -285,8 +316,8 @@ namespace Fireworks
         UpdateFlares(AnimationDelta);
         GenerateWork(AnimationDelta);
 
-        _SkyLight       = ExponentialSmoothing(_SkyLight, _SkyLightTarget, deltaTime, _SkyLightTarget > _SkyLight ? 14.0f : 2.6f);
-        _SkyLightTarget = ExponentialSmoothing(_SkyLightTarget, 0.0f, deltaTime, 3.8f);
+        _SkyLight       = ExponentialSmoothing(_SkyLight,       _SkyLightTarget, deltaTime, (_SkyLightTarget > _SkyLight) ? 14.0 : 2.6);
+        _SkyLightTarget = ExponentialSmoothing(_SkyLightTarget, 0.,              deltaTime, 3.8);
     }
 
     /// <summary>
@@ -312,13 +343,13 @@ namespace Fireworks
                 // Launch from the strongest band.
                 size_t StrongestBand = 0;
 
-                for (size_t i = 1; i < FrequencyBandCount; ++i)
+                for (size_t i = 1; i < BandCount; ++i)
                 {
-                    if (_BandEnergy[i] > _BandEnergy[StrongestBand])
+                    if (_Bands[i].Energy > _Bands[StrongestBand].Energy)
                         StrongestBand = i;
                 }
 
-                const double FlareEnergy = 0.5 + (_BandEnergy[StrongestBand] * 0.65);
+                const double FlareEnergy = 0.5 + (_Bands[StrongestBand].Energy * 0.65);
 
                 LaunchFlare(StrongestBand, Clamp(FlareEnergy));
 
@@ -332,9 +363,10 @@ namespace Fireworks
         // - Calculate a smoothed bass baseline.
         // - Calculate the impact of the bass.
         {
-            const double BassEnergy = (_BandEnergy[0] * 0.48) + (_BandEnergy[1] * 0.34) + (_BandEnergy[2] * 0.18);
-            const double BassBaseline = (_SmoothedBandEnergy[0] * 0.48) + (_SmoothedBandEnergy[1] * 0.34) + (_SmoothedBandEnergy[2] * 0.18);
-            const double BassImpact = std::max(0., BassEnergy - BassBaseline * 0.70) + (_SmoothedPeak * 0.24);
+            const double BassEnergy   = (_Bands[0].Energy         * 0.38) + (_Bands[1].Energy         * 0.29) + (_Bands[2].Energy         * 0.20) + (_Bands[3].Energy         * 0.13);
+            const double BassBaseline = (_Bands[0].SmoothedEnergy * 0.38) + (_Bands[1].SmoothedEnergy * 0.29) + (_Bands[2].SmoothedEnergy * 0.20) + (_Bands[3].Energy         * 0.13);
+
+            const double BassImpact = std::max(0., BassEnergy - (BassBaseline * 0.70)) + (_SmoothedPeak * 0.24);
 
             // The Absolute-energy condition prevents a large relative change in a very quiet signal from triggering a burst.
             // The bass impact condition prevents sustained bass from repeatedly triggering solely because it remains loud.
@@ -357,11 +389,11 @@ namespace Fireworks
 
         // Mechanism 3: Detailed reactions to individual spectral events.
         {
-            for (size_t i = 0; i < FrequencyBandCount; ++i)
+            for (size_t i = 0; i < BandCount; ++i)
             {
-                const double FlareEnergy = _BandEnergy[i];
+                const double FlareEnergy = _Bands[i].Energy;
 
-                const double Rise        = std::max(0., FlareEnergy - (_SmoothedBandEnergy[i] * 0.78));
+                const double Rise        = std::max(0., FlareEnergy - (_Bands[i].SmoothedEnergy * 0.78));
                 const double Trigger     = 0.095 - (_SmoothedSpectralFlux * 0.035);
                 const double Probability = Clamp(((Rise - Trigger) * 25.) + (_SpectralFlux * 0.24)) * DensityMultiplier * (deltaTime * 60.);
 
@@ -395,7 +427,7 @@ namespace Fireworks
 
         uint32_t State = Hash(_RandomState ^ ((uint32_t)band * 0x9E3779B9u) ^ (_LaunchSequence * 0x85EBCA6Bu));
 
-        const double BandAmount = (double) band / (double) (FrequencyBandCount - 1);
+        const double BandAmount = (double) band * InverseBandCount; // [0, 1]
 
         // A rotating set of lanes prevents the bass-heavy lower bands from concentrating launches in the left half of the display. Random jitter inside each lane keeps the pattern organic.
         constexpr size_t LaneCount = 8;
@@ -634,10 +666,10 @@ namespace Fireworks
     /// </summary>
     void effect_t::ExplodeFlare(flare_t & flare) noexcept
     {
-        const size_t SparkCountBase = (_Quality == EyeCandy::Quality::Low) ? 58u : (_Quality == EyeCandy::Quality::High) ? 176u : 108u;
-        const double DensityFactor = (_Density == Density::Low ? 0.82 : _Density == Density::High ? 1.72 : 1.22);
+        const size_t SparkCountBase = (_Quality == Quality::Low) ? 58u  : (_Quality == Quality::High) ? 176u : 108u;
+        const double DensityFactor  = (_Density == Density::Low) ? 0.82 : (_Density == Density::High) ? 1.72 : 1.22;
 
-        const double BassWeight = 1. - ((double)flare.Band / (double)(FrequencyBandCount - 1));
+        const double BassWeight = 1. - ((double) flare.Band * InverseBandCount);
         const double BassBurst = (flare.Band < 3) ? Lerp(1.25, 1.62, BassWeight) : 1.;
 
         const size_t SparkCount = (size_t)std::lround((double)SparkCountBase * DensityFactor * BassBurst * Lerp(0.82, 1.34, std::min(flare.Energy, 1.)));
@@ -684,14 +716,14 @@ namespace Fireworks
             if (!Spark)
                 break;
 
-            const double Amount = (double)i / (double)std::max<size_t>(SparkCount, 1);
+            const double Amount = (double) i / (double) std::max<size_t>(SparkCount, 1); // [0, 1]
 
             double Angle      = Amount * TwoPi;
             double Radius     = std::sqrt(Random(State));
             double HueSpread  = 0.055;
             double SpeedScale = 1.;
             double ScaleX     = 1.;
-            double ScaleY    = 1.;
+            double ScaleY     = 1.;
 
             double LifetimeMinimum = 0.75;
             double LifetimeMaximum = 2.35;
@@ -925,7 +957,10 @@ namespace Fireworks
         {
             for (size_t i = 0; i < WorkerCount; ++i)
             {
-                _Workers.emplace_back(&effect_t::Worker, this);
+                _Workers.emplace_back([this]() noexcept
+                {
+                    Worker();
+                });
             }
         }
         catch (...)
@@ -1048,7 +1083,7 @@ namespace Fireworks
         _Brush->SetColor(D2D1::ColorF(0., 0., 0., Opacity));
         _Brush->SetOpacity(1.f);
 
-        renderTarget->FillRectangle(_Rectangle, _Brush.Get());
+        renderTarget->FillRectangle(_ViewPort, _Brush.Get());
     }
 
     /// <summary>
@@ -1067,7 +1102,7 @@ namespace Fireworks
 
         SetBrush(_Brush.Get(), Color, Opacity);
 
-        renderTarget->FillRectangle(_Rectangle, _Brush.Get());
+        renderTarget->FillRectangle(_ViewPort, _Brush.Get());
     }
 
     /// <summary>
@@ -1079,13 +1114,13 @@ namespace Fireworks
         {
             switch (_Quality)
             {
-                case EyeCandy::Quality::Low:
+                case Quality::Low:
                     return 1;
 
-                case EyeCandy::Quality::High:
+                case Quality::High:
                     return 3;
 
-                case EyeCandy::Quality::Medium:
+                case Quality::Medium:
                 default:
                     return 2;
             }

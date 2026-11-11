@@ -14,24 +14,10 @@ namespace DeJongAttractor
     /// <summary>
     /// 
     /// </summary>
-    void effect_t::Render(ID2D1RenderTarget * renderTarget, double deltaTime, audio_chunk & chunk) noexcept
+    std::wstring effect_t::GetStatus() noexcept
     {
-        const HRESULT hr = CreateDeviceDependentResources(renderTarget);
-
-        if (FAILED(hr))
-            return;
-
-        deltaTime = Clamp(deltaTime);
-
-        AnalyzeAudio(chunk);
-        Update(deltaTime);
-
-        UpdateAttractor(deltaTime);
-        UpdateBitmap();
-
-        RenderBackground(renderTarget);
-
-        renderTarget->DrawBitmap(_BackBuffer.Get(), _Rectangle);
+        return std::format(L"De Jong Attractor, {} theme, {} quality, {} speed, {} brightness",
+            CurveThemes[_CurveThemeTo].Name, Qualities[(size_t) _Quality], Speeds[(size_t) _Speed], Brightnesses[(size_t) _Brightness]);
     }
 
     /// <summary>
@@ -52,26 +38,60 @@ namespace DeJongAttractor
     /// <summary>
     /// 
     /// </summary>
+    void effect_t::Render(ID2D1RenderTarget * renderTarget, double deltaTime, audio_chunk & chunk) noexcept
+    {
+        const HRESULT hr = CreateDeviceDependentResources(renderTarget);
+
+        if (FAILED(hr))
+            return;
+
+        deltaTime = Clamp(deltaTime);
+
+        AnalyzeAudio(chunk);
+        Update(deltaTime);
+
+        UpdateAttractor(deltaTime);
+        UpdateRaster();
+
+        {
+            RenderBackground(renderTarget);
+
+            _BackBuffer->CopyFromMemory(nullptr, _Pixels.data(), _Stride);
+
+            renderTarget->DrawBitmap(_BackBuffer.Get(), _ViewPort);
+        }
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
     void effect_t::Update(double deltaTime) noexcept
     {
         const double SpeedFactor = [&]() noexcept
         {
             switch (_Speed)
             {
-                case EyeCandy::Speed::Slow: return 0.55;
-                case EyeCandy::Speed::Fast: return 1.75;
-                case EyeCandy::Speed::Normal:
-                default: return 1.0;
+                case Speed::Slow:
+                    return 0.55;
+
+                default:
+                case Speed::Normal:
+                    return 1.0;
+
+                case Speed::Fast:
+                    return 1.75;
             }
         }();
 
         _AnimationTime += deltaTime * SpeedFactor;
 
-        _SmoothedPeak        = ExponentialSmoothing(_SmoothedPeak,        _Peak,        deltaTime, (_Peak > _SmoothedPeak) ? 22. : 5.);
-        _SmoothedRMS         = ExponentialSmoothing(_SmoothedRMS,         _RMS,         deltaTime, (_RMS  > _SmoothedRMS)  ? 16. : 4.);
+        {
+            _SmoothedPeak        = ExponentialSmoothing(_SmoothedPeak,        _Peak,        deltaTime, (_Peak > _SmoothedPeak) ? 22. : 5.);
+            _SmoothedRMS         = ExponentialSmoothing(_SmoothedRMS,         _RMS,         deltaTime, (_RMS  > _SmoothedRMS)  ? 16. : 4.);
 
-        _SmoothedStereoWidth = ExponentialSmoothing(_SmoothedStereoWidth, _StereoWidth, deltaTime, 5.5);
-        _SmoothedCorrelation = ExponentialSmoothing(_SmoothedCorrelation, _Correlation, deltaTime, 4.0);
+            _SmoothedStereoWidth = ExponentialSmoothing(_SmoothedStereoWidth, _StereoWidth, deltaTime, 5.5);
+            _SmoothedCorrelation = ExponentialSmoothing(_SmoothedCorrelation, _Correlation, deltaTime, 4.0);
+        }
 
         UpdateCurveTheme(deltaTime);
     }
@@ -93,11 +113,10 @@ namespace DeJongAttractor
     /// </summary>
     void effect_t::UpdateAttractor(double deltaTime) noexcept
     {
-        if (_Densities.empty() || (_BitmapWidth < 2) || (_BitmapHeight < 2))
+        if (_Densities.empty() || (_RasterWidth < 2) || (_RasterHeight < 2))
             return;
 
-        // Each render pass represents a fresh density sample. CopyFromMemory() replaces the complete bitmap later, but the source histogram must also
-        // be cleared or density from earlier passes remains visible indefinitely.
+        // Each render pass represents a fresh density sample. CopyFromMemory() replaces the complete bitmap later, but the source histogram must also be cleared or density from earlier passes remains visible indefinitely.
         std::fill(_Densities.begin(), _Densities.end(), 0.f);
 
         const double SpeedFactor = [&]() noexcept
@@ -168,29 +187,29 @@ namespace DeJongAttractor
         if ((U < 0.) || (U >= 1.) || (V < 0.) || (V >= 1.))
             return;
 
-        const double PixelX = U * (double) (_BitmapWidth - 1);
-        const double PixelY = V * (double) (_BitmapHeight - 1);
+        const double PixelX = U * (double) (_RasterWidth - 1);
+        const double PixelY = V * (double) (_RasterHeight - 1);
 
         const UINT32 X0 = (UINT32) PixelX;
         const UINT32 Y0 = (UINT32) PixelY;
-        const UINT32 X1 = std::min(X0 + 1, _BitmapWidth - 1);
-        const UINT32 Y1 = std::min(Y0 + 1, _BitmapHeight - 1);
+        const UINT32 X1 = std::min(X0 + 1, _RasterWidth - 1);
+        const UINT32 Y1 = std::min(Y0 + 1, _RasterHeight - 1);
 
         const double FractionX = PixelX - (double) X0;
         const double FractionY = PixelY - (double) Y0;
         const double InverseX = 1. - FractionX;
         const double InverseY = 1. - FractionY;
 
-        _Densities[(size_t) Y0 * _BitmapWidth + X0] += amount * InverseX  * InverseY;
-        _Densities[(size_t) Y0 * _BitmapWidth + X1] += amount * FractionX * InverseY;
-        _Densities[(size_t) Y1 * _BitmapWidth + X0] += amount * InverseX  * FractionY;
-        _Densities[(size_t) Y1 * _BitmapWidth + X1] += amount * FractionX * FractionY;
+        _Densities[(size_t) Y0 * _RasterWidth + X0] += amount * InverseX  * InverseY;
+        _Densities[(size_t) Y0 * _RasterWidth + X1] += amount * FractionX * InverseY;
+        _Densities[(size_t) Y1 * _RasterWidth + X0] += amount * InverseX  * FractionY;
+        _Densities[(size_t) Y1 * _RasterWidth + X1] += amount * FractionX * FractionY;
     }
 
     /// <summary>
     /// 
     /// </summary>
-    void effect_t::UpdateBitmap() noexcept
+    void effect_t::UpdateRaster() noexcept
     {
         if (!_BackBuffer || _Densities.empty() || (_Pixels.size() != _Densities.size()))
             return;
@@ -229,12 +248,6 @@ namespace DeJongAttractor
 
             _Pixels[i] = (Alpha << 24) | (Red << 16) | (Green << 8) | Blue;
         }
-
-        const D2D1_RECT_U Destination = D2D1::RectU(0, 0, _BitmapWidth, _BitmapHeight);
-        const UINT32 Pitch = _BitmapWidth * (UINT32) sizeof(uint32_t);
-
-        if (FAILED(_BackBuffer->CopyFromMemory(&Destination, _Pixels.data(), Pitch)))
-            DeleteDeviceDependentResources();
     }
 
     /// <summary>
@@ -259,7 +272,7 @@ namespace DeJongAttractor
         const UINT32 RequiredWidth  = std::max<UINT32>(1u, (UINT32) std::ceil(_Width));
         const UINT32 RequiredHeight = std::max<UINT32>(1u, (UINT32) std::ceil(_Height));
 
-        if ((_RenderTarget == renderTarget) && _BackBuffer && (_BitmapWidth == RequiredWidth) && (_BitmapHeight == RequiredHeight))
+        if ((_RenderTarget == renderTarget) && _BackBuffer && (_RasterWidth == RequiredWidth) && (_RasterHeight == RequiredHeight))
             return S_OK;
 
         DeleteDeviceDependentResources();
@@ -271,11 +284,14 @@ namespace DeJongAttractor
         if (FAILED(hr))
             return hr;
 
-        _BitmapWidth  = RequiredWidth;
-        _BitmapHeight = RequiredHeight;
+        _RasterWidth  = RequiredWidth;
+        _RasterHeight = RequiredHeight;
+
+        _Stride = _RasterWidth * BytesPerPixel;
+
+        _Pixels.assign((size_t) RequiredWidth * RequiredHeight, 0u);
 
         _Densities.assign((size_t) RequiredWidth * RequiredHeight, 0.f);
-        _Pixels.assign((size_t) RequiredWidth * RequiredHeight, 0u);
 
         _Point = { 0.1, 0.1 };
         _Exposure              = 1.;
@@ -293,18 +309,9 @@ namespace DeJongAttractor
     {
         _BackBuffer.Reset();
 
-        _BitmapWidth = 0;
-        _BitmapHeight = 0;
+        _RasterWidth = 0;
+        _RasterHeight = 0;
 
         _RenderTarget = nullptr;
-    }
-
-    /// <summary>
-    /// 
-    /// </summary>
-    std::wstring effect_t::GetStatus() noexcept
-    {
-        return std::format(L"De Jong Attractor, {} theme, {} quality, {} speed, {} brightness",
-            CurveThemes[_CurveThemeTo].Name, Qualities[(size_t) _Quality], Speeds[(size_t) _Speed], Brightnesses[(size_t) _Brightness]);
     }
 }

@@ -1,5 +1,5 @@
 
-/** $VER: FFTAnalyzer.h (2026.11.10) P. Stuer **/
+/** $VER: FFTAnalyzer.h (2026.11.11) P. Stuer **/
 
 #pragma once
 
@@ -46,7 +46,7 @@ public:
     }
 
 private:
-    void Add(const audio_sample * samples, size_t count, uint32_t channels) noexcept;
+    void Add(const audio_sample * frames, size_t frameCount, uint32_t channels) noexcept;
     void Transform() noexcept;
     void Reassign(double norm) noexcept;
 

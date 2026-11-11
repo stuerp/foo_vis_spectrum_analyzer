@@ -1,5 +1,5 @@
 
-/** $VER: Swarm.cpp (2026.10.23) */
+/** $VER: Swarm.cpp (2026.11.07) */
 
 #include <pch.h>
 
@@ -27,7 +27,7 @@ namespace Swarm
         const size_t Count = (_Quality == Quality::Low) ? 420u : (_Quality == Quality::High) ? 1500u : 850u;
 
         _Agents.resize(Count);
-        _Snapshot.resize(Count);
+        _Snapshots.resize(Count);
 
         for (size_t i = 0; i < Count; ++i)
             RespawnAgent(_Agents[i], i);
@@ -68,7 +68,9 @@ namespace Swarm
             }
         }
 
-        renderTarget->DrawBitmap(_BackBuffer.Get(), _Rectangle);
+        {
+            renderTarget->DrawBitmap(_BackBuffer.Get(), _ViewPort);
+        }
     }
 
     /// <summary>
@@ -76,28 +78,37 @@ namespace Swarm
     /// </summary>
     void effect_t::AnalyzeAudio(const audio_chunk & chunk)
     {
+        _HasAudio = false;
+
         _Peak          = 0.;
         _RMS           = 0.;
-
         _SpectralFlux  = 0.;
         _StereoBalance = 0.;
 
-        _BandEnergy.fill(0.);
-
-        _HasAudio = false;
-
         if (chunk.is_empty())
+        {
+            for (auto & Band : _Bands)
+                Band.Energy = 0.;
+
             return;
+        }
 
-        const size_t FrameCount   = chunk.get_sample_count();
-        const size_t ChannelCount = chunk.get_channel_count();
-        const size_t SampleRate   = chunk.get_sample_rate();
+        const audio_sample * const Frames = chunk.get_data();
 
-        const size_t MaxFrames = std::min<size_t>(FrameCount, 2048); // 2048 frames @ 44100 Hz ~ 46 ms
+        const auto FrameCount   = chunk.get_sample_count();
+        const auto ChannelCount = chunk.get_channel_count();
+        const auto SampleRate   = (double) chunk.get_sample_rate();
+
+        // Analyze only the most recent frames of the chunk.
+        const auto MaxFrames = std::min<size_t>(FrameCount, 2048); // 2048 frames @ 44100 Hz ~ 46 ms
 
         if (MaxFrames < 32)
             return;
 
+        if (_Samples.size() < MaxFrames)
+            _Samples.resize(MaxFrames);
+
+        auto Samples = std::span<double>(_Samples.data(), MaxFrames);
 
         // Initialize the energy accumulators.
         double Sum  = 0.;           // Full-audio band
@@ -105,15 +116,8 @@ namespace Swarm
         double LeftPower  = 0.;
         double RightPower = 0.;
 
-        if (_Samples.size() < MaxFrames)
-            _Samples.resize(MaxFrames);
-
-        auto Samples = std::span<double>(_Samples.data(), MaxFrames);
-
         // Process all frames.
         {
-            const audio_sample * Frames = chunk.get_data();
-
             for (size_t i = 0; i < MaxFrames; ++i)
             {
                 const audio_sample * Frame = Frames + (i * ChannelCount);
@@ -166,16 +170,19 @@ namespace Swarm
 
         // Perform a spectrum analysis of logarithmically spaced frequency bands.
         {
-            const double NyquistFrequency = (double) SampleRate * 0.5;
+            const double NyquistFrequency = SampleRate * 0.5;
             const double MaximumFrequency = std::min(HiFrequency, NyquistFrequency);
+
+            constexpr double TuningConstant = 80.;
+            const double LogarithmicScale  = 1. / std::log1p(TuningConstant);
 
             double MaximumEnergy = 0.;
 
             for (size_t i = 0; i < BandCount; ++i)
             {
-                const double Amount = (double) i / (double) (BandCount - 1.); // [0, 1]
+                const double BandAmount = (double) i * InverseBandCount; // [0, 1]
 
-                const double CenterFrequency = LoFrequency * std::pow(MaximumFrequency / LoFrequency, Amount);
+                const double CenterFrequency = LoFrequency * std::pow(MaximumFrequency / LoFrequency, BandAmount);
 
                 double Power = 0.;
 
@@ -184,14 +191,14 @@ namespace Swarm
                 {
                     const double Frequency = std::clamp(CenterFrequency * Ratio, LoFrequency, NyquistFrequency);
 
-                    // Configure the Goertzel detector.
                     {
-                        const double Omega       = TwoPi * Frequency / (double) SampleRate;
+                        // Configure the Goertzel detector.
+                        const double Omega       = TwoPi * Frequency / SampleRate;
                         const double Coefficient = 2. * std::cos(Omega);
 
                         double q1 = 0., q2 = 0.;
 
-                        // Run the Goertzel ecurrence over the windowed signal.
+                        // Run the Goertzel recurrence over the windowed signal.
                         for (double Sample : Samples)
                         {
                             const double q0 = Sample + Coefficient * q1 - q2;
@@ -205,71 +212,92 @@ namespace Swarm
                     }
                 }
 
-                // Convert power to magnitude: Averages the three detector powers, converts power-like values into amplitude-like magnitude and normalizes the value.
                 const double Magnitude = std::sqrt(Power / 3.) / (double) MaxFrames;
 
-                // Compress (logarithmic) and shape the band energy. Perform high-frequency weighting: 0.9 for the lowest band, 1.5 for the highest band.
-                _BandEnergy[i] = Clamp(std::log1p(Magnitude * 80.) / std::log1p(80.) * Lerp(.9, 1.5, Amount));
+                // Compress (logarithmic) and shape the band energy. Perform high-frequency weighting: 0.90 for the lowest band, 1.50 for the highest band.
+                _Bands[i].Energy = Clamp(std::log1p(Magnitude * TuningConstant) * LogarithmicScale * Lerp(0.90, 1.50, BandAmount));
 
                 // Track the highest frequency band energy.
-                MaximumEnergy = std::max(MaximumEnergy, _BandEnergy[i]);
+                MaximumEnergy = std::max(MaximumEnergy, _Bands[i].Energy);
             }
 
             // Normalize the spectrum.
-            if (MaximumEnergy > 1.e-5)
+            if (MaximumEnergy > 1.0e-5)
             {
-                for (double & e : _BandEnergy)
-                    e = Clamp(e / std::max(0.3, MaximumEnergy));
+                const auto Normalization = 1. / std::max(0.30, MaximumEnergy);
+
+                for (auto & Band : _Bands)
+                    Band.Energy = Clamp(Band.Energy * Normalization);
             }
         }
 
         // Calculate the half-wave rectified spectral flux. It responds when spectral energy increases such as during drum hits, note attacks, sudden treble bursts and new musical events.
         {
-            for (size_t i = 0; i < BandCount; ++i)
-            {
-                _SpectralFlux += std::max(0., _BandEnergy[i] - _PreviousBandEnergy[i]);
+            _SpectralFlux = 0.;
 
-                _PreviousBandEnergy[i] = _BandEnergy[i];
+            for (auto & Band : _Bands)
+            {
+                _SpectralFlux += std::max(0., Band.Energy - Band.PreviousEnergy);
+
+                Band.PreviousEnergy = Band.Energy; // Remember the band energy for the next chunk.
             }
 
-            _SpectralFlux = Clamp(_SpectralFlux / (double) BandCount * 5.8); // Boost the spectral flux artificially by 5.8 to make it react more strongly.
+            _SpectralFlux = Clamp(_SpectralFlux / (double) BandCount * 5.5); // Boost the spectral flux artificially to make it react more strongly.
         }
     }
 
     /// <summary>
-    /// 
+    /// Prepares the visual parameters.
     /// </summary>
     void effect_t::Update(double deltaTime) noexcept
     {
         if (_Agents.empty())
             Reset();
 
-        const double SpeedFactor = (_Speed == Speed::Slow) ? .55 : (_Speed == Speed::Fast) ? 1.75 : 1.;
+        const double SpeedFactor = [&]() noexcept
+        {
+            switch (_Speed)
+            {
+                case Speed::Slow:
+                    return 0.55;
+
+                default:
+                case Speed::Normal:
+                    return 1.00;
+
+                case Speed::Fast:
+                    return 1.75;
+            }
+        }();
 
         _AnimationTime += deltaTime * SpeedFactor;
 
-        _SmoothedPeak          = ExponentialSmoothing(_SmoothedPeak,          _Peak,          deltaTime, (_Peak         > _SmoothedPeak) ? 24. : 5.);
-        _SmoothedRMS           = ExponentialSmoothing(_SmoothedRMS,           _RMS,           deltaTime, (_RMS          > _SmoothedRMS)  ? 20. : 4.);
+        {
+            _SmoothedPeak          = ExponentialSmoothing(_SmoothedPeak,          _Peak,          deltaTime, (_Peak         > _SmoothedPeak) ? 24. : 5.);
+            _SmoothedRMS           = ExponentialSmoothing(_SmoothedRMS,           _RMS,           deltaTime, (_RMS          > _SmoothedRMS)  ? 20. : 4.);
 
-        _SmoothedSpectralFlux  = ExponentialSmoothing(_SmoothedSpectralFlux,  _SpectralFlux,  deltaTime, (_SpectralFlux > _SmoothedSpectralFlux) ? 36. : 6.);
-        _SmoothedStereoBalance = ExponentialSmoothing(_SmoothedStereoBalance, _StereoBalance, deltaTime, 8.);
+            _SmoothedSpectralFlux  = ExponentialSmoothing(_SmoothedSpectralFlux,  _SpectralFlux,  deltaTime, (_SpectralFlux > _SmoothedSpectralFlux) ? 36. : 6.);
+            _SmoothedStereoBalance = ExponentialSmoothing(_SmoothedStereoBalance, _StereoBalance, deltaTime, 8.);
+        }
 
         _PreviousBeatPulse = _BeatPulse;
 
         _BeatPulse      = std::max(_BeatPulse * std::exp(-deltaTime * 7.2), _SpectralFlux);
         _BeatCooldown   = std::max(0., _BeatCooldown - deltaTime);
 
-        const double BeatEdge = std::max(0., _BeatPulse - _PreviousBeatPulse);
-
-        if (BeatEdge > .10 && _BeatCooldown <= 0.)
         {
-            _PreviousPaletteIndex = _PaletteIndex;
+            const double BeatEdge = std::max(0., _BeatPulse - _PreviousBeatPulse);
 
-            // Deliberately jump across the wheel instead of stepping to a neighboring palette.
-            _PaletteIndex   = (_PaletteIndex + 2 + (size_t)(_BassEnergy * 3.5)) % 6;
-            _PaletteBlend   = 0.;
-            _BeatCooldown   = .12;
-            _BeatColorPhase = Fraction(_BeatColorPhase + .16 + BeatEdge * .30);
+            if (BeatEdge > .10 && _BeatCooldown <= 0.)
+            {
+                _PreviousPaletteIndex = _PaletteIndex;
+
+                // Deliberately jump across the wheel instead of stepping to a neighboring palette.
+                _PaletteIndex   = (_PaletteIndex + 2 + (size_t)(_BassLevel * 3.5)) % 6;
+                _PaletteBlend   = 0.;
+                _BeatCooldown   = .12;
+                _BeatColorPhase = Fraction(_BeatColorPhase + .16 + BeatEdge * .30);
+            }
         }
 
         _PaletteBlend   = std::min(1., _PaletteBlend + deltaTime * (7.5 + (_BeatPulse * 10.)));
@@ -277,17 +305,21 @@ namespace Swarm
         _BeatColorPhase = Fraction(_BeatColorPhase + deltaTime * (.018 + (_SmoothedRMS * .045)));
         _GradientPhase  = Fraction(_GradientPhase  + deltaTime * (.035 + (_BeatPulse   * .120)));
 
-        for (size_t i = 0; i < BandCount; ++i)
-            _SmoothedBandEnergy[i] = ExponentialSmoothing(_SmoothedBandEnergy[i], _HasAudio ? _BandEnergy[i] : 0., deltaTime, _BandEnergy[i] > _SmoothedBandEnergy[i] ? 22. : 4.5);
+        {
+            for (auto & Band : _Bands)
+                Band.SmoothedEnergy = ExponentialSmoothing(Band.SmoothedEnergy, Band.Energy, deltaTime, Band.Energy > Band.SmoothedEnergy ? 22. : 4.5);
 
-        _BassEnergy   = (_SmoothedBandEnergy[0] + _SmoothedBandEnergy[1] + _SmoothedBandEnergy[ 2] + _SmoothedBandEnergy[ 3]) * .25;
-        _MidEnergy    = (_SmoothedBandEnergy[4] + _SmoothedBandEnergy[5] + _SmoothedBandEnergy[ 6] + _SmoothedBandEnergy[ 7]) * .25;
-        _TrebleEnergy = (_SmoothedBandEnergy[8] + _SmoothedBandEnergy[9] + _SmoothedBandEnergy[10] + _SmoothedBandEnergy[11]) * .25;
+            _BassLevel   = (_Bands[0].SmoothedEnergy + _Bands[1].SmoothedEnergy + _Bands[ 2].SmoothedEnergy + _Bands[ 3].SmoothedEnergy) * .25;
+            _MidLevel    = (_Bands[4].SmoothedEnergy + _Bands[5].SmoothedEnergy + _Bands[ 6].SmoothedEnergy + _Bands[ 7].SmoothedEnergy) * .25;
+            _TrebleLevel = (_Bands[8].SmoothedEnergy + _Bands[9].SmoothedEnergy + _Bands[10].SmoothedEnergy + _Bands[11].SmoothedEnergy) * .25;
+        }
 
-        _Snapshot = _Agents;
+        {
+            _Snapshots = _Agents;
 
-        for (size_t i = 0; i < _Agents.size(); ++i)
-            UpdateAgent(i, deltaTime * SpeedFactor);
+            for (size_t i = 0; i < _Agents.size(); ++i)
+                UpdateAgent(i, deltaTime * SpeedFactor);
+        }
     }
 
     /// <summary>
@@ -297,49 +329,51 @@ namespace Swarm
     {
         agent_t & Agent = _Agents[index];
 
-        const agent_t & s = _Snapshot[index];
+        const agent_t & Snapshot = _Snapshots[index];
 
-        Agent.Previous = s.Position;
-        Agent.Position = s.Position;
-        Agent.Velocity = s.Velocity;
+        Agent.Previous = Snapshot.Position;
+        Agent.Position = Snapshot.Position;
+        Agent.Velocity = Snapshot.Velocity;
 
         const double Dimension  = std::max(1.f, std::min(_Width, _Height));
-        const double Perception = Dimension * (.055 + _MidEnergy * .035);
+        const double Perception = Dimension * (.055 + (_MidLevel * .035));
 
         D2D1_POINT_2F Center {}, Alignment {}, Separation {};
 
         size_t Neighbors = 0;
 
-        uint32_t State = Hash((uint32_t) index ^ s.Seed ^ 0xA511E9B3u);
+        uint32_t State = Hash((uint32_t) index ^ Snapshot.Seed ^ 0xA511E9B3u);
 
-        for (size_t n = 0; n < std::min(NeighborSamples, _Snapshot.size() - 1); ++n)
+        for (size_t n = 0; n < std::min(NeighborSamples, _Snapshots.size() - 1); ++n)
         {
-            State = Hash(State + (uint32_t)n * 0x9E3779B9u);
+            State = Hash(State + (uint32_t) n * 0x9E3779B9u);
 
-            const size_t j = (index + 1 + State % (_Snapshot.size() - 1)) % _Snapshot.size();
+            const size_t j = (index + 1 + State % (_Snapshots.size() - 1)) % _Snapshots.size();
 
-            const auto & Snapshot = _Snapshot[j];
-
-            const double dx = Snapshot.Position.x - s.Position.x;
-            const double dy = Snapshot.Position.y - s.Position.y;
-
-            const double Distance = Length(dx, dy);
-
-            if (Distance < 1.e-3 || Distance > Perception)
-                continue;
-
-            Center.x += Snapshot.Position.x;
-            Center.y += Snapshot.Position.y;
-
-            Alignment.x += Snapshot.Velocity.x;
-            Alignment.y += Snapshot.Velocity.y;
-
-            if (Distance < Perception * .38)
             {
-                const double k = 1. - Distance / (Perception * .38);
+                const auto & Snapshot2 = _Snapshots[j];
 
-                Separation.x -= (float)(dx / Distance * k);
-                Separation.y -= (float)(dy / Distance * k);
+                const double dx = Snapshot2.Position.x - Snapshot2.Position.x;
+                const double dy = Snapshot2.Position.y - Snapshot2.Position.y;
+
+                const double Distance = Length(dx, dy);
+
+                if (Distance < 1.e-3 || Distance > Perception)
+                    continue;
+
+                Center.x += Snapshot2.Position.x;
+                Center.y += Snapshot2.Position.y;
+
+                Alignment.x += Snapshot2.Velocity.x;
+                Alignment.y += Snapshot2.Velocity.y;
+
+                if (Distance < Perception * .38)
+                {
+                    const double k = 1. - Distance / (Perception * .38);
+
+                    Separation.x -= (float) (dx / Distance * k);
+                    Separation.y -= (float) (dy / Distance * k);
+                }
             }
 
             ++Neighbors;
@@ -351,35 +385,35 @@ namespace Swarm
         {
             const double Inv = 1. / (double) Neighbors;
 
-            ax += (Center.x * Inv - s.Position.x) * (.42 + _MidEnergy * .72);
-            ay += (Center.y * Inv - s.Position.y) * (.42 + _MidEnergy * .72);
+            ax += (Center.x * Inv - Snapshot.Position.x) * (.42 + _MidLevel * .72);
+            ay += (Center.y * Inv - Snapshot.Position.y) * (.42 + _MidLevel * .72);
 
-            ax += (Alignment.x * Inv - s.Velocity.x) * (.75 + _TrebleEnergy * 1.25);
-            ay += (Alignment.y * Inv - s.Velocity.y) * (.75 + _TrebleEnergy * 1.25);
+            ax += (Alignment.x * Inv - Snapshot.Velocity.x) * (.75 + _TrebleLevel * 1.25);
+            ay += (Alignment.y * Inv - Snapshot.Velocity.y) * (.75 + _TrebleLevel * 1.25);
 
-            ax += Separation.x * Dimension * (1.8 + _BassEnergy * 3.2);
-            ay += Separation.y * Dimension * (1.8 + _BassEnergy * 3.2);
+            ax += Separation.x * Dimension * (1.8 + _BassLevel * 3.2);
+            ay += Separation.y * Dimension * (1.8 + _BassLevel * 3.2);
         }
 
-        const double Band     = (double) s.Band / (double) (BandCount - 1.);
-        const double Energy   = _SmoothedBandEnergy[s.Band];
-        const double BalanceX = _CenterX + (_SmoothedStereoBalance * _Width * .29);
-        const double LaneY    = _CenterY + std::sin(s.Phase + _AnimationTime * (.25 + Band)) * Dimension * (.08 + Band * .18);
+        const double BandAmount = (double) Snapshot.Band  * InverseBandCount; // [0, 1]
+        const double Energy     = _Bands[Snapshot.Band].SmoothedEnergy;
+        const double BalanceX   = _CenterX + (_SmoothedStereoBalance * _Width * .29);
+        const double LaneY      = _CenterY + std::sin(Snapshot.Phase + _AnimationTime * (.25 + BandAmount)) * Dimension * (.08 + BandAmount * .18);
 
-        ax += (BalanceX - s.Position.x) * (.32 + _BassEnergy * .55);
-        ay += (LaneY    - s.Position.y) * (.20 + _MidEnergy  * .42);
+        ax += (BalanceX - Snapshot.Position.x) * (.32 + _BassLevel * .55);
+        ay += (LaneY    - Snapshot.Position.y) * (.20 + _MidLevel  * .42);
 
-        const double Heading      = std::atan2(s.Velocity.y, s.Velocity.x);
-        const double ImpulseAngle = Heading + ((Hash(s.Seed) & 1u) ? 1. : -1.) * (1.1 + Band * .9);
+        const double Heading      = std::atan2(Snapshot.Velocity.y, Snapshot.Velocity.x);
+        const double ImpulseAngle = Heading + ((Hash(Snapshot.Seed) & 1u) ? 1. : -1.) * (1.1 + BandAmount * .9);
         const double Impulse      = Dimension * _BeatPulse * (1.2 + (Energy * 2.4));
 
         ax += std::cos(ImpulseAngle) * Impulse;
         ay += std::sin(ImpulseAngle) * Impulse;
 
-        const double Noise = s.Phase + _AnimationTime * (1.2 + Band * 2.8);
+        const double Noise = Snapshot.Phase + _AnimationTime * (1.2 + BandAmount * 2.8);
 
-        ax += std::cos(Noise +        s.Position.y * .008) * Dimension * (.035 + _TrebleEnergy * .08);
-        ay += std::sin(Noise * 1.17 + s.Position.x * .007) * Dimension * (.035 + _TrebleEnergy * .08);
+        ax += std::cos(Noise +        Snapshot.Position.y * .008) * Dimension * (.035 + _TrebleLevel * .08);
+        ay += std::sin(Noise * 1.17 + Snapshot.Position.x * .007) * Dimension * (.035 + _TrebleLevel * .08);
 
         Agent.Velocity.x += (float) (ax * deltaTime);
         Agent.Velocity.y += (float) (ay * deltaTime);
@@ -404,6 +438,7 @@ namespace Swarm
         Agent.Position.y += (float) (Agent.Velocity.y * deltaTime);
 
         const float Margin = (float) (Dimension * .08);
+
         bool Wrapped = false;
 
         if (Agent.Position.x < -Margin)
@@ -430,8 +465,7 @@ namespace Swarm
             Wrapped = true;
         }
 
-        // Wrapping teleports the agent to the opposite edge. Starting the trail
-        // there prevents a spurious full-height or full-width line.
+        // Wrapping teleports the agent to the opposite edge. Starting the trail there prevents a spurious full-height or full-width line.
         if (Wrapped)
             Agent.Previous = Agent.Position;
     }
@@ -536,7 +570,7 @@ namespace Swarm
         _Brush->SetColor(D2D1::ColorF(0.f, 0.f, .008f, (float) (1. - Decay)));
         _Brush->SetOpacity(1.f);
 
-        renderTarget->FillRectangle(_Rectangle, _Brush.Get());
+        renderTarget->FillRectangle(_ViewPort, _Brush.Get());
     }
 
     /// <summary>
@@ -549,7 +583,7 @@ namespace Swarm
         for (const auto & Agent : _Agents)
         {
             const double Speed     = Length(Agent.Velocity.x, Agent.Velocity.y);
-            const double Energy    = _SmoothedBandEnergy[Agent.Band];
+            const double Energy    = _Bands[Agent.Band].SmoothedEnergy;
             const double Intensity = Agent.Brightness * (.58 + (Energy * 1.05) + (_SmoothedRMS * .78) + (_BeatPulse * .35)) * std::clamp(Speed / (Side * .20), .58, 1.45);
 
             const auto Color = Colorize(Agent.Band, Energy, Fraction(Agent.Phase / TwoPi + _AnimationTime * .025));
@@ -601,8 +635,8 @@ namespace Swarm
     /// </summary>
     D2D1_COLOR_F effect_t::Colorize(size_t band, double energy, double phase) const noexcept
     {
-        const double Amount   = (double) band / (double) (BandCount - 1.);
-        const double Position = Fraction((Amount * .92) + (phase * .08) + (_SmoothedStereoBalance * .035));
+        const double BandAmount = (double) band * InverseBandCount; // [0, 1]
+        const double Position   = Fraction((BandAmount * .92) + (phase * .08) + (_SmoothedStereoBalance * .035));
 
         const float Hue = (float) GetPaletteHue(Position, _PaletteBlend);
 
@@ -628,7 +662,7 @@ namespace Swarm
 
         double Delta = To - From;
 
-        if (Delta > .5) Delta -= 1.;
+        if (Delta >  .5) Delta -= 1.;
         if (Delta < -.5) Delta += 1.;
 
         const double Eased = blend * blend * (3. - 2. * blend);
@@ -772,8 +806,6 @@ namespace Swarm
         }
 
         _RenderTarget = renderTarget;
-
-        Reset();
 
         return S_OK;
     }

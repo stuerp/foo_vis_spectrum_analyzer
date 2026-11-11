@@ -72,16 +72,16 @@ void y_axis_t::Render(ID2D1DeviceContext * deviceContext) noexcept
     {
         // Draw the horizontal grid line.
         if (_LineStyle.IsEnabled())
-            deviceContext->DrawLine(Iter.PointL, Iter.PointR, _LineStyle._Brush.Get(), _LineStyle._Thickness, nullptr);
+            deviceContext->DrawLine(Iter.PointL, Iter.PointR, _LineStyle.Brush.Get(), _LineStyle._Thickness, nullptr);
 
         // Draw the text.
         if (!Iter.IsHidden && _TextStyle.IsEnabled() && (_GraphOptions->_YAxisMode != YAxisMode::None))
         {
             if (_GraphOptions->_YAxisLeft)
-                deviceContext->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle._TextFormat.Get(), Iter.RectL, _TextStyle._Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                deviceContext->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle.TextFormat.Get(), Iter.RectL, _TextStyle.Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
 
             if (_GraphOptions->_YAxisRight)
-                deviceContext->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle._TextFormat.Get(), Iter.RectR, _TextStyle._Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                deviceContext->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle.TextFormat.Get(), Iter.RectR, _TextStyle.Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
         }
     }
 }
@@ -148,7 +148,7 @@ void y_axis_t::DeleteSizeDependentResources() noexcept
 /// </summary>
 HRESULT y_axis_t::CreateColorDependentResources(ID2D1DeviceContext * deviceContext, style_manager_t & styleManager) noexcept
 {
-    if (_LineStyle._Brush == nullptr)
+    if (_LineStyle.Brush == nullptr)
     {
         _LineStyle = *styleManager.GetStyle(VisualElement::HorizontalGridLine);
 
@@ -160,7 +160,7 @@ HRESULT y_axis_t::CreateColorDependentResources(ID2D1DeviceContext * deviceConte
             return hr;
     }
 
-    if (_TextStyle._Brush == nullptr)
+    if (_TextStyle.Brush == nullptr)
     {
         _TextStyle = *styleManager.GetStyle(VisualElement::YAxisText);
 
@@ -191,8 +191,8 @@ void y_axis_t::RecalculateSizeDependentParameters() noexcept
 {
     assert((_Size.width > 0.f) && (_Size.height > 0.f));
 
-    const FLOAT xl = _Rect.left  + (_GraphOptions->_YAxisLeft  ? _TextStyle._Width : 0.f); // Left axis
-    const FLOAT xr = _Rect.right - (_GraphOptions->_YAxisRight ? _TextStyle._Width : 0.f); // Right axis
+    const FLOAT xl = _Rect.left  + (_GraphOptions->_YAxisLeft  ? _TextStyle.Width : 0.f); // Left axis
+    const FLOAT xr = _Rect.right - (_GraphOptions->_YAxisRight ? _TextStyle.Width : 0.f); // Right axis
 
     // Calculate the position of the labels based on the height.
     D2D1_RECT_F OldRect = {  };
@@ -211,16 +211,16 @@ void y_axis_t::RecalculateSizeDependentParameters() noexcept
         Iter.PointL = D2D1_POINT_2F(xl, y);
         Iter.PointR = D2D1_POINT_2F(xr, y);
 
-        y -= (_TextStyle._Height / 2.f);
+        y -= (_TextStyle.Height / 2.f);
 
         if ((!_GraphOptions->_XAxisTop) && (y <_Rect.top))
             y = _Rect.top;
 
-        if ((!_GraphOptions->_XAxisBottom) && (y + _TextStyle._Height > _Rect.bottom))
-            y = _Rect.bottom - _TextStyle._Height;
+        if ((!_GraphOptions->_XAxisBottom) && (y + _TextStyle.Height > _Rect.bottom))
+            y = _Rect.bottom - _TextStyle.Height;
 
-        Iter.RectL = { _Rect.left, y, xl - 2.f,      y + _TextStyle._Height };
-        Iter.RectR = { xr + 2.f,     y, _Rect.right, y + _TextStyle._Height };
+        Iter.RectL = { _Rect.left, y, xl - 2.f,      y + _TextStyle.Height };
+        Iter.RectR = { xr + 2.f,     y, _Rect.right, y + _TextStyle.Height };
 
         Iter.IsHidden = (Iter.Amplitude != _Labels.front().Amplitude) && (Iter.Amplitude != _Labels.back().Amplitude) && IsOverlappingVertically(Iter.RectL, OldRect);
 

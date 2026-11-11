@@ -36,6 +36,74 @@ namespace AudioGalaxy
     /// <summary>
     /// 
     /// </summary>
+    void effect_t::Reset() noexcept
+    {
+        DeleteDeviceDependentResources();
+
+        Projection.Width       = (double) _Width;
+        Projection.Height      = (double) _Height;
+        Projection.AspectRatio = (_Height > 0.f) ? (double) _Width / (double) _Height : 1.;
+        Projection.LensOffsetX = 0.;
+        Projection.LensOffsetY = 0.;
+
+        World  = {};
+        Camera = {};
+        Object = {};
+
+        _ScaleX = std::max(1.,      Projection.AspectRatio) * 1.08;
+        _ScaleY = std::max(1., 1. / Projection.AspectRatio) * 1.08;
+
+        _SubBassState = 0.;
+        _BassState    = 0.;
+        _MidState     = 0.;
+
+        _PreviousPeak         = 0.;
+        _PreviousTrebleLevel = 0.;
+
+        _TransientPulse     = 0.;
+        _TransientCooldown  = 0.;
+        _TransientStarIndex = 0;
+
+        _SmoothedMidLevel    = 0.;
+        _SmoothedTrebleLevel = 0.;
+
+        _CameraRollVelocity  = 0.;
+        _CameraRollDirection = 1.;
+
+        _FlightYaw           = 0.;
+        _FlightPitch         = 0.;
+        _FlightYawVelocity   = 0.;
+        _FlightPitchVelocity = 0.;
+
+        _BeatPulse = 0.;
+
+        _Stars.clear();
+
+        const size_t Count = [&]() noexcept
+        {
+            switch (_Density)
+            {
+                case Density::Low:
+                    return 450u;
+
+                default:
+                case Density::Medium:
+                    return 900u;
+
+                case Density::High:
+                    return 1800u;
+            }
+        }();
+
+        _Stars.resize(Count);
+
+        for (size_t i = 0; i < Count; ++i)
+            RespawnStar(_Stars[i], i, true);
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
     void effect_t::Render(ID2D1RenderTarget * renderTarget, double deltaTime, audio_chunk & chunk) noexcept
     {
         const HRESULT hr = CreateDeviceDependentResources(renderTarget);
@@ -102,18 +170,19 @@ namespace AudioGalaxy
             _Peak         = 0.;
             _RMS          = 0.;
 
-            _BassEnergy   = 0.;
-            _MidEnergy    = 0.;
-            _TrebleEnergy = 0.;
+            _BassLevel   = 0.;
+            _MidLevel    = 0.;
+            _TrebleLevel = 0.;
 
             return;
         }
 
-        const size_t FrameCount   = chunk.get_sample_count();
-        const size_t ChannelCount = chunk.get_channel_count();
-        const size_t SampleRate   = chunk.get_sample_rate();
+        const auto FrameCount   = chunk.get_sample_count();
+        const auto ChannelCount = chunk.get_channel_count();
+        const auto SampleRate   = (double) chunk.get_sample_rate();
 
-        const size_t MaxFrames  = std::min<size_t>(FrameCount, 4096); // 4096 frames @ 44100 Hz ~ 93 ms
+        // Analyze only the most recent frames of the chunk.
+        const auto MaxFrames  = std::min<size_t>(FrameCount, 4096); // 4096 frames @ 44100 Hz ~ 93 ms
         const size_t FrameIndex = FrameCount - MaxFrames;
 
         if (MaxFrames < 8)
@@ -127,9 +196,9 @@ namespace AudioGalaxy
         double TrebleEnergy = 0.;   // Treble
 
         // Calculate the one-pole low-pass filter coefficients. _LowState tracks frequencies below roughly 180 Hz, while _HighState tracks frequencies below 2400 Hz.
-        const double SubBassCoefficient = std::exp(-TwoPi * SubBassCutoff / (double) SampleRate);
-        const double BassCoefficient    = std::exp(-TwoPi * BassCutoff    / (double) SampleRate);
-        const double MidCoefficient     = std::exp(-TwoPi * MidCutoff     / (double) SampleRate);
+        const double SubBassCoefficient = std::exp(-TwoPi * SubBassCutoff / SampleRate);
+        const double BassCoefficient    = std::exp(-TwoPi * BassCutoff    / SampleRate);
+        const double MidCoefficient     = std::exp(-TwoPi * MidCutoff     / SampleRate);
 
         // Process all frames.
         const audio_sample *       Frame    = chunk.get_data() + (FrameIndex * ChannelCount);
@@ -176,9 +245,9 @@ namespace AudioGalaxy
         _RMS = std::sqrt(Sum * FramesScale);
 
         // Compress the bass and mid energy nonlinear into ranges useful for visualization.
-        _BassEnergy   = Clamp(std::log1p(std::sqrt(BassEnergy   * FramesScale) * 36.) / std::log1p(36.)); // Gain 36
-        _MidEnergy    = Clamp(std::log1p(std::sqrt(MidEnergy    * FramesScale) * 22.) / std::log1p(22.)); // Gain 22
-        _TrebleEnergy = Clamp(std::log1p(std::sqrt(TrebleEnergy * FramesScale) * 16.) / std::log1p(16.)); // Gain 16
+        _BassLevel   = Clamp(std::log1p(std::sqrt(BassEnergy   * FramesScale) * 36.) / std::log1p(36.)); // Gain 36
+        _MidLevel    = Clamp(std::log1p(std::sqrt(MidEnergy    * FramesScale) * 22.) / std::log1p(22.)); // Gain 22
+        _TrebleLevel = Clamp(std::log1p(std::sqrt(TrebleEnergy * FramesScale) * 16.) / std::log1p(16.)); // Gain 16
 
         // Detect silence.
         _HasAudio = (_Peak > 1.e-5) || (_RMS > 1.e-6);
@@ -196,14 +265,14 @@ namespace AudioGalaxy
         {
             switch (_Speed)
             {
-                case EyeCandy::Speed::Slow:
+                case Speed::Slow:
                     return 0.75;
 
                 default:
-                case EyeCandy::Speed::Normal:
+                case Speed::Normal:
                     return 1.00;
 
-                case EyeCandy::Speed::Fast:
+                case Speed::Fast:
                     return 1.75;
             }
         }();
@@ -211,11 +280,11 @@ namespace AudioGalaxy
         _AnimationTime  += deltaTime * SpeedFactor;
 
         {
-            _TransitionTime += deltaTime;
+            _NextThemeTransitionTime += deltaTime;
 
-            while (_TransitionTime >= TransitionInterval)
+            while (_NextThemeTransitionTime >= ThemeTransitionInterval)
             {
-                _TransitionTime -= TransitionInterval;
+                _NextThemeTransitionTime -= ThemeTransitionInterval;
 
                 _ThemeIndex = (_ThemeIndex + 1) % ThemeCount;
             }
@@ -224,19 +293,19 @@ namespace AudioGalaxy
         _SmoothedPeak   = ExponentialSmoothing(_SmoothedPeak,   _Peak,         deltaTime, (_Peak         > _SmoothedPeak)   ? 34. : 6.5);
         _SmoothedRMS    = ExponentialSmoothing(_SmoothedRMS,    _RMS,          deltaTime, (_RMS          > _SmoothedRMS)    ? 18. : 4.);
 
-        _SmoothedBass   = ExponentialSmoothing(_SmoothedBass,   _BassEnergy,   deltaTime, (_BassEnergy   > _SmoothedBass)   ? 24. : 5.);
-        _SmoothedMid    = ExponentialSmoothing(_SmoothedMid,    _MidEnergy,    deltaTime, (_MidEnergy    > _SmoothedMid)    ? 20. : 4.5);
-        _SmoothedTreble = ExponentialSmoothing(_SmoothedTreble, _TrebleEnergy, deltaTime, (_TrebleEnergy > _SmoothedTreble) ? 30. : 7.);
+        _SmoothedBassLevel   = ExponentialSmoothing(_SmoothedBassLevel,   _BassLevel,   deltaTime, (_BassLevel   > _SmoothedBassLevel)   ? 24. : 5.);
+        _SmoothedMidLevel    = ExponentialSmoothing(_SmoothedMidLevel,    _MidLevel,    deltaTime, (_MidLevel    > _SmoothedMidLevel)    ? 20. : 4.5);
+        _SmoothedTrebleLevel = ExponentialSmoothing(_SmoothedTrebleLevel, _TrebleLevel, deltaTime, (_TrebleLevel > _SmoothedTrebleLevel) ? 30. : 7.);
 
-        _PreviousPeak   = _Peak;
-        _PreviousTreble = _TrebleEnergy;
+        _PreviousPeak         = _Peak;
+        _PreviousTrebleLevel = _TrebleLevel;
 
         // Transients create a compact group of genuinely new stars at the galactic core.
         {
             _TransientPulse   *= std::exp(-deltaTime * 9.);
             _TransientCooldown = std::max(0., _TransientCooldown - deltaTime);
 
-            const double Strength = Clamp(std::max(0., _Peak - _PreviousPeak) * 5.5 + std::max(0., _TrebleEnergy - _PreviousTreble) * 4.);
+            const double Strength = Clamp(std::max(0., _Peak - _PreviousPeak) * 5.5 + std::max(0., _TrebleLevel - _PreviousTrebleLevel) * 4.);
 
             if (_HasAudio && (_TransientCooldown <= 0.) && (Strength > .11))
             {
@@ -257,7 +326,7 @@ namespace AudioGalaxy
         _BeatPulse = ExponentialSmoothing(_BeatPulse, _TransientPulse, deltaTime, 18.);
 
         {
-            _CameraRollVelocity = ExponentialSmoothing(_CameraRollVelocity, 1.8 + _SmoothedMid * 5.2, deltaTime, 2.8);
+            _CameraRollVelocity = ExponentialSmoothing(_CameraRollVelocity, 1.8 + _SmoothedMidLevel * 5.2, deltaTime, 2.8);
             _CameraRoll += _CameraRollVelocity * deltaTime * SpeedFactor;
 
             if (_CameraRoll > 180.)
@@ -265,80 +334,12 @@ namespace AudioGalaxy
         }
 
         {
-            const double RotationSpeed = (.08 + _SmoothedMid * .22 + _SmoothedTreble * .12) * SpeedFactor;
+            const double RotationSpeed = (.08 + _SmoothedMidLevel * .22 + _SmoothedTrebleLevel * .12) * SpeedFactor;
 
             _TravelDistance += RotationSpeed * deltaTime;
 
             GenerateWork(deltaTime, RotationSpeed);
         }
-    }
-
-    /// <summary>
-    /// 
-    /// </summary>
-    void effect_t::Reset() noexcept
-    {
-        DeleteDeviceDependentResources();
-
-        Projection.Width       = (double) _Width;
-        Projection.Height      = (double) _Height;
-        Projection.AspectRatio = (_Height > 0.f) ? (double) _Width / (double) _Height : 1.;
-        Projection.LensOffsetX = 0.;
-        Projection.LensOffsetY = 0.;
-
-        World  = {};
-        Camera = {};
-        Object = {};
-
-        _ScaleX = std::max(1.,      Projection.AspectRatio) * 1.08;
-        _ScaleY = std::max(1., 1. / Projection.AspectRatio) * 1.08;
-
-        _SubBassState = 0.;
-        _BassState    = 0.;
-        _MidState     = 0.;
-
-        _PreviousPeak   = 0.;
-        _PreviousTreble = 0.;
-
-        _TransientPulse     = 0.;
-        _TransientCooldown  = 0.;
-        _TransientStarIndex = 0;
-
-        _SmoothedMid    = 0.;
-        _SmoothedTreble = 0.;
-
-        _CameraRollVelocity  = 0.;
-        _CameraRollDirection = 1.;
-
-        _FlightYaw           = 0.;
-        _FlightPitch         = 0.;
-        _FlightYawVelocity   = 0.;
-        _FlightPitchVelocity = 0.;
-
-        _BeatPulse = 0.;
-
-        _Stars.clear();
-
-        const size_t Count = [&]() noexcept
-        {
-            switch (_Density)
-            {
-                case EyeCandy::Density::Low:
-                    return 450u;
-
-                default:
-                case EyeCandy::Density::Medium:
-                    return 900u;
-
-                case EyeCandy::Density::High:
-                    return 1800u;
-            }
-        }();
-
-        _Stars.resize(Count);
-
-        for (size_t i = 0; i < Count; ++i)
-            RespawnStar(_Stars[i], i, true);
     }
 
     /// <summary>
@@ -479,7 +480,7 @@ namespace AudioGalaxy
     {
         star_t & Star = _Stars[index];
 
-        const double Energy    = (Star.Band == 0) ? _SmoothedBass : (Star.Band == 1) ? _SmoothedMid : _SmoothedTreble;
+        const double Energy    = (Star.Band == 0) ? _SmoothedBassLevel : (Star.Band == 1) ? _SmoothedMidLevel : _SmoothedTrebleLevel;
 
         Star.Age    += deltaTime;
         Star.Angle  += Star.Speed * deltaTime * (.500 + (1. - Star.Radius) * MaxAngularSpeed) * forwardSpeed;           // Increase the angular velocity
@@ -540,9 +541,9 @@ namespace AudioGalaxy
 
         // Determine to which frequency band the star responds.
         {
-            const double BW = .2 + _SmoothedBass;
-            const double MW = .2 + _SmoothedMid;
-            const double TW = .2 + _SmoothedTreble;
+            const double BW = .2 + _SmoothedBassLevel;
+            const double MW = .2 + _SmoothedMidLevel;
+            const double TW = .2 + _SmoothedTrebleLevel;
 
             const double Pick = Random(State) * (BW + MW + TW);
 
@@ -577,29 +578,6 @@ namespace AudioGalaxy
     }
 
     /// <summary>
-    /// 
-    /// </summary>
-    float effect_t::CurrentThemeHue() const noexcept
-    {
-        const size_t PreviousTheme = (_ThemeIndex + ThemeCount - 1) % ThemeCount;
-
-        const float StartHue = ThemeHues[PreviousTheme];
-        const float EndHue   = ThemeHues[_ThemeIndex];
-
-        float Delta = EndHue - StartHue;
-
-        if (Delta > 0.5f)
-            Delta -= 1.f;
-        else
-        if (Delta < -0.5f)
-            Delta += 1.f;
-
-        const float Blend = SmoothStep(0.f, (float) ThemeTransitionTime, (float) std::min(_TransitionTime, ThemeTransitionTime));
-
-        return Fraction(StartHue + (Delta * Blend));
-    }
-
-    /// <summary>
     /// Renders a faint background glow.
     /// </summary>
     void effect_t::RenderBackground(ID2D1RenderTarget * renderTarget) noexcept
@@ -614,7 +592,7 @@ namespace AudioGalaxy
 
         _BackgroundBrush->SetOpacity((float) Clamp(0.72 + (_SmoothedRMS * 0.4) + (_BeatPulse * 0.18)));
 
-        renderTarget->FillRectangle(_Rectangle, _BackgroundBrush.Get());
+        renderTarget->FillRectangle(_ViewPort, _BackgroundBrush.Get());
     }
 
     /// <summary>
@@ -644,7 +622,7 @@ namespace AudioGalaxy
 
             const D2D1_COLOR_F Color = GetStarColor(Star, Brightness);
 
-            const float Radius  = (float) (Star.Size * Lerp(0.35f, 2.45f, Brightness) * (1.f + (Pulse * Brightness * 1.20f) + ((float) _SmoothedBass * 0.22f)));
+            const float Radius  = (float) (Star.Size * Lerp(0.35f, 2.45f, Brightness) * (1.f + (Pulse * Brightness * 1.20f) + ((float) _SmoothedBassLevel * 0.22f)));
             const float Feather = (Brightness > 0.62f) ? 2.8f + (BirthGlow * 1.4f) : 1.65f;
 
             DrawStar(renderTarget, Position, Color, Radius, Feather);
@@ -718,7 +696,7 @@ namespace AudioGalaxy
         const float ColorShift = (float) _BeatPulse * 0.035f;
 
         const float H = Fraction(CurrentThemeHue() + (float) (star.HueOffset * 0.035f) + ColorShift + (float) (_AnimationTime * 0.0025));
-        const float S = (float) Clamp(0.12 + std::abs(star.HueOffset) * 0.42 + (_SmoothedBass * 0.12));
+        const float S = (float) Clamp(0.12 + std::abs(star.HueOffset) * 0.42 + (_SmoothedBassLevel * 0.12));
         const float V = (float) Clamp(star.Brightness * Lerp(0.30, 1.15, depthBrightness) * (1.0 + (_BeatPulse * depthBrightness * 0.85)));
         const float A = (float) Clamp(Lerp(0.22, 1., depthBrightness));
 
@@ -731,7 +709,7 @@ namespace AudioGalaxy
     void effect_t::RenderFlash(ID2D1RenderTarget * renderTarget) noexcept
     {
         const float Radius  = std::min(_Width, _Height) * (0.025f + (float) (_BeatPulse * 0.12));
-        const float Opacity = (float) Clamp(0.025 + (_SmoothedBass * 0.06) + (_BeatPulse * 0.28));
+        const float Opacity = (float) Clamp(0.025 + (_SmoothedBassLevel * 0.06) + (_BeatPulse * 0.28));
 
         ComPtr<ID2D1RadialGradientBrush> FlashBrush;
 
@@ -768,6 +746,30 @@ namespace AudioGalaxy
         FlashBrush->SetOpacity(Opacity);
 
         renderTarget->FillEllipse(D2D1::Ellipse(_Center, Radius, Radius), FlashBrush.Get());
+    }
+
+
+    /// <summary>
+    /// 
+    /// </summary>
+    float effect_t::CurrentThemeHue() const noexcept
+    {
+        const size_t PreviousTheme = (_ThemeIndex + ThemeCount - 1) % ThemeCount;
+
+        const float StartHue = ThemeHues[PreviousTheme];
+        const float EndHue   = ThemeHues[_ThemeIndex];
+
+        float Delta = EndHue - StartHue;
+
+        if (Delta > 0.5f)
+            Delta -= 1.f;
+        else
+        if (Delta < -0.5f)
+            Delta += 1.f;
+
+        const float Blend = SmoothStep(0.f, (float) ThemeTransitionTime, (float) std::min(_NextThemeTransitionTime, ThemeTransitionTime));
+
+        return Fraction(StartHue + (Delta * Blend));
     }
 
     /// <summary>

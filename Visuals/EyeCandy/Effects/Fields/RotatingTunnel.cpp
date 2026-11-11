@@ -42,14 +42,18 @@ namespace RotatingTunnel
             _RasterWidth = std::max(64u, (uint32_t) std::lround((double) LongSide * AspectRatio));
         }
 
+        _Stride = _RasterWidth * BytesPerPixel;
+
+        _Pixels.assign((size_t) _RasterWidth * _RasterHeight, PackRGB(0., 0., 0.));
+
+        _Texture    .resize((size_t) TextureWidth * TextureHeight);
+        _NextTexture.resize((size_t) TextureWidth * TextureHeight);
+
         _TableWidth  = _RasterWidth  * 2;
         _TableHeight = _RasterHeight * 2;
 
-        _Pixels.assign((size_t) _RasterWidth * _RasterHeight, PackRGB(0., 0., 0.));
-        _Texture.resize((size_t) TextureWidth * TextureHeight);
-        _NextTexture.resize((size_t) TextureWidth * TextureHeight);
         _DistanceTable.resize((size_t) _TableWidth * _TableHeight);
-        _AngleTable.resize((size_t) _TableWidth * _TableHeight);
+        _AngleTable   .resize((size_t) _TableWidth * _TableHeight);
 
         _TexturePattern = (TexturePattern) (_ThemeIndex % (size_t) TexturePattern::Count);
         _NextTexturePattern = _TexturePattern;
@@ -81,59 +85,80 @@ namespace RotatingTunnel
         if (!std::isfinite(deltaTime) || deltaTime <= 0. || deltaTime > .1)
             deltaTime = DefaultFrameTime;
 
-        _Processor.Process(chunk, deltaTime);
-
-        const double SpeedFactor = (_Speed == EyeCandy::Speed::Slow) ? .55 : (_Speed == EyeCandy::Speed::Fast) ? 1.65 : 1.;
-        const double AudioDrive  = .75 + (.70 * _Processor._Loudness) + (.35 * _Processor._BassEnergy);
-
-        _AnimationTime += deltaTime * SpeedFactor;
-        _Travel        += deltaTime * SpeedFactor * AudioDrive * 58.;
-        _Rotation      += deltaTime * SpeedFactor * (35.00 + 42.00 * _Processor._TrebleEnergy);
-        _LookPhase     += deltaTime * SpeedFactor * ( 0.65 +  0.35 * _Processor._MidEnergy);
-
+        // Update the raster.
         {
-            if (_AnimationTime > _NextTransitionTime)
+            Process(chunk, deltaTime);
+
+            const double SpeedFactor = [&]() noexcept
             {
-                _NextThemeIndex     = (_NextThemeIndex + 1) % Field::theme_t::BuiltInCount;
-                _NextTransitionTime = _AnimationTime + TransitionInterval;
-            }
-
-            if (_ThemeIndex != _NextThemeIndex)
-            {
-                _FromTheme = _Theme;
-                _ToTheme   = Field::theme_t::BuiltIn(_NextThemeIndex);
-
-                _ThemeIndex = _NextThemeIndex;
-                _TransitionTime = 0.;
-
-                _NextTexturePattern = (TexturePattern) (_ThemeIndex % (size_t) TexturePattern::Count);
-
-                if (_NextTexturePattern != _TexturePattern)
+                switch (_Speed)
                 {
-                    GenerateTexture(_NextTexturePattern, _NextTexture);
-                    _TextureTransition = 0.;
+                    case Speed::Slow:
+                        return 0.55;
+
+                    default:
+                    case Speed::Normal:
+                        return 1.0;
+
+                    case Speed::Fast:
+                        return 1.75;
+                }
+            }();
+
+            const double AudioDrive  = .75 + (.70 * _Loudness) + (.35 * _BassLevel);
+
+            _AnimationTime += deltaTime * SpeedFactor;
+            _Travel        += deltaTime * SpeedFactor * AudioDrive * 58.;
+            _Rotation      += deltaTime * SpeedFactor * (35.00 + 42.00 * _TrebleLevel);
+            _LookPhase     += deltaTime * SpeedFactor * ( 0.65 +  0.35 * _MidLevel);
+
+            {
+                if (_AnimationTime > _NextThemeTransitionTime)
+                {
+                    _NextThemeIndex = (_NextThemeIndex + 1) % Field::theme_t::BuiltInCount;
+
+                    _NextThemeTransitionTime = _AnimationTime + ThemeTransitionInterval;
+                }
+
+                if (_ThemeIndex != _NextThemeIndex)
+                {
+                    _FromTheme = _Theme;
+                    _ToTheme   = Field::theme_t::BuiltIn(_NextThemeIndex);
+
+                    _ThemeIndex = _NextThemeIndex;
+                    _TransitionTime = 0.;
+
+                    _NextTexturePattern = (TexturePattern) (_ThemeIndex % (size_t) TexturePattern::Count);
+
+                    if (_NextTexturePattern != _TexturePattern)
+                    {
+                        GenerateTexture(_NextTexturePattern, _NextTexture);
+                        _TextureTransition = 0.;
+                    }
+                }
+
+                _TransitionTime = std::min(_TransitionTime + deltaTime / .85, 1.);
+                _TextureTransition = std::min(_TextureTransition + deltaTime / .85, 1.);
+
+                if (_TransitionTime < 1.)
+                    _Theme = Field::theme_t::Blend(_FromTheme, _ToTheme, _TransitionTime);
+
+                if (_TextureTransition >= 1. && _TexturePattern != _NextTexturePattern)
+                {
+                    _Texture.swap(_NextTexture);
+                    _TexturePattern = _NextTexturePattern;
                 }
             }
 
-            _TransitionTime = std::min(_TransitionTime + deltaTime / .85, 1.);
-            _TextureTransition = std::min(_TextureTransition + deltaTime / .85, 1.);
-
-            if (_TransitionTime < 1.)
-                _Theme = Field::theme_t::Blend(_FromTheme, _ToTheme, _TransitionTime);
-
-            if (_TextureTransition >= 1. && _TexturePattern != _NextTexturePattern)
-            {
-                _Texture.swap(_NextTexture);
-                _TexturePattern = _NextTexturePattern;
-            }
+            DrawTunnel();
         }
 
-        DrawTunnel();
+        // Render the bitmap.
+        {
+            _BackBuffer->CopyFromMemory(nullptr, _Pixels.data(), _Stride);
 
-        _BackBuffer->CopyFromMemory(nullptr, _Pixels.data(), _RasterWidth * BytesPerPixel);
-
-        renderTarget->Clear(Black);
-        renderTarget->DrawBitmap(_BackBuffer.Get(), _Rectangle, 1.f, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR);
+            renderTarget->DrawBitmap(_BackBuffer.Get(), _ViewPort);
+        }
     }
 
     /// <summary>
@@ -281,10 +306,10 @@ namespace RotatingTunnel
         std::array<uint32_t, 256> Palette{ };
 
         {
-            const double Loudness = Clamp(_Processor._Loudness);
-            const double Peak     = Clamp(_Processor._Peak);
-            const double Bass     = Clamp(_Processor._BassEnergy);
-            const double Treble   = Clamp(_Processor._TrebleEnergy);
+            const double Loudness = Clamp(_Loudness);
+            const double Peak     = Clamp(_Peak);
+            const double Bass     = Clamp(_BassLevel);
+            const double Treble   = Clamp(_TrebleLevel);
 
             // Determine the global brightness of the frame based on the audio.
             const double Brightness = .48 + (.42 * std::sqrt(Loudness)) + (.10 * Peak);
@@ -315,8 +340,8 @@ namespace RotatingTunnel
         }
 
         // Calculate the position of the raster-sized window inside the doubled distance and angle tables.
-        const double LookAmountX = .43 + .10 * Clamp(_Processor._StereoWidth);  // Horizontal movement
-        const double LookAmountY = .38 + .08 * Clamp(_Processor._MidEnergy);    // Vertical movement
+        const double LookAmountX = .43 + .10 * Clamp(_StereoWidth);  // Horizontal movement
+        const double LookAmountY = .38 + .08 * Clamp(_MidLevel);    // Vertical movement
 
             // Calculate the look-up window position. The sin functions control the movement.
         const int32_t RequestedLookX = (int32_t) (_RasterWidth  / 2) + (int32_t) std::lround((double) _RasterWidth  * LookAmountX * std::sin(_LookPhase * 0.50));

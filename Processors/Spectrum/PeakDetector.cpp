@@ -1,5 +1,5 @@
 
-/** $VER: PeakDetector.cpp (2026.11.05) P. Stuer - Implements a peak detector for the spectrum visualizations. **/
+/** $VER: PeakDetector.cpp (2026.11.11) P. Stuer - Implements a peak detector for the spectrum visualizations. **/
 
 #include <pch.h>
 
@@ -12,7 +12,7 @@
 namespace Peak
 {
     /// <summary>
-    /// 
+    /// Determines the local maxima in the spectrum.
     /// </summary>
     std::vector<result_t> detector_t::Process(std::span<const frequency_band_t> frequencyBands)
     {
@@ -29,7 +29,7 @@ namespace Peak
             const auto & Center = frequencyBands[i];
             const auto & Right  = frequencyBands[i + 1];
 
-            if (Center.Value < MinValue)
+            if (Center.Value < MinPeakLevel)
                 continue;
 
             const bool IsLocalMaximum = (Center.Value > Left.Value) && (Center.Value >= Right.Value);
@@ -39,7 +39,7 @@ namespace Peak
 
             const double Prominence = DetermineProminence(frequencyBands, i, BandSpan);
 
-            if (Prominence < MinProminence)
+            if (Prominence < MinPeakProminence)
                 continue;
 
             double Frequency = Center.Center;
@@ -96,12 +96,12 @@ namespace Peak
     }
 
     /// <summary>
-    /// Determines the value difference of the specified frequency.
+    /// Determines the level difference of the specified frequency.
     /// </summary>
     inline double detector_t::DetermineProminence(std::span<const frequency_band_t> bands, size_t bandIndex, size_t bandSpan) const noexcept
     {
         const auto Left  = (size_t) std::max<int64_t>(0,               (int64_t) bandIndex - (int64_t) bandSpan);
-        const auto Right = std::min<size_t>(bands.size() - 1, bandIndex + bandSpan);
+        const auto Right =          std::min<size_t>(bands.size() - 1, bandIndex + bandSpan);
 
         double LeftMin = bands[bandIndex].Value;
 
@@ -119,7 +119,7 @@ namespace Peak
     }
 
     /// <summary>
-    /// 
+    /// Interpolates the candidate frequency with its neighbors.
     /// </summary>
     inline double detector_t::InterpolatePeakFrequency(const frequency_band_t & left, const frequency_band_t & center, const frequency_band_t & right) const noexcept
     {
@@ -149,9 +149,9 @@ namespace Peak
     /// </summary>
     inline bool detector_t::IsFarEnoughFrom(const result_t & candidate, const result_t & accepted) const noexcept
     {
-        const double FrequencyDelta = std::abs(candidate.Frequency - accepted.Frequency);
+        const double Distance = std::abs(candidate.Frequency - accepted.Frequency);
 
-        if ((MinFrequencySpacing > 0.) && (FrequencyDelta < MinFrequencySpacing))
+        if ((MinPeakDistance > 0.) && (Distance < MinPeakDistance))
             return false;
 
         return true;

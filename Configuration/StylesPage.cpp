@@ -281,14 +281,14 @@ void styles_page_t::OnSelectionChanged(UINT notificationCode, int id, CWindow wi
 
             const auto SelectedColor = _ColorListBox.GetCurSel();
 
-            if (!IsValidColorIndex(SelectedColor, Style->_CurrentGradientStops.size()))
+            if (!IsValidColorIndex(SelectedColor, Style->CurrentGradientStops.size()))
                 return;
 
             auto Scope = msc::toggle_t(_IgnoreNotifications, true);
 
             // Update the gradient stop position.
             {
-                const auto & cgs = Style->_CurrentGradientStops[(size_t) SelectedColor];
+                const auto & cgs = Style->CurrentGradientStops[(size_t) SelectedColor];
 
                 const auto Position = (int64_t) (cgs.position * 100.f);
 
@@ -405,7 +405,7 @@ void styles_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
                 if (Style->_ColorScheme != ColorScheme::Custom)
                 {
                     Style->_ColorScheme    = ColorScheme::Custom;
-                    Style->_CustomGradient = gradient_t::ConvertFormat(Style->_CurrentGradientStops);
+                    Style->_CustomGradient = gradient_t::ConvertFormat(Style->CurrentGradientStops);
 
                     ((CComboBox) GetDlgItem(IDC_COLOR_SCHEME)).SetCurSel((int) Style->_ColorScheme);
                 }
@@ -428,11 +428,11 @@ void styles_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
                         cgs.position = (FLOAT) NewPosition / 100.f;
                     }
 
-                    Style->_CurrentGradientStops = gradient_t::ConvertFormat(Style->_CustomGradient);
+                    Style->CurrentGradientStops = gradient_t::ConvertFormat(Style->_CustomGradient);
                 }
 
                 // Update the gradient control.
-                _GradientButton.SetGradientStops(Style->_CurrentGradientStops);
+                _GradientButton.SetGradientStops(Style->CurrentGradientStops);
 
                 ChangedSettings = ConfigurationChanges::Layout;
             }
@@ -540,7 +540,7 @@ void styles_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
             if (Style->_ColorScheme != ColorScheme::Custom)
             {
                 Style->_ColorScheme    = ColorScheme::Custom;
-                Style->_CustomGradient = gradient_t::ConvertFormat(Style->_CurrentGradientStops);
+                Style->_CustomGradient = gradient_t::ConvertFormat(Style->CurrentGradientStops);
             }
 
             {
@@ -581,7 +581,7 @@ void styles_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
             if (Style->_ColorScheme != ColorScheme::Custom)
             {
                 Style->_ColorScheme    = ColorScheme::Custom;
-                Style->_CustomGradient = gradient_t::ConvertFormat(Style->_CurrentGradientStops);
+                Style->_CustomGradient = gradient_t::ConvertFormat(Style->CurrentGradientStops);
             }
 
             {
@@ -609,7 +609,7 @@ void styles_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
             if (Style->_ColorScheme != ColorScheme::Custom)
             {
                 Style->_ColorScheme    = ColorScheme::Custom;
-                Style->_CustomGradient = gradient_t::ConvertFormat(Style->_CurrentGradientStops);
+                Style->_CustomGradient = gradient_t::ConvertFormat(Style->CurrentGradientStops);
             }
 
             {
@@ -633,7 +633,7 @@ void styles_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
             if (Style->_ColorScheme != ColorScheme::Custom)
             {
                 Style->_ColorScheme    = ColorScheme::Custom;
-                Style->_CustomGradient = gradient_t::ConvertFormat(Style->_CurrentGradientStops);
+                Style->_CustomGradient = gradient_t::ConvertFormat(Style->CurrentGradientStops);
             }
 
             {
@@ -808,25 +808,25 @@ LRESULT styles_page_t::OnChanged(LPNMHDR nmhd) noexcept
             if (Style->_ColorSource != ColorSource::Gradient)
             {
                 // Initialize the custom gradient with the current colors.
-                Style->_CurrentGradientStops = gradient_t::CreateGradientStops(Colors);
-                Style->_CustomGradient       = gradient_t::ConvertFormat(Style->_CurrentGradientStops);
+                Style->CurrentGradientStops = gradient_t::CreateGradientStops(Colors);
+                Style->_CustomGradient       = gradient_t::ConvertFormat(Style->CurrentGradientStops);
             }
             else
             {
-                Style->_CustomGradient = gradient_t::ConvertFormat(Style->_CurrentGradientStops);
+                Style->_CustomGradient = gradient_t::ConvertFormat(Style->CurrentGradientStops);
 
                 // Update the custom gradient with the current colors.
                 for (size_t i = 0; i < Colors.size(); ++i)
                     Style->_CustomGradient[i].color = Colors[i];
 
-                Style->_CurrentGradientStops = gradient_t::ConvertFormat(Style->_CustomGradient);
+                Style->CurrentGradientStops = gradient_t::ConvertFormat(Style->_CustomGradient);
             }
 
             // Update the color scheme.
             ((CComboBox) GetDlgItem(IDC_COLOR_SCHEME)).SetCurSel((int) Style->_ColorScheme);
 
             // Update the gradient control.
-            _GradientButton.SetGradientStops(Style->_CurrentGradientStops);
+            _GradientButton.SetGradientStops(Style->CurrentGradientStops);
             break;
         }
 
@@ -837,7 +837,7 @@ LRESULT styles_page_t::OnChanged(LPNMHDR nmhd) noexcept
             _ColorButton.GetColor(Style->_CustomColor);
 
             Style->_ColorSource  = ColorSource::Solid; // Force the color source to Solid.
-            Style->_CurrentColor = Style->_CustomColor;
+            Style->CurrentColor = Style->_CustomColor;
 
             UpdateColorControls();
             break;
@@ -862,7 +862,7 @@ LRESULT styles_page_t::OnPositionChanging(LPNMHDR nmh) noexcept
     if (Style->_ColorScheme != ColorScheme::Custom)
     {
         Style->_ColorScheme    = ColorScheme::Custom;
-        Style->_CustomGradient = gradient_t::ConvertFormat(Style->_CurrentGradientStops);
+        Style->_CustomGradient = gradient_t::ConvertFormat(Style->CurrentGradientStops);
 
         ((CComboBox) GetDlgItem(IDC_COLOR_SCHEME)).SetCurSel((int) Style->_ColorScheme);
     }
@@ -897,12 +897,12 @@ LRESULT styles_page_t::OnPositionChanging(LPNMHDR nmh) noexcept
                 SetInteger(IDC_POSITION, Position);
             }
 
-            Style->_CurrentGradientStops = gradient_t::ConvertFormat(Style->_CustomGradient);
+            Style->CurrentGradientStops = gradient_t::ConvertFormat(Style->_CustomGradient);
         }
     }
 
     // Update the gradient control.
-    _GradientButton.SetGradientStops(Style->_CurrentGradientStops);
+    _GradientButton.SetGradientStops(Style->CurrentGradientStops);
 
     NotifyParent(ConfigurationChanges::Layout);
 
@@ -928,11 +928,11 @@ void styles_page_t::InitializeStyles() noexcept
     {
         const style_t * const Style = _StyleManager->GetStyle(Id);
 
-        if ((uint64_t) Style->_UsedBy & (uint64_t) User)
+        if ((uint64_t) Style->UsedBy & (uint64_t) User)
         {
             _ActiveStyles.push_back(Id);
 
-            w.AddString(Style->_Name.c_str());
+            w.AddString(Style->Name.c_str());
         }
     }
 
@@ -969,16 +969,16 @@ void styles_page_t::UpdateControls() noexcept
         {
             if (Style->_ColorScheme == ColorScheme::Custom)
             {
-                Style->_CurrentGradientStops = gradient_t::ConvertFormat(Style->_CustomGradient);
+                Style->CurrentGradientStops = gradient_t::ConvertFormat(Style->_CustomGradient);
             }
             else
             if (Style->_ColorScheme == ColorScheme::Artwork)
             {
-                Style->_CurrentGradientStops = !_State->_ArtworkGradientStops.empty() ? _State->_ArtworkGradientStops : gradient_t::GetBuiltIn(ColorScheme::Artwork);
+                Style->CurrentGradientStops = !_State->_ArtworkGradientStops.empty() ? _State->_ArtworkGradientStops : gradient_t::GetBuiltIn(ColorScheme::Artwork);
             }
             else
             {
-                Style->_CurrentGradientStops = gradient_t::GetBuiltIn(Style->_ColorScheme);
+                Style->CurrentGradientStops = gradient_t::GetBuiltIn(Style->_ColorScheme);
             }
             break;
         }
@@ -1089,7 +1089,7 @@ void styles_page_t::UpdateColorControls() noexcept
     }
 
     // Update the color button.
-    _ColorButton.SetColor(Style->_CurrentColor);
+    _ColorButton.SetColor(Style->CurrentColor);
 
     // Update the gradient control.
     _GradientButton.SetGradientStops(gs);

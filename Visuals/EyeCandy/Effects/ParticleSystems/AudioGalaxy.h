@@ -1,9 +1,9 @@
 
-/** $VER: AudioGalaxy.h (2026.10.24) **/
+/** $VER: AudioGalaxy.h (2026.11.06) **/
 
 #pragma once
 
-#include "Effect.h"
+#include "ParticleSystemEffect.h"
 #include "ThreeD.h"
 
 #include <array>
@@ -21,16 +21,9 @@ namespace AudioGalaxy
 
     using Microsoft::WRL::ComPtr;
 
-    class effect_t final : public EyeCandy::effect_t, public EyeCandy::ThreeD
+    class effect_t final : public ParticleSystem::effect_t, public EyeCandy::ThreeD
     {
     public:
-        enum class FlightMotionIntensity
-        {
-            Subtle,
-            Normal,
-            Strong,
-        };
-
         effect_t();
         ~effect_t() override final;
 
@@ -97,13 +90,12 @@ namespace AudioGalaxy
 
         HRESULT CreateDeviceDependentResources(ID2D1RenderTarget * renderTarget) noexcept;
         void DeleteDeviceDependentResources() noexcept;
-        
+
         D2D1_COLOR_F GetStarColor(const star_t & star, double depthBrightness) const noexcept;
         
     private:
         std::vector<star_t> _Stars;
-
-        std::atomic<size_t> _NextStar { 0 };
+        std::atomic<size_t> _NextStar = 0;
 
         static constexpr double MinBirthAge =  0.; // seconds
         static constexpr double MaxBirthAge = 10.; // seconds
@@ -120,53 +112,9 @@ namespace AudioGalaxy
         double _StarDeltaTime        = 0.;
         double _ForwardSpeed         = 0.;
 
-        double _PreviousPeak         = 0.;
-        double _PreviousTreble       = 0.;
-
+    private:
         double _TransientPulse       = 0.;
         double _TransientCooldown    = 0.;
         size_t _TransientStarIndex   = 0;
-
-        double _CameraRollVelocity   = 0.;
-        double _CameraRollDirection  = 1.;
-
-        double _FlightYaw            = 0.;
-        double _FlightYawVelocity    = 0.;
-        double _FlightPitch          = 0.;
-        double _FlightPitchVelocity  = 0.;
-
-        static constexpr double HorizontalVanishingPointRange = .25; // 25% of the viewport width.
-        static constexpr double HVerticalVanishingPointRange  = .25; // 25% of the viewport height.
-
-        D2D1_POINT_2F _Center {};
-
-    private:
-        inline static constexpr std::array<float, 10> ThemeHues =
-        { {
-            0.54f, // Andromeda blue.
-            0.66f, // Whirlpool violet.
-            0.78f, // Orion magenta.
-            0.91f, // Rosette crimson.
-            0.04f, // Sombrero amber.
-            0.12f, // Cartwheel gold.
-            0.33f, // Aurora green.
-            0.47f, // Triangulum cyan.
-            0.70f, // Pinwheel indigo.
-            0.85f, // Cigar rose.
-        } };
-
-    private:
-        static constexpr double TransitionInterval = 5.; // seconds
-
-        double _TransitionTime = 0.;
-
-        static constexpr size_t ThemeCount = ThemeHues.size();
-        static constexpr double ThemeTransitionTime = 1.0;
-
-        size_t _ThemeIndex = 1;
-
-    private:
-        ComPtr<ID2D1GradientStopCollection> _BackgroundStops;
-        ComPtr<ID2D1RadialGradientBrush> _BackgroundBrush;
     };
 }

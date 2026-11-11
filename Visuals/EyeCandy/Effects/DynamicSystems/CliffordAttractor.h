@@ -54,7 +54,7 @@ namespace CliffordAttractor
 
         void UpdateAttractor(double deltaTime) noexcept;
         void AccumulatePoint(point_t point, double amount) noexcept;
-        void UpdateBitmap() noexcept;
+        void UpdateRaster() noexcept;
         void ClearDensity() noexcept;
 
         HRESULT CreateDeviceDependentResources(ID2D1RenderTarget * renderTarget) noexcept;
@@ -67,15 +67,8 @@ namespace CliffordAttractor
         point_t _Point { 0.1, 0.1 };
 
         std::vector<double> _Densities;
-        std::vector<uint32_t> _Pixels;
-
-        UINT32 _BitmapWidth = 0;
-        UINT32 _BitmapHeight = 0;
 
         double _Exposure = 1.;
         double _AccumulationRemainder = 0.;
-
-    private:
-        ComPtr<ID2D1Bitmap> _BackBuffer;
     };
 }

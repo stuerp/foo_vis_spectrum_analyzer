@@ -27,8 +27,8 @@ style_t::style_t(const style_t & other) noexcept
 /// </summary>
 style_t & style_t::operator=(const style_t & other) noexcept
 {
-    _Name                 = other._Name;
-    _UsedBy               = other._UsedBy;
+    Name                 = other.Name;
+    UsedBy               = other.UsedBy;
 
     _Flags                = other._Flags;
 
@@ -46,11 +46,11 @@ style_t & style_t::operator=(const style_t & other) noexcept
     _FontSize             = other._FontSize;
 
     // Non-serialized
-    _CurrentColor         = other._CurrentColor;
-    _CurrentGradientStops = other._CurrentGradientStops;
+    CurrentColor         = other.CurrentColor;
+    CurrentGradientStops = other.CurrentGradientStops;
 
-    _Width                = other._Width;
-    _Height               = other._Height;
+    Width                = other.Width;
+    Height               = other.Height;
 
     DeleteDeviceSpecificResources();
 
@@ -62,8 +62,8 @@ style_t & style_t::operator=(const style_t & other) noexcept
 /// </summary>
 style_t::style_t(const std::wstring & name, VisualizationTypes usedBy, style_t::Features flags, ColorSource colorSource, D2D1_COLOR_F customColor, uint32_t colorIndex, ColorScheme colorScheme, std::vector<D2D1_GRADIENT_STOP> customGradientStops, FLOAT opacity, FLOAT thickness, const wchar_t * fontName, FLOAT fontSize) noexcept
 {
-    _Name                 = name;
-    _UsedBy               = usedBy;
+    Name                 = name;
+    UsedBy               = usedBy;
 
     _Flags                = flags;
 
@@ -81,11 +81,11 @@ style_t::style_t(const std::wstring & name, VisualizationTypes usedBy, style_t::
     _FontSize             = fontSize;
 
     // Non-serialized
-    _CurrentColor         = customColor;
-    _CurrentGradientStops = customGradientStops;
+    CurrentColor         = customColor;
+    CurrentGradientStops = customGradientStops;
 
-    _Width                = 0.f;
-    _Height               = 0.f;
+    Width                = 0.f;
+    Height               = 0.f;
 }
 
 /// <summary>
@@ -97,32 +97,32 @@ void style_t::SetColor(const state_t * state) noexcept
     {
         case ColorSource::None:
         {
-            _CurrentColor = D2D1::ColorF(0, 0.f); // Transparent
+            CurrentColor = D2D1::ColorF(0, 0.f); // Transparent
 
             return;
         }
 
         case ColorSource::Solid:
         {
-            _CurrentColor = _CustomColor;
+            CurrentColor = _CustomColor;
 
             return;
         }
 
         case ColorSource::DominantColor:
         {
-            _CurrentColor = state->_ArtworkDominantColor;
+            CurrentColor = state->_ArtworkDominantColor;
 
             return;
         }
 
         case ColorSource::Gradient:
         {
-            _CurrentColor = D2D1::ColorF(0, 0.f); // Transparent
+            CurrentColor = D2D1::ColorF(0, 0.f); // Transparent
 
             if (_ColorScheme == ColorScheme::Artwork)
             {
-                _CurrentGradientStops = state->_ArtworkGradientStops;
+                CurrentGradientStops = state->_ArtworkGradientStops;
 
                 return;
             }
@@ -132,12 +132,12 @@ void style_t::SetColor(const state_t * state) noexcept
                 for (auto & gs : _CustomGradient)
                     gs.SetColor(state);
 
-                _CurrentGradientStops = gradient_t::ConvertFormat(_CustomGradient);
+                CurrentGradientStops = gradient_t::ConvertFormat(_CustomGradient);
 
                 return;
             }
 
-            _CurrentGradientStops = gradient_t::GetBuiltIn(_ColorScheme);
+            CurrentGradientStops = gradient_t::GetBuiltIn(_ColorScheme);
 
             return;
         }
@@ -158,7 +158,7 @@ void style_t::SetColor(const state_t * state) noexcept
 
             const auto Index = std::clamp((size_t) _ColorIndex, (size_t) 0, _countof(ColorIndex) - 1);
 
-            _CurrentColor = D2D1::ColorF(::GetSysColor(ColorIndex[Index]));
+            CurrentColor = D2D1::ColorF(::GetSysColor(ColorIndex[Index]));
 
             return;
         }
@@ -167,14 +167,14 @@ void style_t::SetColor(const state_t * state) noexcept
         {
             if (state->_UserInterfaceColors.empty())
             {
-                _CurrentColor = D2D1_COLOR_F(D2D1::ColorF::Red); // Error
+                CurrentColor = D2D1_COLOR_F(D2D1::ColorF::Red); // Error
 
                 return;
             }
 
             const auto Index = std::clamp((size_t) _ColorIndex, (size_t) 0, state->_UserInterfaceColors.size() - 1);
 
-            _CurrentColor = state->_UserInterfaceColors[Index];
+            CurrentColor = state->_UserInterfaceColors[Index];
 
             return;
         }
@@ -193,12 +193,12 @@ HRESULT style_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContex
     // Create the DirectX brush.
     if (_ColorSource != ColorSource::Gradient)
     {
-        hr = deviceContext->CreateSolidColorBrush(_CurrentColor, SolidColorBrush.GetAddressOf());
+        hr = deviceContext->CreateSolidColorBrush(CurrentColor, SolidColorBrush.GetAddressOf());
 
         if (FAILED(hr))
             return hr;
 
-        _Brush = SolidColorBrush;
+        Brush = SolidColorBrush;
     }
     else
     {
@@ -209,9 +209,9 @@ HRESULT style_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContex
             if (FAILED(hr))
                 return hr;
 
-            _Brush = SolidColorBrush;
+            Brush = SolidColorBrush;
 
-            hr = CreateAmplitudeMap(_ColorScheme, _CurrentGradientStops, _AmplitudeMap);
+            hr = CreateAmplitudeMap(_ColorScheme, CurrentGradientStops, AmplitudeMap);
 
             if (FAILED(hr))
                 return hr;
@@ -220,24 +220,24 @@ HRESULT style_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContex
         {
             ComPtr<ID2D1LinearGradientBrush> LinearGradientBrush;
 
-            hr = Direct2D::CreateGradientBrush(deviceContext, _CurrentGradientStops, size, Has(style_t::Features::HorizontalGradient), LinearGradientBrush.GetAddressOf());
+            hr = Direct2D::CreateGradientBrush(deviceContext, CurrentGradientStops, size, Has(style_t::Features::HorizontalGradient), LinearGradientBrush.GetAddressOf());
 
             if (FAILED(hr))
                 return hr;
 
-            _Brush = LinearGradientBrush;
+            Brush = LinearGradientBrush;
         }
     }
 
-    if (_Brush != nullptr)
-        _Brush->SetOpacity(_Opacity);
+    if (Brush != nullptr)
+        Brush->SetOpacity(_Opacity);
 
     // Create the DirectX text format.
-    if (Has(style_t::Features::SupportsFont) && (_TextFormat == nullptr) && !_FontName.empty())
+    if (Has(style_t::Features::SupportsFont) && (TextFormat == nullptr) && !_FontName.empty())
     {
         const FLOAT FontSize = PointsToDIPs(_FontSize) / scaleFactor; // In DIPs
 
-        hr = DirectWrite::CreateTextFormat(_FontName, FontSize, DWRITE_TEXT_ALIGNMENT_CENTER, DWRITE_PARAGRAPH_ALIGNMENT_CENTER, _TextFormat.GetAddressOf());
+        hr = DirectWrite::CreateTextFormat(_FontName, FontSize, DWRITE_TEXT_ALIGNMENT_CENTER, DWRITE_PARAGRAPH_ALIGNMENT_CENTER, TextFormat.GetAddressOf());
 
         if (FAILED(hr))
             return hr;
@@ -260,12 +260,12 @@ HRESULT style_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContex
     // Create the DirectX brush.
     if (_ColorSource != ColorSource::Gradient)
     {
-        hr = deviceContext->CreateSolidColorBrush(_CurrentColor, SolidColorBrush.GetAddressOf());
+        hr = deviceContext->CreateSolidColorBrush(CurrentColor, SolidColorBrush.GetAddressOf());
 
         if (FAILED(hr))
             return hr;
 
-        _Brush = SolidColorBrush;
+        Brush = SolidColorBrush;
     }
     else
     {
@@ -276,9 +276,9 @@ HRESULT style_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContex
             if (FAILED(hr))
                 return hr;
 
-            _Brush = SolidColorBrush;
+            Brush = SolidColorBrush;
 
-            hr = CreateAmplitudeMap(_ColorScheme, _CurrentGradientStops, _AmplitudeMap);
+            hr = CreateAmplitudeMap(_ColorScheme, CurrentGradientStops, AmplitudeMap);
 
             if (FAILED(hr))
                 return hr;
@@ -287,17 +287,17 @@ HRESULT style_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContex
         {
             ComPtr<ID2D1RadialGradientBrush> RadialGradientBrush;
 
-            hr = Direct2D::CreateRadialGradientBrush(deviceContext, _CurrentGradientStops, center, offset, rx, ry, rOffset, RadialGradientBrush.GetAddressOf());
+            hr = Direct2D::CreateRadialGradientBrush(deviceContext, CurrentGradientStops, center, offset, rx, ry, rOffset, RadialGradientBrush.GetAddressOf());
 
             if (FAILED(hr))
                 return hr;
 
-            _Brush = RadialGradientBrush;
+            Brush = RadialGradientBrush;
         }
     }
 
-    if (_Brush != nullptr)
-        _Brush->SetOpacity(_Opacity);
+    if (Brush != nullptr)
+        Brush->SetOpacity(_Opacity);
 
     return hr;
 }
@@ -307,8 +307,8 @@ HRESULT style_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContex
 /// </summary>
 void style_t::DeleteDeviceSpecificResources() noexcept
 {
-    _TextFormat.Reset();
-    _Brush.Reset();
+    TextFormat.Reset();
+    Brush.Reset();
 }
 
 /// <summary>
@@ -316,19 +316,19 @@ void style_t::DeleteDeviceSpecificResources() noexcept
 /// </summary>
 HRESULT style_t::SetBrushColor(double value) noexcept
 {
-    if (_AmplitudeMap.empty())
+    if (AmplitudeMap.empty())
         return E_FAIL;
 
     ComPtr<ID2D1SolidColorBrush> SolidColorBrush;
 
-    HRESULT hr = _Brush.As(&SolidColorBrush);
+    HRESULT hr = Brush.As(&SolidColorBrush);
 
     if (FAILED(hr))
         return hr;
 
-    const size_t Index = msc::Map(value, 0., 1., (size_t) 0, _AmplitudeMap.size() - 1);
+    const size_t Index = msc::Map(value, 0., 1., (size_t) 0, AmplitudeMap.size() - 1);
 
-    SolidColorBrush->SetColor(_AmplitudeMap[Index]);
+    SolidColorBrush->SetColor(AmplitudeMap[Index]);
 
     return hr;
 }
@@ -470,8 +470,8 @@ HRESULT style_t::CreateAmplitudeMap(ColorScheme colorScheme, const std::vector<D
 /// </summary>
 HRESULT style_t::MeasureText(const std::wstring & text) noexcept
 {
-    if (_TextFormat == nullptr)
+    if (TextFormat == nullptr)
         return E_FAIL;
 
-    return DirectWrite::GetTextMetrics(_TextFormat.Get(), text.c_str(), _Width, _Height);
+    return DirectWrite::GetTextMetrics(TextFormat.Get(), text.c_str(), Width, Height);
 }

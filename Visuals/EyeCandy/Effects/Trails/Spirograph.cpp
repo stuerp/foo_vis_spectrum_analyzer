@@ -58,7 +58,9 @@ namespace Spirograph
             }
         }
 
-        renderTarget->DrawBitmap(_BackBuffer.Get(), _Rectangle);
+        {
+            renderTarget->DrawBitmap(_BackBuffer.Get(), _ViewPort);
+        }
     }
 
     /// <summary>
@@ -78,17 +80,22 @@ namespace Spirograph
             return;
         }
 
-        const size_t ChannelCount = chunk.get_channel_count();
-        const size_t FrameCount   = chunk.get_sample_count();
+        const audio_sample * const Frames = chunk.get_data();
 
-        if ((channels[0] >= ChannelCount) || (channels[1] >= ChannelCount) || (FrameCount < 16))
+        const auto FrameCount   = chunk.get_sample_count();
+        const auto ChannelCount = chunk.get_channel_count();
+
+        if ((FrameCount < 16) || (channels[0] >= ChannelCount) || (channels[1] >= ChannelCount))
             return;
 
-        const size_t MaxFrames = std::min<size_t>(FrameCount, (_Quality == EyeCandy::Quality::High) ? 1024 : 512);
-        const size_t FrameStep = std::max<size_t>(1, FrameCount / MaxFrames);
+        // Analyze only the most recent frames of the chunk.
+        const auto MaxFrames = std::min<size_t>(FrameCount, (_Quality == Quality::High) ? 1024 : 512);
+        const auto FrameStep = std::max<size_t>(1, FrameCount / MaxFrames);
 
         if (_Samples.size() < MaxFrames)
             _Samples.resize(MaxFrames);
+
+        auto Samples = std::span<double>(_Samples.data(), MaxFrames);
 
         // Process all frames.
         {
@@ -98,10 +105,6 @@ namespace Spirograph
             double Difference = 0.;
 
             double Previous = 0.;
-
-            const audio_sample * Frames = chunk.get_data();
-
-            auto Samples = std::span<double>(_Samples.data(), MaxFrames);
 
             for (size_t i = 0; i < MaxFrames; ++i)
             {
@@ -129,11 +132,11 @@ namespace Spirograph
             const double MaxFrequency     = std::min(HiFrequency, NyquistFrequency);
             const double Ratio            = MaxFrequency / LoFrequency;
 
-            std::array<double, BandCount> RawEnergies {};
+            std::array<double, BandCount> RawEnergies { };
 
             for (size_t i = 0; i < BandCount; ++i)
             {
-                const double Amount          = (double) i / (double) (BandCount - 1);
+                const double Amount          = (double) i * InverseBandCount; // [0, 1]
                 const double CenterFrequency = LoFrequency * std::pow(Ratio, Amount);
                 const double AngularStep     = TwoPi * CenterFrequency / _SampleRate;
 
@@ -154,7 +157,7 @@ namespace Spirograph
                 const double Magnitude = 2. * std::sqrt((Real * Real) + (Imaginary * Imaginary)) / (double) MaxFrames;
 
                 // Apply perceptual frequency compensation.
-                const double FrequencyGain = 1.65 + (4.1 * std::pow(Amount, 1.18));
+                const double FrequencyGain = 1.65 + (4.10 * std::pow(Amount, 1.18));
 
                 RawEnergies[i] = Clamp(std::pow(Magnitude * FrequencyGain * 7., 0.74)); // Boost quiet spectral components to give them more visual presence
 
@@ -205,12 +208,15 @@ namespace Spirograph
 
         _AnimationTime += deltaTime * SpeedFactor;
 
+        {
         for (auto & Band : _Bands)
             Band.SmoothedEnergy = ExponentialSmoothing(Band.SmoothedEnergy, Band.Energy, deltaTime, Band.Energy > Band.SmoothedEnergy ? 11. : 2.6);
 
-        _SmoothedRhythm   = ExponentialSmoothing(_SmoothedRhythm, _Rhythm, deltaTime, (_Rhythm > _SmoothedRhythm) ? 15. : 3.2);
-        _RhythmPulse      = std::max(_SmoothedRhythm, _RhythmPulse * std::pow(0.86, deltaTime * 60.));
-        _SmoothedTonality = ExponentialSmoothing(_SmoothedTonality, _Tonality, deltaTime, 2.2);
+            _SmoothedRhythm   = ExponentialSmoothing(_SmoothedRhythm, _Rhythm, deltaTime, (_Rhythm > _SmoothedRhythm) ? 15. : 3.2);
+            _SmoothedTonality = ExponentialSmoothing(_SmoothedTonality, _Tonality, deltaTime, 2.2);
+        }
+
+        _RhythmPulse = std::max(_SmoothedRhythm, _RhythmPulse * std::pow(0.86, deltaTime * 60.));
 
         _Rotation += (deltaTime * SpeedFactor) * (0.34 + (_SmoothedRhythm * 1.15));
     }
@@ -220,7 +226,7 @@ namespace Spirograph
     /// </summary>
     void effect_t::GenerateCurves() noexcept
     {
-        size_t PointCount = (_Quality == EyeCandy::Quality::Low) ? 240u : (_Quality == EyeCandy::Quality::High) ? 720 : 480;
+        size_t PointCount = (_Quality == Quality::Low) ? 240u : (_Quality == Quality::High) ? 720 : 480;
 
         _Curves.resize(CurveCount);
 
@@ -245,7 +251,8 @@ namespace Spirograph
 
             for (size_t j = 0; j <= PointCount; ++j)
             {
-                const double Amount           = (double) j / (double) PointCount;
+                const double Amount = (double) j / (double) PointCount; // [0, 1]
+
                 const double Angle            = Amount * TwoPi * Turns;
                 const double RadiusDifference = Inward ? MajorRadius - MinorRadius : MajorRadius + MinorRadius;
                 const double RotationAngle    = Angle + (_Rotation * Direction * (0.46 + Layer * 0.52));
@@ -274,7 +281,7 @@ namespace Spirograph
         _Brush->SetColor(D2D1::ColorF(0.f, 0.f, 0.f, (float) Clamp(1. - Decay)));
         _Brush->SetOpacity(1.f);
 
-        renderTarget->FillRectangle(_Rectangle, _Brush.Get());
+        renderTarget->FillRectangle(_ViewPort, _Brush.Get());
     }
 
     /// <summary>

@@ -1,5 +1,5 @@
 
-/** $VER: StyleManager.cpp (2026.10.28) P. Stuer - Creates and manages the DirectX resources of the styles. **/
+/** $VER: StyleManager.cpp (2026.11.11) P. Stuer - Creates and manages the DirectX resources of the styles. **/
 
 #include "pch.h"
 
@@ -49,8 +49,8 @@ void style_manager_t::Reset() noexcept
 
     for (auto & [ID, Style] : _Styles)
     {
-        Style._CurrentColor         = Style._CustomColor;
-        Style._CurrentGradientStops = gradient_t::GetBuiltIn(Style._ColorScheme);
+        Style.CurrentColor         = Style._CustomColor;
+        Style.CurrentGradientStops = gradient_t::GetBuiltIn(Style._ColorScheme);
     }
 }
 
@@ -599,15 +599,15 @@ std::unordered_map<VisualElement, style_t> style_manager_t::_DefaultStyles
             /* Name                */ L"Horizontal Grid Line",
             /* UsedBy              */ VisualizationTypes::Bars | VisualizationTypes::Curve | VisualizationTypes::PeakMeter | VisualizationTypes::Spectrogram | VisualizationTypes::Oscilloscope,
             /* Flags               */ style_t::Features::SupportsOpacity | style_t::Features::SupportsThickness,
-            /* CustomColor         */ ColorSource::Solid,
-            D2D1::ColorF(.25f, .25f, .25f, 1.f),
-            0,
-            ColorScheme::Solid,
-            gradient_t::GetBuiltIn(ColorScheme::Custom),
-            1.f,
-            1.f,
-            L"",
-            0.f
+            /* ColorSource         */ ColorSource::Solid,
+            /* CustomColor         */ D2D1::ColorF(.25f, .25f, .25f, 1.f),
+            /* ColorIndex          */ 0,
+            /* ColorScheme         */ ColorScheme::Solid,
+            /* CustomGradientStops */ gradient_t::GetBuiltIn(ColorScheme::Custom),
+            /* Opacity             */ 1.f,
+            /* Thickness           */ 1.f,
+            /* FontName            */ L"",
+            /* FontSize            */ 0.f
         )
     },
 
@@ -618,15 +618,15 @@ std::unordered_map<VisualElement, style_t> style_manager_t::_DefaultStyles
             /* Name                */ L"Vertical Grid Line",
             /* UsedBy              */ VisualizationTypes::Bars | VisualizationTypes::Curve | VisualizationTypes::Spectrogram | VisualizationTypes::Oscilloscope,
             /* Flags               */ style_t::Features::SupportsOpacity | style_t::Features::SupportsThickness,
-            /* CustomColor         */ ColorSource::Solid,
-            D2D1::ColorF(.25f, .25f, .25f, 1.f),
-            0,
-            ColorScheme::Solid,
-            gradient_t::GetBuiltIn(ColorScheme::Custom),
-            1.f,
-            1.f,
-            L"",
-            0.f
+            /* ColorSource         */ ColorSource::Solid,
+            /* CustomColor         */ D2D1::ColorF(.25f, .25f, .25f, 1.f),
+            /* ColorIndex          */ 0,
+            /* ColorScheme         */ ColorScheme::Solid,
+            /* CustomGradientStops */ gradient_t::GetBuiltIn(ColorScheme::Custom),
+            /* Opacity             */ 1.f,
+            /* Thickness           */ 1.f,
+            /* FontName            */ L"",
+            /* FontSize            */ 0.f
         )
     },
 
@@ -637,15 +637,51 @@ std::unordered_map<VisualElement, style_t> style_manager_t::_DefaultStyles
             /* Name                */ L"Nyquist Frequency Line",
             /* UsedBy              */ VisualizationTypes::Bars | VisualizationTypes::Curve | VisualizationTypes::Spectrogram,
             /* Flags               */ style_t::Features::SupportsOpacity | style_t::Features::SupportsThickness,
-            /* CustomColor         */ ColorSource::Solid,
-            D2D1::ColorF(D2D1::ColorF::Red),
-            0,
-            ColorScheme::Solid,
-            gradient_t::GetBuiltIn(ColorScheme::Custom),
-            1.f,
-            1.f,
-            L"",
-            0.f
+            /* ColorSource         */ ColorSource::Solid,
+            /* CustomColor         */ D2D1::ColorF(D2D1::ColorF::Red),
+            /* ColorIndex          */ 0,
+            /* ColorScheme         */ ColorScheme::Solid,
+            /* CustomGradientStops */ gradient_t::GetBuiltIn(ColorScheme::Custom),
+            /* Opacity             */ 1.f,
+            /* Thickness           */ 1.f,
+            /* FontName            */ L"",
+            /* FontSize            */ 0.f
+        )
+    },
+    {
+        VisualElement::PeakMarker,
+        style_t
+        (
+            /* Name                */ L"Peak Marker",
+            /* UsedBy              */ VisualizationTypes::Bars | VisualizationTypes::Curve,
+            /* Flags               */ style_t::Features::SupportsOpacity,
+            /* ColorSource         */ ColorSource::Solid,
+            /* CustomColor         */ D2D1::ColorF(D2D1::ColorF::Red),
+            /* ColorIndex          */ 0,
+            /* ColorScheme         */ ColorScheme::Solid,
+            /* CustomGradientStops */ gradient_t::GetBuiltIn(ColorScheme::Solid),
+            /* Opacity             */ 1.f,
+            /* Thickness           */ 0.f,
+            /* FontName            */ L"",
+            /* FontSize            */ 0.f
+        )
+    },
+    {
+        VisualElement::PeakText,
+        style_t
+        (
+            /* Name                */ L"Peak Text",
+            /* UsedBy              */ VisualizationTypes::Bars | VisualizationTypes::Curve,
+            /* Flags               */ style_t::Features::SupportsOpacity | style_t::Features::SupportsFont,
+            /* ColorSource         */ ColorSource::Solid,
+            /* CustomColor         */ D2D1::ColorF(D2D1::ColorF::White),
+            /* ColorIndex          */ 0,
+            /* ColorScheme         */ ColorScheme::Solid,
+            /* CustomGradientStops */ gradient_t::GetBuiltIn(ColorScheme::Solid),
+            /* Opacity             */ 1.f,
+            /* Thickness           */ 0.f,
+            /* FontName            */ L"Segoe UI",
+            /* FontSize            */ 7.f
         )
     },
     #pragma endregion

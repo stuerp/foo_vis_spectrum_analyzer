@@ -36,7 +36,6 @@ namespace Swarm
         std::wstring GetStatus() noexcept override;
 
     private:
-        static constexpr size_t BandCount = 12;
         static constexpr size_t NeighborSamples = 24;
 
         struct agent_t
@@ -76,18 +75,9 @@ namespace Swarm
 
     private:
         std::vector<agent_t> _Agents;
-        std::vector<agent_t> _Snapshot;
+        std::vector<agent_t> _Snapshots;
 
     private:
-        std::vector<double> _Samples;
-
-        std::array<double, BandCount> _BandEnergy {};
-        std::array<double, BandCount> _SmoothedBandEnergy {};
-        std::array<double, BandCount> _PreviousBandEnergy {};
-
-        double _StereoBalance         = 0.;
-        double _SmoothedStereoBalance = 0.;
-
         double _PreviousBeatPulse     = 0.;
         double _BeatColorPhase        = 0.;
         double _GradientPhase         = 0.;
@@ -100,8 +90,5 @@ namespace Swarm
     private:
         ComPtr<ID2D1SolidColorBrush> _Brush;
         ComPtr<ID2D1StrokeStyle> _StrokeStyle;
-
-        ComPtr<ID2D1BitmapRenderTarget> _BackBufferRenderTarget;
-        ComPtr<ID2D1Bitmap> _BackBuffer;
     };
 }

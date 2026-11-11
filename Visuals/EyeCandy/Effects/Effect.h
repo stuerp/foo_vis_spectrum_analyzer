@@ -1,5 +1,5 @@
 
-/** $VER: Effect.h (2026.10.23) P. Stuer - Base class for the Eye Candy effects. **/
+/** $VER: Effect.h (2026.11.06) P. Stuer - Base class for the Eye Candy effects. **/
 
 #pragma once
 
@@ -10,379 +10,29 @@
 #include <SDKDDKVer.h>
 
 #include <Windows.h>
+
 #include <d2d1.h>
-
 #include <wrl/client.h>
-
-using Microsoft::WRL::ComPtr;
 
 #include <array>
 #include <condition_variable>
 #include <memory>
-#include <numbers>
 #include <string>
 #include <thread>
 
 #include <SDK/audio_chunk.h>
 
 #include "Effects.h"
+#include "EffectProcessor.h"
 
 namespace EyeCandy
 {
-    constexpr double Pi = std::numbers::pi_v<double>;
-    constexpr double TwoPi = 2. * Pi;
-    constexpr double Epsilon = std::numeric_limits<double>::epsilon();
-
-    constexpr double LoFrequency     =     20.;
-    constexpr double HiFrequency     = 20'000.;
-
-    constexpr double FrequencyRatio  = HiFrequency / LoFrequency;
-
-    constexpr double BassFrequency   =    250.; // 16 to 250 Hz (C0 to C4), https://en.wikipedia.org/wiki/Bass_(sound)
-    constexpr double TrebleFrequency =  6'000.; // 6 to 20 kHz, https://en.wikipedia.org/wiki/Treble_(sound)
-
-    // Cutoff frequencies for the first-order low-pass filters.
-    constexpr double SubBassCutoff  =   35.; // Hz, Removes DC and very-low-frequency movement.
-    constexpr double BassCutoff     =  220.; // Hz, Separates bass from the mid frequecies.
-    constexpr double MidCutoff      = 2400.; // Hz, Separates the mids from treble.
-
-    enum class Quality
-    {
-        Low = 0,
-        Medium = 1,
-        High = 2,
-
-        Min = Low,
-        Max = High
-    };
-
-    enum class Speed
-    {
-        Slow = 0,
-        Normal = 1,
-        Fast = 2,
-
-        Min = Slow,
-        Max = Fast
-    };
-
-    enum class Brightness
-    {
-        Low,
-        Medium,
-        High,
-
-        Min = Low,
-        Max = High
-    };
-
-    enum class Density
-    {
-        Low,
-        Medium,
-        High,
-
-        Min = Low,
-        Max = High
-    };
-
-    struct theme_t
-    {
-        std::wstring Name;
-    };
-
-    struct color_theme_t : theme_t
-    {
-        float BackgroundHueA = 0.f;
-        float BackgroundHueB = 0.f;
-        float RingHue        = 0.f;
-        float RailHue        = 0.f;
-        float CoreHue        = 0.f;
-        float FlashHue       = 0.f;
-        float HueRange       = 0.f;
-        float Saturation     = 1.f;
-        float Brightness     = 1.f;
-
-        bool Monochrome = false;
-    };
-
-    enum class ColorTheme : uint8_t
-    {
-        Synthwave,
-        Cyberpunk,
-        Tron,
-        Toxic,
-        Inferno,
-        Monochrome,
-        Count
-    };
-
-    enum class ThemeRole : uint8_t
-    {
-        BackgroundA, BackgroundB, Ring, Rail, Core, Flash
-    };
-
-    struct hsv_t
-    {
-        float H = 0.f;
-        float S = 0.f;
-        float V = 0.f;
-    };
-
-    const D2D1_COLOR_F Black = D2D1::ColorF(D2D1::ColorF::Black);
-    const D2D1_COLOR_F White = D2D1::ColorF(D2D1::ColorF::White);
-
-    template <typename T> inline constexpr T Clamp(T value) noexcept
-    {
-        return std::clamp(value, (T) 0., (T) 1.);
-    }
-
-    inline double ClampAudio(double value) noexcept
-    {
-        if (!std::isfinite(value))
-            return 0.;
-
-        return std::clamp(value, -2., 2.);
-    }
-
-    inline double Length(double x, double y) noexcept
-    {
-        return std::sqrt(x * x + y * y);
-    }
-
-    template <typename T> inline constexpr T Fraction(T value) noexcept
-    {
-        return value - std::floor(value);
-    }
-
-    inline constexpr double Interpolate(double a, double b, double deltaTime, double rate) noexcept
-    {
-        return std::lerp(a, b, 1. - std::exp(-rate * deltaTime));
-    }
-
-    inline bool IsFinite(D2D1_POINT_2F point) noexcept
-    {
-        return std::isfinite(point.x) && std::isfinite(point.y);
-    }
-
-    template <typename T> inline constexpr T Lerp(T from, T to, T amount) noexcept
-    {
-        return from + (to - from) * amount;
-    }
-
-    static double ExponentialSmoothing(double from, double to, double deltaTime, double response) noexcept
-    {
-        const double Amount = 1. - std::exp(-std::max(0., deltaTime) * response);
-
-        return Lerp(from, to, Amount);
-    }
-
-    static float InterpolateHue(float from, float to, float amount) noexcept
-    {
-        from = Fraction(from);
-        to   = Fraction(to);
-
-        float Difference = to - from;
-
-        if (Difference > 0.5f)
-            Difference -= 1.0f;
-        else
-        if (Difference < -0.5f)
-            Difference += 1.0f;
-
-        return Fraction(from + Difference * amount + 1.0f);
-    }
-
-    static hsv_t InterpolateHSV(const hsv_t & from, const hsv_t & to, float amount) noexcept
-    {
-        amount = Clamp(amount);
-
-        return
-        {
-            InterpolateHue(from.H, to.H, amount),
-
-            Lerp(from.S, to.S, amount),
-            Lerp(from.V, to.V, amount)
-        };
-    }
-
-    template <typename T> static uint8_t ToByte(T value) noexcept
-    {
-        return (uint8_t) (((T) 255. * value) + (T) 0.5);
-    }
-
-    static uint8_t ToRGB(double value) noexcept
-    {
-        return (uint8_t) (255. * std::pow(Clamp(value), 1. / 2.2));
-    }
-
-    static uint8_t GetChannel(uint32_t color, unsigned int shift) noexcept
-    {
-        return (uint8_t) ((color >> shift) & 0xFFu);
-    }
-
-    static D2D1_COLOR_F SetAlpha(D2D1_COLOR_F color, float alpha) noexcept
-    {
-        color.a = Clamp(alpha);
-
-        return color;
-    }
-
-    /// <summary>
-    /// 
-    /// </summary>
-    static uint32_t PackColor(double r, double g, double b) noexcept
-    {
-        const uint32_t R = ToByte(r);
-        const uint32_t G = ToByte(g);
-        const uint32_t B = ToByte(b);
-
-        return 0xFF000000u | (R << 16u) | (G << 8u) | B;
-    }
-
-    /// <summary>
-    /// 
-    /// </summary>
-    static uint32_t PackRGB(double r, double g, double b) noexcept
-    {
-        const uint32_t R = ToRGB(r);
-        const uint32_t G = ToRGB(g);
-        const uint32_t B = ToRGB(b);
-
-        return 0xFF000000u | (R << 16u) | (G << 8u) | B;
-    }
-
-    /// <summary>
-    /// Converts an HSV color to a normalized Direct2D color.
-    /// </summary>
-    static D2D1_COLOR_F HSVToColor(float h, float s, float v, float a = 1.f) noexcept
-    {
-        h = Fraction(h); // Wrap hue into [0, 1].
-        s = Clamp(s);
-        v = Clamp(v);
-
-        const float ScaledHue = h * 6.0f;
-        const auto  Sector    = (int) ScaledHue;
-        const float Fraction  = ScaledHue - (float) Sector;
-
-        const float ChromaReduction = v * s;
-
-        const float p = v - ChromaReduction;
-        const float q = v - ChromaReduction * Fraction;
-        const float t = v - ChromaReduction * (1.f - Fraction);
-
-        switch (Sector)
-        {
-            case 0:  return { v, t, p, Clamp(a) };
-            case 1:  return { q, v, p, Clamp(a) };
-            case 2:  return { p, v, t, Clamp(a) };
-            case 3:  return { p, q, v, Clamp(a) };
-            case 4:  return { t, p, v, Clamp(a) };
-            default: return { v, p, q, Clamp(a) }; // 5
-        }
-    }
-
-    /// <summary>
-    /// Converts a color from HSV to RGB.
-    /// </summary>
-    static void HSVToRGB(double h, double s, double v, double & r, double & g, double & b) noexcept
-    {
-        h = Fraction(h); // Wrap hue into [0, 1].
-        s = Clamp(s);
-        v = Clamp(v);
-
-        const double ScaledHue = h * 6.0;
-        const auto   Sector    = (int) ScaledHue;
-        const double Fraction  = ScaledHue - Sector;
-
-        const double ChromaReduction = v * s;
-
-        const double p = v - ChromaReduction;
-        const double q = v - ChromaReduction * Fraction;
-        const double t = v - ChromaReduction * (1. - Fraction);
-
-        switch (Sector)
-        {
-            case 0:  { r = v; g = t; b = p; break; }
-            case 1:  { r = q; g = v; b = p; break; }
-            case 2:  { r = p; g = v; b = t; break; }
-            case 3:  { r = p; g = q; b = v; break; }
-            case 4:  { r = t; g = p; b = v; break; }
-            default: { r = v; g = p; b = q; break; } // 5
-        }
-    }
-
-    struct interaction_t
-    {
-        double X       = 0.;
-        double Y       = 0.;
-        double Zoom    = 1.;
-        double Impulse = 0.;
-    };
-
-    class drag_helper_t
-    {
-    public:
-        void Start(HWND hWnd, int x, int y, const EyeCandy::interaction_t & interaction) noexcept
-        {
-            ::SetFocus(hWnd);
-            ::SetCapture(hWnd);
-
-            _hWnd = hWnd;
-            _IsDragging = true;
-
-            _Origin = { x, y };
-
-            _FocusX = interaction.X;
-            _FocusY = interaction.Y;
-        }
-
-        void Stop(int x, int y, EyeCandy::interaction_t & interaction) noexcept
-        {
-            if (!_IsDragging)
-                return;
-
-            const int dx = x - _Origin.x;
-            const int dy = y - _Origin.y;
-
-            if (((dx * dx) + (dy * dy)) < 16)
-                interaction.Impulse = 1.;
-
-            _IsDragging = false;
-
-            if (_hWnd == ::GetCapture())
-                ::ReleaseCapture();
-
-            _hWnd = NULL;
-        }
-
-        void Move(int x, int y, EyeCandy::interaction_t & interaction) noexcept
-        {
-            if (!_IsDragging)
-                return;
-
-            RECT rc;
-
-            ::GetClientRect(_hWnd, &rc);
-
-            interaction.X = _FocusX - 2.5 * (double) (x - _Origin.x) / std::max(1L, rc.right);
-            interaction.Y = _FocusY - 2.5 * (double) (y - _Origin.y) / std::max(1L, rc.bottom);
-        }
-
-    private:
-        HWND _hWnd = NULL;
-
-        bool _IsDragging = false;
-        POINT _Origin {};
-
-        double _FocusX = 0.;
-        double _FocusY = 0.;
-    };
+    using Microsoft::WRL::ComPtr;
 
     /// <summary>
     /// Base class for all effects.
     /// </summary>
-    class effect_t
+    class effect_t : public effect_processor_t
     {
     public:
         effect_t() = default;
@@ -403,7 +53,7 @@ namespace EyeCandy
             _CenterX = width  * 0.5f;
             _CenterY = height * 0.5f;
 
-            _Rectangle = D2D1::RectF(0.f, 0.f, _Width, _Height);
+            _ViewPort = D2D1::RectF(0.f, 0.f, _Width, _Height);
 
             Reset();
         }
@@ -431,6 +81,7 @@ namespace EyeCandy
         {
         };
 
+    public:
         double GetTime() const noexcept
         {
             return _AnimationTime;
@@ -484,8 +135,6 @@ namespace EyeCandy
         // Factory method
         static std::unique_ptr<effect_t> Create(Effect effect) noexcept;
 
-    public:
-
     protected:
         HRESULT CreateDeviceDependentResources(ID2D1RenderTarget * renderTarget);
         void DeleteDeviceDependentResources() noexcept;
@@ -494,6 +143,12 @@ namespace EyeCandy
         virtual void RenderScanlines(ID2D1RenderTarget * renderTarget) noexcept;
         virtual void RenderFrame(ID2D1RenderTarget * renderTarget, const D2D1_COLOR_F & color) noexcept;
 
+    protected:
+        ColorTheme GetColorTheme() const noexcept
+        {
+            return _ColorTheme;
+        }
+
         void UpdateThemeTransition(double deltaTime) noexcept;
         void BeginThemeTransition(ColorTheme theme) noexcept;
 
@@ -501,23 +156,10 @@ namespace EyeCandy
         void NextColorTheme() noexcept;
         void PreviousColorTheme() noexcept;
 
-        ColorTheme GetColorTheme() const noexcept
-        {
-            return _ColorTheme;
-        }
-
-        D2D1_COLOR_F GetThemeColor(ThemeRole role, float hueOffset, float saturation, float value, float alpha) const noexcept;
-        D2D1_COLOR_F GetThemeColor(const color_theme_t & theme, float baseHue, float hueOffset, float saturation, float value, float alpha) const noexcept;
-
-        static D2D1_COLOR_F LerpColor(const D2D1_COLOR_F & from, const D2D1_COLOR_F & to, float amount) noexcept;
         static const color_theme_t & GetTheme(ColorTheme theme) noexcept;
         static const std::wstring GetThemeName(ColorTheme theme) noexcept;
 
-        template <typename T> static T SmoothStep(T lower, T upper, T value) noexcept;
-
-        static inline uint32_t Hash(uint32_t value) noexcept;
-        static inline double Random(uint32_t & state) noexcept;
-        static inline double RandomSigned(uint32_t & state) noexcept;
+        D2D1_COLOR_F GetThemeColor(ThemeRole role, float hueOffset, float saturation, float value, float alpha) const noexcept;
 
     protected:
         float _Width  = 0.f;
@@ -526,68 +168,20 @@ namespace EyeCandy
         float _CenterX = 0.f;
         float _CenterY = 0.f;
 
-        D2D1_RECT_F _Rectangle {};
+        D2D1_RECT_F _ViewPort {};
+
+    protected:
+        UINT32 _RasterWidth  = 0;
+        UINT32 _RasterHeight = 0;
+        UINT32 _Stride       = 0;
+
+        std::vector<uint32_t> _Pixels;
 
         double _AnimationTime = 0.;
 
         interaction_t _Interaction {};
 
     protected:
-        double _Peak                 = 0.; // [ 0, 1], Overall peak amplitude. The loudest individual mono sample in a chunk.
-        double _RMS                  = 0.; // [ 0, 1], Full-band mono RMS loudness
-        double _StereoWidth          = 0.; // [ 0, 2], Side-to-mid ratio: 0.0: identical channels, fully mono; around 1.0: side energy equals mid energy;  above 1.0: more side energy than mid energy; 2.0: maximum displayed width after clamping.
-        double _Correlation          = 1.; // [-1, 1], +1: channels have the same shape and polarity; 0: channels are unrelated or orthogonal over the analysis window; -1: channels have the same shape but opposite polarity.
-
-        double _BassEnergy           = 0.; // [ 0, 1], Combined bass energy
-        double _MidEnergy            = 0.; // [ 0, 1], Combined midrange energy
-        double _TrebleEnergy         = 0.; // [ 0, 1], Combined treble energy
-        double _PhaseEnergy          = 0.; // [ 0, 1], L=R: phase energy is 0; only one channel active: phase energy is 0.5; L=−RL=-RL=−R: phase energy is 1; unrelated equal-power channels: approximately 0.5.
-
-        double _SpectralFlux         = 0.; // [ 0, 1], How much the frequency spectrum increased since the previous call. Responds when spectral energy increases such as during drum hits, note attacks, sudden treble bursts and new musical events.
-
-        double _SmoothedPeak         = 0.; // [ 0, 1]
-        double _SmoothedRMS          = 0.; // [ 0, 1]
-
-        double _SmoothedBass         = 0.; // [ 0, 1]
-        double _SmoothedMid          = 0.; // [ 0, 1]
-        double _SmoothedTreble       = 0.; // [ 0, 1]
-
-        double _SmoothedStereoWidth  = 0.; // [ 0, 1]
-        double _SmoothedCorrelation  = 1.; // [ 0, 1]
-
-        double _SmoothedSpectralFlux = 0.; // [ 0, 1]
-
-        static constexpr size_t FrequencyBandCount = 8;
-
-        std::array<double, FrequencyBandCount> _Bands{};            // Eight frequency-band levels: 0-2 = bass, 3-5 = midrange, 6/7 = treble
-        std::array<double, FrequencyBandCount> _SmoothedBands{};
-
-        // Musical events:
-        // _BeatAverage estimates the normal or local bass level of the current music.
-        // A fixed bass threshold would not work reliably because different recordings have very different levels:
-        // - one track may have quiet bass,
-        // - another may have heavily compressed bass,
-        // - another may have a continuous low-frequency drone,
-        // - another may contain isolated kick drums.
-        // Instead, _BeatAverage follows the recent bass level and provides an adaptive reference.
-        double _BeatAverage          = 0.;
-        double _BeatEnvelope         = 0.;
-        double _BeatPulse            = 0.; // Represents a qualified beat event.
-        double _BeatCooldown         = 0.;
-        double _PreviousBassEnvelope = 0.;
-
-        // Derived animation controls
-        double _BassImpulse          = 0.; // Represents transient visual energy.
-        double _BassExpansion        = 0.;
-        double _BassTwist            = 0.;
-
-        // First-order low-pass filter states.
-        double _SubBassState         = 0.;
-        double _BassState            = 0.;
-        double _MidState             = 0.;
-
-        bool _HasAudio = false;
-
         double _TravelDistance       = 0.;
 
         double _CameraShake          = 0.;
@@ -632,8 +226,8 @@ namespace EyeCandy
         ColorTheme _ThemeFrom  = ColorTheme::Synthwave;
         ColorTheme _ThemeTo    = ColorTheme::Synthwave;
 
-        static constexpr double ThemeInterval = 3.0;
-        static constexpr double ThemeTransitionDuration = 1.2;
+        static constexpr double ThemeTransitionInterval     = 3.0;          // seconds
+        static constexpr double ThemeTransitionDuration     = 1.2;
         static constexpr double ThemeResourceUpdateInterval = 1.0 / 30.0;
 
         double _ThemeElapsed           = 0.;
@@ -641,8 +235,16 @@ namespace EyeCandy
         double _ThemeResourceElapsed   = 0.;
         double _ThemeBlend             = 1.;
 
-        bool _ThemeTransitionActive = false;
-        bool _ThemeResourcesDirty   = true;
+        bool _IsThemeTransitionActive = false;
+        bool _IsThemeResourceDirty    = true;
+
+        double _ThemeTime  = 0.;
+        size_t _ThemeIndex = 0;
+
+        double _NextThemeTransitionTime = ThemeTransitionInterval;
+        size_t _NextThemeIndex = 0;
+
+        double _TransitionTime = 1.;
 
     protected:
         std::vector<std::thread> _Workers;
@@ -662,6 +264,9 @@ namespace EyeCandy
         ComPtr<ID2D1LinearGradientBrush> _BackgroundBrush;
         ComPtr<ID2D1SolidColorBrush> _FrameBrush;
 
+        ComPtr<ID2D1BitmapRenderTarget> _BackBufferRenderTarget;
+        ComPtr<ID2D1Bitmap> _BackBuffer;
+
     private:
         drag_helper_t _DragHelper;
 
@@ -669,49 +274,4 @@ namespace EyeCandy
         ComPtr<ID2D1SolidColorBrush> _ScanlineBrush;
         ComPtr<ID2D1GradientStopCollection> _BackgroundStops;
     };
-
-    /// <summary>
-    /// Converts value into a smoothly interpolated value between 0 and 1. Unlike a linear interpolation, it starts and ends gradually, avoiding sharp transitions.
-    /// </summary>
-    template <typename T>
-    T effect_t::SmoothStep(T lower, T upper, T value) noexcept
-    {
-        if (lower == upper)
-            return value >= upper ? T { 1 } : T { 0 };
-
-        const T Amount = Clamp((value - lower) / (upper - lower));
-
-        return Amount * Amount * (T { 3 } - T { 2 } * Amount);
-    }
-
-    /// <summary>
-    /// 
-    /// </summary>
-    uint32_t effect_t::Hash(uint32_t v) noexcept
-    {
-        v ^= v >> 16;
-        v *= 0x7FEB352Du;
-        v ^= v >> 15;
-        v *= 0x846CA68Bu;
-
-        return v ^ (v >> 16);
-    }
-
-    /// <summary>
-    /// Returns a value in the [0, 1] range using a small, fast deterministic pseudo-random number generator.
-    /// </summary>
-    double effect_t::Random(uint32_t & seed) noexcept
-    {
-        seed = seed * 1664525u + 1013904223u;
-
-        return (double)(seed >> 8) * (1. / 16777216.);
-    }
-
-    /// <summary>
-    /// Returns a value in the [-1, 1] range using a small, fast deterministic pseudo-random number generator.
-    /// </summary>
-    double effect_t::RandomSigned(uint32_t & seed) noexcept
-    {
-        return (Random(seed) * 2.) - 1.;
-    }
 }

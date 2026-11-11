@@ -37,15 +37,17 @@ namespace FlipDotMatrix
         std::wstring GetStatus() noexcept override;
 
     private:
-        static constexpr size_t BandCount = 12;
         void AnalyzeAudio(const audio_chunk &);
         void Update(double) noexcept;
+
         void UpdateTargets() noexcept;
         void UpdateDots(double) noexcept;
         void RenderTexture() noexcept;
+
         void StartWorkers();
         void StopWorkers() noexcept;
         void Worker(size_t) noexcept;
+
         void RenderRows(UINT32, UINT32) noexcept;
 
     private:
@@ -53,19 +55,11 @@ namespace FlipDotMatrix
         void DeleteDeviceDependentResources() noexcept;
 
     private:
-        std::vector<double> _Samples;
-
-        std::array<double, BandCount> _BandEnergy{ };
-        std::array<double, BandCount> _SmoothedBandEnergy{ };
-        std::array<double, BandCount> _PreviousBandEnergy{ };
-
         std::vector<float> _DotState;
         std::vector<float> _DotVelocity;
         std::vector<uint8_t> _DotTarget;
-        std::vector<uint32_t> _Pixels;
 
-        UINT32 _PixelWidth = 0;
-        UINT32 _PixelHeight = 0;
+    private:
         UINT32 _Columns = 0;
         UINT32 _Rows = 0;
         size_t _RefreshCursor = 0;
@@ -80,8 +74,5 @@ namespace FlipDotMatrix
         double _ColorIntensity = .85;
         double _HighlightIntensity = .24;
         double _RenderBrightness = 1.;
-
-    private:
-        ComPtr<ID2D1Bitmap> _Bitmap;
     };
 }

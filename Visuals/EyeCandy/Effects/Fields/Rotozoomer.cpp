@@ -1,5 +1,5 @@
 
-/** $VER: Rotozoomer.cpp (2026.11.03) **/
+/** $VER: Rotozoomer.cpp (2026.11.07) **/
 
 #include <pch.h>
 
@@ -57,9 +57,12 @@ namespace Rotozoomer
         _PreviousPulse = 0.;
         _TextureTime   = 0.;
 
-        _BandEnergy.fill(0.);
-        _SmoothedBandEnergy.fill(0.);
-        _PreviousBandEnergy.fill(0.);
+        for (auto & Band : _Bands)
+        {
+            Band.Energy         = 0.;
+            Band.SmoothedEnergy = 0.;
+            Band.PreviousEnergy = 0.;
+        }
     }
 
     /// <summary>
@@ -81,20 +84,12 @@ namespace Rotozoomer
 
         RenderTexture();
 
-        if (!_Bitmap || _Pixels.empty())
-            return;
-
-        const D2D1_RECT_U Source = D2D1::RectU(0, 0, _PixelWidth, _PixelHeight);
-
-        hr = _Bitmap->CopyFromMemory(&Source, _Pixels.data(), _PixelWidth * sizeof(uint32_t));
-
-        if (FAILED(hr))
+        // Render the bitmap.
         {
-            DeleteDeviceDependentResources();
-            return;
-        }
+            _BackBuffer->CopyFromMemory(nullptr, _Pixels.data(), _Stride);
 
-        renderTarget->DrawBitmap(_Bitmap.Get(), _Rectangle, 1.f, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR);
+            renderTarget->DrawBitmap(_BackBuffer.Get(), _ViewPort);
+        }
     }
 
     /// <summary>
@@ -108,15 +103,21 @@ namespace Rotozoomer
         _RMS          = 0.;
         _SpectralFlux = 0.;
 
-        _BandEnergy.fill(0.);
-
         if (chunk.is_empty())
+        {
+            for (auto & Band : _Bands)
+                Band.Energy = 0.;
+
             return;
+        }
 
-        const size_t FrameCount   = chunk.get_sample_count();
-        const size_t ChannelCount = chunk.get_channel_count();
-        const size_t SampleRate   = chunk.get_sample_rate();
+        const audio_sample * const Frames = chunk.get_data();
 
+        const auto FrameCount   = chunk.get_sample_count();
+        const auto ChannelCount = chunk.get_channel_count();
+        const auto SampleRate   = (double) chunk.get_sample_rate();
+
+        // Analyze only the most recent frames of the chunk.
         const size_t MaxFrames = std::min<size_t>(FrameCount, 1536);
 
         if (MaxFrames < 32)
@@ -127,11 +128,10 @@ namespace Rotozoomer
 
         auto Samples = std::span<double>(_Samples.data(), MaxFrames);
 
-        double Sum = 0.;
+        // Initialize the energy accumulators.
+        double Sum  = 0.;           // Full-audio band
 
         {
-            const audio_sample * Frames = chunk.get_data();
-
             const double InverseChannelCount = 1. / (double) ChannelCount;
             const double WindowStep          = TwoPi / ((double) MaxFrames - 1.);
 
@@ -164,56 +164,75 @@ namespace Rotozoomer
         if (!_HasAudio)
             return;
 
-        const double NyquistFrequency = (double) SampleRate * 0.5;
-        const double MaximumFrequency = std::min(HiFrequency, NyquistFrequency);
-
-        double MaximumEnergy = 0.;
-
-        for (size_t i = 0; i < BandCount; ++i)
+        // Perform a spectrum analysis of logarithmically spaced frequency bands.
         {
-            const double Amount = (double) i / (double) (BandCount - 1); // [0, 1]
-
-            const double Frequency = LoFrequency * std::pow(MaximumFrequency / LoFrequency, Amount);
-
-            // Configure the Goertzel detector.
-            const double Omega       = TwoPi * Frequency / (double) SampleRate;
-            const double Coefficient = 2. * std::cos(Omega);
-
-            double q1 = 0., q2 = 0.;
-
-            for (double Sample : Samples)
-            {
-                const double q0 = Sample + Coefficient * q1 - q2;
-
-                q2 = q1;
-                q1 = q0;
-            }
-
-            // Convert the detector state to power.
-            const double Power = std::max(0., q2 * q2 + q1 * q1 - Coefficient * q1 * q2);
-            const double Magnitude = std::sqrt(Power) / (double) MaxFrames;
+            const double NyquistFrequency = SampleRate * 0.5;
+            const double MaximumFrequency = std::min(HiFrequency, NyquistFrequency);
 
             constexpr double TuningConstant = 90.;
+            const double LogarithmicScale  = 1. / std::log1p(TuningConstant);
 
-            _BandEnergy[i] = Clamp(std::log1p(Magnitude * TuningConstant) / std::log1p(TuningConstant) * Lerp(.95, 1.55, Amount));
+            double MaximumEnergy = 0.;
 
-            MaximumEnergy = std::max(MaximumEnergy, _BandEnergy[i]);
+            for (size_t i = 0; i < BandCount; ++i)
+            {
+                const double BandAmount = (double) i * InverseBandCount; // [0, 1]
+
+                double BandPower = 0.;
+
+                {
+                    const double Frequency = LoFrequency * std::pow(MaximumFrequency / LoFrequency, BandAmount);
+
+                    // Configure the Goertzel detector.
+                    const double Omega       = TwoPi * Frequency / SampleRate;
+                    const double Coefficient = 2. * std::cos(Omega);
+
+                    double q1 = 0., q2 = 0.;
+
+                    for (double Sample : Samples)
+                    {
+                        const double q0 = Sample + Coefficient * q1 - q2;
+
+                        q2 = q1;
+                        q1 = q0;
+                    }
+
+                    // Convert the detector state to power.
+                    BandPower = std::max(0., q2 * q2 + q1 * q1 - Coefficient * q1 * q2);
+                }
+
+                const double Magnitude = std::sqrt(BandPower) / (double) MaxFrames;
+
+                // Compress (logarithmic) and shape the band energy. Perform high-frequency weighting: 0.90 for the lowest band, 1.50 for the highest band.
+                _Bands[i].Energy = Clamp(std::log1p(Magnitude * TuningConstant) * LogarithmicScale * Lerp(0.90, 1.50, BandAmount));
+
+                // Track the highest frequency band energy.
+                MaximumEnergy = std::max(MaximumEnergy, _Bands[i].Energy);
+            }
+
+            // Normalize the spectrum.
+            if (MaximumEnergy > 1.0e-5)
+            {
+                const auto Normalization = 1. / std::max(0.30, MaximumEnergy);
+
+                for (auto & Band : _Bands)
+                    Band.Energy = Clamp(Band.Energy * Normalization);
+            }
         }
 
-        if (MaximumEnergy > 1.e-5)
+        // Calculate the half-wave rectified spectral flux. It responds when spectral energy increases such as during drum hits, note attacks, sudden treble bursts and new musical events.
         {
-            for (double & Energy : _BandEnergy)
-                Energy = Clamp(Energy / std::max(.28, MaximumEnergy));
+            _SpectralFlux = 0.;
+
+            for (auto & Band : _Bands)
+            {
+                _SpectralFlux += std::max(0., Band.Energy - Band.PreviousEnergy);
+
+                Band.PreviousEnergy = Band.Energy; // Remember the band energy for the next chunk.
+            }
+
+            _SpectralFlux = Clamp(_SpectralFlux / (double) BandCount * 5.5); // Boost the spectral flux artificially to make it react more strongly.
         }
-
-        for (size_t i = 0; i < BandCount; ++i)
-        {
-            _SpectralFlux += std::max(0., _BandEnergy[i] - _PreviousBandEnergy[i]);
-
-            _PreviousBandEnergy[i] = _BandEnergy[i];
-        }
-
-        _SpectralFlux = Clamp(_SpectralFlux / (double) BandCount * 5.5);
     }
 
     /// <summary>
@@ -225,12 +244,14 @@ namespace Rotozoomer
         _SmoothedRMS          = ExponentialSmoothing(_SmoothedRMS,          _RMS,          deltaTime, (_RMS          > _SmoothedRMS)          ? 20. : 4.);
         _SmoothedSpectralFlux = ExponentialSmoothing(_SmoothedSpectralFlux, _SpectralFlux, deltaTime, (_SpectralFlux > _SmoothedSpectralFlux) ? 34. : 6.);
 
-        for (size_t i = 0; i < BandCount; ++i)
-            _SmoothedBandEnergy[i] = ExponentialSmoothing(_SmoothedBandEnergy[i], _HasAudio ? _BandEnergy[i] : 0., deltaTime, _BandEnergy[i] > _SmoothedBandEnergy[i] ? 22. : 4.5);
+        {
+            for (auto & Band : _Bands)
+                Band.SmoothedEnergy = ExponentialSmoothing(Band.SmoothedEnergy, Band.Energy, deltaTime, Band.Energy > Band.SmoothedEnergy ? 22. : 4.5);
 
-        _BassEnergy   = (_SmoothedBandEnergy[0] + _SmoothedBandEnergy[1] + _SmoothedBandEnergy[ 2] + _SmoothedBandEnergy[ 3]) * .25;
-        _MidEnergy    = (_SmoothedBandEnergy[4] + _SmoothedBandEnergy[5] + _SmoothedBandEnergy[ 6] + _SmoothedBandEnergy[ 7]) * .25;
-        _TrebleEnergy = (_SmoothedBandEnergy[8] + _SmoothedBandEnergy[9] + _SmoothedBandEnergy[10] + _SmoothedBandEnergy[11]) * .25;
+            _BassLevel   = (_Bands[0].SmoothedEnergy + _Bands[1].SmoothedEnergy + _Bands[ 2].SmoothedEnergy + _Bands[ 3].SmoothedEnergy) * .25;
+            _MidLevel    = (_Bands[4].SmoothedEnergy + _Bands[5].SmoothedEnergy + _Bands[ 6].SmoothedEnergy + _Bands[ 7].SmoothedEnergy) * .25;
+            _TrebleLevel = (_Bands[8].SmoothedEnergy + _Bands[9].SmoothedEnergy + _Bands[10].SmoothedEnergy + _Bands[11].SmoothedEnergy) * .25;
+        }
 
         _PreviousPulse = std::max(_PreviousPulse * std::exp(-deltaTime * 7.), _SpectralFlux);
     }
@@ -240,12 +261,26 @@ namespace Rotozoomer
     /// </summary>
     void effect_t::Update(double deltaTime) noexcept
     {
-        const double SpeedFactor = (_Speed == Speed::Slow) ? .55 : (_Speed == Speed::Fast) ? 1.75 : 1.;
+        const double SpeedFactor = [&]() noexcept
+        {
+            switch (_Speed)
+            {
+                case Speed::Slow:
+                    return 0.55;
+
+                default:
+                case Speed::Normal:
+                    return 1.0;
+
+                case Speed::Fast:
+                    return 1.75;
+            }
+        }();
 
         _AnimationTime += deltaTime * SpeedFactor;
         _TextureTime   += deltaTime;
 
-        const double TargetZoomVelocity = _HasAudio ? (.12 + _BassEnergy * 1.65 + _PreviousPulse * .45) : .08;
+        const double TargetZoomVelocity = _HasAudio ? (.12 + _BassLevel * 1.65 + _PreviousPulse * .45) : .08;
         const double ResponseRate = (TargetZoomVelocity > _ZoomResponse) ? 8. : 2.5;
 
         _ZoomResponse = ExponentialSmoothing(_ZoomResponse, TargetZoomVelocity, deltaTime, ResponseRate);
@@ -255,7 +290,7 @@ namespace Rotozoomer
 
         _ZoomPhase += ZoomDelta;
 
-        const double TargetRotationVelocity = (.035 + _MidEnergy * .075 + _PreviousPulse * .025) * SpeedFactor;
+        const double TargetRotationVelocity = (.035 + _MidLevel * .075 + _PreviousPulse * .025) * SpeedFactor;
 
         _RotationVelocity = ExponentialSmoothing(_RotationVelocity, TargetRotationVelocity, deltaTime, 3.5);
 
@@ -277,7 +312,7 @@ namespace Rotozoomer
         _RotationSN = RotationSN / RotationLength;
 
         _ColorPhase = Fraction(_ColorPhase + _SmoothedDeltaTime * _RotationVelocity * .035);
-        _WarpPhase  = Fraction(_WarpPhase + deltaTime * (.12 + _TrebleEnergy * .48) * SpeedFactor);
+        _WarpPhase  = Fraction(_WarpPhase + deltaTime * (.12 + _TrebleLevel * .48) * SpeedFactor);
     }
 
     /// <summary>
@@ -285,7 +320,7 @@ namespace Rotozoomer
     /// </summary>
     void effect_t::RenderTexture() noexcept
     {
-        if (_Pixels.empty() || _PixelWidth == 0 || _PixelHeight == 0)
+        if (_Pixels.empty() || _RasterWidth == 0 || _RasterHeight == 0)
             return;
 
         _RenderCS = _RotationCS;
@@ -295,8 +330,8 @@ namespace Rotozoomer
         _RenderZoom         = std::pow(2., _RenderZoomFraction);
 
         _RenderDetailLevel = (int64_t) std::floor(_ZoomPhase);
-        _RenderAspect      = (double) _PixelWidth / (double) _PixelHeight;
-        _RenderWarp        = (_HasAudio ? .012 : .003) + _TrebleEnergy * .055 + _SmoothedSpectralFlux * .018;
+        _RenderAspect      = (double) _RasterWidth / (double) _RasterHeight;
+        _RenderWarp        = (_HasAudio ? .012 : .003) + _TrebleLevel * .055 + _SmoothedSpectralFlux * .018;
         _RenderPhase       = _WarpPhase * TwoPi;
 
         constexpr double TextureDuration    = 3.;
@@ -318,7 +353,7 @@ namespace Rotozoomer
 
         if (_Workers.empty())
         {
-            RenderRows(0, _PixelHeight);
+            RenderRows(0, _RasterHeight);
             return;
         }
 
@@ -351,8 +386,21 @@ namespace Rotozoomer
 
         _Workers.reserve(WorkerCount);
 
-        for (size_t i = 0; i < WorkerCount; ++i)
-            _Workers.emplace_back(&effect_t::Worker, this, i);
+        try
+        {
+            for (size_t i = 0; i < WorkerCount; ++i)
+            {
+                _Workers.emplace_back([this, i]() noexcept
+                {
+                    Worker(i);
+                });
+            }
+        }
+        catch (...)
+        {
+            StopWorkers();
+            throw;
+        }
     }
 
     /// <summary>
@@ -401,8 +449,8 @@ namespace Rotozoomer
                 Generation = _Generation;
             }
 
-            const UINT32 Begin = (UINT32) ((uint64_t) _PixelHeight * workerIndex       / _Workers.size());
-            const UINT32 End   = (UINT32) ((uint64_t) _PixelHeight * (workerIndex + 1) / _Workers.size());
+            const UINT32 Begin = (UINT32) ((uint64_t) _RasterHeight * workerIndex       / _Workers.size());
+            const UINT32 End   = (UINT32) ((uint64_t) _RasterHeight * (workerIndex + 1) / _Workers.size());
 
             RenderRows(Begin, End);
 
@@ -419,8 +467,8 @@ namespace Rotozoomer
     /// </summary>
     void effect_t::RenderRows(UINT32 begin, UINT32 end) noexcept
     {
-        const double InverseHeight = 1. / (double) _PixelHeight;
-        const double PixelStep     = _RenderAspect / (double) _PixelWidth;
+        const double InverseHeight = 1. / (double) _RasterHeight;
+        const double PixelStep     = _RenderAspect / (double) _RasterWidth;
 
         const double UStep = PixelStep * _RenderCS;
         const double VStep = PixelStep * _RenderSN;
@@ -431,7 +479,7 @@ namespace Rotozoomer
         const double PhaseV1 = -_RenderPhase * 1.13;
         const double PhaseV2 =  _RenderPhase * .83;
 
-        const double StartPX = (.5 / (double) _PixelWidth - .5) * _RenderAspect;
+        const double StartPX = (.5 / (double) _RasterWidth - .5) * _RenderAspect;
 
         for (UINT32 y = begin; y < end; ++y)
         {
@@ -440,9 +488,9 @@ namespace Rotozoomer
             double BaseU = StartPX * _RenderCS - py * _RenderSN;
             double BaseV = StartPX * _RenderSN + py * _RenderCS;
 
-            uint32_t * Pixel = _Pixels.data() + (size_t) y * _PixelWidth;
+            uint32_t * Pixel = _Pixels.data() + (size_t) y * _RasterWidth;
 
-            const uint32_t * const EndPixel = Pixel + _PixelWidth;
+            const uint32_t * const EndPixel = Pixel + _RasterWidth;
 
             while (Pixel < EndPixel)
             {
@@ -674,12 +722,12 @@ namespace Rotozoomer
     /// </summary>
     uint32_t effect_t::SampleTexture(double u, double v, double phase, int64_t detailLevel, double zoomFraction) const noexcept
     {
-        const double ContinuousDepth = (double)detailLevel + zoomFraction;
+        const double ContinuousDepth = (double) detailLevel + zoomFraction;
 
         double Pattern = 0.;
         double Weight  = 0.;
 
-        const bool SampleTextureA = _RenderTextureBlend < 1.e-6;
+        const bool SampleTextureA = _RenderTextureBlend <      1.e-6;
         const bool SampleTextureB = _RenderTextureBlend > 1. - 1.e-6;
 
         for (int RelativeOctave = -2; RelativeOctave <= 4; ++RelativeOctave)
@@ -703,11 +751,14 @@ namespace Rotozoomer
             const int64_t cx = (int64_t) std::floor(su);
             const int64_t cy = (int64_t) std::floor(sv);
 
-            uint64_t Hash = (uint64_t)(cx * 0x632be59bd9b4e019LL) ^ (uint64_t)(cy * 0x9e3779b97f4a7c15LL);
+            uint64_t Hash = (uint64_t) (cx * 0x632be59bd9b4e019LL) ^ (uint64_t) (cy * 0x9e3779b97f4a7c15LL);
 
-            Hash ^= (uint64_t)GlobalOctave * 0x94d049bb133111ebULL; Hash ^= Hash >> 30; Hash *= 0xbf58476d1ce4e5b9ULL; Hash ^= Hash >> 27;
+            Hash ^= (uint64_t) GlobalOctave * 0x94d049bb133111ebULL;
+            Hash ^= Hash >> 30;
+            Hash *= 0xbf58476d1ce4e5b9ULL;
+            Hash ^= Hash >> 27;
 
-            const double Random = (double) (Hash & 0xffffu) / 65535.;
+            const double Random = (double) (Hash & 0xFFFFu) / 65535.;
 
             double Value;
 
@@ -724,12 +775,13 @@ namespace Rotozoomer
                 Value = Lerp(A, B, _RenderTextureBlend);
             }
 
-            Pattern += Value * OctaveWeight; Weight += OctaveWeight;
+            Pattern += Value * OctaveWeight;
+             Weight += OctaveWeight;
         }
 
         Pattern = Clamp(Pattern / std::max(Weight, 1.e-6));
 
-        const double PaletteAmount = Clamp(Pattern * (.86 + _TrebleEnergy * .14));
+        const double PaletteAmount = Clamp(Pattern * (.86 + _TrebleLevel * .14));
 
         D2D1_COLOR_F Color;
 
@@ -743,18 +795,14 @@ namespace Rotozoomer
             const D2D1_COLOR_F A = SamplePalette(_RenderPaletteA, PaletteAmount);
             const D2D1_COLOR_F B = SamplePalette(_RenderPaletteB, PaletteAmount);
 
-            Color = D2D1::ColorF((float)Lerp((double)A.r, (double)B.r, _RenderPaletteBlend),
-                                 (float)Lerp((double)A.g, (double)B.g, _RenderPaletteBlend),
-                                 (float)Lerp((double)A.b, (double)B.b, _RenderPaletteBlend));
+            Color = D2D1::ColorF((float) Lerp((double) A.r, (double) B.r, _RenderPaletteBlend),
+                                 (float) Lerp((double) A.g, (double) B.g, _RenderPaletteBlend),
+                                 (float) Lerp((double) A.b, (double) B.b, _RenderPaletteBlend));
         }
 
-        const double BrightnessFactor = ((_Brightness == Brightness::Low) ? .72 : (_Brightness == Brightness::High) ? 1.18 : .94) * 255.;
+        const double BrightnessFactor = (_Brightness == Brightness::Low)  ? 0.72 : (_Brightness == Brightness::High) ? 1.18 : 0.94;
 
-        const uint32_t R = (uint32_t)std::clamp((double)Color.r * BrightnessFactor, 0., 255.);
-        const uint32_t G = (uint32_t)std::clamp((double)Color.g * BrightnessFactor, 0., 255.);
-        const uint32_t B = (uint32_t)std::clamp((double)Color.b * BrightnessFactor, 0., 255.);
-
-        return 0xff000000u | (R << 16) | (G << 8) | B;
+        return PackColor(Color.r * BrightnessFactor, Color.g * BrightnessFactor, Color.b * BrightnessFactor);
     }
 
     /// <summary>
@@ -772,26 +820,26 @@ namespace Rotozoomer
         const UINT32 Width  = std::max<UINT32>(64, (UINT32) std::ceil(_Width  * Resolution));
         const UINT32 Height = std::max<UINT32>(64, (UINT32) std::ceil(_Height * Resolution));
 
-        if (_RenderTarget == renderTarget && _Bitmap && (Width == _PixelWidth) && (Height == _PixelHeight))
+        if (_RenderTarget == renderTarget && _BackBuffer && (Width == _RasterWidth) && (Height == _RasterHeight))
             return S_OK;
 
         DeleteDeviceDependentResources();
 
-        _PixelWidth  = Width;
-        _PixelHeight = Height;
+        _RasterWidth  = Width;
+        _RasterHeight = Height;
 
-        _Pixels.assign((size_t) Width * Height, 0xff000000u);
+        _Stride = _RasterWidth * BytesPerPixel;
+
+        _Pixels.assign((size_t) Width * Height, 0xFF000000u);
 
         const auto Properties = D2D1::BitmapProperties(D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_IGNORE), 96.f, 96.f);
 
-        hr = renderTarget->CreateBitmap(D2D1::SizeU(Width, Height), _Pixels.data(), Width * sizeof(uint32_t), Properties, _Bitmap.ReleaseAndGetAddressOf());
+        hr = renderTarget->CreateBitmap(D2D1::SizeU(Width, Height), _Pixels.data(), Width * sizeof(uint32_t), Properties, _BackBuffer.ReleaseAndGetAddressOf());
 
         if (FAILED(hr))
             return hr;
 
         _RenderTarget = renderTarget;
-
-        Reset();
 
         return S_OK;
     }
@@ -803,11 +851,12 @@ namespace Rotozoomer
     {
         _RenderTarget = nullptr;
 
-        _Bitmap.Reset();
+        _BackBuffer.Reset();
 
         _Pixels.clear();
-        _PixelWidth = 0;
-        _PixelHeight = 0;
+
+        _RasterWidth  = 0;
+        _RasterHeight = 0;
 
         __super::DeleteDeviceDependentResources();
     }

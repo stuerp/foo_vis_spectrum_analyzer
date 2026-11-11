@@ -169,7 +169,7 @@ HRESULT peak_meter_t::CreateColorDependentResources(ID2D1DeviceContext * deviceC
 
     const auto InitializeStyle = [this, deviceContext, & StyleManager](auto & style, VisualElement visualElement, const wchar_t * text) noexcept -> HRESULT
     {
-        if (style._Brush != nullptr)
+        if (style.Brush != nullptr)
             return S_OK;
 
         style = *StyleManager.GetStyle(visualElement);
@@ -184,37 +184,37 @@ HRESULT peak_meter_t::CreateColorDependentResources(ID2D1DeviceContext * deviceC
     if (FAILED(hr))
         return hr;
 
-    hr = InitializeStyle(_PeakStyle, VisualElement::BarPeakLevel, L"");
+    hr = InitializeStyle(_BarPeakStyle, VisualElement::BarPeakLevel, L"");
 
     if (FAILED(hr))
         return hr;
 
-    hr = InitializeStyle(_Peak0dBStyle, VisualElement::Bar0dBPeakLevel, L"");
+    hr = InitializeStyle(_Bar0dBPeakStyle, VisualElement::Bar0dBPeakLevel, L"");
 
     if (FAILED(hr))
         return hr;
 
-    hr = InitializeStyle(_PeakTextStyle, VisualElement::BarPeakLevelText, L"+199.9");
+    hr = InitializeStyle(_BarPeakTextStyle, VisualElement::BarPeakLevelText, L"+199.9");
 
     if (FAILED(hr))
         return hr;
 
-    hr = InitializeStyle(_MaxPeakStyle, VisualElement::BarMaxPeakLevel, L"");
+    hr = InitializeStyle(_BarMaxPeakStyle, VisualElement::BarMaxPeakLevel, L"");
 
     if (FAILED(hr))
         return hr;
 
-    hr = InitializeStyle(_RMSStyle, VisualElement::BarRMSLevel, L"");
+    hr = InitializeStyle(_BarRMSStyle, VisualElement::BarRMSLevel, L"");
 
     if (FAILED(hr))
         return hr;
 
-    hr = InitializeStyle(_RMS0dBStyle, VisualElement::Bar0dBRMSLevel, L"");
+    hr = InitializeStyle(_Bar0dBRMSStyle, VisualElement::Bar0dBRMSLevel, L"");
 
     if (FAILED(hr))
         return hr;
 
-    hr = InitializeStyle(_RMSTextStyle, VisualElement::BarRMSLevelText, L"+199.9");
+    hr = InitializeStyle(_BarRMSTextStyle, VisualElement::BarRMSLevelText, L"+199.9");
 
     if (FAILED(hr))
         return hr;
@@ -244,14 +244,14 @@ void peak_meter_t::DeleteColorDependentResources() noexcept
 {
     _BarBackgroundStyle.DeleteDeviceSpecificResources();
 
-    _PeakStyle.DeleteDeviceSpecificResources();
-    _Peak0dBStyle.DeleteDeviceSpecificResources();
-    _MaxPeakStyle.DeleteDeviceSpecificResources();
-    _PeakTextStyle.DeleteDeviceSpecificResources();
+    _BarPeakStyle.DeleteDeviceSpecificResources();
+    _Bar0dBPeakStyle.DeleteDeviceSpecificResources();
+    _BarMaxPeakStyle.DeleteDeviceSpecificResources();
+    _BarPeakTextStyle.DeleteDeviceSpecificResources();
 
-    _RMSStyle.DeleteDeviceSpecificResources();
-    _RMS0dBStyle.DeleteDeviceSpecificResources();
-    _RMSTextStyle.DeleteDeviceSpecificResources();
+    _BarRMSStyle.DeleteDeviceSpecificResources();
+    _Bar0dBRMSStyle.DeleteDeviceSpecificResources();
+    _BarRMSTextStyle.DeleteDeviceSpecificResources();
 
     _NameStyle.DeleteDeviceSpecificResources();
 
@@ -400,8 +400,8 @@ void peak_meter_t::DeleteParts() noexcept
 /// </summary>
 void peak_meter_t::MeasureParts(ID2D1DeviceContext * deviceContext) noexcept
 {
-    const FLOAT ScaleWidth  = _ScaleTextStyle._Width  + _TickSize;
-    const FLOAT ScaleHeight = _ScaleTextStyle._Height + _TickSize;
+    const FLOAT ScaleWidth  = _ScaleTextStyle.Width  + _TickSize;
+    const FLOAT ScaleHeight = _ScaleTextStyle.Height + _TickSize;
 
     FLOAT TotalScaleWidth  = 0.f;
     FLOAT TotalScaleHeight = 0.f;
@@ -413,13 +413,13 @@ void peak_meter_t::MeasureParts(ID2D1DeviceContext * deviceContext) noexcept
         (
             deviceContext,
             &_BarBackgroundStyle,
-            &_PeakStyle,
-            &_Peak0dBStyle,
-            &_MaxPeakStyle,
-            &_PeakTextStyle,
-            &_RMSStyle,
-            &_RMS0dBStyle,
-            &_RMSTextStyle,
+            &_BarPeakStyle,
+            &_Bar0dBPeakStyle,
+            &_BarMaxPeakStyle,
+            &_BarPeakTextStyle,
+            &_BarRMSStyle,
+            &_Bar0dBRMSStyle,
+            &_BarRMSTextStyle,
             &_NameStyle,
             &_ScaleTextStyle,
             &_ScaleLineStyle,
@@ -432,9 +432,9 @@ void peak_meter_t::MeasureParts(ID2D1DeviceContext * deviceContext) noexcept
         if (Scale != nullptr)
         {
             if (_State._IsHorizontalPeakMeter)
-                TotalScaleHeight += Scale->IsCenter() ? _ScaleTextStyle._Height : ScaleHeight;
+                TotalScaleHeight += Scale->IsCenter() ? _ScaleTextStyle.Height : ScaleHeight;
             else
-                TotalScaleWidth  += Scale->IsCenter() ? _ScaleTextStyle._Width  : ScaleWidth;
+                TotalScaleWidth  += Scale->IsCenter() ? _ScaleTextStyle.Width  : ScaleWidth;
         }
     }
 
@@ -486,7 +486,7 @@ void peak_meter_t::MeasureParts(ID2D1DeviceContext * deviceContext) noexcept
             if (Scale != nullptr) // Scale
             {
                 Rect.top    = y;
-                Rect.bottom = y + _ScaleTextStyle._Height + (Scale->IsCenter() ? 0.f : _TickSize);
+                Rect.bottom = y + _ScaleTextStyle.Height + (Scale->IsCenter() ? 0.f : _TickSize);
 
                 NeedGap = false;
             }
@@ -518,7 +518,7 @@ void peak_meter_t::MeasureParts(ID2D1DeviceContext * deviceContext) noexcept
             if (Scale != nullptr)
             {
                 Rect.left  = x;
-                Rect.right = x + _ScaleTextStyle._Width + (Scale->IsCenter() ? 0.f : _TickSize);
+                Rect.right = x + _ScaleTextStyle.Width + (Scale->IsCenter() ? 0.f : _TickSize);
 
                 NeedGap = false;
             }

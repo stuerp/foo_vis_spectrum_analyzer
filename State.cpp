@@ -1,10 +1,10 @@
 
-/** $VER: State.cpp (2026.11.10) P. Stuer **/
+/** $VER: State.cpp (2026.11.11) P. Stuer **/
 
 #include "pch.h"
+
 #include "State.h"
 
-#include "Effect.h"
 #include "Effects.h"
 #include "Gradient.h"
 #include "Resources.h"
@@ -75,6 +75,15 @@ void state_t::Reset() noexcept
 
     _MappingMethod = CoefficientMapping::Standard;
 
+    // Peak Detection
+    _DetectPeaks          = false;
+    _MaxPeakCount         = 10;
+    _MinPeakLevel         = 0.05;
+    _MinPeakProminence    = 0.02;
+    _BandSpan             = 4;
+    _MinPeakDistance      = 25.0;
+    _InterpolateFrequency = true;
+
     // CQT
     _CQTBandwidthOffset = 1.;
     _CQTAlignment = 1.;
@@ -119,8 +128,6 @@ void state_t::Reset() noexcept
     _ScalingFunction = ScalingFunction::Logarithmic;
     _SkewFactor      = 0.0;
     _Bandwidth       = 0.5;
-
-    _RenderPeaks     = false;
 
     // Filters
     _WeightingType = WeightingType::None;
@@ -401,6 +408,18 @@ state_t & state_t::operator=(const state_t & other) noexcept
 
         _MappingMethod             = other._MappingMethod;
 
+        #pragma region Peak Detection
+
+        _DetectPeaks               = other._DetectPeaks;
+        _MaxPeakCount              = other._MaxPeakCount;
+        _MinPeakLevel              = other._MinPeakLevel;
+        _MinPeakProminence         = other._MinPeakProminence;
+        _BandSpan                  = other._BandSpan;
+        _MinPeakDistance           = other._MinPeakDistance;
+        _InterpolateFrequency      = other._InterpolateFrequency;
+
+        #pragma endregion
+
         #pragma region Brown-Puckette CQT
 
             _BandwidthOffset      = other._BandwidthOffset;
@@ -455,8 +474,6 @@ state_t & state_t::operator=(const state_t & other) noexcept
         _ScalingFunction        = other._ScalingFunction;
         _SkewFactor             = other._SkewFactor;
         _Bandwidth              = other._Bandwidth;
-
-        _RenderPeaks            = other._RenderPeaks;
 
     #pragma endregion
 
@@ -1582,8 +1599,8 @@ void state_t::FromJSON(const char * data, size_t size, bool isPreset)
 
     const auto & EyeCandy = Object.value("eyeCandy", json::object());
     {
-        _EffectCategoryId = std::clamp(EyeCandy.value("category", _EffectCategoryId), EyeCandy::Category::Min, EyeCandy::Category::Max);
-        _EffectId         = std::clamp(EyeCandy.value("effect", _EffectId), EyeCandy::Effect::Min, EyeCandy::Effect::Max);
+        _EffectCategoryId = std::clamp(EyeCandy.value("category",   _EffectCategoryId), EyeCandy::Category::Min,   EyeCandy::Category::Max);
+        _EffectId         = std::clamp(EyeCandy.value("effect",     _EffectId),         EyeCandy::Effect::Min,     EyeCandy::Effect::Max);
 
         _EffectQuality    = std::clamp(EyeCandy.value("quality",    _EffectQuality),    EyeCandy::Quality::Min,    EyeCandy::Quality::Max);
         _EffectSpeed      = std::clamp(EyeCandy.value("speed",      _EffectSpeed),      EyeCandy::Speed::Min,      EyeCandy::Speed::Max);
@@ -1594,26 +1611,37 @@ void state_t::FromJSON(const char * data, size_t size, bool isPreset)
     // Transform
     const auto & Transform = Object.value("transform", json::object());
     {
-        _TransformMethod        = std::clamp(Transform.value("method",            _TransformMethod),        TransformMethod::Min,       TransformMethod::Max);
+        _TransformMethod            = std::clamp(Transform.value("method",            _TransformMethod),        TransformMethod::Min,       TransformMethod::Max);
 
         // FFT
-        _WindowFunction         = std::clamp(Transform.value("windowFunction",    _WindowFunction),         WindowFunctionType::Min,    WindowFunctionType::Max);
-        _WindowParameter        = std::clamp(Transform.value("windowParameter",   _WindowParameter),        MinWindowParameter,         MaxWindowParameter);
-        _WindowSkew             = std::clamp(Transform.value("windowSkew",        _WindowSkew),             MinWindowSkew,              MaxWindowSkew);
-        _ReactionAlignment      = std::clamp(Transform.value("reactionAlignment", _ReactionAlignment),      MinReactionAlignment,       MaxReactionAlignment);
+        _WindowFunction             = std::clamp(Transform.value("windowFunction",    _WindowFunction),         WindowFunctionType::Min,    WindowFunctionType::Max);
+        _WindowParameter            = std::clamp(Transform.value("windowParameter",   _WindowParameter),        MinWindowParameter,         MaxWindowParameter);
+        _WindowSkew                 = std::clamp(Transform.value("windowSkew",        _WindowSkew),             MinWindowSkew,              MaxWindowSkew);
+        _ReactionAlignment          = std::clamp(Transform.value("reactionAlignment", _ReactionAlignment),      MinReactionAlignment,       MaxReactionAlignment);
 
-        _FFTMode                = std::clamp(Transform.value("mode",              _FFTMode),                FFTMode::Min,               FFTMode::Max);
-        _FFTCustom              = std::clamp(Transform.value("custom",            _FFTCustom),              (size_t) MinFFTSize,        (size_t) MaxFFTSize);
-        _FFTDuration            = std::clamp(Transform.value("duration",          _FFTDuration),            MinFFTDuration,             MaxFFTDuration);
-        _HopSizeFraction        = std::clamp(Transform.value("hopSizeFraction",   _HopSizeFraction),        MinHopSizeFraction,         MaxHopSizeFraction);
+        _FFTMode                    = std::clamp(Transform.value("mode",              _FFTMode),                FFTMode::Min,               FFTMode::Max);
+        _FFTCustom                  = std::clamp(Transform.value("custom",            _FFTCustom),              (size_t) MinFFTSize,        (size_t) MaxFFTSize);
+        _FFTDuration                = std::clamp(Transform.value("duration",          _FFTDuration),            MinFFTDuration,             MaxFFTDuration);
+        _HopSizeFraction            = std::clamp(Transform.value("hopSizeFraction",   _HopSizeFraction),        MinHopSizeFraction,         MaxHopSizeFraction);
 
-        _AggregationMethod         = std::clamp(Transform.value("aggregationMethod", _AggregationMethod),      AggregationMethod::Min,     AggregationMethod::Max);
-        _MappingMethod             = std::clamp(Transform.value("mapping",           _MappingMethod),          CoefficientMapping::Min,    CoefficientMapping::Max);
-        _SmoothLowerFrequencies    = Transform.value("smoothLowerFrequencies",       _SmoothLowerFrequencies);
-        _SmoothGainTransition      = Transform.value("smoothGainTransition",         _SmoothGainTransition);
-        _UseReassignmentSharpening = Transform.value("reassignmentSharpening",       _UseReassignmentSharpening);
+        _AggregationMethod          = std::clamp(Transform.value("aggregationMethod", _AggregationMethod),      AggregationMethod::Min,     AggregationMethod::Max);
+        _MappingMethod              = std::clamp(Transform.value("mapping",           _MappingMethod),          CoefficientMapping::Min,    CoefficientMapping::Max);
+        _SmoothLowerFrequencies     = Transform.value("smoothLowerFrequencies",       _SmoothLowerFrequencies);
+        _SmoothGainTransition       = Transform.value("smoothGainTransition",         _SmoothGainTransition);
+        _UseReassignmentSharpening  = Transform.value("reassignmentSharpening",       _UseReassignmentSharpening);
 
-        _KernelSize             = std::clamp(Transform.value("kernelSize",        _KernelSize),             MinKernelSize,              MaxKernelSize);
+        _KernelSize                 = std::clamp(Transform.value("kernelSize",        _KernelSize),             MinKernelSize,              MaxKernelSize);
+
+        const auto & PeakDetection = Transform.value("peakDetection", json::object());
+        {
+            _DetectPeaks            = PeakDetection.value("enabled", _DetectPeaks);
+            _MaxPeakCount           = std::clamp(PeakDetection.value("maxPeakCount",        _MaxPeakCount),       MinPeakCount,      MaxPeakCount);
+            _MinPeakLevel           = std::clamp(PeakDetection.value("minPeakLevel    ",    _MinPeakLevel),       MinPeakLevel,      MaxPeakLevel);
+            _MinPeakProminence      = std::clamp(PeakDetection.value("minPeakProminence",   _MinPeakProminence),  MinPeakProminence, MaxPeakProminence);
+            _BandSpan               = std::clamp(PeakDetection.value("bandSpan",            _BandSpan),           MinBandSpan,       MaxBandSpan);
+            _MinPeakDistance        = std::clamp(PeakDetection.value("minPeakDistance",     _MinPeakDistance),    MinPeakDistance,   MaxPeakDistance);
+            _InterpolateFrequency   = PeakDetection.value("interpolateFrequency",           _InterpolateFrequency);
+        }
     }
 
     // CQT
@@ -1624,7 +1652,7 @@ void state_t::FromJSON(const char * data, size_t size, bool isPreset)
         _BandwidthAmount        = std::clamp(CQT.value("bandwidthAmount",       _BandwidthAmount),          MinBandwidthAmount,         MaxBandwidthAmount);
         _UseGranularBandwidth   = CQT.value("useGranularBandwidth",             _UseGranularBandwidth);
 
-        _KernelShape            = std::clamp(CQT.value("kernelShape",           _KernelShape),              WindowFunctionType::Min,        WindowFunctionType::Max);
+        _KernelShape            = std::clamp(CQT.value("kernelShape",           _KernelShape),              WindowFunctionType::Min,    WindowFunctionType::Max);
         _KernelShapeParameter   = std::clamp(CQT.value("kernelShapeParameter",  _KernelShapeParameter),     MinWindowParameter,         MaxWindowParameter);
         _KernelAsymmetry        = std::clamp(CQT.value("kernelAsymmetry",       _KernelAsymmetry),          MinWindowSkew,              MaxWindowSkew);
     }
@@ -1668,8 +1696,6 @@ void state_t::FromJSON(const char * data, size_t size, bool isPreset)
         _ScalingFunction        = std::clamp(Frequencies.value("scalingFunction",   _ScalingFunction),          ScalingFunction::Min,       ScalingFunction::Max);
         _SkewFactor             = std::clamp(Frequencies.value("skewFactor",        _SkewFactor),               MinSkewFactor,              MaxSkewFactor);
         _Bandwidth              = std::clamp(Frequencies.value("bandwidth",         _Bandwidth),                MinBandwidth,               MaxBandwidth);
-
-        _RenderPeaks            = Frequencies.value("renderPeaks", _RenderPeaks);
     }
 
     // Acoustic Filters
@@ -1687,7 +1713,6 @@ void state_t::FromJSON(const char * data, size_t size, bool isPreset)
 
         _WeightingAmount        = std::clamp(Filters.value("weightingAmount",       _WeightingAmount),          MinWeightingAmount,         MaxWeightingAmount);
     }
-
 
     // Crossover Filters
     const auto & CrossoverFilters = Object.value("crossoverFilters", json::object());
@@ -1952,6 +1977,22 @@ json state_t::ToJSON(bool isPreset) const
 
                 { "kernelSize", _KernelSize },
 
+                json::object_t::value_type
+                (
+                    "peakDetection", json::object
+                    ({
+                        { "enabled", _DetectPeaks },
+
+                        { "maxPeakCount", _MaxPeakCount },
+                        { "minPeakLevel", _MinPeakLevel },
+                        { "minPeakProminence", _MinPeakProminence },
+                        { "bandSpan", _BandSpan },
+
+                        { "minPeakDistance", _MinPeakDistance },
+                        { "interpolateFrequency", _InterpolateFrequency },
+                    })
+                ),
+
                 // CQT
                 json::object_t::value_type
                 (
@@ -1965,7 +2006,6 @@ json state_t::ToJSON(bool isPreset) const
                         { "kernelShape", _KernelShape },
                         { "kernelShapeParameter", _KernelShapeParameter },
                         { "kernelAsymmetry", _KernelAsymmetry },
-
                     })
                 ),
 
@@ -2008,8 +2048,6 @@ json state_t::ToJSON(bool isPreset) const
                 { "scalingFunction", _ScalingFunction },
                 { "skewFactor", _SkewFactor },
                 { "bandwidth", _Bandwidth },
-
-                { "renderPeaks", _RenderPeaks },
             })
         ),
 
@@ -2135,20 +2173,20 @@ void state_t::ConvertColorSettings() noexcept
             _BackgroundMode_Deprecated = BackgroundMode::Artwork;
 
             style._ColorSource = ColorSource::DominantColor;
-            style._CurrentColor = _ArtworkDominantColor;
+            style.CurrentColor = _ArtworkDominantColor;
         }
         else
         if (!_UseCustomBackColor_Deprecated)
         {
             style._ColorSource = ColorSource::UserInterface;
-            style._CurrentColor = _UserInterfaceColors[_IsDUI ? 1U : 3U];
+            style.CurrentColor = _UserInterfaceColors[_IsDUI ? 1U : 3U];
         }
         else
         {
             style._CustomColor = _BackColor_Deprecated;
 
             style._ColorSource = ColorSource::Solid;
-            style._CurrentColor = style._CustomColor;
+            style.CurrentColor = style._CustomColor;
         }
 
         if (_HorizontalGradient_Deprecated)
@@ -2166,15 +2204,15 @@ void state_t::ConvertColorSettings() noexcept
             if (!_UseCustomXLineColor_Deprecated)
             {
                 style._ColorSource = ColorSource::UserInterface;
-                style._CurrentColor = _UserInterfaceColors[0];
+                style.CurrentColor = _UserInterfaceColors[0];
             }
             else
             {
                 style._ColorSource = ColorSource::Solid;
-                style._CurrentColor = style._CustomColor;
+                style.CurrentColor = style._CustomColor;
             }
 
-        style._CurrentGradientStops = gradient_t::ConvertFormat(style._CustomGradient);
+        style.CurrentGradientStops = gradient_t::ConvertFormat(style._CustomGradient);
     }
 
     {
@@ -2188,15 +2226,15 @@ void state_t::ConvertColorSettings() noexcept
             if (!_UseCustomXTextColor_Deprecated)
             {
                 style._ColorSource = ColorSource::UserInterface;
-                style._CurrentColor = _UserInterfaceColors[0];
+                style.CurrentColor = _UserInterfaceColors[0];
             }
             else
             {
                 style._ColorSource = ColorSource::Solid;
-                style._CurrentColor = style._CustomColor;
+                style.CurrentColor = style._CustomColor;
             }
 
-        style._CurrentGradientStops = gradient_t::ConvertFormat(style._CustomGradient);
+        style.CurrentGradientStops = gradient_t::ConvertFormat(style._CustomGradient);
     }
 
     {
@@ -2210,15 +2248,15 @@ void state_t::ConvertColorSettings() noexcept
             if (!_UseCustomYLineColor_Deprecated)
             {
                 style._ColorSource = ColorSource::UserInterface;
-                style._CurrentColor = _UserInterfaceColors[0];
+                style.CurrentColor = _UserInterfaceColors[0];
             }
             else
             {
                 style._ColorSource = ColorSource::Solid;
-                style._CurrentColor = style._CustomColor;
+                style.CurrentColor = style._CustomColor;
             }
 
-        style._CurrentGradientStops = gradient_t::ConvertFormat(style._CustomGradient);
+        style.CurrentGradientStops = gradient_t::ConvertFormat(style._CustomGradient);
     }
 
     {
@@ -2232,15 +2270,15 @@ void state_t::ConvertColorSettings() noexcept
             if (!_UseCustomYTextColor_Deprecated)
             {
                 style._ColorSource = ColorSource::UserInterface;
-                style._CurrentColor = _UserInterfaceColors[0];
+                style.CurrentColor = _UserInterfaceColors[0];
             }
             else
             {
                 style._ColorSource = ColorSource::Solid;
-                style._CurrentColor = style._CustomColor;
+                style.CurrentColor = style._CustomColor;
             }
 
-        style._CurrentGradientStops = gradient_t::ConvertFormat(style._CustomGradient);
+        style.CurrentGradientStops = gradient_t::ConvertFormat(style._CustomGradient);
     }
 
     {
@@ -2251,8 +2289,8 @@ void state_t::ConvertColorSettings() noexcept
         style._ColorScheme = _ColorScheme_Deprecated;
 
             style._ColorSource           = ColorSource::Gradient;
-            style._CurrentColor          = D2D1::ColorF(0, 0.f); // Transparent
-            style._CurrentGradientStops = SelectGradientStops_Deprecated(_ColorScheme_Deprecated);
+            style.CurrentColor          = D2D1::ColorF(0, 0.f); // Transparent
+            style.CurrentGradientStops = SelectGradientStops_Deprecated(_ColorScheme_Deprecated);
     }
 
     {
@@ -2262,7 +2300,7 @@ void state_t::ConvertColorSettings() noexcept
         style._CustomGradient = gradient_t::ConvertFormat(_CustomGradientStops_Deprecated);
 
             style._ColorSource = ColorSource::Solid;
-            style._CurrentColor = style._CustomColor;
+            style.CurrentColor = style._CustomColor;
     }
 
     {
@@ -2272,7 +2310,7 @@ void state_t::ConvertColorSettings() noexcept
         style._CustomGradient = gradient_t::ConvertFormat(_CustomGradientStops_Deprecated);
 
             style._ColorSource = ColorSource::Solid;
-            style._CurrentColor = style._CustomColor;
+            style.CurrentColor = style._CustomColor;
     }
 
     {
@@ -2286,13 +2324,13 @@ void state_t::ConvertColorSettings() noexcept
             if (!_UseCustomLineColor_Deprecated)
             {
                 style._ColorSource          = ColorSource::Gradient;
-                style._CurrentColor         = D2D1::ColorF(0, 0.f); // Transparent
-                style._CurrentGradientStops = SelectGradientStops_Deprecated(_ColorScheme_Deprecated);
+                style.CurrentColor         = D2D1::ColorF(0, 0.f); // Transparent
+                style.CurrentGradientStops = SelectGradientStops_Deprecated(_ColorScheme_Deprecated);
             }
             else
             {
                 style._ColorSource = ColorSource::Solid;
-                style._CurrentColor = style._CustomColor;
+                style.CurrentColor = style._CustomColor;
             }
 
         style._Thickness = _LineWidth_Deprecated;
@@ -2306,8 +2344,8 @@ void state_t::ConvertColorSettings() noexcept
         style._ColorScheme = _ColorScheme_Deprecated;
 
             style._ColorSource          = ColorSource::Gradient;
-            style._CurrentColor         = D2D1::ColorF(0, 0.f); // Transparent
-            style._CurrentGradientStops = SelectGradientStops_Deprecated(_ColorScheme_Deprecated);
+            style.CurrentColor         = D2D1::ColorF(0, 0.f); // Transparent
+            style.CurrentGradientStops = SelectGradientStops_Deprecated(_ColorScheme_Deprecated);
             style._Opacity = _AreaOpacity_Deprecated;
     }
 }

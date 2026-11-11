@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.h (2026.11.05) P. Stuer -  Implements a spectrum analyzer visualization **/
+/** $VER: Spectrum.h (2026.11.11) P. Stuer -  Implements a spectrum analyzer visualization **/
 
 #pragma once
 
@@ -115,7 +115,6 @@ private:
 
     // Device-dependent resources
     ComPtr<ID2D1SolidColorBrush> _DebugBrush;
-    ComPtr<ID2D1SolidColorBrush> _PeakBrush;
     ComPtr<ID2D1Bitmap> _OpacityMask;
 
     style_t _BarAreaStyle;
@@ -135,7 +134,8 @@ private:
     style_t _WindowFunctionStyle;
     style_t _WeighingFunctionStyle;
 
-    style_t _TextStyle;
+    style_t _PeakMarkerStyle;
+    style_t _PeakTextStyle;
 
     static constexpr double Pi    = std::numbers::pi;
     static constexpr double TwoPi = 2. * Pi;

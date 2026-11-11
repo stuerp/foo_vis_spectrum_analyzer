@@ -299,7 +299,7 @@ HRESULT goniometer_t::CreateSizeDependentResources(ID2D1DeviceContext * deviceCo
 
     auto & StyleManager = _GraphOptions->_UseLocalStyles ? _GraphOptions->_StyleManager : _State._StyleManager;
 
-    if (_SignalStyle._Brush == nullptr)
+    if (_SignalStyle.Brush == nullptr)
     {
         _SignalStyle = *StyleManager.GetStyle(VisualElement::Signal);
 
@@ -317,7 +317,7 @@ HRESULT goniometer_t::CreateSizeDependentResources(ID2D1DeviceContext * deviceCo
                 D2D1_COLOR_F cm = { };
 
                 // Find the first color that is in the middle of the gradient.
-                for (auto & gs : _SignalStyle._CurrentGradientStops)
+                for (auto & gs : _SignalStyle.CurrentGradientStops)
                 {
                     cm = gs.color;
 
@@ -329,7 +329,7 @@ HRESULT goniometer_t::CreateSizeDependentResources(ID2D1DeviceContext * deviceCo
             }
             else
             {
-                _Processor->SetMonoColor(_SignalStyle._CurrentColor);
+                _Processor->SetMonoColor(_SignalStyle.CurrentColor);
             }
         }
         else
@@ -337,13 +337,13 @@ HRESULT goniometer_t::CreateSizeDependentResources(ID2D1DeviceContext * deviceCo
         {
             if (_SignalStyle._ColorSource == ColorSource::Gradient)
             {
-                auto cl = _SignalStyle._CurrentGradientStops.front().color;
-                auto ch = _SignalStyle._CurrentGradientStops.back().color;
+                auto cl = _SignalStyle.CurrentGradientStops.front().color;
+                auto ch = _SignalStyle.CurrentGradientStops.back().color;
 
                 D2D1_COLOR_F cm = { };
 
                 // Find the first color that is in the middle of the gradient.
-                for (auto & gs : _SignalStyle._CurrentGradientStops)
+                for (auto & gs : _SignalStyle.CurrentGradientStops)
                 {
                     cm = gs.color;
 
@@ -355,12 +355,12 @@ HRESULT goniometer_t::CreateSizeDependentResources(ID2D1DeviceContext * deviceCo
             }
             else
             {
-                _Processor->SetTriBandColors(_SignalStyle._CurrentColor, _SignalStyle._CurrentColor, _SignalStyle._CurrentColor);
+                _Processor->SetTriBandColors(_SignalStyle.CurrentColor, _SignalStyle.CurrentColor, _SignalStyle.CurrentColor);
             }
         }
     }
 
-    if (_StaticLinesStyle._Brush == nullptr)
+    if (_StaticLinesStyle.Brush == nullptr)
     {
         _StaticLinesStyle = *StyleManager.GetStyle(VisualElement::StaticLines);
 
@@ -373,7 +373,7 @@ HRESULT goniometer_t::CreateSizeDependentResources(ID2D1DeviceContext * deviceCo
             return hr;
     }
 
-    if (_StaticTextStyle._Brush == nullptr)
+    if (_StaticTextStyle.Brush == nullptr)
     {
         _StaticTextStyle = *StyleManager.GetStyle(VisualElement::StaticText);
 
@@ -383,7 +383,7 @@ HRESULT goniometer_t::CreateSizeDependentResources(ID2D1DeviceContext * deviceCo
         {
             (void) _StaticTextStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"L", 1.f);
 
-            _Radius = .98f - (_StaticTextStyle._Height / _HalfSide);
+            _Radius = .98f - (_StaticTextStyle.Height / _HalfSide);
 
             _StaticTextStyle.DeleteDeviceSpecificResources();
         }
@@ -641,31 +641,31 @@ HRESULT goniometer_t::CreateStaticContent() noexcept
 
     // Draw the L-axis.
     {
-        _DeviceContext->DrawLine(D2D1::Point2F(-_Radius * Sin, -_Radius * Cos), D2D1::Point2F(_Radius * Sin, _Radius * Cos), _StaticLinesStyle._Brush.Get(), 1.f, _StaticStrokeStyle.Get());
+        _DeviceContext->DrawLine(D2D1::Point2F(-_Radius * Sin, -_Radius * Cos), D2D1::Point2F(_Radius * Sin, _Radius * Cos), _StaticLinesStyle.Brush.Get(), 1.f, _StaticStrokeStyle.Get());
 
         _StaticTextStyle.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
         _StaticTextStyle.SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_FAR);
 
         const D2D1_RECT_F TextRect = {-Sin, -Cos, -_Radius * Sin, -_Radius * Cos };
 
-        _DeviceContext->DrawText(L"L", 1u, _StaticTextStyle._TextFormat.Get(), TextRect, _StaticTextStyle._Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_NONE);
+        _DeviceContext->DrawText(L"L", 1u, _StaticTextStyle.TextFormat.Get(), TextRect, _StaticTextStyle.Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_NONE);
     }
 
     // Draw the R-axis.
     {
-        _DeviceContext->DrawLine(D2D1::Point2F(-_Radius * Sin, _Radius * Cos), D2D1::Point2F(_Radius * Sin, -_Radius * Cos), _StaticLinesStyle._Brush.Get(), 1.f, _StaticStrokeStyle.Get());
+        _DeviceContext->DrawLine(D2D1::Point2F(-_Radius * Sin, _Radius * Cos), D2D1::Point2F(_Radius * Sin, -_Radius * Cos), _StaticLinesStyle.Brush.Get(), 1.f, _StaticStrokeStyle.Get());
 
         _StaticTextStyle.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
         _StaticTextStyle.SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_FAR);
 
         const D2D1_RECT_F TextRect = { _Radius * Sin, -_Radius * Cos, Sin, -Cos };
 
-        _DeviceContext->DrawText(L"R", 1u, _StaticTextStyle._TextFormat.Get(), TextRect, _StaticTextStyle._Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_NONE);
+        _DeviceContext->DrawText(L"R", 1u, _StaticTextStyle.TextFormat.Get(), TextRect, _StaticTextStyle.Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_NONE);
     }
 
     // Draw the S-axis.
     {
-        _DeviceContext->DrawLine(D2D1::Point2F(-_Radius, 0.f), D2D1::Point2F(_Radius, 0.f), _StaticLinesStyle._Brush.Get(), 1.f, _StaticStrokeStyle.Get());
+        _DeviceContext->DrawLine(D2D1::Point2F(-_Radius, 0.f), D2D1::Point2F(_Radius, 0.f), _StaticLinesStyle.Brush.Get(), 1.f, _StaticStrokeStyle.Get());
 
         {
             _StaticTextStyle.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
@@ -673,7 +673,7 @@ HRESULT goniometer_t::CreateStaticContent() noexcept
 
             const D2D1_RECT_F TextRect = { -_Radius, 0.f, -_Radius, 0.f };
 
-            _DeviceContext->DrawText(L"+S", 2u, _StaticTextStyle._TextFormat.Get(), TextRect, _StaticTextStyle._Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_NONE);
+            _DeviceContext->DrawText(L"+S", 2u, _StaticTextStyle.TextFormat.Get(), TextRect, _StaticTextStyle.Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_NONE);
         }
 
         {
@@ -681,13 +681,13 @@ HRESULT goniometer_t::CreateStaticContent() noexcept
 
             const D2D1_RECT_F TextRect = { _Radius, 0.f, _Radius, 0.f };
 
-            _DeviceContext->DrawText(L"-S", 2u, _StaticTextStyle._TextFormat.Get(), TextRect, _StaticTextStyle._Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_NONE);
+            _DeviceContext->DrawText(L"-S", 2u, _StaticTextStyle.TextFormat.Get(), TextRect, _StaticTextStyle.Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_NONE);
         }
     }
 
     // Draw the M-axis.
     {
-        _DeviceContext->DrawLine(D2D1::Point2F(0.f, -_Radius), D2D1::Point2F(0, _Radius), _StaticLinesStyle._Brush.Get(), 1.f, _StaticStrokeStyle.Get());
+        _DeviceContext->DrawLine(D2D1::Point2F(0.f, -_Radius), D2D1::Point2F(0, _Radius), _StaticLinesStyle.Brush.Get(), 1.f, _StaticStrokeStyle.Get());
 
         {
             _StaticTextStyle.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
@@ -695,7 +695,7 @@ HRESULT goniometer_t::CreateStaticContent() noexcept
 
             const D2D1_RECT_F TextRect = { 0.f, -_Radius, 0.f, -_Radius };
 
-            _DeviceContext->DrawText(L"+M", 2u, _StaticTextStyle._TextFormat.Get(), TextRect, _StaticTextStyle._Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_NONE);
+            _DeviceContext->DrawText(L"+M", 2u, _StaticTextStyle.TextFormat.Get(), TextRect, _StaticTextStyle.Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_NONE);
         }
 
         {
@@ -703,7 +703,7 @@ HRESULT goniometer_t::CreateStaticContent() noexcept
 
             const D2D1_RECT_F TextRect = { 0.f, _Radius, 0.f, _Radius };
 
-            _DeviceContext->DrawText(L"-M", 2u, _StaticTextStyle._TextFormat.Get(), TextRect, _StaticTextStyle._Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_NONE);
+            _DeviceContext->DrawText(L"-M", 2u, _StaticTextStyle.TextFormat.Get(), TextRect, _StaticTextStyle.Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_NONE);
         }
 /*
         _XAxisTextStyle.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
@@ -719,7 +719,7 @@ HRESULT goniometer_t::CreateStaticContent() noexcept
     {
         auto Ellipse = D2D1::Ellipse(D2D1::Point2F(0.f, 0.f), _Radius, _Radius);
 
-        _DeviceContext->DrawEllipse(Ellipse, _StaticLinesStyle._Brush.Get(), 1.f, _StaticStrokeStyle.Get());
+        _DeviceContext->DrawEllipse(Ellipse, _StaticLinesStyle.Brush.Get(), 1.f, _StaticStrokeStyle.Get());
     }
 
     // Draw the middle circle (-6 dBFS).
@@ -728,7 +728,7 @@ HRESULT goniometer_t::CreateStaticContent() noexcept
 
         auto Ellipse = D2D1::Ellipse(D2D1::Point2F(0.f, 0.f), r, r);
 
-        _DeviceContext->DrawEllipse(Ellipse, _StaticLinesStyle._Brush.Get(), 1.f, _StaticStrokeStyle.Get());
+        _DeviceContext->DrawEllipse(Ellipse, _StaticLinesStyle.Brush.Get(), 1.f, _StaticStrokeStyle.Get());
     }
 
     // Draw the inner circle (-12 dBFS).
@@ -738,7 +738,7 @@ HRESULT goniometer_t::CreateStaticContent() noexcept
         auto Ellipse = D2D1::Ellipse(D2D1::Point2F(0.f, 0.f), r, r);
 
 
-        _DeviceContext->DrawEllipse(Ellipse, _StaticLinesStyle._Brush.Get(), 1.f, _StaticStrokeStyle.Get());
+        _DeviceContext->DrawEllipse(Ellipse, _StaticLinesStyle.Brush.Get(), 1.f, _StaticStrokeStyle.Get());
     }
 
     _DeviceContext->SetTransform(D2D1::Matrix3x2F::Identity());

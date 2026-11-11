@@ -49,8 +49,6 @@ namespace Fireflies
         std::wstring GetStatus() noexcept override final;
 
     private:
-        static constexpr size_t FrequencyBandCount = 12;
-        
         struct particle_t
         {
             D2D1_POINT_2F Position {};
@@ -113,18 +111,13 @@ namespace Fireflies
         void DeleteDeviceDependentResources() noexcept;
 
     private:
-        std::vector<double> _Samples;
-
         std::vector<particle_t> _Particles;
+        std::atomic<size_t> _NextParticle = 0;
 
-        std::atomic<size_t> _NextParticle { 0 };
         double _ParticleDeltaTime = 0.;
 
-        std::array<center_t, FrequencyBandCount> _Centers {};
-
-        std::array<double, FrequencyBandCount> _BandEnergy {};          // Energy at logarithmically spaced frequencies.
-        std::array<double, FrequencyBandCount> _SmoothedBandEnergy {};
-        std::array<double, FrequencyBandCount> _PreviousBandEnergy {};
+    private:
+        std::array<center_t, BandCount> _Centers {};
 
     private:
         Palette _Palette         = Palette::Warm;
@@ -134,18 +127,8 @@ namespace Fireflies
 
         double _PaletteTransition = 1.;
 
-        static constexpr double TransitionInterval = 3.; // seconds
-
-        double _TransitionTime = 1.;
-
-        double _NextTransitionTime = TransitionInterval;
-        size_t _NextThemeIndex = 0;
-
     private:
         ComPtr<ID2D1SolidColorBrush> _Brush;
         ComPtr<ID2D1StrokeStyle> _StrokeStyle;
-
-        ComPtr<ID2D1BitmapRenderTarget> _BackBufferRenderTarget;
-        ComPtr<ID2D1Bitmap> _BackBuffer;
     };
 }

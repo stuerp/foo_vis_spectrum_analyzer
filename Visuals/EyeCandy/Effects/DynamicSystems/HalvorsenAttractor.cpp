@@ -81,9 +81,11 @@ namespace HalvorsenAttractor
             }
         }
 
-        renderTarget->DrawBitmap(_BackBuffer.Get(), _Rectangle);
+        {
+            renderTarget->DrawBitmap(_BackBuffer.Get(), _ViewPort);
 
-        RenderAxes(renderTarget, 5.);
+            RenderAxes(renderTarget, 5.0);
+        }
     }
 
     /// <summary>
@@ -95,20 +97,27 @@ namespace HalvorsenAttractor
         {
             switch (_Speed)
             {
-                case EyeCandy::Speed::Slow: return 0.55;
-                case EyeCandy::Speed::Fast: return 1.75;
-                case EyeCandy::Speed::Normal:
-                default: return 1.0;
+                case Speed::Slow:
+                    return 0.55;
+
+                default:
+                case Speed::Normal:
+                    return 1.0;
+
+                case Speed::Fast:
+                    return 1.75;
             }
         }();
 
         _AnimationTime += deltaTime * SpeedFactor;
 
-        _SmoothedPeak        = ExponentialSmoothing(_SmoothedPeak,        _Peak,        deltaTime, (_Peak > _SmoothedPeak) ? 22. : 5.);
-        _SmoothedRMS         = ExponentialSmoothing(_SmoothedRMS,         _RMS,         deltaTime, (_RMS  > _SmoothedRMS)  ? 16. : 4.);
+        {
+            _SmoothedPeak        = ExponentialSmoothing(_SmoothedPeak,        _Peak,        deltaTime, (_Peak > _SmoothedPeak) ? 22. : 5.);
+            _SmoothedRMS         = ExponentialSmoothing(_SmoothedRMS,         _RMS,         deltaTime, (_RMS  > _SmoothedRMS)  ? 16. : 4.);
 
-        _SmoothedStereoWidth = ExponentialSmoothing(_SmoothedStereoWidth, _StereoWidth, deltaTime, 5.5);
-        _SmoothedCorrelation = ExponentialSmoothing(_SmoothedCorrelation, _Correlation, deltaTime, 4.0);
+            _SmoothedStereoWidth = ExponentialSmoothing(_SmoothedStereoWidth, _StereoWidth, deltaTime, 5.5);
+            _SmoothedCorrelation = ExponentialSmoothing(_SmoothedCorrelation, _Correlation, deltaTime, 4.0);
+        }
 
         UpdateCurveTheme(deltaTime);
     }
@@ -136,7 +145,7 @@ namespace HalvorsenAttractor
 
             if (Previous.IsProjectable && Current.IsProjectable)
             {
-                const double Amount = (double) i / (double) (_SplinePoints.size() - 1);
+                const double Amount = (double) i / (double) (_SplinePoints.size() - 1); // [0, 1]
 
                 const auto Color = GetCurveColor(Amount + (_AnimationTime * 0.025));
 

@@ -95,7 +95,7 @@ void oscilloscope_t::Render(ID2D1DeviceContext * deviceContext) noexcept
     if (FAILED(hr))
         return;
 
-    const FLOAT YAxisWidth = _YAxisTextStyle._Width;
+    const FLOAT YAxisWidth = _YAxisTextStyle.Width;
 
     FLOAT XOffset = 0.f;
     FLOAT YAxisCount = 0.f;
@@ -166,20 +166,20 @@ void oscilloscope_t::Render(ID2D1DeviceContext * deviceContext) noexcept
             // Draw a faded and wide version of the signal.
             if (Geometry)
             {
-                FLOAT OldOpacity = _SignalLineStyle._Brush->GetOpacity();
+                FLOAT OldOpacity = _SignalLineStyle.Brush->GetOpacity();
 
-                _SignalLineStyle._Brush->SetOpacity(OldOpacity * .25f);
+                _SignalLineStyle.Brush->SetOpacity(OldOpacity * .25f);
 
-                _DeviceContext->DrawGeometry(Geometry.Get(), _SignalLineStyle._Brush.Get(), _SignalLineStyle._Thickness * 3.f, _SignalStrokeStyle.Get());
+                _DeviceContext->DrawGeometry(Geometry.Get(), _SignalLineStyle.Brush.Get(), _SignalLineStyle._Thickness * 3.f, _SignalStrokeStyle.Get());
 
-                _SignalLineStyle._Brush->SetOpacity(OldOpacity);
+                _SignalLineStyle.Brush->SetOpacity(OldOpacity);
             }
         }
 
         // Draw a normal version of the signal.
         if (Geometry)
         {
-            _DeviceContext->DrawGeometry(Geometry.Get(), _SignalLineStyle._Brush.Get(), _SignalLineStyle._Thickness, _SignalStrokeStyle.Get());
+            _DeviceContext->DrawGeometry(Geometry.Get(), _SignalLineStyle.Brush.Get(), _SignalLineStyle._Thickness, _SignalStrokeStyle.Get());
         }
 
         hr = _DeviceContext->EndDraw();
@@ -255,7 +255,7 @@ HRESULT oscilloscope_t::CreateDeviceSpecificResources(ID2D1DeviceContext * devic
     auto & StyleManager = _GraphOptions->_UseLocalStyles ? _GraphOptions->_StyleManager : _State._StyleManager;
 
     // The font style is created prescaled to counter the Scale transform in the command list.
-    if (_XAxisTextStyle._Brush == nullptr)
+    if (_XAxisTextStyle.Brush == nullptr)
     {
         _XAxisTextStyle = *StyleManager.GetStyle(VisualElement::XAxisText);
 
@@ -268,7 +268,7 @@ HRESULT oscilloscope_t::CreateDeviceSpecificResources(ID2D1DeviceContext * devic
     }
 
     // The font style is created prescaled to counter the Scale transform in the command list.
-    if (_YAxisTextStyle._Brush == nullptr)
+    if (_YAxisTextStyle.Brush == nullptr)
     {
         _YAxisTextStyle = *StyleManager.GetStyle(VisualElement::YAxisText);
 
@@ -450,7 +450,7 @@ HRESULT oscilloscope_t::CreateStaticContent(uint32_t axesCount) noexcept
     _StaticContext.Reset();
 
     const FLOAT ChannelHeight = _Size.height / (FLOAT) axesCount; // Height available to one channel.
-    const FLOAT YAxisWidth = _YAxisTextStyle._Width;
+    const FLOAT YAxisWidth = _YAxisTextStyle.Width;
 
     const FLOAT x1 = 0.f         + ((_GraphOptions->HasYAxis() && _GraphOptions->_YAxisLeft)  ? YAxisWidth : 0.f);
     const FLOAT x2 = _Size.width - ((_GraphOptions->HasYAxis() && _GraphOptions->_YAxisRight) ? YAxisWidth : 0.f);
@@ -481,10 +481,10 @@ HRESULT oscilloscope_t::CreateStaticContent(uint32_t axesCount) noexcept
         for (uint32_t i = 0; i < axesCount; ++i)
         {
             if (_GraphOptions->_YAxisLeft)
-                _DeviceContext->DrawLine(D2D1::Point2F(YAxisWidth, y1), D2D1::Point2F(YAxisWidth, y2), _YAxisLineStyle._Brush.Get(), _YAxisLineStyle._Thickness, nullptr);
+                _DeviceContext->DrawLine(D2D1::Point2F(YAxisWidth, y1), D2D1::Point2F(YAxisWidth, y2), _YAxisLineStyle.Brush.Get(), _YAxisLineStyle._Thickness, nullptr);
 
             if (_GraphOptions->_YAxisRight)
-                _DeviceContext->DrawLine(D2D1::Point2F(_Size.width - (YAxisWidth - 1.f), y1), D2D1::Point2F(_Size.width - (YAxisWidth - 1.f), y2), _YAxisLineStyle._Brush.Get(), _YAxisLineStyle._Thickness, nullptr);
+                _DeviceContext->DrawLine(D2D1::Point2F(_Size.width - (YAxisWidth - 1.f), y1), D2D1::Point2F(_Size.width - (YAxisWidth - 1.f), y2), _YAxisLineStyle.Brush.Get(), _YAxisLineStyle._Thickness, nullptr);
 
             if (_YAxisTextStyle.IsEnabled())
             {
@@ -493,17 +493,17 @@ HRESULT oscilloscope_t::CreateStaticContent(uint32_t axesCount) noexcept
                     const FLOAT y = msc::Map(_GraphOptions->ScaleAmplitude(ToMagnitude(Label.Amplitude)), 0., 1., y2, y1);
 
                     if (_HorizontalGridLineStyle.IsEnabled())
-                        _DeviceContext->DrawLine(D2D1::Point2F(x1, y), D2D1::Point2F(x2, y), _HorizontalGridLineStyle._Brush.Get(), _HorizontalGridLineStyle._Thickness, _StaticStrokeStyle.Get());
+                        _DeviceContext->DrawLine(D2D1::Point2F(x1, y), D2D1::Point2F(x2, y), _HorizontalGridLineStyle.Brush.Get(), _HorizontalGridLineStyle._Thickness, _StaticStrokeStyle.Get());
 
-                    TextRect.top    = Label.IsMin ? y - _YAxisTextStyle._Height : (Label.IsMax ? y : y - (_YAxisTextStyle._Height / 2.f));
-                    TextRect.bottom = TextRect.top + _YAxisTextStyle._Height;
+                    TextRect.top    = Label.IsMin ? y - _YAxisTextStyle.Height : (Label.IsMax ? y : y - (_YAxisTextStyle.Height / 2.f));
+                    TextRect.bottom = TextRect.top + _YAxisTextStyle.Height;
 
                     if (_GraphOptions->_YAxisLeft)
                     {
                         TextRect.left  = 0.f;
                         TextRect.right = YAxisWidth - 2.f;
 
-                        _DeviceContext->DrawText(Label.Text.c_str(), (UINT) Label.Text.size(), _YAxisTextStyle._TextFormat.Get(), TextRect, _YAxisTextStyle._Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                        _DeviceContext->DrawText(Label.Text.c_str(), (UINT) Label.Text.size(), _YAxisTextStyle.TextFormat.Get(), TextRect, _YAxisTextStyle.Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
                     }
 
                     if (_GraphOptions->_YAxisRight)
@@ -511,7 +511,7 @@ HRESULT oscilloscope_t::CreateStaticContent(uint32_t axesCount) noexcept
                         TextRect.left  = x2 + 2.f;
                         TextRect.right = _Size.width - 1.f;
 
-                        _DeviceContext->DrawText(Label.Text.c_str(), (UINT) Label.Text.size(), _YAxisTextStyle._TextFormat.Get(), TextRect, _YAxisTextStyle._Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                        _DeviceContext->DrawText(Label.Text.c_str(), (UINT) Label.Text.size(), _YAxisTextStyle.TextFormat.Get(), TextRect, _YAxisTextStyle.Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
                     }
                 }
             }
@@ -543,7 +543,7 @@ HRESULT oscilloscope_t::CreateStaticContent(uint32_t axesCount) noexcept
             int Time = dt;
 
             if (_XAxisLineStyle.IsEnabled())
-                _DeviceContext->DrawLine(D2D1::Point2F(x1, y), D2D1::Point2F(x2, y), _XAxisLineStyle._Brush.Get(), _XAxisLineStyle._Thickness, _StaticStrokeStyle.Get());
+                _DeviceContext->DrawLine(D2D1::Point2F(x1, y), D2D1::Point2F(x2, y), _XAxisLineStyle.Brush.Get(), _XAxisLineStyle._Thickness, _StaticStrokeStyle.Get());
 
             if (_XAxisTextStyle.IsEnabled())
             {
@@ -554,13 +554,13 @@ HRESULT oscilloscope_t::CreateStaticContent(uint32_t axesCount) noexcept
                 for (TextRect.left = x1 + dx; TextRect.left < x2; TextRect.left += dx)
                 {
                     if (_VerticalGridLineStyle.IsEnabled())
-                        _DeviceContext->DrawLine(D2D1::Point2F(TextRect.left, y1), D2D1::Point2F(TextRect.left, y2), _VerticalGridLineStyle._Brush.Get(), _VerticalGridLineStyle._Thickness, _StaticStrokeStyle.Get());
+                        _DeviceContext->DrawLine(D2D1::Point2F(TextRect.left, y1), D2D1::Point2F(TextRect.left, y2), _VerticalGridLineStyle.Brush.Get(), _VerticalGridLineStyle._Thickness, _StaticStrokeStyle.Get());
 
                     WCHAR Text[8] = { };
 
                     ::StringCchPrintfW(Text, _countof(Text), L"%3d ms", Time);
 
-                    _DeviceContext->DrawText(Text, (UINT32) ::wcslen(Text), _XAxisTextStyle._TextFormat.Get(), TextRect, _XAxisTextStyle._Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                    _DeviceContext->DrawText(Text, (UINT32) ::wcslen(Text), _XAxisTextStyle.TextFormat.Get(), TextRect, _XAxisTextStyle.Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
 
                     Time += dt;
                 }

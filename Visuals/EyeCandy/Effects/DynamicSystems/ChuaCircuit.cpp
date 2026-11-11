@@ -82,9 +82,11 @@ namespace ChuaCircuit
             }
         }
 
-        renderTarget->DrawBitmap(_BackBuffer.Get(), _Rectangle);
+        {
+            renderTarget->DrawBitmap(_BackBuffer.Get(), _ViewPort);
 
-        RenderAxes(renderTarget, 5.);
+            RenderAxes(renderTarget, 5.);
+        }
     }
 
     /// <summary>
@@ -92,15 +94,31 @@ namespace ChuaCircuit
     /// </summary>
     void effect_t::Update(double deltaTime)
     {
-        const double SpeedFactor = (_Speed == EyeCandy::Speed::Slow) ? .55 : (_Speed == EyeCandy::Speed::Fast) ? 1.75 : 1.;
+        const double SpeedFactor = [&]() noexcept
+        {
+            switch (_Speed)
+            {
+                case Speed::Slow:
+                    return 0.55;
+
+                default:
+                case Speed::Normal:
+                    return 1.0;
+
+                case Speed::Fast:
+                    return 1.75;
+            }
+        }();
 
         _AnimationTime += deltaTime * SpeedFactor;
 
-        _SmoothedPeak        = ExponentialSmoothing(_SmoothedPeak,        _Peak,        deltaTime, (_Peak > _SmoothedPeak) ? 22. : 5.0);
-        _SmoothedRMS         = ExponentialSmoothing(_SmoothedRMS,         _RMS,         deltaTime, (_RMS  > _SmoothedRMS)  ? 16. : 4.0);
+        {
+            _SmoothedPeak        = ExponentialSmoothing(_SmoothedPeak,        _Peak,        deltaTime, (_Peak > _SmoothedPeak) ? 22. : 5.0);
+            _SmoothedRMS         = ExponentialSmoothing(_SmoothedRMS,         _RMS,         deltaTime, (_RMS  > _SmoothedRMS)  ? 16. : 4.0);
 
-        _SmoothedStereoWidth = ExponentialSmoothing(_SmoothedStereoWidth, _StereoWidth, deltaTime, 5.0);
-        _SmoothedCorrelation = ExponentialSmoothing(_SmoothedCorrelation, _Correlation, deltaTime, 4.0);
+            _SmoothedStereoWidth = ExponentialSmoothing(_SmoothedStereoWidth, _StereoWidth, deltaTime, 5.0);
+            _SmoothedCorrelation = ExponentialSmoothing(_SmoothedCorrelation, _Correlation, deltaTime, 4.0);
+        }
 
         UpdateCurveTheme(deltaTime);
     }
@@ -144,7 +162,7 @@ namespace ChuaCircuit
 
                 if (Previous.IsProjectable && Current.IsProjectable)
                 {
-                    const double Amount = (double) i * SplinePointScale;
+                    const double Amount = (double) i * SplinePointScale; // [0, 1]
 
                     const auto Color = GetCurveColor(Amount + (_AnimationTime * 0.025));
 
@@ -326,14 +344,14 @@ namespace ChuaCircuit
         {
             switch (_Quality)
             {
-                case EyeCandy::Quality::Low:
+                case Quality::Low:
                     return 3000;
 
                 default:
-                case EyeCandy::Quality::Medium:
+                case Quality::Medium:
                     return 6000;
 
-                case EyeCandy::Quality::High:
+                case Quality::High:
                     return 12000;
             }
         }();

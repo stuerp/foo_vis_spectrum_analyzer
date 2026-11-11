@@ -13,12 +13,12 @@ namespace ParticleVortex
 {
     effect_t::effect_t()
     {
-        for (size_t i = 0; i < FrequencyBandCount; ++i)
+        for (size_t i = 0; i < BandCount; ++i)
         {
-            const double Amount = (double) i / (double) (FrequencyBandCount - 1);
+            const double BandAmount = (double) i * InverseBandCount; // [0, 1]
 
-            _Centers[i].Frequency = LoFrequency * std::pow(FrequencyRatio, Amount); // 40 Hz to 16.5 kHz
-            _Centers[i].Phase     = Amount * TwoPi;
+            _Centers[i].Frequency = LoFrequency * std::pow(FrequencyRatio, BandAmount); // 40 Hz to 16.5 kHz
+            _Centers[i].Phase     = BandAmount * TwoPi;
         }
 
         StartWorkers();
@@ -48,10 +48,10 @@ namespace ParticleVortex
         {
             switch (_Quality)
             {
-                case EyeCandy::Quality::Low:    return  500u;
+                case Quality::Low:    return  500u;
                 default:
-                case EyeCandy::Quality::Medium: return  950u;
-                case EyeCandy::Quality::High:   return 1800u;
+                case Quality::Medium: return  950u;
+                case Quality::High:   return 1800u;
             }
         }();
 
@@ -104,7 +104,9 @@ namespace ParticleVortex
             }
         }
 
-        renderTarget->DrawBitmap(_BackBuffer.Get(), _Rectangle);
+        {
+            renderTarget->DrawBitmap(_BackBuffer.Get(), _ViewPort);
+        }
     }
 
     /// <summary>
@@ -112,30 +114,34 @@ namespace ParticleVortex
     /// </summary>
     void effect_t::AnalyzeAudio(const audio_chunk & chunk)
     {
+        _HasAudio = false;
+
         _Peak         = 0.;
         _RMS          = 0.;
         _SpectralFlux = 0.;
 
-        _BandEnergy.fill(0.);
-
-        _HasAudio = false;
-
         if (chunk.is_empty())
+        {
+            for (auto & Band : _Bands)
+                Band.Energy = 0.;
+
             return;
+        }
 
         const audio_sample * const Frames = chunk.get_data();
 
-        const unsigned ChannelCount  = chunk.get_channel_count();
-        const unsigned ChannelConfig = chunk.get_channel_config();
-        const unsigned SampleRate    = chunk.get_sample_rate();
+        const auto FrameCount    = chunk.get_sample_count();
+        const auto ChannelCount  = chunk.get_channel_count();
+        const auto ChannelConfig = chunk.get_channel_config();
+        const auto SampleRate    = (double) chunk.get_sample_rate();
 
-        // Analyze only the last 2048 frames of the chunk.
-        const size_t FrameCount = std::min(chunk.get_sample_count(), (size_t) 2048);
+        // Analyze only the last frames of the chunk.
+        const auto MaxFrames = std::min<size_t>(FrameCount, 2048);
 
-        if (FrameCount < 32)
+        if (MaxFrames < 32)
             return;
 
-        std::vector<double> WindowedSamples(FrameCount, 0.);
+        std::vector<double> WindowedSamples(MaxFrames, 0.);
 
         std::array<double, audio_chunk::defined_channel_count> ChannelWeights {};
         double TotalChannelWeight = 0.;
@@ -223,10 +229,10 @@ namespace ParticleVortex
         {
             const double InverseChannelWeight = 1. / TotalChannelWeight;
 
-            const size_t FirstFrame = FrameCount - FrameCount;
+            const size_t FirstFrame = MaxFrames - MaxFrames;
 
             const audio_sample *       Frame    = Frames + FirstFrame * ChannelCount;
-            const audio_sample * const FrameEnd = Frame + FrameCount * ChannelCount;
+            const audio_sample * const FrameEnd = Frame + MaxFrames * ChannelCount;
 
             double * WindowedSample = WindowedSamples.data();
 
@@ -252,7 +258,7 @@ namespace ParticleVortex
 
                 // Apply a Hann window.
                 {
-                    const double Window = 0.5 - (std::cos(TwoPi * (double) FrameIndex / (double) (FrameCount - 1)) * 0.5);
+                    const double Window = 0.5 - (std::cos(TwoPi * (double) FrameIndex / (double) (MaxFrames - 1)) * 0.5);
 
                     *WindowedSample++ = (audio_sample) ((double) Sample * Window);
                 }
@@ -267,98 +273,106 @@ namespace ParticleVortex
             }
         }
 
-        _RMS = std::sqrt(SquaredSum / (double) FrameCount);
+        _RMS = std::sqrt(SquaredSum / (double) MaxFrames);
 
         _HasAudio = (_Peak > 1.0e-5) || (_RMS > 1.0e-6);
 
         if (!_HasAudio)
             return;
 
-        const double NyquistFrequency = (double) SampleRate * 0.5;
-
-        double MaximumEnergy = 0.;
-
-        for (size_t i = 0; i < FrequencyBandCount; ++i)
+        // Perform a spectrum analysis of logarithmically spaced frequency bands.
         {
-            const double BandAmount      = (FrequencyBandCount > 1) ? (double) i / (double) (FrequencyBandCount - 1) : 0.; 
-            const double CenterFrequency = LoFrequency * std::pow(FrequencyRatio, BandAmount);
+            constexpr double ProbeOffset        = 1.122462048;
+            constexpr double InverseProbeOffset = 1. / ProbeOffset;
 
-            const double Frequencies[3] =
+            const double NyquistFrequency = SampleRate * 0.5;
+
+            constexpr double TuningConstant = 80.;
+            const double LogarithmicScale  = 1. / std::log1p(TuningConstant);
+
+            double MaximumEnergy = 0.;
+
+            for (size_t i = 0; i < BandCount; ++i)
             {
-                CenterFrequency / 1.122462048,
-                CenterFrequency,
-                CenterFrequency * 1.122462048
-            };
+                const double BandAmount      = (double) i * InverseBandCount; // [0, 1]
+                const double CenterFrequency = LoFrequency * std::pow(FrequencyRatio, BandAmount);
 
-            double BandPower = 0.;
-
-            for (const double j : Frequencies)
-            {
-                const double Frequency   = std::clamp(j, LoFrequency, NyquistFrequency);
-                const double Omega       = TwoPi * Frequency / (double) SampleRate;
-                const double Coefficient = 2. * std::cos(Omega);
-
-                double Previous  = 0.;
-                double Previous2 = 0.;
-
-                const double * Sample = WindowedSamples.data();
-                const double * const SampleEnd = Sample + FrameCount;
-
-                while (Sample < SampleEnd)
+                // Create three probes around each center. 1.122462048 ~= 2^1/6 or 2 semitones.
+                const double Probes[3] =
                 {
-                    const double Current = (double) *Sample++ + Coefficient * Previous - Previous2;
+                    CenterFrequency * InverseProbeOffset,
+                    CenterFrequency,
+                    CenterFrequency * ProbeOffset
+                };
 
-                    Previous2 = Previous;
-                    Previous  = Current;
+                double Power = 0.;
+
+                // Analyze each probe frequency.
+                for (const double Probe : Probes)
+                {
+                    const double Frequency = std::clamp(Probe, LoFrequency, NyquistFrequency);
+
+                    {
+                        // Configure the Goertzel detector.
+                        const double Omega       = TwoPi * Frequency / SampleRate;
+                        const double Coefficient = 2. * std::cos(Omega);
+
+                        double q1 = 0., q2 = 0.;
+
+                        // Run the Goertzel recurrence over the windowed signal.
+                        const double * Sample = WindowedSamples.data();
+                        const double * const SampleEnd = Sample + MaxFrames;
+
+                        while (Sample < SampleEnd)
+                        {
+                            const double q0 = *Sample++ + Coefficient * q1 - q2;
+
+                            q2 = q1;
+                            q1 = q0;
+                        }
+
+                        // Convert the detector state to power.
+                        Power += std::max(0., q2 * q2 + q1 * q1 - Coefficient * q1 * q2);
+                    }
                 }
 
-                BandPower += std::max(0., Previous2 * Previous2 + Previous  * Previous - Coefficient * Previous * Previous2);
+                // Calculate the band magnitude.
+                const double Magnitude = std::sqrt(Power / (double) _countof(Probes)) / (double) MaxFrames;
+
+                // Compress (logarithmic) and shape the band energy. Perform high-frequency weighting: 0.90 for the lowest band, 1.50 for the highest band.
+                _Bands[i].Energy = Clamp(std::log1p(Magnitude * TuningConstant) * LogarithmicScale * Lerp(0.90, 1.50, BandAmount));
+
+                // Track the highest frequency band energy.
+                MaximumEnergy = std::max(MaximumEnergy, _Bands[i].Energy);
             }
 
-            const double Magnitude  = std::sqrt(BandPower / 3.) / (double) FrameCount;
-            const double Compressed = std::log1p(Magnitude * 80.) / std::log1p(80.);
-
-            _BandEnergy[i] = Clamp(Compressed * Lerp(0.85, 1.45, BandAmount));
-
-            MaximumEnergy = std::max(MaximumEnergy, _BandEnergy[i]);
-        }
-
-        if (MaximumEnergy > 1.0e-5)
-        {
-            const double Normalization = 1. / std::max(0.35, MaximumEnergy);
-
-            double *       Energy    = _BandEnergy.data();
-            double * const EnergyEnd = Energy + FrequencyBandCount;
-
-            while (Energy < EnergyEnd)
+            // Normalize the spectrum.
+            if (MaximumEnergy > 1.0e-5)
             {
-                *Energy = Clamp(*Energy * Normalization);
+                const auto Normalization = 1. / std::max(0.30, MaximumEnergy);
 
-                ++Energy;
+                for (auto & Band : _Bands)
+                    Band.Energy = Clamp(Band.Energy * Normalization);
             }
         }
 
+        // Calculate the half-wave rectified spectral flux. It responds when spectral energy increases such as during drum hits, note attacks, sudden treble bursts and new musical events.
         {
-            double Flux = 0.;
+            _SpectralFlux = 0.;
 
-            const double *       Energy    = _BandEnergy.data();
-            const double * const EnergyEnd = Energy + FrequencyBandCount;
-
-            double * PreviousEnergy = _PreviousBandEnergy.data();
-
-            while (Energy < EnergyEnd)
+            for (auto & Band : _Bands)
             {
-                Flux += std::max(0., *Energy - *PreviousEnergy);
+                _SpectralFlux += std::max(0., Band.Energy - Band.PreviousEnergy);
 
-                *PreviousEnergy++ = *Energy++;
+                Band.PreviousEnergy = Band.Energy; // Remember the band energy for the next chunk.
             }
 
-            _SpectralFlux = Clamp(Flux / (double) FrequencyBandCount * 4.); // Boost the spectral flux artificially by 4 to make it react more strongly.
+            _SpectralFlux = Clamp(_SpectralFlux / (double) BandCount * 5.5); // Boost the spectral flux artificially to make it react more strongly.
         }
     }
 
     /// <summary>
-    ///
+    /// Prepares the visual parameters.
     /// </summary>
     void effect_t::Update(double deltaTime)
     {
@@ -366,10 +380,15 @@ namespace ParticleVortex
         {
             switch (_Speed)
             {
-                case EyeCandy::Speed::Slow: return 0.55;
-                case EyeCandy::Speed::Fast: return 1.75;
-                case EyeCandy::Speed::Normal:
-                default: return 1.0;
+                case Speed::Slow:
+                    return 0.55;
+
+                default:
+                case Speed::Normal:
+                    return 1.0;
+
+                case Speed::Fast:
+                    return 1.75;
             }
         }();
 
@@ -377,20 +396,21 @@ namespace ParticleVortex
 
         _AnimationTime += AnimationDelta;
 
-        _SmoothedPeak = ExponentialSmoothing(_SmoothedPeak, _Peak,         deltaTime, (_Peak         > _SmoothedPeak) ? 22. : 5.);
-        _SmoothedRMS  = ExponentialSmoothing(_SmoothedRMS,  _RMS,          deltaTime, (_RMS          > _SmoothedRMS)  ? 16. : 4.);
-        _SmoothedFlux = ExponentialSmoothing(_SmoothedFlux, _SpectralFlux, deltaTime, (_SpectralFlux > _SmoothedFlux) ? 28. : 5.);
-
-        for (size_t i = 0; i < FrequencyBandCount; ++i)
         {
-            const double target = _HasAudio ? _BandEnergy[i] : 0.;
+            _SmoothedPeak         = ExponentialSmoothing(_SmoothedPeak,         _Peak,         deltaTime, (_Peak         > _SmoothedPeak)         ? 22. : 5.);
+            _SmoothedRMS          = ExponentialSmoothing(_SmoothedRMS,          _RMS,          deltaTime, (_RMS          > _SmoothedRMS)          ? 16. : 4.);
 
-            _SmoothedBandEnergy[i] = ExponentialSmoothing(_SmoothedBandEnergy[i], target, deltaTime, target > _SmoothedBandEnergy[i] ? 18.0f : 4.5f);
+            _SmoothedSpectralFlux = ExponentialSmoothing(_SmoothedSpectralFlux, _SpectralFlux, deltaTime, (_SpectralFlux > _SmoothedSpectralFlux) ? 28. : 5.);
+
+            {
+                for (auto & Band : _Bands)
+                    Band.SmoothedEnergy = ExponentialSmoothing(Band.SmoothedEnergy, Band.Energy, deltaTime, (Band.Energy > Band.SmoothedEnergy) ? 18.0 : 4.5);
+
+                _BassLevel   = (_Bands[0].SmoothedEnergy + _Bands[1].SmoothedEnergy + _Bands[ 2].SmoothedEnergy + _Bands[ 3].SmoothedEnergy) * .25;
+                _MidLevel    = (_Bands[4].SmoothedEnergy + _Bands[5].SmoothedEnergy + _Bands[ 6].SmoothedEnergy + _Bands[ 7].SmoothedEnergy) * .25;
+                _TrebleLevel = (_Bands[8].SmoothedEnergy + _Bands[9].SmoothedEnergy + _Bands[10].SmoothedEnergy + _Bands[11].SmoothedEnergy) * .25;
+            }
         }
-
-        _BassEnergy   = (_SmoothedBandEnergy[0] + _SmoothedBandEnergy[1] + _SmoothedBandEnergy[ 2] + _SmoothedBandEnergy[ 3]) * 0.25;
-        _MidEnergy    = (_SmoothedBandEnergy[4] + _SmoothedBandEnergy[5] + _SmoothedBandEnergy[ 6] + _SmoothedBandEnergy[ 7]) * 0.25;
-        _TrebleEnergy = (_SmoothedBandEnergy[8] + _SmoothedBandEnergy[9] + _SmoothedBandEnergy[10] + _SmoothedBandEnergy[11]) * 0.25;
 
         UpdateCenters(AnimationDelta);
 
@@ -402,32 +422,33 @@ namespace ParticleVortex
     /// </summary>
     void effect_t::UpdateCenters(double deltaTime)
     {
-        const float Dimension = std::min(_Width, _Height);
+        const double Dimension = (double) std::min(_Width, _Height);
 
-        for (size_t i = 0; i < FrequencyBandCount; ++i)
+        for (size_t i = 0; i < BandCount; ++i)
         {
             center_t & Center = _Centers[i];
 
             Center.Previous = Center.Position;
 
-            const double Amount             = (double) i / (double) (FrequencyBandCount - 1);
-            const double LowFrequencyWeight = 1. - Amount;
-            const double Energy             = _SmoothedBandEnergy[i];
+            const double BandAmount         = (double) i * InverseBandCount; // [0, 1]
+            const double LowFrequencyWeight = 1. - BandAmount;
+            const double Energy             = _Bands[i].SmoothedEnergy;
             const double Direction          = ((i & 1u) == 0u) ? 1. : -1.;
 
-            Center.Phase += deltaTime * Lerp(0.16, 0.72, Amount) * Direction * (0.75 + Energy * 1.5);
+            Center.Phase += deltaTime * Lerp(0.16, 0.72, BandAmount) * Direction * (0.75 + Energy * 1.5);
 
-            const double RingRadius  = Dimension * Lerp(0.09, 0.34, Amount);
-            const double Pulse       = 1. + Energy * Lerp(0.18, 0.42, Amount) + _SmoothedFlux * 0.18;
-            const double Angle       = Center.Phase + (_AnimationTime * Lerp(0.08, 0.22, Amount)) + (Amount * TwoPi);
+            const double RingRadius  = Dimension * Lerp(0.09, 0.34, BandAmount);
+            const double Pulse       = 1. + Energy * Lerp(0.18, 0.42, BandAmount) + _SmoothedSpectralFlux * 0.18;
+            const double Angle       = Center.Phase + (_AnimationTime * Lerp(0.08, 0.22, BandAmount)) + (BandAmount * TwoPi);
             const double EllipticalY = 0.55 + LowFrequencyWeight * 0.18;
-            const double Wobble      = std::sin((Angle * 2.) + (Amount * 7.) + (_AnimationTime * 0.31)) * Dimension * 0.025 * (0.25 + Energy);
+            const double Wobble      = std::sin((Angle * 2.) + (BandAmount * 7.) + (_AnimationTime * 0.31)) * Dimension * 0.025 * (0.25 + Energy);
 
             Center.Position =
             {
                 (float) (_CenterX + std::cos(Angle) * RingRadius * Pulse + Wobble),
                 (float) (_CenterY + std::sin(Angle) * RingRadius * Pulse * EllipticalY)
             };
+
             Center.Energy   = Energy;
             Center.Peak     = std::max(Energy, ExponentialSmoothing(Center.Peak, Energy, deltaTime, Energy > Center.Peak ? 24. : 3.));
         }
@@ -449,7 +470,7 @@ namespace ParticleVortex
             return;
         }
 
-        const size_t Band = particle.Band % FrequencyBandCount;
+        const size_t Band = particle.Band % BandCount;
 
         const center_t & Center = _Centers[Band];
 
@@ -463,7 +484,7 @@ namespace ParticleVortex
         const double TangentDirection = ((Band + (size_t)particle.Seed) & 1u) == 0u ? 1.0f : -1.0f;
         const double TangentX         = -RadialY * TangentDirection;
         const double TangentY         =  RadialX * TangentDirection;
-        const double BandAmount       = (float) Band / (float) (FrequencyBandCount - 1);
+        const double BandAmount       = (double) Band  * InverseBandCount; // [0, 1]
         const double Energy           = (float) Center.Energy;
 
         const double Dimension        = std::min(_Width, _Height);
@@ -471,7 +492,7 @@ namespace ParticleVortex
 
         double Attraction = Lerp(2.8, 6.2, BandAmount) * (0.24 + Energy * 1.85);
 
-        Attraction += (float) _SmoothedFlux * Lerp(7.0, 3.2, BandAmount);
+        Attraction += (float) _SmoothedSpectralFlux * Lerp(7.0, 3.2, BandAmount);
 
         const double RadialAcceleration  = (Distance - PreferredRadius) * Attraction;
         const double OrbitalAcceleration = Dimension * Lerp(0.78, 1.85, BandAmount) * (0.18f + Energy * 1.35f);
@@ -519,7 +540,7 @@ namespace ParticleVortex
         uint32_t State = Hash((uint32_t)index * 0x9E3779B9u ^ particle.Seed ^ (uint32_t)(_AnimationTime * 1'000.0));
 
         particle.Seed = State;
-        particle.Band = (index + (size_t) (Random(State) * (float) FrequencyBandCount)) % FrequencyBandCount;
+        particle.Band = (index + (size_t) (Random(State) * (float) BandCount)) % BandCount;
 
         const center_t & Center = _Centers[particle.Band];
 
@@ -556,13 +577,13 @@ namespace ParticleVortex
     /// </summary>
     void effect_t::Fade(ID2D1RenderTarget * renderTarget, double deltaTime) noexcept
     {
-        const double Persistence = 0.902f + _BassEnergy * 0.026f + _SmoothedFlux * 0.018f;
+        const double Persistence = 0.902f + _BassLevel * 0.026f + _SmoothedSpectralFlux * 0.018f;
         const double Decay       = std::pow(std::clamp(Persistence, 0.70, 0.965), (deltaTime * 60.));
 
         _Brush->SetColor(D2D1::ColorF(0.f, 0.f, 0.f, (float) Clamp(1. - Decay)));
         _Brush->SetOpacity(1.f);
 
-        renderTarget->FillRectangle(_Rectangle, _Brush.Get());
+        renderTarget->FillRectangle(_ViewPort, _Brush.Get());
     }
 
     /// <summary>
@@ -570,7 +591,7 @@ namespace ParticleVortex
     /// </summary>
     void effect_t::RenderVortex(ID2D1RenderTarget * renderTarget) noexcept
     {
-        for (size_t i = 0; i < FrequencyBandCount; ++i)
+        for (size_t i = 0; i < BandCount; ++i)
         {
             if (_Centers[i].Energy > 0.025f)
                 RenderCenterGlow(renderTarget, _Centers[i], i);
@@ -586,13 +607,13 @@ namespace ParticleVortex
             const double Speed           = Length(particle.Velocity.x, particle.Velocity.y);
             const double SpeedBrightness = std::clamp(Speed / (std::min(_Width, _Height) * 0.35), 0.15, 1.0);
 
-            const size_t Band            = particle.Band % FrequencyBandCount;
+            const size_t Band            = particle.Band % BandCount;
             const double Energy          = _Centers[Band].Energy;
             const double ParticlePhase   = Fraction(particle.OrbitOffset / TwoPi + LifeAmount + _AnimationTime * 0.025);
 
             const auto   Color           = Colorize(Band, Energy, ParticlePhase);
             const double Intensity       = particle.Brightness * FadeIn * FadeOut * (0.18 + (Energy * 0.92)) * (0.55 + (SpeedBrightness * 0.65));
-            const double Width           = 0.75 + (Energy * 1.8) + (_SmoothedFlux * 1.25);
+            const double Width           = 0.75 + (Energy * 1.8) + (_SmoothedSpectralFlux * 1.25);
 
             DrawGlowLine(renderTarget, particle.Previous, particle.Position, Color, (float) Intensity, (float) Width);
         }
@@ -609,9 +630,9 @@ namespace ParticleVortex
         {
             switch (_Quality)
             {
-                case EyeCandy::Quality::Low: return 7;
-                case EyeCandy::Quality::High: return 15;
-                case EyeCandy::Quality::Medium:
+                case Quality::Low: return 7;
+                case Quality::High: return 15;
+                case Quality::Medium:
                 default: return 10;
             }
         }();
@@ -639,7 +660,7 @@ namespace ParticleVortex
 
         for (size_t i = 0; i < Count; ++i)
         {
-            const double Amount = (double) i / (double)(Count - 1);
+            const double Amount = (double) i / (double)(Count - 1); // [0, 1]
             const double Phase  = (Amount * TwoPi * 7.) + _AnimationTime * (0.28 + (Amount * 0.75));
             const double Radius = Dimension * (0.035 + Amount * 0.31);
             const double Spiral = 1. + 0.08 * std::sin(Phase * 0.43 - _AnimationTime * 0.6);
@@ -660,13 +681,13 @@ namespace ParticleVortex
         {
             switch (_Quality)
             {
-            case EyeCandy::Quality::Low:
+            case Quality::Low:
                 return 1;
 
-            case EyeCandy::Quality::High:
+            case Quality::High:
                 return 3;
 
-            case EyeCandy::Quality::Medium:
+            case Quality::Medium:
             default:
                 return 2;
             }
@@ -766,11 +787,11 @@ namespace ParticleVortex
     /// </summary>
     D2D1_COLOR_F effect_t::Colorize(size_t band, double energy, double particlePhase) const noexcept
     {
-        const double BandAmount = (double) band / (double) (FrequencyBandCount - 1);
+        const double BandAmount = (double) band * InverseBandCount; // [0, 1]
 
         const float H = (float) Fraction(0.92 + (BandAmount * 0.62) + (particlePhase * 0.055) + (_AnimationTime * 0.006));
         const float S = (float) Clamp(0.76 + (energy * 0.19));
-        const float V = (float) Clamp(0.54 + (energy * 0.44) + (_SmoothedFlux * 0.16));
+        const float V = (float) Clamp(0.54 + (energy * 0.44) + (_SmoothedSpectralFlux * 0.16));
 
         return HSVToColor(H, S, V);
     }
@@ -789,7 +810,10 @@ namespace ParticleVortex
         {
             for (size_t i = 0; i < WorkerCount; ++i)
             {
-                _Workers.emplace_back(&effect_t::Worker, this);
+                _Workers.emplace_back([this]() noexcept
+                {
+                    Worker();
+                });
             }
         }
         catch (...)

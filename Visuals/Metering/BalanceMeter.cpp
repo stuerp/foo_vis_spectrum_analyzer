@@ -75,10 +75,10 @@ void balance_meter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
             if (_State._LEDIntegralSize && (LEDHeight > 0.f))
                 Rect.right = std::ceil(Rect.right / LEDHeight) * LEDHeight;
 
-            deviceContext->FillOpacityMask(OpacityMask, Style._Brush.Get(), D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
+            deviceContext->FillOpacityMask(OpacityMask, Style.Brush.Get(), D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
         }
         else
-            deviceContext->FillRectangle(Rect, Style._Brush.Get());
+            deviceContext->FillRectangle(Rect, Style.Brush.Get());
     };
 
     const auto RenderVerticalBar = [this, deviceContext, LEDHeight, OpacityMask](D2D1_RECT_F & Rect, auto & Style) noexcept
@@ -91,10 +91,10 @@ void balance_meter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
             if (_State._LEDIntegralSize && (LEDHeight > 0.f))
                 Rect.bottom = std::ceil(Rect.bottom / LEDHeight) * LEDHeight;
 
-            deviceContext->FillOpacityMask(OpacityMask, Style._Brush.Get(), D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
+            deviceContext->FillOpacityMask(OpacityMask, Style.Brush.Get(), D2D1_OPACITY_MASK_CONTENT_GRAPHICS, Rect, Rect);
         }
         else
-            deviceContext->FillRectangle(Rect, Style._Brush.Get());
+            deviceContext->FillRectangle(Rect, Style.Brush.Get());
     };
 
     if (_State._IsHorizontalLevelMeter)
@@ -112,7 +112,7 @@ void balance_meter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
                 Rect.left  = x - _LeftRightIndicatorStyle._Thickness;
                 Rect.right = x + _LeftRightIndicatorStyle._Thickness;
 
-                deviceContext->FillRectangle(Rect, _LeftRightIndicatorStyle._Brush.Get());
+                deviceContext->FillRectangle(Rect, _LeftRightIndicatorStyle.Brush.Get());
             }
 
             x = (FLOAT) _Processor->_Phase * w;
@@ -126,15 +126,15 @@ void balance_meter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
                 Rect.left  = x - _MidSideIndicatorStyle._Thickness;
                 Rect.right = x + _MidSideIndicatorStyle._Thickness;
 
-                deviceContext->FillRectangle(Rect, _MidSideIndicatorStyle._Brush.Get());
+                deviceContext->FillRectangle(Rect, _MidSideIndicatorStyle.Brush.Get());
             }
         }
 
         // Render the axis.
         if (_AxisStyle.IsEnabled())
         {
-            ID2D1Brush * Brush = _AxisStyle._Brush.Get();
-            IDWriteTextFormat * TextFormat = _AxisStyle._TextFormat.Get();
+            ID2D1Brush * Brush = _AxisStyle.Brush.Get();
+            IDWriteTextFormat * TextFormat = _AxisStyle.TextFormat.Get();
 
             deviceContext->DrawLine({ 2.f, CenterY }, { w - 2.f, CenterY }, Brush, _AxisStyle._Thickness);
 
@@ -181,7 +181,7 @@ void balance_meter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
                 Rect.top    = y - _LeftRightIndicatorStyle._Thickness;
                 Rect.bottom = y + _LeftRightIndicatorStyle._Thickness;
 
-                deviceContext->FillRectangle(Rect, _LeftRightIndicatorStyle._Brush.Get());
+                deviceContext->FillRectangle(Rect, _LeftRightIndicatorStyle.Brush.Get());
             }
 
             y = (FLOAT) _Processor->_Phase * h;
@@ -195,15 +195,15 @@ void balance_meter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
                 Rect.top    = y - _MidSideIndicatorStyle._Thickness;
                 Rect.bottom = y + _MidSideIndicatorStyle._Thickness;
 
-                deviceContext->FillRectangle(Rect, _MidSideIndicatorStyle._Brush.Get());
+                deviceContext->FillRectangle(Rect, _MidSideIndicatorStyle.Brush.Get());
             }
         }
 
         // Render the axis.
         if (_AxisStyle.IsEnabled())
         {
-            ID2D1Brush * Brush = _AxisStyle._Brush.Get();
-            IDWriteTextFormat * TextFormat = _AxisStyle._TextFormat.Get();
+            ID2D1Brush * Brush = _AxisStyle.Brush.Get();
+            IDWriteTextFormat * TextFormat = _AxisStyle.TextFormat.Get();
 
             deviceContext->DrawLine({ CenterX, 2.f }, { CenterX, h - 2.f }, Brush, _AxisStyle._Thickness);
 
@@ -328,7 +328,7 @@ HRESULT balance_meter_t::CreateColorDependentResources(ID2D1DeviceContext * devi
 {
     const auto InitializeStyle = [this, deviceContext](auto & style, VisualElement visualElement, const wchar_t * text) noexcept -> HRESULT
     {
-        if (style._Brush != nullptr)
+        if (style.Brush != nullptr)
             return S_OK;
 
         style = *_State._StyleManager.GetStyle(visualElement);

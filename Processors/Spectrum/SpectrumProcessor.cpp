@@ -128,18 +128,20 @@ namespace Spectrum
 
         // From here on frequency_band_t::Value is guaranteed to be in the range [0, 1].
 
-        Peak::detector_t PeakDetector
+        if (_State._DetectPeaks)
         {
-            .MaxPeakCount         = 10,
-            .MinValue             = 0.05,
-            .MinProminence        = 0.02,
-            .BandSpan             = 4,
-            .MinFrequencySpacing  = 25.0,
-            .InterpolateFrequency = true
-        };
+            Peak::detector_t PeakDetector
+            {
+                .MaxPeakCount         = _State._MaxPeakCount,
+                .MinPeakLevel         = _State._MinPeakLevel,
+                .MinPeakProminence    = _State._MinPeakProminence,
+                .BandSpan             = _State._BandSpan,
+                .MinPeakDistance      = _State._MinPeakDistance,
+                .InterpolateFrequency = _State._InterpolateFrequency
+            };
 
-        if (_State._RenderPeaks)
             Peaks = PeakDetector.Process(std::span<const frequency_band_t> { FrequencyBands });
+        }
 /*
     {
         for (auto & fb : FrequencyBands)

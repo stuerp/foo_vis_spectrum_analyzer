@@ -212,7 +212,7 @@ bool graph_t::GetToolTipText(FLOAT x, FLOAT y, std::wstring & toolTip, size_t & 
 void graph_t::RenderBackground(artwork_t & artwork) noexcept
 {
     if (_BackgroundStyle.IsEnabled())
-        _RenderContext._D2DDeviceContext->FillRectangle(_Rect, _BackgroundStyle._Brush.Get());
+        _RenderContext._D2DDeviceContext->FillRectangle(_Rect, _BackgroundStyle.Brush.Get());
 
     if (!_State._ShowArtworkOnBackground)
         return;
@@ -236,7 +236,7 @@ void graph_t::RenderDescription() noexcept
 
     ComPtr<IDWriteTextLayout> TextLayout;
 
-    HRESULT hr = DirectWriteFactory::Get()->CreateTextLayout(_Description.c_str(), (UINT32) _Description.length(), _DescriptionTextStyle._TextFormat.Get(), _Size.width, _Size.height, TextLayout.GetAddressOf());
+    HRESULT hr = DirectWriteFactory::Get()->CreateTextLayout(_Description.c_str(), (UINT32) _Description.length(), _DescriptionTextStyle.TextFormat.Get(), _Size.width, _Size.height, TextLayout.GetAddressOf());
 
     if (FAILED(hr))
         return;
@@ -260,10 +260,10 @@ void graph_t::RenderDescription() noexcept
     Rect.bottom = Rect.top  + TextMetrics.height + (Inset * 2.f);
 
     if (_DescriptionBackgroundStyle.IsEnabled())
-        _RenderContext._D2DDeviceContext->FillRoundedRectangle(D2D1::RoundedRect(Rect, Inset, Inset), _DescriptionBackgroundStyle._Brush.Get());
+        _RenderContext._D2DDeviceContext->FillRoundedRectangle(D2D1::RoundedRect(Rect, Inset, Inset), _DescriptionBackgroundStyle.Brush.Get());
 
     if (_DescriptionTextStyle.IsEnabled())
-        _RenderContext._D2DDeviceContext->DrawText(_Description.c_str(), (UINT) _Description.length(), _DescriptionTextStyle._TextFormat.Get(), Rect, _DescriptionTextStyle._Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_NONE);
+        _RenderContext._D2DDeviceContext->DrawText(_Description.c_str(), (UINT) _Description.length(), _DescriptionTextStyle.TextFormat.Get(), Rect, _DescriptionTextStyle.Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_NONE);
 }
 
 /// <summary>
@@ -285,7 +285,7 @@ HRESULT graph_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContex
 
     const auto InitializeStyle = [this, deviceContext, & StyleManager](auto & style, VisualElement visualElement, const wchar_t * text) noexcept -> HRESULT
     {
-        if (style._Brush != nullptr)
+        if (style.Brush != nullptr)
             return S_OK;
 
         style = *StyleManager.GetStyle(visualElement);

@@ -60,8 +60,8 @@ void bit_meter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
         deviceContext->DrawImage(_StaticContentCommandList.Get());
     }
 
-    const FLOAT XAxisHeight = _GraphOptions->_XAxisBottom ? YPadding + _XAxisText._Height + YPadding : 1.f;
-    const FLOAT YAxisWidth  = _GraphOptions->_YAxisLeft   ? XPadding + _YAxisText._Width  + XPadding : 0.f;
+    const FLOAT XAxisHeight = _GraphOptions->_XAxisBottom ? YPadding + _XAxisText.Height + YPadding : 1.f;
+    const FLOAT YAxisWidth  = _GraphOptions->_YAxisLeft   ? XPadding + _YAxisText.Width  + XPadding : 0.f;
 
     const FLOAT ClientWidth  = _Size.width - YAxisWidth;
     const FLOAT ClientHeight = _Size.height - ((FLOAT) _MeasurementCount * XAxisHeight);
@@ -122,15 +122,15 @@ void bit_meter_t::Render(ID2D1DeviceContext * deviceContext) noexcept
                         if (_State._OpacityMode)
                         {
                             r.top = 0.f;
-                            Style->_Brush->SetOpacity((FLOAT) BitCount);
+                            Style->Brush->SetOpacity((FLOAT) BitCount);
                         }
                         else
                         {
                             r.top = ChannelHeight - ((FLOAT) BitCount * ChannelHeight);
-                            Style->_Brush->SetOpacity(Style->_Opacity); // Always set the opacity in case we're returning from opacity mode.
+                            Style->Brush->SetOpacity(Style->_Opacity); // Always set the opacity in case we're returning from opacity mode.
                         }
 
-                        deviceContext->FillRectangle(r, Style->_Brush.Get());
+                        deviceContext->FillRectangle(r, Style->Brush.Get());
                     }
                 }
 
@@ -261,7 +261,7 @@ HRESULT bit_meter_t::CreateColorDependentResources(ID2D1DeviceContext * deviceCo
 
     const auto InitializeStyle = [this, deviceContext](auto & Style, VisualElement Element, const D2D1_SIZE_F & Size, const wchar_t * Text) noexcept -> HRESULT
     {
-        if (Style._Brush != nullptr)
+        if (Style.Brush != nullptr)
             return S_OK;
 
         Style = *_State._StyleManager.GetStyle(Element);
@@ -291,7 +291,7 @@ HRESULT bit_meter_t::CreateColorDependentResources(ID2D1DeviceContext * deviceCo
     if (FAILED(hr))
         return hr;
 
-    if (_XAxisText._Brush == nullptr)
+    if (_XAxisText.Brush == nullptr)
     {
         hr = InitializeStyle(_XAxisText, VisualElement::XAxisText, _Size, L"");
 
@@ -302,7 +302,7 @@ HRESULT bit_meter_t::CreateColorDependentResources(ID2D1DeviceContext * deviceCo
         _XAxisText.SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
     }
 
-    if (_YAxisText._Brush == nullptr)
+    if (_YAxisText.Brush == nullptr)
     {
         hr = InitializeStyle(_YAxisText, VisualElement::YAxisText, _Size, L"WW");
 
@@ -370,8 +370,8 @@ HRESULT bit_meter_t::CreateStaticContentCommandList() noexcept
     const bool DrawYAxis         = _GraphOptions->_YAxisLeft   && _YAxisText.IsEnabled();
     const bool DrawBarBackground = _BarBackground.IsEnabled();
 
-    const FLOAT XAxisHeight = _GraphOptions->_XAxisBottom ? YPadding + _XAxisText._Height + YPadding : 1.f;
-    const FLOAT YAxisWidth  = _GraphOptions->_YAxisLeft   ? XPadding + _YAxisText._Width  + XPadding : 0.f;
+    const FLOAT XAxisHeight = _GraphOptions->_XAxisBottom ? YPadding + _XAxisText.Height + YPadding : 1.f;
+    const FLOAT YAxisWidth  = _GraphOptions->_YAxisLeft   ? XPadding + _YAxisText.Width  + XPadding : 0.f;
 
     const FLOAT ClientWidth  = _Size.width - YAxisWidth;
     const FLOAT ClientHeight = _Size.height - ((FLOAT) _MeasurementCount * XAxisHeight);
@@ -412,10 +412,10 @@ HRESULT bit_meter_t::CreateStaticContentCommandList() noexcept
             if (DrawYAxis)
             {
                 r.left  += XPadding;
-                r.right = r.left + _YAxisText._Width;
+                r.right = r.left + _YAxisText.Width;
 
 //              _DeviceContext->DrawRectangle(r, _DebugBrush);
-                _DeviceContext->DrawText(m.ChannelName.c_str(), (UINT) m.ChannelName.size(), _YAxisText._TextFormat.Get(), r, _YAxisText._Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                _DeviceContext->DrawText(m.ChannelName.c_str(), (UINT) m.ChannelName.size(), _YAxisText.TextFormat.Get(), r, _YAxisText.Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
 
                 r.left = r.right + XPadding;
             }
@@ -428,7 +428,7 @@ HRESULT bit_meter_t::CreateStaticContentCommandList() noexcept
             r.right = r.left + BarWidth - 1.f;
 
             if (DrawBarBackground)
-                _DeviceContext->FillRectangle(r, _BarBackground._Brush.Get());
+                _DeviceContext->FillRectangle(r, _BarBackground.Brush.Get());
 
             // Draw the bit number.
             if (DrawXAxis)
@@ -438,7 +438,7 @@ HRESULT bit_meter_t::CreateStaticContentCommandList() noexcept
                 const D2D1_RECT_F cr = { r.left, r.bottom, r.right, r.bottom + XAxisHeight };
 
 //              _DeviceContext->DrawRectangle(cr, _DebugBrush);
-                _DeviceContext->DrawText(Text.c_str(), (UINT) Text.size(), _XAxisText._TextFormat.Get(), cr, _XAxisText._Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                _DeviceContext->DrawText(Text.c_str(), (UINT) Text.size(), _XAxisText.TextFormat.Get(), cr, _XAxisText.Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
             }
 
             r.left += BarWidth;

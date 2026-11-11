@@ -1,5 +1,5 @@
 
-/** $VER: Fireflies.cpp (2026.10.18) **/
+/** $VER: Fireflies.cpp (2026.11.07) **/
 
 #include <pch.h>
 
@@ -70,12 +70,12 @@ namespace Fireflies
 
     effect_t::effect_t()
     {
-        for (size_t i = 0; i < FrequencyBandCount; ++i)
+        for (size_t i = 0; i < BandCount; ++i)
         {
-            const double Amount = (double) i / (double) (FrequencyBandCount - 1);
+            const double BandAmount = (double) i * InverseBandCount; // [0, 1]
 
-            _Centers[i].Frequency = LoFrequency * std::pow(FrequencyRatio, Amount);
-            _Centers[i].Phase     = Amount * TwoPi;
+            _Centers[i].Frequency = LoFrequency * std::pow(FrequencyRatio, BandAmount);
+            _Centers[i].Phase     = BandAmount * TwoPi;
         }
 
         StartWorkers();
@@ -108,10 +108,15 @@ namespace Fireflies
         {
             switch (_Quality)
             {
-                case EyeCandy::Quality::Low: return 180u;
-                case EyeCandy::Quality::High: return 720u;
-                case EyeCandy::Quality::Medium:
-                default: return 360u;
+                case Quality::Low:
+                    return 180u;
+
+                default:
+                case Quality::Medium:
+                    return 360u;
+
+                case Quality::High:
+                    return 720u;
             }
         }();
 
@@ -180,7 +185,10 @@ namespace Fireflies
             }
         }
 
-        renderTarget->DrawBitmap(_BackBuffer.Get(), _Rectangle);
+        // Render the bitmap.
+        {
+            renderTarget->DrawBitmap(_BackBuffer.Get(), _ViewPort);
+        }
     }
 
     /// <summary>
@@ -188,33 +196,38 @@ namespace Fireflies
     /// </summary>
     void effect_t::AnalyzeAudio(const audio_chunk & chunk)
     {
+        _HasAudio = false;
+
         _Peak         = 0.;
         _RMS          = 0.;
         _SpectralFlux = 0.;
 
-        _BandEnergy.fill(0.);
-
-        _HasAudio = false;
-
         if (chunk.is_empty())
+        {
+            for (auto & Band : _Bands)
+                Band.Energy = 0.;
+
             return;
+        }
 
         const audio_sample * const Frames = chunk.get_data();
 
-        const size_t FrameCount     = chunk.get_sample_count();
-        const unsigned ChannelCount = chunk.get_channel_count();
-        const unsigned SampleRate   = chunk.get_sample_rate();
+        const auto FrameCount   = chunk.get_sample_count();
+        const auto ChannelCount = chunk.get_channel_count();
+        const auto SampleRate   = (double) chunk.get_sample_rate();
 
-        // Analyze only the most recent 2048 sample frames.
-        const size_t MaxFrames = std::min(FrameCount, (size_t) 2048);
+        // Analyze only the most recent frames of the chunk.
+        const auto MaxFrames = std::min<size_t>(FrameCount, 2048);
 
         if (MaxFrames < 32)
             return;
 
         const size_t FirstFrame = FrameCount - MaxFrames;
 
-        if (MaxFrames > _Samples.size())
+        if (_Samples.size() < MaxFrames)
             _Samples.resize(MaxFrames);
+
+        auto Samples = std::span<double>(_Samples.data(), MaxFrames);
 
         const audio_sample *       Frame    = Frames + FirstFrame * (size_t) ChannelCount;
         const audio_sample * const FrameEnd = Frame + MaxFrames * (size_t) ChannelCount;
@@ -226,7 +239,7 @@ namespace Fireflies
 
             const double WindowStep = TwoPi / ((double) MaxFrames - 1.);
 
-            double * Sample = _Samples.data();
+            double * Sample = Samples.data();
 
             while (Frame < FrameEnd)
             {
@@ -268,95 +281,92 @@ namespace Fireflies
         if (!_HasAudio)
             return;
 
-        const double NyquistFrequency = (double) SampleRate * 0.5;
-
-        double MaximumEnergy = 0.;
-
-        for (size_t i = 0; i < FrequencyBandCount; ++i)
+        // Perform a spectrum analysis of logarithmically spaced frequency bands.
         {
-            const double BandAmount = (FrequencyBandCount > 1) ? (double) i / (double) (FrequencyBandCount - 1) : 0.;
+            const double NyquistFrequency = SampleRate * 0.5;
 
-            const double CenterFrequency = LoFrequency * std::pow(FrequencyRatio, BandAmount);
+            constexpr double TuningConstant = 80.;
+            const double LogarithmicScale  = 1. / std::log1p(TuningConstant);
 
-            const double Frequencies[] =
+            double MaximumEnergy = 0.;
+
+            for (size_t i = 0; i < BandCount; ++i)
             {
-                CenterFrequency / 1.122462048,
-                CenterFrequency,
-                CenterFrequency * 1.122462048
-            };
+                const double BandAmount = (double) i * InverseBandCount; // [0, 1]
+                const double CenterFrequency = LoFrequency * std::pow(FrequencyRatio, BandAmount);
 
-            double BandPower = 0.;
-
-            const double * Frequency = Frequencies;
-            const double * const FrequencyEnd = Frequency + std::size(Frequencies);
-
-            while (Frequency < FrequencyEnd)
-            {
-                const double ClampedFrequency = std::clamp(*Frequency++, LoFrequency, NyquistFrequency);
-
-                const double Omega = TwoPi * ClampedFrequency / (double) SampleRate;
-
-                const double Coefficient = 2. * std::cos(Omega);
-
-                double Previous  = 0.;
-                double Previous2 = 0.;
-
-                const double *       Sample    = _Samples.data();
-                const double * const SampleEnd = Sample + MaxFrames;
-
-                while (Sample < SampleEnd)
+                const double Frequencies[] =
                 {
-                    const double Current = (double)*Sample++ + Coefficient * Previous - Previous2;
+                    CenterFrequency / 1.122462048,
+                    CenterFrequency,
+                    CenterFrequency * 1.122462048
+                };
 
-                    Previous2 = Previous;
-                    Previous = Current;
+                double BandPower = 0.;
+
+                const double * Frequency = Frequencies;
+                const double * const FrequencyEnd = Frequency + std::size(Frequencies);
+
+                while (Frequency < FrequencyEnd)
+                {
+                    const double ClampedFrequency = std::clamp(*Frequency++, LoFrequency, NyquistFrequency);
+
+                    // Configure the Goertzel detector.
+                    const double Omega       = TwoPi * ClampedFrequency / SampleRate;
+                    const double Coefficient = 2. * std::cos(Omega);
+
+                    double q1 = 0., q2 = 0.;
+
+                    const double *       Sample    = _Samples.data();
+                    const double * const SampleEnd = Sample + MaxFrames;
+
+                    while (Sample < SampleEnd)
+                    {
+                        const double q0 = (double) *Sample++ + Coefficient * q1 - q2;
+
+                        q2 = q1;
+                        q1 = q0;
+                    }
+
+                    BandPower += std::max(0., q2 * q2 + q1 * q1 - Coefficient * q1 * q2);
                 }
 
-                BandPower += std::max(0., Previous2 * Previous2 + Previous * Previous - Coefficient * Previous * Previous2);
+                const double Magnitude = std::sqrt(BandPower / (double) _countof(Frequencies)) / (double) MaxFrames;
+
+                // Compress (logarithmic) and shape the band energy. Perform high-frequency weighting: 0.90 for the lowest band, 1.50 for the highest band.
+                _Bands[i].Energy = Clamp(std::log1p(Magnitude * TuningConstant) * LogarithmicScale * Lerp(0.90, 1.50, BandAmount));
+
+                // Track the highest frequency band energy.
+                MaximumEnergy = std::max(MaximumEnergy, _Bands[i].Energy);
             }
 
-            const double Magnitude  = std::sqrt(BandPower / (double) _countof(Frequencies)) / (double) MaxFrames;
-            const double Compressed = std::log1p(Magnitude * 80.) / std::log1p(80.);
-
-            _BandEnergy[i] = (float) Clamp(Compressed * Lerp(0.85, 1.45, BandAmount));
-
-            MaximumEnergy = std::max(MaximumEnergy, _BandEnergy[i]);
-        }
-
-        if (MaximumEnergy > 1.0e-5f)
-        {
-            const auto Normalization = 1.f / std::max(0.35, MaximumEnergy);
-
-            double * Energy = _BandEnergy.data();
-            double * const EnergyEnd = Energy + FrequencyBandCount;
-
-            while (Energy < EnergyEnd)
+            // Normalize the spectrum.
+            if (MaximumEnergy > 1.0e-5)
             {
-                *Energy = Clamp(*Energy * Normalization);
+                const auto Normalization = 1. / std::max(0.30, MaximumEnergy);
 
-                ++Energy;
+                for (auto & Band : _Bands)
+                    Band.Energy = Clamp(Band.Energy * Normalization);
             }
         }
 
-        double Flux = 0.;
-
-        const double * Energy = _BandEnergy.data();
-        const double * const EnergyEnd = Energy + FrequencyBandCount;
-
-        double * PreviousEnergy = _PreviousBandEnergy.data();
-
-        while (Energy < EnergyEnd)
+        // Calculate the half-wave rectified spectral flux. It responds when spectral energy increases such as during drum hits, note attacks, sudden treble bursts and new musical events.
         {
-            Flux += std::max(0., *Energy - *PreviousEnergy);
+            _SpectralFlux = 0.;
 
-            *PreviousEnergy++ = *Energy++;
+            for (auto & Band : _Bands)
+            {
+                _SpectralFlux += std::max(0., Band.Energy - Band.PreviousEnergy);
+
+                Band.PreviousEnergy = Band.Energy; // Remember the band energy for the next chunk.
+            }
+
+            _SpectralFlux = Clamp(_SpectralFlux / (double) BandCount * 5.5); // Boost the spectral flux artificially to make it react more strongly.
         }
-
-        _SpectralFlux = Clamp(Flux / (double) FrequencyBandCount * 4.); // Boost the spectral flux artificially by 4 to make it react more strongly.
     }
 
     /// <summary>
-    ///
+    /// Prepares the visual parameters.
     /// </summary>
     void effect_t::Update(double deltaTime)
     {
@@ -364,10 +374,15 @@ namespace Fireflies
         {
             switch (_Speed)
             {
-                case EyeCandy::Speed::Slow: return 0.55;
-                case EyeCandy::Speed::Fast: return 1.75;
-                case EyeCandy::Speed::Normal:
-                default: return 1.0;
+                case Speed::Slow:
+                    return 0.55;
+
+                default:
+                case Speed::Normal:
+                    return 1.0;
+
+                case Speed::Fast:
+                    return 1.75;
             }
         }();
 
@@ -377,20 +392,21 @@ namespace Fireflies
 
         _PaletteTransition = std::min(1., _PaletteTransition + deltaTime / PaletteTransitionDuration);
 
-        _SmoothedPeak         = ExponentialSmoothing(_SmoothedPeak,         _Peak,         deltaTime, (_Peak         > _SmoothedPeak)         ? 34. : 7.0);
-        _SmoothedRMS          = ExponentialSmoothing(_SmoothedRMS,          _RMS,          deltaTime, (_RMS          > _SmoothedRMS)          ? 25. : 5.5);
-        _SmoothedSpectralFlux = ExponentialSmoothing(_SmoothedSpectralFlux, _SpectralFlux, deltaTime, (_SpectralFlux > _SmoothedSpectralFlux) ? 42. : 7.0);
-
-        for (size_t i = 0; i < FrequencyBandCount; ++i)
         {
-            const double Target = _HasAudio ? _BandEnergy[i] : 0.;
+            _SmoothedPeak         = ExponentialSmoothing(_SmoothedPeak,         _Peak,         deltaTime, (_Peak         > _SmoothedPeak)         ? 34. : 7.0);
+            _SmoothedRMS          = ExponentialSmoothing(_SmoothedRMS,          _RMS,          deltaTime, (_RMS          > _SmoothedRMS)          ? 25. : 5.5);
 
-            _SmoothedBandEnergy[i] = ExponentialSmoothing(_SmoothedBandEnergy[i], Target, deltaTime, (Target > _SmoothedBandEnergy[i]) ? 30. : 6.5);
+            _SmoothedSpectralFlux = ExponentialSmoothing(_SmoothedSpectralFlux, _SpectralFlux, deltaTime, (_SpectralFlux > _SmoothedSpectralFlux) ? 42. : 7.0);
+
+            {
+                for (auto & Band : _Bands)
+                    Band.SmoothedEnergy = ExponentialSmoothing(Band.SmoothedEnergy, _HasAudio ? Band.Energy : 0., deltaTime, Band.Energy > Band.SmoothedEnergy ? 22. : 4.5);
+
+                _BassLevel   = (_Bands[0].SmoothedEnergy + _Bands[1].SmoothedEnergy + _Bands[ 2].SmoothedEnergy + _Bands[ 3].SmoothedEnergy) * .25;
+                _MidLevel    = (_Bands[4].SmoothedEnergy + _Bands[5].SmoothedEnergy + _Bands[ 6].SmoothedEnergy + _Bands[ 7].SmoothedEnergy) * .25;
+                _TrebleLevel = (_Bands[8].SmoothedEnergy + _Bands[9].SmoothedEnergy + _Bands[10].SmoothedEnergy + _Bands[11].SmoothedEnergy) * .25;
+            }
         }
-
-        _BassEnergy   = (_SmoothedBandEnergy[0] + _SmoothedBandEnergy[1] + _SmoothedBandEnergy[ 2] + _SmoothedBandEnergy[ 3]) * 0.25;
-        _MidEnergy    = (_SmoothedBandEnergy[4] + _SmoothedBandEnergy[5] + _SmoothedBandEnergy[ 6] + _SmoothedBandEnergy[ 7]) * 0.25;
-        _TrebleEnergy = (_SmoothedBandEnergy[8] + _SmoothedBandEnergy[9] + _SmoothedBandEnergy[10] + _SmoothedBandEnergy[11]) * 0.25;
 
         UpdateCenters(AnimationDelta);
 
@@ -402,33 +418,36 @@ namespace Fireflies
     /// </summary>
     void effect_t::UpdateCenters(double deltaTime)
     {
-        const float Dimension = std::min(_Width, _Height);
+        const double Dimension = (double) std::min(_Width, _Height);
 
-        for (size_t i = 0; i < FrequencyBandCount; ++i)
+        for (size_t i = 0; i < BandCount; ++i)
         {
             center_t & Center = _Centers[i];
 
             Center.Previous = Center.Position;
 
-            const double Amount = (float)i / (float)(FrequencyBandCount - 1);
-            const double Energy = _SmoothedBandEnergy[i];
+            const double BandAmount = (double) i * InverseBandCount; // [0, 1]
 
-            const double PreviousEnergy = i > 0 ? _SmoothedBandEnergy[i - 1] : _SmoothedBandEnergy[FrequencyBandCount - 1];
-            const double NextEnergy     = i + 1 < FrequencyBandCount ? _SmoothedBandEnergy[i + 1] : _SmoothedBandEnergy[0];
+            const double Energy = _Bands[i].SmoothedEnergy;
 
-            const bool localMaximum = Energy >= PreviousEnergy && Energy >= NextEnergy && Energy > 0.060f;
+            {
+                const double PreviousEnergy = ( i > 0)              ? _Bands[i - 1].SmoothedEnergy : _Bands[BandCount - 1].SmoothedEnergy;
+                const double NextEnergy     = ((i + 1) < BandCount) ? _Bands[i + 1].SmoothedEnergy : _Bands[0].SmoothedEnergy;
 
-            Center.IsActive = localMaximum;
-            Center.Energy = ExponentialSmoothing(Center.Energy, localMaximum ? Energy : Energy * 0.16f, deltaTime, localMaximum ? 36. : 6.);
+                const bool IsLocalMaximum = (Energy >= PreviousEnergy) && (Energy >= NextEnergy) && (Energy > 0.06);
+
+                Center.IsActive = IsLocalMaximum;
+                Center.Energy   = ExponentialSmoothing(Center.Energy, IsLocalMaximum ? Energy : Energy * 0.16, deltaTime, IsLocalMaximum ? 36. : 6.);
+            }
 
             Center.Peak = std::max(Energy, ExponentialSmoothing(Center.Peak, Energy, deltaTime, (Energy > Center.Peak) ? 44. : 3.5));
 
-            Center.Phase += (float)deltaTime * Lerp(0.18, 0.52, Amount) * ((i & 1u) == 0u ? 1.0f : -1.0f) * (0.80f + Center.Energy * 1.70f);
+            Center.Phase += deltaTime * Lerp(0.18, 0.52, BandAmount) * ((i & 1u) == 0u ? 1. : -1.) * (0.80 + (Center.Energy * 1.70));
 
-            const double Angle = Amount * TwoPi + Center.Phase * 0.28f;
+            const double Angle = (BandAmount * TwoPi) + (Center.Phase * 0.28);
 
-            const double Radius = Dimension * (0.09f + Center.Energy * 0.28f);
-            const double Drift = std::sin(Center.Phase * 1.7f + Amount * 11.0f) * Dimension * 0.018f;
+            const double Radius = Dimension * (0.09 + (Center.Energy * 0.28));
+            const double Drift  = std::sin((Center.Phase * 1.7) + (BandAmount * 11.0)) * Dimension * 0.018;
 
             Center.Position =
             {
@@ -456,11 +475,11 @@ namespace Fireflies
             return;
         }
 
-        size_t strongestBand = Particle.Band % FrequencyBandCount;
+        size_t StrongestBand = Particle.Band % BandCount;
 
-        double strongestInfluence = -1.;
+        double StrongestInfluence = -1.;
 
-        for (size_t i = 0; i < FrequencyBandCount; ++i)
+        for (size_t i = 0; i < BandCount; ++i)
         {
             const center_t & Center = _Centers[i];
 
@@ -469,16 +488,16 @@ namespace Fireflies
             const double DistanceSquared = (dx * dx) + (dy * dy) + 64.;
             const double Influence       = Center.Energy * Center.Energy / DistanceSquared;
 
-            if (Influence > strongestInfluence)
+            if (Influence > StrongestInfluence)
             {
-                strongestInfluence = Influence;
-                strongestBand = i;
+                StrongestInfluence = Influence;
+                StrongestBand = i;
             }
         }
 
-        Particle.Band = strongestBand;
+        Particle.Band = StrongestBand;
 
-        const center_t & Center = _Centers[strongestBand];
+        const center_t & Center = _Centers[StrongestBand];
 
         const double dx = Center.Position.x - Particle.Position.x;
         const double dy = Center.Position.y - Particle.Position.y;
@@ -487,7 +506,7 @@ namespace Fireflies
 
         const double radialX             = dx / distance;
         const double radialY             = dy / distance;
-        const double tangentDirection    = ((strongestBand + (size_t) Particle.Seed) & 1u) == 0u ? 1.0f : -1.0f;
+        const double tangentDirection    = ((StrongestBand + (size_t) Particle.Seed) & 1u) == 0u ? 1.0f : -1.0f;
         const double tangentX            = -radialY * tangentDirection;
         const double tangentY            =  radialX * tangentDirection;
         const double energy              = Center.Energy;
@@ -539,17 +558,17 @@ namespace Fireflies
 
         particle.Seed = State;
 
-        size_t SelectedBand = index % FrequencyBandCount;
-        double TotalEnergy = 0.f;
+        size_t SelectedBand = index % BandCount;
+        double TotalEnergy  = 0.;
 
-        for (double Energy : _SmoothedBandEnergy)
-            TotalEnergy += 0.035f + (Energy * Energy);
+        for (auto & Band : _Bands)
+            TotalEnergy += 0.035 + (Band.SmoothedEnergy * Band.SmoothedEnergy);
 
         double Selection = Random(State) * TotalEnergy;
 
-        for (size_t i = 0; i < FrequencyBandCount; ++i)
+        for (size_t i = 0; i < BandCount; ++i)
         {
-            Selection -= 0.035f + (_SmoothedBandEnergy[i] * _SmoothedBandEnergy[i]);
+            Selection -= 0.035f + (_Bands[i].SmoothedEnergy * _Bands[i].SmoothedEnergy);
 
             if (Selection <= 0.f)
             {
@@ -603,7 +622,7 @@ namespace Fireflies
         _Brush->SetColor(D2D1::ColorF(0.f, 0.f, 0.f, (float) Clamp(1. - Decay)));
         _Brush->SetOpacity(1.f);
 
-        renderTarget->FillRectangle(_Rectangle, _Brush.Get());
+        renderTarget->FillRectangle(_ViewPort, _Brush.Get());
     }
 
     /// <summary>
@@ -611,7 +630,7 @@ namespace Fireflies
     /// </summary>
     void effect_t::RenderFireflies(ID2D1RenderTarget * renderTarget) noexcept
     {
-        for (size_t i = 0; i < FrequencyBandCount; ++i)
+        for (size_t i = 0; i < BandCount; ++i)
         {
             if (_Centers[i].Energy > 0.06f)
                 RenderCenterGlow(renderTarget, _Centers[i], i);
@@ -619,7 +638,7 @@ namespace Fireflies
 
         for (const particle_t & particle : _Particles)
         {
-            const size_t Band = particle.Band % FrequencyBandCount;
+            const size_t Band = particle.Band % BandCount;
 
             const double Energy        = _Centers[Band].Energy;
             const double LifeAmount    = Clamp(particle.Age / std::max(particle.Lifetime, 0.001));
@@ -653,13 +672,13 @@ namespace Fireflies
         {
             switch (_Quality)
             {
-                case EyeCandy::Quality::Low:
+                case Quality::Low:
                     return 10;
 
-                case EyeCandy::Quality::High:
+                case Quality::High:
                     return 24;
 
-                case EyeCandy::Quality::Medium:
+                case Quality::Medium:
                 default:
                     return 16;
             }
@@ -688,7 +707,7 @@ namespace Fireflies
 
         for (size_t i = 0; i < IdleParticles; ++i)
         {
-            const double Amount = (double) i / (double) (IdleParticles - 1);
+            const double Amount = (double) i / (double) (IdleParticles - 1); // [0, 1]
             const double Phase  = (Amount * TwoPi * 5.) + (_AnimationTime * (0.22 + Amount * 0.48));
 
             const D2D1_POINT_2F Position =
@@ -716,13 +735,13 @@ namespace Fireflies
         {
             switch (_Quality)
             {
-                case EyeCandy::Quality::Low:
+                case Quality::Low:
                     return 1;
 
-                case EyeCandy::Quality::High:
+                case Quality::High:
                     return 3;
 
-                case EyeCandy::Quality::Medium:
+                case Quality::Medium:
                 default:
                     return 2;
             }
@@ -822,7 +841,7 @@ namespace Fireflies
     /// </summary>
     D2D1_COLOR_F effect_t::Colorize(size_t band, float energy, float particlePhase) const noexcept
     {
-        const double BandAmount = (double) band / (double) (FrequencyBandCount - 1);
+        const double BandAmount = (double) band * InverseBandCount; // [0, 1]
         const double Position   = Fraction((BandAmount * 0.88) + (particlePhase * 0.085) + (_AnimationTime * 0.0014));
 
         const auto GetColor = [&](Palette palette) noexcept
@@ -881,7 +900,10 @@ namespace Fireflies
         {
             for (size_t i = 0; i < WorkerCount; ++i)
             {
-                _Workers.emplace_back(&effect_t::Worker, this);
+                _Workers.emplace_back([this]() noexcept
+                {
+                    Worker();
+                });
             }
         }
         catch (...)

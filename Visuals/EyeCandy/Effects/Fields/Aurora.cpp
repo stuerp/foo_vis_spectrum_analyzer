@@ -46,6 +46,8 @@ namespace Aurora
         _RasterWidth  = std::max((uint32_t) std::lround(_Width  * Scale / Divider), 1u);
         _RasterHeight = std::max((uint32_t) std::lround(_Height * Scale / Divider), 1u);
 
+        _Stride = _RasterWidth * BytesPerPixel;
+
         _Pixels.resize((size_t) _RasterWidth * _RasterHeight);
 
         // Make sure the Direct2D bitmap gets recreated.
@@ -72,21 +74,21 @@ namespace Aurora
 
         // Update the pixel matrix.
         {
-            _Processor.Process(chunk, deltaTime);
+            Process(chunk, deltaTime);
 
             {
                 const double SpeedFactor = [&]() noexcept
                 {
                     switch (_Speed)
                     {
-                        case EyeCandy::Speed::Slow:
+                        case Speed::Slow:
                             return 0.30;
 
                         default:
-                        case EyeCandy::Speed::Normal:
+                        case Speed::Normal:
                             return 0.45;
 
-                        case EyeCandy::Speed::Fast:
+                        case Speed::Fast:
                             return 0.85;
                     }
                 }();
@@ -103,14 +105,14 @@ namespace Aurora
 
             _Interaction.Impulse *= std::exp(-2.6 * deltaTime);
 
-            if (_AnimationTime > _NextTransitionTime)
+            if (_ThemeTime > _NextThemeTransitionTime)
             {
                 ++_NextThemeIndex;
 
                 if (_NextThemeIndex == Field::theme_t::BuiltInCount)
                     _NextThemeIndex = 0;
 
-                _NextTransitionTime = _AnimationTime + TransitionInterval;
+                _NextThemeTransitionTime = _ThemeTime + ThemeTransitionInterval;
             }
 
             if (_ThemeIndex != _NextThemeIndex)
@@ -122,7 +124,7 @@ namespace Aurora
                 _TransitionTime = 0.;
             }
 
-            _TransitionTime = std::min(_TransitionTime + (deltaTime / .40), 1.);
+            _TransitionTime = std::min(_TransitionTime + (deltaTime / 0.40), 1.);
 
             if (_TransitionTime < 1.)
                 _Theme = Field::theme_t::Blend(_FromTheme, _ToTheme, _TransitionTime);
@@ -140,20 +142,13 @@ namespace Aurora
 
                 renderTarget->CreateBitmap(Size, nullptr, 0, D2D1::BitmapProperties(D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_IGNORE)), _BackBuffer.GetAddressOf());
             }
-
-            if (_BackBuffer)
-                _BackBuffer->CopyFromMemory(nullptr, _Pixels.data(), _RasterWidth * BytesPerPixel);
         }
 
         // Render the bitmap.
         {
-            _BackBuffer->CopyFromMemory(nullptr, _Pixels.data(), _RasterWidth * BytesPerPixel);
+            _BackBuffer->CopyFromMemory(nullptr, _Pixels.data(), _Stride);
 
-            renderTarget->Clear(Black);
-
-            const auto Size = renderTarget->GetSize();
-
-            renderTarget->DrawBitmap(_BackBuffer.Get(), _Rectangle);
+            renderTarget->DrawBitmap(_BackBuffer.Get(), _ViewPort);
         }
     }
 
@@ -168,9 +163,9 @@ namespace Aurora
 
         const double ClampedZoom = std::clamp(_Interaction.Zoom, .55, 2.2); // Prevent extreme or invalid scaling.
 
-        const double LowEnergy   = Clamp((_Processor._BassEnergy   * .82) + (_Processor._Loudness * .18));
-        const double MidEnergy   = Clamp((_Processor._MidEnergy    * .84) + (_Processor._Loudness * .16));
-        const double HighEnergy  = Clamp((_Processor._TrebleEnergy * .88) + (_Processor._Peak     * .12));
+        const double LowEnergy   = Clamp((_BassLevel   * .82) + (_Loudness * .18));
+        const double MidEnergy   = Clamp((_MidLevel    * .84) + (_Loudness * .16));
+        const double HighEnergy  = Clamp((_TrebleLevel * .88) + (_Peak     * .12));
 
         const double BroadEnergy = Clamp((LowEnergy + MidEnergy + HighEnergy) / 3.);
 
@@ -184,11 +179,13 @@ namespace Aurora
             .FoldStrength  = .10 + (.31 * MidEnergy) + (.08 * LowEnergy),
             .FoldFrequency = 2.3 + (4.7 * MidEnergy),
             .VerticalFlow  = .18 + (1.15 * HighEnergy),
+
             .LowEnergy     = LowEnergy,
             .MidEnergy     = MidEnergy,
             .HighEnergy    = HighEnergy,
             .BroadEnergy   = BroadEnergy,
-            .BalanceOffset = .16 * _Processor._Balance,
+
+            .BalanceOffset = .16 * _Balance,
             .Horizon       = .80 - (.05 * LowEnergy),
             .HasImpulse    = (_Interaction.Impulse != 0.)
         };
@@ -229,13 +226,13 @@ namespace Aurora
         const double H =
             _Theme.BaseHue +
            (_Theme.HueSpan   * ((Fold * .72) + (Height * .18))) +
-           (_Theme.BassHue   * _Processor._BassEnergy) +
-           (_Theme.MidHue    * _Processor._MidEnergy) +
-           (_Theme.TrebleHue * _Processor._TrebleEnergy);
+           (_Theme.BassHue   * _BassLevel) +
+           (_Theme.MidHue    * _MidLevel) +
+           (_Theme.TrebleHue * _TrebleLevel);
 
-        const double S = Clamp((_Theme.Saturation * .78) + (.14 * Fold) + (.08 * _Processor._TrebleEnergy));
+        const double S = Clamp((_Theme.Saturation * .78) + (.14 * Fold) + (.08 * _TrebleLevel));
 
-        const double Ambient = .012 + (.055 * std::pow(Clamp(_Processor._Loudness), .6));
+        const double Ambient = .012 + (.055 * std::pow(Clamp(_Loudness), .6));
 
         const double V = Clamp(Ambient + (_Theme.Brightness * Intensity * (.56 + (.44 * Fold))));
 
@@ -243,22 +240,22 @@ namespace Aurora
 
         HSVToRGB(H, S, V, R, G, B);
 
-        R = Clamp(R + (_Theme.BassRed    * _Processor._BassEnergy)   + (.06 * Fold));
-        G = Clamp(G + (_Theme.MidGreen   * _Processor._MidEnergy)    + (.14 * Intensity));
-        B = Clamp(B + (_Theme.TrebleBlue * _Processor._TrebleEnergy) + (.10 * Fold));
+        R = Clamp(R + (_Theme.BassRed    * _BassLevel)   + (.06 * Fold));
+        G = Clamp(G + (_Theme.MidGreen   * _MidLevel)    + (.14 * Intensity));
+        B = Clamp(B + (_Theme.TrebleBlue * _TrebleLevel) + (.10 * Fold));
 
         const double BrightnessFactor = [&]() noexcept
         {
             switch (_Brightness)
             {
-                case EyeCandy::Brightness::Low:
+                case Brightness::Low:
                     return .50;
 
                 default:
-                case EyeCandy::Brightness::Medium:
+                case Brightness::Medium:
                     return 1.00;
 
-                case EyeCandy::Brightness::High:
+                case Brightness::High:
                     return 1.50;
             }
         }();
@@ -284,7 +281,10 @@ namespace Aurora
         {
             for (size_t i = 0; i < WorkerCount; ++i)
             {
-                _Workers.emplace_back(&effect_t::Worker, this);
+                _Workers.emplace_back([this]() noexcept
+                {
+                    Worker();
+                });
             }
         }
         catch (...)

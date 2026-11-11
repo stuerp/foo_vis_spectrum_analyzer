@@ -200,13 +200,5 @@
     #define X_A36    X_A35 + W_A35 + IX
     #define Y_A36    Y_A35
 
-/** Render Peaks **/
-
-    // Checkbox: Render peaks
-    #define W_T01    104
-    #define H_T01    H_CHB
-    #define X_T01    X_A36
-    #define Y_T01    Y_A36 + H_A36 + IY
-
 #define W_B01   226
-#define H_B01   11 + H_A02 + IY + H_A20 + IY + H_A22 + IY + H_A26 + IY + H_A56 + IY + H_A30 + IY + H_A32 + IY + H_A14 + IY + H_A34 + IY + H_A36 + IY + H_T01 + 7
+#define H_B01   11 + H_A02 + IY + H_A20 + IY + H_A22 + IY + H_A26 + IY + H_A56 + IY + H_A30 + IY + H_A32 + IY + H_A14 + IY + H_A34 + IY + H_A36 + 7

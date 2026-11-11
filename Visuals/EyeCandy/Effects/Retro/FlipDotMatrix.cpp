@@ -42,9 +42,12 @@ namespace FlipDotMatrix
         _ColorIntensity     = .85;
         _HighlightIntensity = .24;
 
-        _BandEnergy.fill(0.);
-        _SmoothedBandEnergy.fill(0.);
-        _PreviousBandEnergy.fill(0.);
+        for (auto & Band : _Bands)
+        {
+            Band.Energy         = 0.;
+            Band.SmoothedEnergy = 0.;
+            Band.PreviousEnergy = 0.;
+        }
 
         std::fill(_DotState.begin(), _DotState.end(), 0.f);
         std::fill(_DotVelocity.begin(), _DotVelocity.end(), 0.f);
@@ -65,23 +68,15 @@ namespace FlipDotMatrix
         deltaTime = Clamp(deltaTime);
 
         AnalyzeAudio(chunk);
+
         Update(deltaTime);
         RenderTexture();
 
-        if (!_Bitmap || _Pixels.empty())
-            return;
-
-        const D2D1_RECT_U Source = D2D1::RectU(0, 0, _PixelWidth, _PixelHeight);
-
-        hr = _Bitmap->CopyFromMemory(&Source, _Pixels.data(), _PixelWidth * sizeof(uint32_t));
-
-        if (FAILED(hr))
         {
-            DeleteDeviceDependentResources();
-            return;
-        }
+            _BackBuffer->CopyFromMemory(nullptr, _Pixels.data(), _Stride);
 
-        renderTarget->DrawBitmap(_Bitmap.Get(), _Rectangle, 1.f, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR);
+            renderTarget->DrawBitmap(_BackBuffer.Get(), _ViewPort);
+        }
     }
 
     /// <summary>
@@ -91,33 +86,40 @@ namespace FlipDotMatrix
     {
         _HasAudio = false;
 
-        _Peak         = 0;
+        _Peak         = 0.;
         _RMS          = 0.;
         _SpectralFlux = 0.;
 
         if (chunk.is_empty())
         {
-            _BandEnergy.fill(0.);
+            for (auto & Band : _Bands)
+                Band.Energy = 0.;
 
             return;
         }
 
-        const size_t MaxFrames = std::min<size_t>(chunk.get_sample_count(), 1536);
+        const audio_sample * const Frames = chunk.get_data();
 
-        const size_t ChannelCount = chunk.get_channel_count();
-        const size_t SampleRate = chunk.get_sample_rate();
+        const auto FrameCount   = chunk.get_sample_count();
+        const auto ChannelCount = chunk.get_channel_count();
+        const auto SampleRate   = (double) chunk.get_sample_rate();
+
+        // Analyze only the most recent frames of the chunk.
+        const auto MaxFrames = std::min<size_t>(FrameCount, 1536);
 
         if (MaxFrames < 32)
             return;
 
-        _Samples.resize(MaxFrames);
+        if (_Samples.size() < MaxFrames)
+            _Samples.resize(MaxFrames);
 
-        double Sum = 0.;
+        auto Samples = std::span<double>(_Samples.data(), MaxFrames);
+
+        // Initialize the energy accumulators.
+        double Sum  = 0.;           // Full-audio band
 
         // Process all frames.
         {
-            const audio_sample * Frames = chunk.get_data();
-
             for (size_t i = 0; i < MaxFrames; ++i)
             {
                 double Mono = 0.;
@@ -130,7 +132,7 @@ namespace FlipDotMatrix
                 // Apply a Hann window.
                 const double Window = .5 - .5 * std::cos(TwoPi * (double) i / ((double) MaxFrames - 1.));
 
-                _Samples[i] = Mono * Window;
+                Samples[i] = Mono * Window;
 
                 _Peak = std::max(_Peak, std::abs(Mono));
 
@@ -145,81 +147,119 @@ namespace FlipDotMatrix
         if (!_HasAudio)
             return;
 
-        const double NyquistFrequency = (double) SampleRate * 0.5;
-        const double MaximumFrequency = std::min(HiFrequency, NyquistFrequency);
-
-        double MaximumEnergy = 0.;
-
-        for (size_t i = 0; i < BandCount; ++i)
+        // Perform a spectrum analysis of logarithmically spaced frequency bands.
         {
-            const double Amount = (double) i / (double) (BandCount - 1); // [0, 1]
+            const double NyquistFrequency = SampleRate * 0.5;
+            const double MaximumFrequency = std::min(HiFrequency, NyquistFrequency);
 
-            const double Frequency = LoFrequency * std::pow(MaximumFrequency / LoFrequency, Amount);
+            constexpr double TuningConstant = 90.;
+            const double LogarithmicScale  = 1. / std::log1p(TuningConstant);
 
-            // Configure the Goertzel detector.
-            const double Omega       = TwoPi * Frequency / (double) SampleRate;
-            const double Coefficient = 2. * std::cos(Omega);
+            double MaximumEnergy = 0.;
 
-            double q1 = 0., q2 = 0.;
-
-            for (double Sample : _Samples)
+            for (size_t i = 0; i < BandCount; ++i)
             {
-                const double q0 = Sample + Coefficient * q1 - q2;
+                const double BandAmount = (double) i * InverseBandCount; // [0, 1]
 
-                q2 = q1;
-                q1 = q0;
+                double Power = 0.;
+
+                {
+                    const double Frequency = LoFrequency * std::pow(MaximumFrequency / LoFrequency, BandAmount);
+
+                    // Configure the Goertzel detector.
+                    const double Omega       = TwoPi * Frequency / SampleRate;
+                    const double Coefficient = 2. * std::cos(Omega);
+
+                    double q1 = 0., q2 = 0.;
+
+                    for (double Sample : Samples)
+                    {
+                        const double q0 = Sample + Coefficient * q1 - q2;
+
+                        q2 = q1;
+                        q1 = q0;
+                    }
+
+                    // Convert the detector state to power.
+                    Power = std::max(0., q2 * q2 + q1 * q1 - Coefficient * q1 * q2);
+                }
+
+                const double Magnitude = std::sqrt(Power) / (double) MaxFrames;
+
+                // Compress (logarithmic) and shape the band energy.
+                _Bands[i].Energy = Clamp(std::log1p(Magnitude * TuningConstant) * LogarithmicScale);
+
+                // Track the highest frequency band energy.
+                MaximumEnergy = std::max(MaximumEnergy, _Bands[i].Energy);
             }
 
-            // Convert the detector state to power.
-            const double Power = std::max(0., q2 * q2 + q1 * q1 - Coefficient * q1 * q2);
-            const double Magnitude = std::sqrt(Power) / (double) MaxFrames;
+            // Normalize the spectrum.
+            if (MaximumEnergy > 1.0e-5)
+            {
+                const auto Normalization = 1. / std::max(0.30, MaximumEnergy);
 
-            _BandEnergy[i] = Clamp(std::log1p(Magnitude * 90.) / std::log1p(90.));
-
-            MaximumEnergy = std::max(MaximumEnergy, _BandEnergy[i]);
+                for (auto & Band : _Bands)
+                    Band.Energy = Clamp(Band.Energy * Normalization);
+            }
         }
 
-        if (MaximumEnergy > 1.e-5)
+        // Calculate the half-wave rectified spectral flux. It responds when spectral energy increases such as during drum hits, note attacks, sudden treble bursts and new musical events.
         {
-            for (double & Energy : _BandEnergy)
-                Energy = Clamp(Energy / std::max(.28, MaximumEnergy));
+            _SpectralFlux = 0.;
+
+            for (auto & Band : _Bands)
+            {
+                _SpectralFlux += std::max(0., Band.Energy - Band.PreviousEnergy);
+
+                Band.PreviousEnergy = Band.Energy; // Remember the band energy for the next chunk.
+            }
+
+            _SpectralFlux = Clamp(_SpectralFlux / (double) BandCount * 5.5); // Boost the spectral flux artificially to make it react more strongly.
         }
-
-        for (size_t i = 0; i < BandCount; ++i)
-        {
-            _SpectralFlux += std::max(0., _BandEnergy[i] - _PreviousBandEnergy[i]);
-
-            _PreviousBandEnergy[i] = _BandEnergy[i];
-        }
-
-        _SpectralFlux = Clamp(_SpectralFlux / (double) BandCount * 5.5);
     }
 
     /// <summary>
-    /// 
+    /// Prepares the visual parameters.
     /// </summary>
     void effect_t::Update(double deltaTime) noexcept
     {
-        const double SpeedFactor = (_Speed == Speed::Slow) ? .55 : (_Speed == Speed::Fast) ? 1.75 : 1.;
+        const double SpeedFactor = [&]() noexcept
+        {
+            switch (_Speed)
+            {
+                case Speed::Slow:
+                    return 0.55;
 
-        for (size_t i = 0; i < BandCount; ++i)
-            _SmoothedBandEnergy[i] = ExponentialSmoothing(_SmoothedBandEnergy[i], _HasAudio ? _BandEnergy[i] : 0., deltaTime, _BandEnergy[i] > _SmoothedBandEnergy[i] ? 18. : 3.5);
+                default:
+                case Speed::Normal:
+                    return 1.0;
 
-        _BassEnergy   = (_SmoothedBandEnergy[0] + _SmoothedBandEnergy[1] + _SmoothedBandEnergy[ 2]) / 3.;
-        _MidEnergy    = (_SmoothedBandEnergy[3] + _SmoothedBandEnergy[4] + _SmoothedBandEnergy[ 5] + _SmoothedBandEnergy[ 6] + _SmoothedBandEnergy[7]) * .2;
-        _TrebleEnergy = (_SmoothedBandEnergy[8] + _SmoothedBandEnergy[9] + _SmoothedBandEnergy[10] + _SmoothedBandEnergy[11]) * .25;
+                case Speed::Fast:
+                    return 1.75;
+            }
+        }();
+
+        {
+            for (auto & Band : _Bands)
+                Band.SmoothedEnergy = ExponentialSmoothing(Band.SmoothedEnergy, Band.Energy, deltaTime, (Band.Energy > Band.SmoothedEnergy) ? 18. : 3.5);
+
+            _BassLevel   = (_Bands[ 0].SmoothedEnergy + _Bands[ 1].SmoothedEnergy + _Bands[ 2].SmoothedEnergy + _Bands[ 3].SmoothedEnergy) * .25;
+            _MidLevel    = (_Bands[ 4].SmoothedEnergy + _Bands[ 5].SmoothedEnergy + _Bands[ 6].SmoothedEnergy + _Bands[ 7].SmoothedEnergy + _Bands[ 8].SmoothedEnergy) * .20;
+            _TrebleLevel = (_Bands[ 9].SmoothedEnergy + _Bands[10].SmoothedEnergy + _Bands[11].SmoothedEnergy) * .33;
+        }
 
         const double Pulse = std::max(_PreviousPulse * std::exp(-deltaTime * 8.), _SpectralFlux);
 
-        _Time        += deltaTime                                           * SpeedFactor;
-        _WavePhase   += deltaTime * (.08 + _MidEnergy  * .28)               * SpeedFactor;
-        _RipplePhase += deltaTime * (.11 + _BassEnergy * .42 + Pulse * .11) * SpeedFactor;
+        _Time += deltaTime * SpeedFactor;
 
-        const double TargetHueShift = _BassEnergy * .09 + _MidEnergy * .31 + _TrebleEnergy * .57 + Pulse * .11;
+        _WavePhase   += deltaTime * (.08 + _MidLevel  * .28)               * SpeedFactor;
+        _RipplePhase += deltaTime * (.11 + _BassLevel * .42 + Pulse * .11) * SpeedFactor;
+
+        const double TargetHueShift = _BassLevel * .09 + _MidLevel * .31 + _TrebleLevel * .57 + Pulse * .11;
 
         _HueShift           = ExponentialSmoothing(_HueShift,           TargetHueShift,                                       deltaTime, (TargetHueShift > _HueShift) ? 10. : 3.);
-        _PaletteSpread      = ExponentialSmoothing(_PaletteSpread,      .14 + _MidEnergy * .3 + _TrebleEnergy * .26,          deltaTime, 4.5);
-        _ColorIntensity     = ExponentialSmoothing(_ColorIntensity,     .78 + _RMS * .18 + _TrebleEnergy * .24 + Pulse * .12, deltaTime, 5.);
+        _PaletteSpread      = ExponentialSmoothing(_PaletteSpread,      .14 + _MidLevel * .3 + _TrebleLevel * .26,          deltaTime, 4.5);
+        _ColorIntensity     = ExponentialSmoothing(_ColorIntensity,     .78 + _RMS * .18 + _TrebleLevel * .24 + Pulse * .12, deltaTime, 5.);
         _HighlightIntensity = ExponentialSmoothing(_HighlightIntensity, .24 + _Peak * .34 + Pulse * .28,                      deltaTime, 8.);
 
         _RenderBrightness = (_Brightness == Brightness::Low) ? .72 : (_Brightness == Brightness::High) ? 1.22 : .96;
@@ -249,9 +289,9 @@ namespace FlipDotMatrix
                 const double px = (((double) x + .5) / (double) _Columns - .5) * Aspect;
 
                 const double Radius    = std::hypot(px - std::sin(_Time * .17) * .12, py - std::cos(_Time * .13) * .1);
-                const double Wave      = std::sin(px * TwoPi * (2.8 + _MidEnergy * .5) + _WavePhase * TwoPi + std::sin(py * TwoPi * 2.) * .7);
-                const double Ripple    = std::cos(Radius * TwoPi * (6. + _BassEnergy * 1.5) - _RipplePhase * TwoPi);
-                const double Scan      = std::sin((px + py) * TwoPi * 2.2 - _Time * .7 + _TrebleEnergy * 1.2);
+                const double Wave      = std::sin(px * TwoPi * (2.8 + _MidLevel * .5) + _WavePhase * TwoPi + std::sin(py * TwoPi * 2.) * .7);
+                const double Ripple    = std::cos(Radius * TwoPi * (6. + _BassLevel * 1.5) - _RipplePhase * TwoPi);
+                const double Scan      = std::sin((px + py) * TwoPi * 2.2 - _Time * .7 + _TrebleLevel * 1.2);
                 const double Threshold = .18 - _RMS * .28;
                 const double Pattern   = Wave * .43 + Ripple * .42 + Scan * .21;
 
@@ -270,7 +310,7 @@ namespace FlipDotMatrix
         if (DotCount == 0)
             return;
 
-        const double RefreshRate = (420. + _TrebleEnergy * 520. + _SpectralFlux * 180.) * ((_Speed == Speed::Slow) ? .7 : (_Speed == Speed::Fast) ? 1.45 : 1.);
+        const double RefreshRate = (420. + _TrebleLevel * 520. + _SpectralFlux * 180.) * ((_Speed == Speed::Slow) ? .7 : (_Speed == Speed::Fast) ? 1.45 : 1.);
 
         _RefreshAccumulator += deltaTime * RefreshRate;
 
@@ -310,7 +350,7 @@ namespace FlipDotMatrix
 
         if (_Workers.empty())
         {
-            RenderRows(0, _PixelHeight);
+            RenderRows(0, _RasterHeight);
 
             return;
         }
@@ -344,9 +384,20 @@ namespace FlipDotMatrix
 
         _Workers.reserve(WorkerCount);
 
-        for (size_t i = 0; i < WorkerCount; ++i)
+        try
         {
-            _Workers.emplace_back(&effect_t::Worker, this, i);
+            for (size_t i = 0; i < WorkerCount; ++i)
+            {
+                _Workers.emplace_back([this, i]() noexcept
+                {
+                    Worker(i);
+                });
+            }
+        }
+        catch (...)
+        {
+            StopWorkers();
+            throw;
         }
     }
 
@@ -396,8 +447,8 @@ namespace FlipDotMatrix
                 Generation = _Generation;
             }
 
-            const UINT32 Begin = (UINT32) ((uint64_t) _PixelHeight *  workerIndex      / _Workers.size());
-            const UINT32 End   = (UINT32) ((uint64_t) _PixelHeight * (workerIndex + 1) / _Workers.size());
+            const UINT32 Begin = (UINT32) ((uint64_t) _RasterHeight *  workerIndex      / _Workers.size());
+            const UINT32 End   = (UINT32) ((uint64_t) _RasterHeight * (workerIndex + 1) / _Workers.size());
 
             RenderRows(Begin, End);
 
@@ -415,74 +466,80 @@ namespace FlipDotMatrix
     /// </summary>
     void effect_t::RenderRows(UINT32 begin, UINT32 end) noexcept
     {
-        const double CellWidth  = (double) _PixelWidth  / (double) _Columns;
-        const double CellHeight = (double) _PixelHeight / (double) _Rows;
+        const double CellWidth  = (double) _RasterWidth  / (double) _Columns;
+        const double CellHeight = (double) _RasterHeight / (double) _Rows;
 
         const double DotRadius = std::min(CellWidth, CellHeight) * .39;
 
+        const double ColumnScale = 1. / std::max<UINT32>(1, _Columns - 1);
+        const double RowScale    = 1. / std::max<UINT32>(1, _Rows    - 1);
+
         for (UINT32 y = begin; y < end; ++y)
         {
-            uint32_t * Pixel = _Pixels.data() + (size_t) y * _PixelWidth;
+            uint32_t * Pixel = _Pixels.data() + ((size_t) y * _RasterWidth);
 
             const UINT32 DotY = std::min<UINT32>((UINT32) ((double) y / CellHeight), _Rows - 1);
-            const double CenterY = ((double)DotY + .5) * CellHeight;
 
-            for (UINT32 x = 0; x < _PixelWidth; ++x)
+            const double CenterY = ((double) DotY + .5) * CellHeight;
+
+            for (UINT32 x = 0; x < _RasterWidth; ++x)
             {
-                const UINT32 DotX = std::min<UINT32>((UINT32)((double)x / CellWidth), _Columns - 1);
+                const UINT32 DotX = std::min<UINT32>((UINT32) ((double) x / CellWidth), _Columns - 1);
 
-                const double CenterX = ((double)DotX + .5) * CellWidth;
-                const double dx = ((double)x + .5 - CenterX) / DotRadius;
-                const double dy = ((double)y + .5 - CenterY) / DotRadius;
-                const double Distance2 = dx * dx + dy * dy;
-                const float State = _DotState[(size_t)DotY * _Columns + DotX];
-                const double FlipAngle = (double)State * Pi;
-                const double Facing = std::abs(std::cos(FlipAngle));
-                const double VisibleRadius = .24 + Facing * .76;
+                const double CenterX = ((double) DotX + .5) * CellWidth;
+
+                const double dx = ((double) x + .5 - CenterX) / DotRadius;
+                const double dy = ((double) y + .5 - CenterY) / DotRadius;
+
+                const double Distance2     = dx * dx + dy * dy;
+                const float State          = _DotState[(size_t) DotY * _Columns + DotX];
+                const double FlipAngle     = (double) State * Pi;
+                const double Facing        = std::abs(std::cos(FlipAngle));
+                const double VisibleRadius = .24 + (Facing * .76);
+
                 const bool Inside = Distance2 <= VisibleRadius * VisibleRadius;
 
                 double Red = .025, Green = .03, Blue = .035;
 
                 if (Inside)
                 {
-                    const double Edge = std::clamp((VisibleRadius - std::sqrt(Distance2)) * 7., 0., 1.);
-                    const double Highlight = std::pow(std::clamp(1. - std::hypot(dx + .28, dy + .32) * 1.24, 0., 1.), 2.2);
-                    const double PinHighlight = std::pow(std::clamp(1. - std::hypot(dx + .38, dy + .42) * 2.35, 0., 1.), 3.4);
-                    const double BrightState = SmoothStep(.48, .94, (double)State);
-                    const double DarkState = SmoothStep(.48, .06, (double)State);
-                    const double ColumnAmount = (double)DotX / std::max<UINT32>(1, _Columns - 1);
-                    const double RowAmount = (double)DotY / std::max<UINT32>(1, _Rows - 1);
-                    const double BandColor = _SmoothedBandEnergy[(DotX + DotY * 3) % BandCount];
+                    const double ColumnAmount = (double) DotX * ColumnScale;
+                    const double RowAmount    = (double) DotY * RowScale;
+
+                    const double BandColor  = _Bands[(DotX + DotY * 3) % BandCount].SmoothedEnergy;
                     const double SpatialHue = (ColumnAmount - .5) * _PaletteSpread + (RowAmount - .5) * _PaletteSpread * .63;
 
-                    const double H = Fraction(.03 + _HueShift + SpatialHue + BandColor * .24 + _RipplePhase * .025);
-                    const double S = std::clamp(.72 + _TrebleEnergy * .22 + BandColor * .12, 0., 1.);
-                    const double V = std::clamp(_ColorIntensity + BandColor * .2 + _Peak * .1, 0., 1.);
+                    const double H = Fraction(.03 + _HueShift + SpatialHue + (BandColor * .24) + (_RipplePhase * .025));
+                    const double S = Clamp(.72 + (_TrebleLevel * .22)     + (BandColor * .12));
+                    const double V = Clamp(_ColorIntensity                 + (BandColor * .20) + (_Peak * .10));
 
                     const D2D1_COLOR_F Bright   = HSVToColor((float) H, (float) S, (float) V);
                     const D2D1_COLOR_F Specular = HSVToColor((float) Fraction(H + .035), .18f, 1.f);
 
-                    const double Mechanical = .055 + DarkState * .085;
-                    const double Glow = (Highlight * _HighlightIntensity + PinHighlight * (_HighlightIntensity + .22)) * Facing * (.45 + BrightState * .55);
+                    const double DarkState      = SmoothStep(.48, .06, (double) State);
+                    const double BrightState    = SmoothStep(.48, .94, (double) State);
+                    const double Mechanical     = .055 + (DarkState * .085);
 
-                    Red   = Lerp(Mechanical,        (double) Bright.r * _RenderBrightness, BrightState) * Edge + Glow * Specular.r;
-                    Green = Lerp(Mechanical * 1.08, (double) Bright.g * _RenderBrightness, BrightState) * Edge + Glow * Specular.g;
-                    Blue  = Lerp(Mechanical * .92,  (double) Bright.b * _RenderBrightness, BrightState) * Edge + Glow * Specular.b;
+                    const double Highlight      = std::pow(Clamp(1. - std::hypot(dx + .28, dy + .32) * 1.24), 2.2);
+                    const double PinHighlight   = std::pow(Clamp(1. - std::hypot(dx + .38, dy + .42) * 2.35), 3.4);
+
+                    const double Edge           = Clamp((VisibleRadius - std::sqrt(Distance2)) * 7.);
+                    const double Glow           = ((Highlight * _HighlightIntensity) + (PinHighlight * (.22 + _HighlightIntensity)) * Facing * (.45 + (BrightState * .55)));
+
+                    Red   = (Lerp(Mechanical,        (double) Bright.r * _RenderBrightness, BrightState) * Edge) + (Specular.r * Glow);
+                    Green = (Lerp(Mechanical * 1.08, (double) Bright.g * _RenderBrightness, BrightState) * Edge) + (Specular.g * Glow);
+                    Blue  = (Lerp(Mechanical * 0.92, (double) Bright.b * _RenderBrightness, BrightState) * Edge) + (Specular.b * Glow);
                 }
                 else
                 {
-                    const double Rim = std::clamp(1. - std::abs(std::sqrt(Distance2) - 1.) * 8., 0., 1.);
+                    const double Rim = Clamp(1. - (std::abs(std::sqrt(Distance2) - 1.) * 8.0));
 
                     Red   += Rim * .035;
                     Green += Rim * .040;
                     Blue  += Rim * .045;
                 }
 
-                const uint32_t R = (uint32_t)std::clamp(Red   * 255., 0., 255.);
-                const uint32_t G = (uint32_t)std::clamp(Green * 255., 0., 255.);
-                const uint32_t B = (uint32_t)std::clamp(Blue  * 255., 0., 255.);
-
-                *Pixel++ = 0xFF000000u | (R << 16) | (G << 8) | B;
+                *Pixel++ = PackColor(Red, Green, Blue);
             }
         }
     }
@@ -504,33 +561,37 @@ namespace FlipDotMatrix
         const UINT32 Rows    = (_Quality == Quality::Low) ? 22u : (_Quality == Quality::High) ? 38u : 30u;
         const UINT32 Columns = std::max<UINT32>(24, (UINT32) std::round((double) Rows * (double) Width / (double) Height));
 
-        if (_RenderTarget == renderTarget && _Bitmap && Width == _PixelWidth && Height == _PixelHeight && Columns == _Columns && Rows == _Rows)
+        if (_RenderTarget == renderTarget && _BackBuffer && Width == _RasterWidth && Height == _RasterHeight && Columns == _Columns && Rows == _Rows)
             return S_OK;
 
         DeleteDeviceDependentResources();
 
-        _PixelWidth  = Width;
-        _PixelHeight = Height;
-        _Columns     = Columns;
-        _Rows        = Rows;
+        _RasterWidth  = Width;
+        _RasterHeight = Height;
+
+        _Stride = _RasterWidth * BytesPerPixel;
+
+        _Pixels.assign((size_t) Width * Height, 0xff090b0du);
+
+        _Columns = Columns;
+        _Rows    = Rows;
 
         const size_t DotCount = (size_t) Columns * Rows;
 
-        _DotState.assign(DotCount, 0.f);
+        _DotState   .assign(DotCount, 0.f);
         _DotVelocity.assign(DotCount, 0.f);
-        _DotTarget.assign(DotCount, 0);
-        _Pixels.assign((size_t) Width * Height, 0xff090b0du);
+        _DotTarget  .assign(DotCount, 0);
 
         const auto Properties = D2D1::BitmapProperties(D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_IGNORE), 96.f, 96.f);
 
-        hr = renderTarget->CreateBitmap(D2D1::SizeU(Width, Height), _Pixels.data(), Width * sizeof(uint32_t), Properties, _Bitmap.ReleaseAndGetAddressOf());
+        hr = renderTarget->CreateBitmap(D2D1::SizeU(Width, Height), _Pixels.data(), Width * sizeof(uint32_t), Properties, _BackBuffer.ReleaseAndGetAddressOf());
 
         if (FAILED(hr))
             return hr;
 
         _RenderTarget = renderTarget;
 
-        Reset();
+//      Reset();
 
         return S_OK;
     }
@@ -542,12 +603,19 @@ namespace FlipDotMatrix
     {
         _RenderTarget = nullptr;
 
-        _Bitmap.Reset();
+        _BackBuffer.Reset();
+
         _DotState.clear();
         _DotVelocity.clear();
         _DotTarget.clear();
+
         _Pixels.clear();
-        _PixelWidth = _PixelHeight = _Columns = _Rows = 0;
+
+        _RasterWidth  = 0;
+        _RasterHeight = 0;
+
+        _Columns = 0;
+        _Rows    = 0;
 
         __super::DeleteDeviceDependentResources();
     }

@@ -1,5 +1,5 @@
 
-/** $VER: Effect.h (2026.11.03) P. Stuer - Base class for the Eye Candy effects. **/
+/** $VER: Effect.h (2026.11.06) P. Stuer - Base class for the Eye Candy effects. **/
 
 #include <pch.h>
 
@@ -264,7 +264,7 @@ void effect_t::RenderFrame(ID2D1RenderTarget * renderTarget, const D2D1_COLOR_F 
 /// </summary>
 void effect_t::RenderScanlines(ID2D1RenderTarget * renderTarget) noexcept
 {
-    const float Opacity = 0.04f + (float) (_SmoothedBass * 0.015);
+    const float Opacity = 0.04f + (float) (_SmoothedBassLevel * 0.015);
 
     _ScanlineBrush->SetColor(D2D1::ColorF(0.f, 0.f, 0.f, Opacity));
 
@@ -272,14 +272,14 @@ void effect_t::RenderScanlines(ID2D1RenderTarget * renderTarget) noexcept
     {
         switch (_Quality)
         {
-            case EyeCandy::Quality::Low:
+            case Quality::Low:
                 return 6.0f;
 
             default:
-            case EyeCandy::Quality::Medium:
+            case Quality::Medium:
                 return 4.0f;
 
-            case EyeCandy::Quality::High:
+            case Quality::High:
                 return 3.0f;
         }
     }();
@@ -293,56 +293,7 @@ void effect_t::RenderScanlines(ID2D1RenderTarget * renderTarget) noexcept
 /// <summary>
 /// 
 /// </summary>
-D2D1_COLOR_F effect_t::LerpColor(const D2D1_COLOR_F & from, const D2D1_COLOR_F & to, float amount) noexcept
-{
-    amount = Clamp(amount);
-
-    return D2D1::ColorF(Lerp(from.r, to.r, amount), Lerp(from.g, to.g, amount), Lerp(from.b, to.b, amount), Lerp(from.a, to.a, amount));
-}
-
-/// <summary>
-/// 
-/// </summary>
-D2D1_COLOR_F effect_t::GetThemeColor(const color_theme_t & theme, float hue, float offset, float saturation, float value, float alpha) const noexcept
-{
-    value = std::clamp(value * theme.Brightness, 0.0f, 1.0f);
-
-    if (theme.Monochrome) return D2D1::ColorF(value, value, value, alpha);
-
-    return HSVToColor(hue + offset * theme.HueRange, saturation * theme.Saturation, value, alpha);
-}
-
-/// <summary>
-/// 
-/// </summary>
-D2D1_COLOR_F effect_t::GetThemeColor(ThemeRole role, float offset, float saturation, float value, float alpha) const noexcept
-{
-    const auto & a = GetTheme(_ThemeFrom);
-    const auto & b = GetTheme(_ThemeTo);
-
-    float ah = a.RingHue;
-    float bh = b.RingHue;
-
-    switch (role)
-    {
-        case ThemeRole::BackgroundA: ah = a.BackgroundHueA; bh = b.BackgroundHueA; break;
-        case ThemeRole::BackgroundB: ah = a.BackgroundHueB; bh = b.BackgroundHueB; break;
-        case ThemeRole::Rail:        ah = a.RailHue;        bh = b.RailHue; break;
-        case ThemeRole::Core:        ah = a.CoreHue;        bh = b.CoreHue; break;
-        case ThemeRole::Flash:       ah = a.FlashHue;       bh = b.FlashHue; break;
-
-        case ThemeRole::Ring:
-        default:
-            break;
-    }
-
-    return LerpColor(GetThemeColor(a, ah, offset, saturation, value, alpha), GetThemeColor(b, bh, offset, saturation, value, alpha), (float) _ThemeBlend);
-}
-
-/// <summary>
-/// 
-/// </summary>
-const color_theme_t& effect_t::GetTheme(ColorTheme theme) noexcept
+const color_theme_t & effect_t::GetTheme(ColorTheme theme) noexcept
 {
     static const color_theme_t Themes[] =
     {
@@ -397,19 +348,19 @@ void effect_t::PreviousColorTheme() noexcept
 /// </summary>
 void effect_t::BeginThemeTransition(ColorTheme theme) noexcept
 {
-    _ThemeFrom = _ThemeTransitionActive && (_ThemeBlend >= 0.5) ? _ThemeTo : _ThemeFrom;
+    _ThemeFrom = _IsThemeTransitionActive && (_ThemeBlend >= 0.5) ? _ThemeTo : _ThemeFrom;
 
-    if (!_ThemeTransitionActive)
+    if (!_IsThemeTransitionActive)
         _ThemeFrom = _ThemeTo;
 
     _ThemeTo    = theme;
     _ColorTheme = theme;
 
-    _ThemeBlend             = (_ThemeFrom == _ThemeTo) ? 1. : 0.;
-    _ThemeTransitionElapsed = (_ThemeFrom == _ThemeTo) ? ThemeTransitionDuration : 0.;
-    _ThemeTransitionActive  = (_ThemeFrom != _ThemeTo);
-    _ThemeResourceElapsed   = ThemeResourceUpdateInterval;
-    _ThemeResourcesDirty    = true;
+    _ThemeBlend              = (_ThemeFrom == _ThemeTo) ? 1. : 0.;
+    _ThemeTransitionElapsed  = (_ThemeFrom == _ThemeTo) ? ThemeTransitionDuration : 0.;
+    _IsThemeTransitionActive = (_ThemeFrom != _ThemeTo);
+    _ThemeResourceElapsed    = ThemeResourceUpdateInterval;
+    _IsThemeResourceDirty    = true;
 }
 
 /// <summary>
@@ -419,14 +370,14 @@ void effect_t::UpdateThemeTransition(double deltaTime) noexcept
 {
     _ThemeElapsed += deltaTime;
 
-    if (!_ThemeTransitionActive && _ThemeElapsed >= ThemeInterval)
+    if (!_IsThemeTransitionActive && _ThemeElapsed >= ThemeTransitionInterval)
     {
-        _ThemeElapsed = std::fmod(_ThemeElapsed, ThemeInterval);
+        _ThemeElapsed = std::fmod(_ThemeElapsed, ThemeTransitionInterval);
 
         NextColorTheme();
     }
 
-    if (!_ThemeTransitionActive)
+    if (!_IsThemeTransitionActive)
         return;
 
     _ThemeTransitionElapsed += deltaTime;
@@ -439,16 +390,46 @@ void effect_t::UpdateThemeTransition(double deltaTime) noexcept
     if (_ThemeResourceElapsed >= ThemeResourceUpdateInterval)
     {
         _ThemeResourceElapsed = std::fmod(_ThemeResourceElapsed, ThemeResourceUpdateInterval);
-        _ThemeResourcesDirty = true;
+        _IsThemeResourceDirty = true;
     }
 
     if (Linear >= 1.)
     {
-        _ThemeFrom             = _ThemeTo;
-        _ThemeBlend            = 1.;
-        _ThemeTransitionActive = false;
-        _ThemeResourcesDirty   = true;
+        _ThemeFrom               = _ThemeTo;
+        _ThemeBlend              = 1.;
+        _IsThemeTransitionActive = false;
+        _IsThemeResourceDirty    = true;
     }
+}
+
+/// <summary>
+/// 
+/// </summary>
+D2D1_COLOR_F effect_t::GetThemeColor(ThemeRole role, float offset, float saturation, float value, float alpha) const noexcept
+{
+    const auto & a = GetTheme(_ThemeFrom);
+    const auto & b = GetTheme(_ThemeTo);
+
+    float ah = a.RingHue;
+    float bh = b.RingHue;
+
+    switch (role)
+    {
+        case ThemeRole::BackgroundA: ah = a.BackgroundHueA; bh = b.BackgroundHueA; break;
+        case ThemeRole::BackgroundB: ah = a.BackgroundHueB; bh = b.BackgroundHueB; break;
+        case ThemeRole::Rail:        ah = a.RailHue;        bh = b.RailHue; break;
+        case ThemeRole::Core:        ah = a.CoreHue;        bh = b.CoreHue; break;
+        case ThemeRole::Flash:       ah = a.FlashHue;       bh = b.FlashHue; break;
+
+        case ThemeRole::Ring:
+        default:
+            break;
+    }
+
+    const auto ThemeAColor = a.GetThemeColor(ah, offset, saturation, value, alpha);
+    const auto ThemeBColor = b.GetThemeColor(bh, offset, saturation, value, alpha);
+
+    return Lerp(ThemeAColor, ThemeBColor, (float) _ThemeBlend);
 }
 
 }

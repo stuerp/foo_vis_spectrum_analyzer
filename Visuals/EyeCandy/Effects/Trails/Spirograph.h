@@ -39,14 +39,7 @@ namespace Spirograph
         std::wstring GetStatus() noexcept override final;
 
     private:
-        static constexpr size_t BandCount = 12;
         static constexpr size_t CurveCount = 7;
-
-        struct band_t
-        {
-            double Energy         = 0.; // Spectrum bands
-            double SmoothedEnergy = 0.;
-        };
 
         struct curve_t
         {
@@ -76,31 +69,23 @@ namespace Spirograph
         void DeleteDeviceDependentResources() noexcept;
 
     private:
-        std::array<band_t, BandCount> _Bands {};
-        std::array<double, 12> _PitchClasses {};
+        double _SampleRate       = 44100.;
 
-        std::vector<double> _Samples;
+        double _Rhythm           = 0.; // Rhythm estimate
+        double _Tonality         = 0.; // Dominant pitch
+
+        double _RhythmPulse      = 0.;
+
+        double _SmoothedRhythm   = 0.;
+        double _SmoothedTonality = 0.;
 
     private:
         std::vector<curve_t> _Curves;
 
-        double _SampleRate       = 44100.;
-
-        double _Rhythm           = 0.;  // Rhythm estimate
-        double _SmoothedRhythm   = 0.;
-
-        double _RhythmPulse      = 0.;
-
-        double _Tonality         = 0.; // Dominant pitch
-        double _SmoothedTonality = 0.;
-
-        double _Rotation         = 0.;
+        double _Rotation = 0.;
 
     private:
         ComPtr<ID2D1SolidColorBrush> _Brush;
         ComPtr<ID2D1StrokeStyle> _StrokeStyle;
-
-        ComPtr<ID2D1BitmapRenderTarget> _BackBufferRenderTarget;
-        ComPtr<ID2D1Bitmap> _BackBuffer;
     };
 }

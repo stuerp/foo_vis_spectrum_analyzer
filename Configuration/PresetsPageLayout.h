@@ -5,7 +5,7 @@
 
 #include "ConfigurationDialogLayout.h"
 
-#define W_J00    W_A00 - IX - W_D01 - IX - IX
+#define W_J00    W_A00 - IX - W_Z01 - IX - IX
 #define H_J00    H_A00 - IY - IY - H_BTN - IY
 
 // Label: Location

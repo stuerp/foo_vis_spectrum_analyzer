@@ -58,7 +58,9 @@ namespace RibbonFlow
             }
         }
 
-        renderTarget->DrawBitmap(_BackBuffer.Get(), _Rectangle);
+        {
+            renderTarget->DrawBitmap(_BackBuffer.Get(), _ViewPort);
+        }
     }
 
     /// <summary>
@@ -74,14 +76,16 @@ namespace RibbonFlow
             return;
         }
 
-        const size_t ChannelCount = chunk.get_channel_count();
-        const size_t FrameCount = chunk.get_sample_count();
+        const audio_sample * const Frames = chunk.get_data();
 
-        if ((channels[0] >= ChannelCount) || (channels[1] >= ChannelCount) || (FrameCount < 16))
+        const auto FrameCount   = chunk.get_sample_count();
+        const auto ChannelCount = chunk.get_channel_count();
+
+        if ((FrameCount < 16) || (channels[0] >= ChannelCount) || (channels[1] >= ChannelCount))
             return;
 
-        const size_t MaxFrames = std::min<size_t>(FrameCount, (_Quality == EyeCandy::Quality::High) ? 1024 : 512);
-        const size_t FrameStep = std::max<size_t>(1, FrameCount / MaxFrames);
+        const auto MaxFrames = std::min<size_t>(FrameCount, (_Quality == Quality::High) ? 1024 : 512);
+        const auto FrameStep = std::max<size_t>(1, FrameCount / MaxFrames);
 
         if (_Samples.size() < MaxFrames)
             _Samples.resize(MaxFrames);
@@ -91,8 +95,6 @@ namespace RibbonFlow
         // Process all frames.
         {
             const double WindowScale = TwoPi / (double) (MaxFrames - 1);
-
-            const audio_sample * Frames = chunk.get_data();
 
             for (size_t i = 0; i < MaxFrames; ++i)
             {
@@ -108,14 +110,14 @@ namespace RibbonFlow
             }
         }
 
-        std::array<double, BandCount> RawEnergies {};
+        std::array<double, BandCount> RawEnergies { };
 
         {
             const double MaxFrequency = std::min(HiFrequency, _SampleRate * 0.5);
 
             for (size_t i = 0; i < BandCount; ++i)
             {
-                const double Amount          = (double) i / (double) (BandCount - 1);
+                const double Amount          = (double) i * InverseBandCount; // [0, 1]
                 const double CenterFrequency = LoFrequency * std::pow(MaxFrequency / LoFrequency, Amount);
                 const double AngularStep     = TwoPi * CenterFrequency / _SampleRate;
 
@@ -158,14 +160,14 @@ namespace RibbonFlow
         {
             switch (_Speed)
             {
-                case EyeCandy::Speed::Slow:
+                case Speed::Slow:
                     return 0.55;
 
                 default:
-                case EyeCandy::Speed::Normal:
+                case Speed::Normal:
                     return 1.0;
 
-                case EyeCandy::Speed::Fast:
+                case Speed::Fast:
                     return 1.75;
             }
         }();
@@ -186,7 +188,7 @@ namespace RibbonFlow
     /// </summary>
     void effect_t::GenerateRibbons() noexcept
     {
-        size_t PointCount = (_Quality == EyeCandy::Quality::Low) ? 80u : (_Quality == EyeCandy::Quality::High) ? 192u : 128u;
+        size_t PointCount = (_Quality == Quality::Low) ? 80u : (_Quality == Quality::High) ? 192u : 128u;
 
         _Ribbons.clear();
         _Ribbons.resize(BandCount);
@@ -199,14 +201,15 @@ namespace RibbonFlow
 
             Ribbon.Points.resize(PointCount);
 
-            const double BandAmount = (double) i / (double) (BandCount - 1);
+            const double BandAmount = (double) i * InverseBandCount; // [0, 1]
+
             const double Baseline   = _CenterY + ((BandAmount - 0.5) * _Height * 0.68);
             const double Response   = std::pow(Band.SmoothedEnergy, 0.78);
             const double Amplitude  = _Height * (0.024 + (Response * 0.145));
 
             for (size_t j = 0; j < PointCount; ++j)
             {
-                const double Amount    = (double) j / (double) (PointCount - 1);
+                const double Amount    = (double) j / (double) (PointCount - 1); // [0, 1]
                 const double Envelope  = std::sin(Amount * Pi);
                 const double Primary   = std::sin((Amount * (5.0 + BandAmount * 5.0) * Pi) + Band.Phase);
                 const double Secondary = std::sin((Amount * TwoPi) - (Band.Phase * 0.43) + (BandAmount * Pi));
@@ -234,7 +237,7 @@ namespace RibbonFlow
         _Brush->SetColor(D2D1::ColorF(0.f, 0.f, 0.f, (float) Clamp(1. - Decay)));
         _Brush->SetOpacity(1.f);
 
-        renderTarget->FillRectangle(_Rectangle, _Brush.Get());
+        renderTarget->FillRectangle(_ViewPort, _Brush.Get());
     }
 
     /// <summary>

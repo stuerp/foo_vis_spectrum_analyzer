@@ -41,13 +41,6 @@ namespace RibbonFlow
     private:
         static constexpr size_t BandCount = 10;
 
-        struct band_t
-        {
-            double Energy         = 0.;
-            double SmoothedEnergy = 0.;
-            double Phase          = 0.;
-        };
-
         struct ribbon_t
         {
             std::vector<D2D1_POINT_2F> Points;
@@ -72,16 +65,10 @@ namespace RibbonFlow
         void DeleteDeviceDependentResources() noexcept;
 
     private:
-        std::array<band_t, BandCount> _Bands {};
         std::vector<ribbon_t> _Ribbons;
-
-        double _SampleRate = 44100.;
-        std::vector<double> _Samples;
 
     private:
         ComPtr<ID2D1SolidColorBrush> _Brush;
         ComPtr<ID2D1StrokeStyle> _StrokeStyle;
-        ComPtr<ID2D1BitmapRenderTarget> _BackBufferRenderTarget;
-        ComPtr<ID2D1Bitmap> _BackBuffer;
     };
 }

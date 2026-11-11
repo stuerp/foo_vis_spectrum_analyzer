@@ -38,10 +38,6 @@ namespace Fireworks
         std::wstring GetStatus() noexcept override final;
 
     private:
-        static constexpr size_t FrequencyBandCount = 12;
-
-        static_assert(FrequencyBandCount > 1);
-
         static constexpr size_t FlareTrailPointCount = 24;
         static constexpr double FlareTrailLifetime   = 0.32;
 
@@ -129,15 +125,11 @@ namespace Fireworks
 
     private:
         std::vector<flare_t> _Flares;
+
         std::vector<spark_t> _Sparks;
+        std::atomic<size_t> _NextSpark = 0;
 
-        std::atomic<size_t> _NextSpark { 0 };
-        double _SparkDeltaTime = 0.;
-
-        std::array<double, FrequencyBandCount> _BandEnergy {};          // Energy at logarithmically spaced frequencies.
-        std::array<double, FrequencyBandCount> _SmoothedBandEnergy {};
-        std::array<double, FrequencyBandCount> _PreviousBandEnergy {};
-        std::array<double, FrequencyBandCount> _BandCooldown {};
+        double _SparkDeltaTime    = 0.;
 
         double _SkyLight          = 0.;
         double _SkyLightTarget    = 0.;
@@ -150,11 +142,11 @@ namespace Fireworks
         uint32_t _LaunchSequence = 0;
 
     private:
+        std::array<double, BandCount> _BandCooldown {};
+
+    private:
         ComPtr<ID2D1SolidColorBrush> _Brush;
         ComPtr<ID2D1StrokeStyle> _StrokeStyle;
-
-        ComPtr<ID2D1BitmapRenderTarget> _BackBufferRenderTarget;
-        ComPtr<ID2D1Bitmap> _BackBuffer;
 
         ComPtr<ID2D1SolidColorBrush> _ForegroundBrush;
     };

@@ -48,7 +48,7 @@ public:
 
     FLOAT GetTextHeight() const noexcept
     {
-        return _TextStyle._Height;
+        return _TextStyle.Height;
     }
 
 private:

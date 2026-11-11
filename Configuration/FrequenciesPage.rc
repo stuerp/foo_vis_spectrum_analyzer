@@ -1,5 +1,5 @@
 
-/** $VER: FrequenciesPage.rc (2026.11.05) P. Stuer **/
+/** $VER: FrequenciesPage.rc (2026.11.11) P. Stuer **/
 
 #include "Resources.h"
 
@@ -65,6 +65,4 @@ style DS_SETFONT | DS_CONTROL | WS_CHILD | WS_CLIPCHILDREN
         rtext           "Bandwidth:"                IDC_STATIC,                     X_A35, Y_A35 + 2, W_A35, H_A35
         edittext                                    IDC_BANDWIDTH,                  X_A36, Y_A36, W_A36, H_A36, ES_RIGHT | ES_AUTOHSCROLL | ES_READONLY | WS_TABSTOP
         control         "",                         IDC_BANDWIDTH_SPIN,             "msctls_updown32", UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_NOTHOUSANDS, 0, 0, 0, 0
-
-        control         "Render peaks",             IDC_RENDER_PEAKS,               "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_T01, Y_T01, W_T01, H_T01
 }

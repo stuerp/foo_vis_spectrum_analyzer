@@ -37,8 +37,6 @@ namespace Rotozoomer
         std::wstring GetStatus() noexcept override;
 
     private:
-        static constexpr size_t BandCount = 12;
-
         void AnalyzeAudio(const audio_chunk &);
 
         void Prepare(double deltaTime) noexcept;
@@ -61,16 +59,6 @@ namespace Rotozoomer
         void DeleteDeviceDependentResources() noexcept;
 
     private:
-        std::vector<double> _Samples;
-
-        std::array<double, BandCount> _BandEnergy {};
-        std::array<double, BandCount> _SmoothedBandEnergy {};
-        std::array<double, BandCount> _PreviousBandEnergy {};
-        std::vector<uint32_t> _Pixels;
-
-        UINT32 _PixelWidth  = 0;
-        UINT32 _PixelHeight = 0;
-
         double _RotationVelocity   = 0.035;
         double _RotationCS         = 1.;
         double _RotationSN         = 0.;
@@ -97,8 +85,5 @@ namespace Rotozoomer
         size_t _RenderPaletteB     = 1;
         double _RenderTextureBlend = 0.;
         double _RenderPaletteBlend = 0.;
-
-    private:
-        ComPtr<ID2D1Bitmap> _Bitmap;
     };
 }

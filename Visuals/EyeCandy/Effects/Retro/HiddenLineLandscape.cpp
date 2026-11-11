@@ -46,31 +46,6 @@ namespace HiddenLineLandscape
     /// <summary>
     /// 
     /// </summary>
-    void effect_t::Render(ID2D1RenderTarget * renderTarget, double deltaTime, audio_chunk & chunk) noexcept
-    {
-        const HRESULT hr = CreateDeviceDependentResources(renderTarget);
-
-        if (FAILED(hr))
-            return;
-
-        deltaTime = Clamp(deltaTime);
-
-        AnalyzeAudio(chunk);
-        Update(deltaTime);
-
-        renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
-
-        RenderBackground(renderTarget);
-        RenderHorizonGlow(renderTarget);
-        RenderLandscape(renderTarget);
-        RenderScanlines(renderTarget);
-
-        RenderFrame(renderTarget, D2D1::ColorF(0.60f, 1.00f, 0.72f, 0.20f + (float) (_BeatPulse * 0.22)));
-    }
-
-    /// <summary>
-    /// 
-    /// </summary>
     void effect_t::Reset() noexcept
     {
         DeleteDeviceDependentResources();
@@ -94,6 +69,31 @@ namespace HiddenLineLandscape
     }
 
     /// <summary>
+    /// 
+    /// </summary>
+    void effect_t::Render(ID2D1RenderTarget * renderTarget, double deltaTime, audio_chunk & chunk) noexcept
+    {
+        const HRESULT hr = CreateDeviceDependentResources(renderTarget);
+
+        if (FAILED(hr))
+            return;
+
+        deltaTime = Clamp(deltaTime);
+
+        AnalyzeAudio(chunk);
+        Update(deltaTime);
+
+        renderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+
+        RenderBackground(renderTarget);
+        RenderHorizonGlow(renderTarget);
+        RenderLandscape(renderTarget);
+        RenderScanlines(renderTarget);
+
+        RenderFrame(renderTarget, D2D1::ColorF(0.60f, 1.00f, 0.72f, 0.20f + (float) (_BeatPulse * 0.22)));
+    }
+
+    /// <summary>
     /// Analyzes an audio chunk.
     /// </summary>
     void effect_t::AnalyzeAudio(const audio_chunk & chunk)
@@ -103,17 +103,20 @@ namespace HiddenLineLandscape
         _Peak = 0.;
         _RMS  = 0.;
 
-        _BassEnergy = 0.;
-        _MidEnergy  = 0.;
+        _BassLevel = 0.;
+        _MidLevel  = 0.;
 
         if (chunk.is_empty())
             return;
 
-        const size_t FrameCount = chunk.get_sample_count();
-        const size_t ChannelCount = chunk.get_channel_count();
-        const size_t SampleRate = chunk.get_sample_rate();
+        const audio_sample * const Frames = chunk.get_data();
 
-        const size_t MaxFrames = std::min<size_t>(FrameCount, 4096);
+        const auto FrameCount   = chunk.get_sample_count();
+        const auto ChannelCount = chunk.get_channel_count();
+        const auto SampleRate   = (double) chunk.get_sample_rate();
+
+        // Analyze only the most recent frames of the chunk.
+        const auto MaxFrames = std::min<size_t>(FrameCount, 4096);
 
         if (MaxFrames < 8)
             return;
@@ -122,15 +125,15 @@ namespace HiddenLineLandscape
         double SumBass = 0.;
         double SumMid  = 0.;
 
-        const double SubBassCoefficient = std::exp(-TwoPi * SubBassCutoff / (double) SampleRate);
-        const double BassCoefficient    = std::exp(-TwoPi * BassCutoff    / (double) SampleRate);
-        const double MidCoefficient     = std::exp(-TwoPi * MidCutoff     / (double) SampleRate);
+        const double SubBassCoefficient = std::exp(-TwoPi * SubBassCutoff / SampleRate);
+        const double BassCoefficient    = std::exp(-TwoPi * BassCutoff    / SampleRate);
+        const double MidCoefficient     = std::exp(-TwoPi * MidCutoff     / SampleRate);
 
-        const double ChannelScale = 1. / (double)ChannelCount;
+        const double ChannelScale = 1. / (double) ChannelCount;
 
         const size_t FrameIndex = FrameCount - MaxFrames;
 
-        const audio_sample * Frame = chunk.get_data() + (FrameIndex * ChannelCount);
+        const audio_sample * Frame = Frames + (FrameIndex * ChannelCount);
         const audio_sample * const EndFrame = Frame + (MaxFrames * ChannelCount);
 
         while (Frame < EndFrame)
@@ -166,11 +169,11 @@ namespace HiddenLineLandscape
 
         _RMS = std::sqrt(Sum * FramesScale);
 
-        _BassEnergy = std::sqrt(SumBass * FramesScale);
-        _MidEnergy  = std::sqrt(SumMid  * FramesScale);
+        _BassLevel = std::sqrt(SumBass * FramesScale);
+        _MidLevel  = std::sqrt(SumMid  * FramesScale);
 
-        _BassEnergy = Clamp(std::log1p(_BassEnergy * 36.) / std::log1p(36.));
-        _MidEnergy  = Clamp(std::log1p(_MidEnergy  * 18.) / std::log1p(18.));
+        _BassLevel = Clamp(std::log1p(_BassLevel * 36.) / std::log1p(36.));
+        _MidLevel  = Clamp(std::log1p(_MidLevel  * 18.) / std::log1p(18.));
 
         _HasAudio = (_Peak > 1.0e-5) || (_RMS > 1.0e-6);
     }
@@ -184,31 +187,34 @@ namespace HiddenLineLandscape
         {
             switch (_Speed)
             {
-                case EyeCandy::Speed::Slow:
+                case Speed::Slow:
                     return 0.70;
 
                 default:
-                case EyeCandy::Speed::Normal:
+                case Speed::Normal:
                     return 1.00;
 
-                case EyeCandy::Speed::Fast:
+                case Speed::Fast:
                     return 1.85;
             }
         }();
 
         _AnimationTime += deltaTime * SpeedFactor;
 
-        _SmoothedPeak = ExponentialSmoothing(_SmoothedPeak, _Peak,       deltaTime, (_Peak       > _SmoothedPeak) ? 34.0 : 6.5);
-        _SmoothedRMS  = ExponentialSmoothing(_SmoothedRMS,  _RMS,        deltaTime, (_RMS        > _SmoothedRMS)  ? 26.0 : 5.5);
-        _SmoothedBass = ExponentialSmoothing(_SmoothedBass, _BassEnergy, deltaTime, (_BassEnergy > _SmoothedBass) ? 42.0 : 12.0);
-        _SmoothedMid  = ExponentialSmoothing(_SmoothedMid,  _MidEnergy,  deltaTime, (_MidEnergy  > _SmoothedMid)  ?  8.0 : 3.0);
-        _BeatAverage  = ExponentialSmoothing(_BeatAverage,  _BassEnergy, deltaTime, (_BassEnergy < _BeatAverage)  ?  5.0 : 0.85);
+        {
+            _SmoothedPeak = ExponentialSmoothing(_SmoothedPeak, _Peak,       deltaTime, (_Peak       > _SmoothedPeak) ? 34.0 : 6.5);
+            _SmoothedRMS  = ExponentialSmoothing(_SmoothedRMS,  _RMS,        deltaTime, (_RMS        > _SmoothedRMS)  ? 26.0 : 5.5);
 
-        const double BassRise          = std::max(0., _BassEnergy - _PreviousBass);
-        const double BassAboveAverage = std::max(0., _SmoothedBass - _BeatAverage);
+            _SmoothedBassLevel = ExponentialSmoothing(_SmoothedBassLevel, _BassLevel, deltaTime, (_BassLevel > _SmoothedBassLevel) ? 42.0 : 12.0);
+            _SmoothedMidLevel  = ExponentialSmoothing(_SmoothedMidLevel,  _MidLevel,  deltaTime, (_MidLevel  > _SmoothedMidLevel)  ?  8.0 : 3.0);
+            _BeatAverage  = ExponentialSmoothing(_BeatAverage,  _BassLevel, deltaTime, (_BassLevel < _BeatAverage)  ?  5.0 : 0.85);
+        }
+
+        const double BassRise          = std::max(0., _BassLevel - _PreviousBass);
+        const double BassAboveAverage = std::max(0., _SmoothedBassLevel - _BeatAverage);
         const double AttackStrength   = Clamp((BassAboveAverage * 2.5) + (BassRise * 9.0));
 
-        _PreviousBass      = _BassEnergy;
+        _PreviousBass      = _BassLevel;
         _BeatCooldown      = std::max(0., _BeatCooldown - deltaTime);
         _PeakSpawnCooldown = std::max(0., _PeakSpawnCooldown - deltaTime);
         _BeatPulse        *= std::exp(-deltaTime * 10.0);
@@ -240,7 +246,7 @@ namespace HiddenLineLandscape
             _TerrainTravel += TravelSpeed * deltaTime;
         }
 
-        _CameraSway = ExponentialSmoothing(_CameraSway, std::sin(_AnimationTime * 0.19) * (0.10 + _SmoothedMid * 0.32), deltaTime, 1.8);
+        _CameraSway = ExponentialSmoothing(_CameraSway, std::sin(_AnimationTime * 0.19) * (0.10 + _SmoothedMidLevel * 0.32), deltaTime, 1.8);
 
         // Follow the actual slope on the camera path. Dense forward samples prevent a narrow peak from falling between probes.
         constexpr double CameraPlane      = 0.10;
@@ -437,14 +443,14 @@ namespace HiddenLineLandscape
         {
             switch (_Quality)
             {
-                case EyeCandy::Quality::Low:
+                case Quality::Low:
                     return quality_settings_t{ 46, 92, 17, 0.35f };
 
                 default:
-                case EyeCandy::Quality::Medium:
+                case Quality::Medium:
                     return quality_settings_t{ 76, 156, 25, 0.50f };
 
-                case EyeCandy::Quality::High:
+                case Quality::High:
                     return quality_settings_t{ 112, 240, 35, 0.75f };
             }
         }();

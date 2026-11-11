@@ -48,6 +48,8 @@ namespace Metaballs
         _RasterWidth  = std::max((uint32_t) std::lround(_Width  * Scale / Divider), 1u);
         _RasterHeight = std::max((uint32_t) std::lround(_Height * Scale / Divider), 1u);
 
+        _Stride = _RasterWidth * BytesPerPixel;
+
         _Pixels.resize((size_t) _RasterWidth * _RasterHeight);
 
         // Make sure the Direct2D bitmap gets recreated.
@@ -72,23 +74,23 @@ namespace Metaballs
         if (!std::isfinite(deltaTime) || deltaTime <= 0. || deltaTime > MaximumFrameTime)
             deltaTime = DefaultFrameTime;
 
-        // Update the pixel matrix.
+        // Update the raster.
         {
-            _Processor.Process(chunk, deltaTime);
+            Process(chunk, deltaTime);
 
             {
                 const double SpeedFactor = [&]() noexcept
                 {
                     switch (_Speed)
                     {
-                        case EyeCandy::Speed::Slow:
+                        case Speed::Slow:
                             return 0.30;
 
                         default:
-                        case EyeCandy::Speed::Normal:
+                        case Speed::Normal:
                             return 0.45;
 
-                        case EyeCandy::Speed::Fast:
+                        case Speed::Fast:
                             return 0.85;
                     }
                 }();
@@ -105,14 +107,14 @@ namespace Metaballs
 
             _Interaction.Impulse *= std::exp(-2.6 * deltaTime);
 
-            if (_ThemeTime > _NextTransitionTime)
+            if (_ThemeTime > _NextThemeTransitionTime)
             {
                 ++_NextThemeIndex;
 
                 if (_NextThemeIndex == Field::theme_t::BuiltInCount)
                     _NextThemeIndex = 0;
 
-                _NextTransitionTime = _ThemeTime + TransitionInterval;
+                _NextThemeTransitionTime = _ThemeTime + ThemeTransitionInterval;
             }
 
             if (_ThemeIndex != _NextThemeIndex)
@@ -134,13 +136,9 @@ namespace Metaballs
 
         // Render the bitmap.
         {
-            _BackBuffer->CopyFromMemory(nullptr, _Pixels.data(), _RasterWidth * BytesPerPixel);
+            _BackBuffer->CopyFromMemory(nullptr, _Pixels.data(), _Stride);
 
-            renderTarget->Clear(Black);
-
-            const auto Size = renderTarget->GetSize();
-
-            renderTarget->DrawBitmap(_BackBuffer.Get(), _Rectangle);
+            renderTarget->DrawBitmap(_BackBuffer.Get(), _ViewPort);
         }
     }
 
@@ -155,11 +153,11 @@ namespace Metaballs
 
         const double Zoom     = std::clamp(_Interaction.Zoom, .55, 2.2);
 
-        const double Bass     = Clamp(_Processor._BassEnergy);
-        const double Mid      = Clamp(_Processor._MidEnergy);
-        const double Treble   = Clamp(_Processor._TrebleEnergy);
+        const double Bass     = Clamp(_BassLevel);
+        const double Mid      = Clamp(_MidLevel);
+        const double Treble   = Clamp(_TrebleLevel);
 
-        const double Loudness = Clamp(_Processor._Loudness);
+        const double Loudness = Clamp(_Loudness);
 
         work_t Work {};
 
@@ -185,7 +183,7 @@ namespace Metaballs
             const double Phase     = time * Speed * Direction + Index * 1.713;
             const double Travel    = ((i < 3) ? .105 : ((i < 5) ? .145 : .190)) * (.65 + .35 * Band);
 
-            Work.BlobX[i] = BaseX[i] + _Interaction.X * .18 + _Processor._Balance * .08 + std::cos(Phase) * Travel;
+            Work.BlobX[i] = BaseX[i] + _Interaction.X * .18 + _Balance * .08 + std::cos(Phase) * Travel;
             Work.BlobY[i] = BaseY[i] + _Interaction.Y * .18 + std::sin(Phase * (1.13 + .03 * Index)) * Travel * .72;
 
             const double Expansion = (i < 3) ? (.060 * Bass) : ((i < 5) ? (.042 * Mid) : (.025 * Treble));
@@ -241,7 +239,7 @@ namespace Metaballs
         edge     = Clamp(edge);
         glow     = Clamp(glow);
 
-        const double H = _Theme.BaseHue + (_Theme.HueSpan * (.12 + .72 * interior)) + (_Theme.BassHue * _Processor._BassEnergy) + (_Theme.MidHue * _Processor._MidEnergy) + (_Theme.TrebleHue * _Processor._TrebleEnergy);
+        const double H = _Theme.BaseHue + (_Theme.HueSpan * (.12 + .72 * interior)) + (_Theme.BassHue * _BassLevel) + (_Theme.MidHue * _MidLevel) + (_Theme.TrebleHue * _TrebleLevel);
         const double S = Clamp(_Theme.Saturation + .08 - .22 * edge);
         const double V = Clamp(glow + surface * (_Theme.Brightness * (.36 + .50 * interior)) + .28 * edge);
 
@@ -249,22 +247,22 @@ namespace Metaballs
 
         HSVToRGB(H, S, V, R, G, B);
 
-        R = Clamp(R + surface * _Theme.BassRed    * _Processor._BassEnergy   + .12 * edge);
-        G = Clamp(G + surface * _Theme.MidGreen   * _Processor._MidEnergy    + .15 * edge);
-        B = Clamp(B + surface * _Theme.TrebleBlue * _Processor._TrebleEnergy + .20 * edge);
+        R = Clamp(R + surface * _Theme.BassRed    * _BassLevel   + .12 * edge);
+        G = Clamp(G + surface * _Theme.MidGreen   * _MidLevel    + .15 * edge);
+        B = Clamp(B + surface * _Theme.TrebleBlue * _TrebleLevel + .20 * edge);
 
         const double BrightnessFactor = [&]() noexcept
         {
             switch (_Brightness)
             {
-                case EyeCandy::Brightness::Low:
+                case Brightness::Low:
                     return .50;
 
                 default:
-                case EyeCandy::Brightness::Medium:
+                case Brightness::Medium:
                     return 1.00;
 
-                case EyeCandy::Brightness::High:
+                case Brightness::High:
                     return 1.50;
             }
         }();
@@ -289,7 +287,12 @@ namespace Metaballs
         try
         {
             for (size_t i = 0; i < WorkerCount; ++i)
-                _Workers.emplace_back(&effect_t::Worker, this);
+            {
+                _Workers.emplace_back([this]() noexcept
+                {
+                    Worker();
+                });
+            }
         }
         catch (...)
         {

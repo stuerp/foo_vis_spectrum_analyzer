@@ -35,8 +35,6 @@ BOOL frequencies_page_t::OnInitDialog(CWindow w, LPARAM lParam) noexcept
         { IDC_SCALING_FUNCTION, "Determines which function is used to scale the frequencies." },
         { IDC_SKEW_FACTOR, "Affects any adjustable frequency scaling functions like hyperbolic sine and nth root. Higher values mean a more linear spectrum." },
         { IDC_BANDWIDTH, "Distance between the low and high frequency boundaries for each frequency band" },
-
-        { IDC_RENDER_PEAKS, "Enable to render the peak frequencies of the spectrum. (Experimental)" },
     };
 
     for (const auto & [ID, Text] : Tips)
@@ -234,10 +232,6 @@ void frequencies_page_t::InitializeControls() noexcept
         w.SetRange32((int) (MinBandwidth * 10.), (int) (MaxBandwidth * 10.));
         w.SetPos32((int) (_State->_Bandwidth * 10.));
         w.SetAccel(_countof(Accel), Accel);
-    }
-
-    {
-        SendDlgItemMessageW(IDC_RENDER_PEAKS, BM_SETCHECK, _State->_RenderPeaks);
     }
 
     UpdateControls();
@@ -582,6 +576,7 @@ LRESULT frequencies_page_t::OnDeltaPos(LPNMHDR nmhd) noexcept
 /// </summary>
 void frequencies_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
 {
+/*
     if (_State == nullptr)
         return;
 
@@ -591,14 +586,8 @@ void frequencies_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
     {
         default:
             return;
-
-        case IDC_RENDER_PEAKS:
-        {
-            _State->_RenderPeaks = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
-
-            break;
-        }
     }
 
     NotifyParent(ChangedSettings);
+*/
 }

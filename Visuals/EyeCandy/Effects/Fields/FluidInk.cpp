@@ -46,6 +46,8 @@ namespace FluidInk
         _RasterWidth  = std::max((uint32_t) std::lround(_Width  * Scale / Divider), 1u);
         _RasterHeight = std::max((uint32_t) std::lround(_Height * Scale / Divider), 1u);
 
+        _Stride = _RasterWidth * BytesPerPixel;
+
         _Pixels.resize((size_t) _RasterWidth * _RasterHeight);
 
         // Make sure the Direct2D bitmap gets recreated.
@@ -72,21 +74,21 @@ namespace FluidInk
 
         // Update the pixel matrix.
         {
-            _Processor.Process(chunk, deltaTime);
+            Process(chunk, deltaTime);
 
             {
                 const double SpeedFactor = [&]() noexcept
                 {
                     switch (_Speed)
                     {
-                        case EyeCandy::Speed::Slow:
+                        case Speed::Slow:
                             return 0.30;
 
                         default:
-                        case EyeCandy::Speed::Normal:
+                        case Speed::Normal:
                             return 0.45;
 
-                        case EyeCandy::Speed::Fast:
+                        case Speed::Fast:
                             return 0.85;
                     }
                 }();
@@ -103,14 +105,14 @@ namespace FluidInk
 
             _Interaction.Impulse *= std::exp(-2.6 * deltaTime);
 
-            if (_AnimationTime > _NextTransitionTime)
+            if (_ThemeTime > _NextThemeTransitionTime)
             {
                 ++_NextThemeIndex;
 
                 if (_NextThemeIndex == Field::theme_t::BuiltInCount)
                     _NextThemeIndex = 0;
 
-                _NextTransitionTime = _AnimationTime + TransitionInterval;
+                _NextThemeTransitionTime = _ThemeTime + ThemeTransitionInterval;
             }
 
             if (_ThemeIndex != _NextThemeIndex)
@@ -141,17 +143,13 @@ namespace FluidInk
                 renderTarget->CreateBitmap(Size, nullptr, 0, D2D1::BitmapProperties(D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_IGNORE)), _BackBuffer.GetAddressOf());
             }
 
-            if (_BackBuffer)
-                _BackBuffer->CopyFromMemory(nullptr, _Pixels.data(), _RasterWidth * BytesPerPixel);
         }
 
         // Render the bitmap.
         {
-            renderTarget->Clear(Black);
+            _BackBuffer->CopyFromMemory(nullptr, _Pixels.data(), _Stride);
 
-            const auto Size = renderTarget->GetSize();
-
-            renderTarget->DrawBitmap(_BackBuffer.Get(), _Rectangle);
+            renderTarget->DrawBitmap(_BackBuffer.Get(), _ViewPort);
         }
     }
 
@@ -165,24 +163,24 @@ namespace FluidInk
             return;
 
         const double ClampedZoom = std::clamp(_Interaction.Zoom, .55, 2.2); // Prevent extreme or invalid scaling.
-        const double Transient   = Clamp(std::max(0., _Processor._Peak - .42) * 1.75 + std::abs(_Interaction.Impulse));
+        const double Transient   = Clamp(std::max(0., _Peak - .42) * 1.75 + std::abs(_Interaction.Impulse));
 
         work_t Work
         {
             .Time            = time,
             .InverseWidth    = 1. / (double) _RasterWidth,
             .InverseHeight   = 1. / (double) _RasterHeight,
-            .CoordinateScale = (1.12 + (.20 * _Processor._BassEnergy)) / ClampedZoom,
+            .CoordinateScale = (1.12 + (.20 * _BassLevel)) / ClampedZoom,
             .HorizontalScale = (double) _RasterWidth / std::max(1., (double) _RasterHeight),
-            .FlowSpeed       = .18 + (.72 * _Processor._Loudness),
-            .BassPush        = .18 + (1.75 * _Processor._BassEnergy),
-            .MidCurl         = .28 + (1.45 * _Processor._MidEnergy),
-            .TrebleDetail    = .12 + (1.35 * _Processor._TrebleEnergy),
+            .FlowSpeed       = .18 + (.72 * _Loudness),
+            .BassPush        = .18 + (1.75 * _BassLevel),
+            .MidCurl         = .28 + (1.45 * _MidLevel),
+            .TrebleDetail    = .12 + (1.35 * _TrebleLevel),
             .TransientForce  = Transient,
-            .ForcePositionX  = .48 * std::sin(time * .31 + _Processor._Balance * 2.1),
-            .ForcePositionY  = .34 * std::cos(time * .23 - _Processor._Balance * 1.4),
-            .ColorPhase      = time * (.09 + (.22 * _Processor._TrebleEnergy)),
-            .BalanceOffset   = .24 * _Processor._Balance,
+            .ForcePositionX  = .48 * std::sin(time * .31 + _Balance * 2.1),
+            .ForcePositionY  = .34 * std::cos(time * .23 - _Balance * 1.4),
+            .ColorPhase      = time * (.09 + (.22 * _TrebleLevel)),
+            .BalanceOffset   = .24 * _Balance,
             .HasImpulse      = (_Interaction.Impulse != 0.)
         };
 
@@ -219,11 +217,11 @@ namespace FluidInk
         const double Stream    = Clamp(stream);
         const double Highlight = Clamp(highlight);
 
-        const double H = _Theme.BaseHue + (_Theme.HueSpan * (.12 + (.88 * Stream))) + (_Theme.BassHue * _Processor._BassEnergy) + (_Theme.MidHue * _Processor._MidEnergy) + (_Theme.TrebleHue * _Processor._TrebleEnergy);
+        const double H = _Theme.BaseHue + (_Theme.HueSpan * (.12 + (.88 * Stream))) + (_Theme.BassHue * _BassLevel) + (_Theme.MidHue * _MidLevel) + (_Theme.TrebleHue * _TrebleLevel);
 
         const double S = Clamp((_Theme.Saturation * (.74 + (.24 * Density))) + (.12 * Stream));
 
-        const double Ambient = .035 + (.22 * std::pow(Clamp(_Processor._Loudness), .55));
+        const double Ambient = .035 + (.22 * std::pow(Clamp(_Loudness), .55));
 
         const double V = Clamp(Ambient + (_Theme.Brightness * (.58 * Density + .34 * Highlight)));
 
@@ -231,22 +229,22 @@ namespace FluidInk
 
         HSVToRGB(H, S, V, R, G, B);
 
-        R = Clamp(R + (_Theme.BassRed    * _Processor._BassEnergy)   + (.10 * Highlight));
-        G = Clamp(G + (_Theme.MidGreen   * _Processor._MidEnergy)    + (.07 * Highlight));
-        B = Clamp(B + (_Theme.TrebleBlue * _Processor._TrebleEnergy) + (.14 * Highlight));
+        R = Clamp(R + (_Theme.BassRed    * _BassLevel)   + (.10 * Highlight));
+        G = Clamp(G + (_Theme.MidGreen   * _MidLevel)    + (.07 * Highlight));
+        B = Clamp(B + (_Theme.TrebleBlue * _TrebleLevel) + (.14 * Highlight));
 
         const double BrightnessFactor = [&]() noexcept
         {
             switch (_Brightness)
             {
-                case EyeCandy::Brightness::Low:
+                case Brightness::Low:
                     return .50;
 
                 default:
-                case EyeCandy::Brightness::Medium:
+                case Brightness::Medium:
                     return 1.00;
 
-                case EyeCandy::Brightness::High:
+                case Brightness::High:
                     return 1.50;
             }
         }();
@@ -272,7 +270,10 @@ namespace FluidInk
         {
             for (size_t i = 0; i < WorkerCount; ++i)
             {
-                _Workers.emplace_back(&effect_t::Worker, this);
+                _Workers.emplace_back([this]() noexcept
+                {
+                    Worker();
+                });
             }
         }
         catch (...)

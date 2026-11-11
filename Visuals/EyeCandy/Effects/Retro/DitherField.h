@@ -37,7 +37,6 @@ namespace DitherField
         std::wstring GetStatus() noexcept override;
 
     private:
-        static constexpr size_t BandCount = 12;
         static constexpr size_t DitherModeCount = 10;
 
         void AnalyzeAudio(const audio_chunk &);
@@ -59,20 +58,11 @@ namespace DitherField
         void DeleteDeviceDependentResources() noexcept;
 
     private:
-        std::vector<double> _Samples;
-
-        std::array<double, BandCount> _BandEnergy{ };
-        std::array<double, BandCount> _SmoothedBandEnergy{ };
-        std::array<double, BandCount> _PreviousBandEnergy{ };
-
         std::vector<float> _EnergyField;
         std::vector<float> _ErrorBuffer;
         std::vector<uint8_t> _DiffusedField;
-        std::vector<uint32_t> _Pixels;
 
-        UINT32 _PixelWidth = 0;
-        UINT32 _PixelHeight = 0;
-
+    private:
         double _PreviousPulse = 0.;
         double _Time = 0.;
         double _FieldPhase = 0.;
@@ -86,8 +76,5 @@ namespace DitherField
         size_t _DitherModeA = 0;
         size_t _DitherModeB = 1;
         double _RenderBrightness = 1.;
-
-    private:
-        ComPtr<ID2D1Bitmap> _Bitmap;
     };
 }

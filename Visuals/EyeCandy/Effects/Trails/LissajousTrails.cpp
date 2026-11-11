@@ -78,7 +78,9 @@ namespace LissajousTrails
             }
         }
 
-        renderTarget->DrawBitmap(_BackBuffer.Get(), _Rectangle);
+        {
+            renderTarget->DrawBitmap(_BackBuffer.Get(), _ViewPort);
+        }
     }
 
     /// <summary>
@@ -98,9 +100,10 @@ namespace LissajousTrails
         if (chunk.is_empty())
             return;
 
-        const size_t ChannelCount = chunk.get_channel_count();
-        const size_t FrameCount   = chunk.get_sample_count();
-        const audio_sample * Data = chunk.get_data();
+        const audio_sample * const Frames = chunk.get_data();
+
+        const auto FrameCount   = chunk.get_sample_count();
+        const auto ChannelCount = chunk.get_channel_count();
 
         const size_t LeftChannel  = channels[0];
         const size_t RightChannel = channels[1];
@@ -112,30 +115,30 @@ namespace LissajousTrails
 
         switch (_Quality)
         {
-            case EyeCandy::Quality::Low:
+            case Quality::Low:
                 DesiredSamples = 384;
                 break;
 
-            case EyeCandy::Quality::High:
-                DesiredSamples = 1536;
+            default:
+            case Quality::Medium:
                 break;
 
-            case EyeCandy::Quality::Medium:
-            default:
+            case Quality::High:
+                DesiredSamples = 1536;
                 break;
         }
 
-        const size_t OutputCount = std::min(FrameCount, DesiredSamples);
+        const size_t MaxFrames = std::min(FrameCount, DesiredSamples);
 
-        if (OutputCount < 2)
+        if (MaxFrames < 2)
             return;
 
-        _Samples.reserve(OutputCount);
+        _Samples.reserve(MaxFrames);
 
-        const size_t FramesPerSample = FrameCount / OutputCount;
-        const size_t RemainingFrames = FrameCount % OutputCount;
+        const size_t FramesPerSample = FrameCount / MaxFrames;
+        const size_t RemainingFrames = FrameCount % MaxFrames;
 
-        const audio_sample * Frame = Data;
+        const audio_sample * Frame = Frames;
 
         double LeftSquared  = 0.;
         double RightSquared = 0.;
@@ -144,15 +147,15 @@ namespace LissajousTrails
 
         size_t FrameRemainder = 0;
 
-        for (size_t OutputIndex = 0; OutputIndex < OutputCount; ++OutputIndex)
+        for (size_t OutputIndex = 0; OutputIndex < MaxFrames; ++OutputIndex)
         {
             size_t FramesInSample = FramesPerSample;
 
             FrameRemainder += RemainingFrames;
 
-            if (FrameRemainder >= OutputCount)
+            if (FrameRemainder >= MaxFrames)
             {
-                FrameRemainder -= OutputCount;
+                FrameRemainder -= MaxFrames;
                 ++FramesInSample;
             }
 
@@ -240,25 +243,27 @@ namespace LissajousTrails
         {
             switch (_Speed)
             {
-                case EyeCandy::Speed::Slow:
+                case Speed::Slow:
                     return 0.55;
 
                 default:
-                case EyeCandy::Speed::Normal:
+                case Speed::Normal:
                     return 1.0;
 
-                case EyeCandy::Speed::Fast:
+                case Speed::Fast:
                     return 1.75;
             }
         }();
 
         _AnimationTime += deltaTime * SpeedFactor;
 
-        _SmoothedPeak        = ExponentialSmoothing(_SmoothedPeak,        _Peak,        deltaTime, (_Peak > _SmoothedPeak) ? 22. : 5.);
-        _SmoothedRMS         = ExponentialSmoothing(_SmoothedRMS,         _RMS,         deltaTime, (_RMS > _SmoothedRMS)   ? 16. : 4.);
+        {
+            _SmoothedPeak        = ExponentialSmoothing(_SmoothedPeak,        _Peak,        deltaTime, (_Peak > _SmoothedPeak) ? 22. : 5.);
+            _SmoothedRMS         = ExponentialSmoothing(_SmoothedRMS,         _RMS,         deltaTime, (_RMS > _SmoothedRMS)   ? 16. : 4.);
 
-        _SmoothedStereoWidth = ExponentialSmoothing(_SmoothedStereoWidth, _StereoWidth, deltaTime, 5.5);
-        _SmoothedCorrelation = ExponentialSmoothing(_SmoothedCorrelation, _Correlation, deltaTime, 4.0);
+            _SmoothedStereoWidth = ExponentialSmoothing(_SmoothedStereoWidth, _StereoWidth, deltaTime, 5.5);
+            _SmoothedCorrelation = ExponentialSmoothing(_SmoothedCorrelation, _Correlation, deltaTime, 4.0);
+        }
     }
 
     /// <summary>
@@ -325,15 +330,15 @@ namespace LissajousTrails
 
         switch (_Quality)
         {
-            case EyeCandy::Quality::Low:
+            case Quality::Low:
                 SubdivisionCount = 2;
                 break;
 
-            case EyeCandy::Quality::High:
+            case Quality::High:
                 SubdivisionCount = 5;
                 break;
 
-            case EyeCandy::Quality::Medium:
+            case Quality::Medium:
             default:
                 break;
         }
@@ -357,7 +362,7 @@ namespace LissajousTrails
 
             for (size_t Subdivision = 1; Subdivision <= SubdivisionCount; ++Subdivision)
             {
-                const double Amount = (double) Subdivision * InverseSubdivisionCount;
+                const double Amount = (double) Subdivision * InverseSubdivisionCount; // [0, 1]
 
                 const D2D1_POINT_2F Current = EvaluateSpline(P0, P1, P2, P3, Amount);
 
@@ -433,7 +438,7 @@ namespace LissajousTrails
         _Brush->SetColor(D2D1::ColorF(Blend(From.r, To.r), Blend(From.g, To.g), Blend(From.b, To.b), Opacity));
         _Brush->SetOpacity(1.f);
 
-        renderTarget->FillRectangle(_Rectangle, _Brush.Get());
+        renderTarget->FillRectangle(_ViewPort, _Brush.Get());
     }
 
     /// <summary>
@@ -464,8 +469,8 @@ namespace LissajousTrails
 
         for (size_t i = 0; i < IdlePoints; ++i)
         {
-            const double Amount = (double) i / (double) (IdlePoints - 1);
-            const double Angle = Amount * TwoPi;
+            const double Amount = (double) i / (double) (IdlePoints - 1); // [0, 1]
+            const double Angle  = Amount * TwoPi;
 
             // A slowly evolving 3:2 Lissajous figure provides a subtle attractor while no audio is available.
             const D2D1_POINT_2F current
@@ -494,13 +499,13 @@ namespace LissajousTrails
         {
             switch (_Quality)
             {
-                case EyeCandy::Quality::Low:
+                case Quality::Low:
                     return 2;
 
-                case EyeCandy::Quality::High:
+                case Quality::High:
                     return 5;
 
-                case EyeCandy::Quality::Medium:
+                case Quality::Medium:
                 default:
                     return 3;
             }
@@ -616,7 +621,10 @@ namespace LissajousTrails
         {
             for (size_t i = 0; i < WorkerCount; ++i)
             {
-                _Workers.emplace_back(&effect_t::Worker, this);
+                _Workers.emplace_back([this]() noexcept
+                {
+                    Worker();
+                });
             }
         }
         catch (...)

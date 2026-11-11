@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.cpp (2026.11.06) P. Stuer - Implements a spectrum analyzer visualization **/
+/** $VER: Spectrum.cpp (2026.11.11) P. Stuer - Implements a spectrum analyzer visualization **/
 
 #include "pch.h"
 
@@ -85,7 +85,7 @@ void spectrum_t::Render(ID2D1DeviceContext * deviceContext) noexcept
             if (_IsLast && _NyquistMarkerStyle.IsEnabled())
                 RenderNyquistFrequencyMarker(deviceContext);
 
-            if (_State._RenderPeaks)
+            if (_State._DetectPeaks)
                 RenderPeaks(deviceContext);
 
             ResetTransform(deviceContext);
@@ -247,7 +247,7 @@ void spectrum_t::RenderBar(ID2D1DeviceContext * deviceContext, D2D1_RECT_F & rec
         }
 
         if ((_State._PeakMode == PeakMode::FadeOut) || (_State._PeakMode == PeakMode::FadingAIMP))
-            topStyle._Brush->SetOpacity((FLOAT) opacity);
+            topStyle.Brush->SetOpacity((FLOAT) opacity);
 
         RenderBarSegment(deviceContext, rect, topStyle);
     }
@@ -261,9 +261,9 @@ void spectrum_t::RenderBarSegment(ID2D1DeviceContext * deviceContext, D2D1_RECT_
 //  _DebugBrush->SetColor(D2D1::ColorF(0x00FF0000)); deviceContext->DrawRectangle(rect, _DebugBrush.Get());
 
     if (_State._LEDMode)
-        deviceContext->FillOpacityMask(_OpacityMask.Get(), style._Brush.Get(), rect, rect);
+        deviceContext->FillOpacityMask(_OpacityMask.Get(), style.Brush.Get(), rect, rect);
     else
-        deviceContext->FillRectangle(rect, style._Brush.Get());
+        deviceContext->FillRectangle(rect, style.Brush.Get());
 }
 
 /// <summary>
@@ -295,7 +295,7 @@ void spectrum_t::RenderCurve(ID2D1DeviceContext * deviceContext) noexcept
             hr = CreateCurve(Points, true, Curve.GetAddressOf());
 
             if (SUCCEEDED(hr))
-                deviceContext->FillGeometry(Curve.Get(), _CurvePeakAreaStyle._Brush.Get());
+                deviceContext->FillGeometry(Curve.Get(), _CurvePeakAreaStyle.Brush.Get());
 
             Curve.Reset();
         }
@@ -306,7 +306,7 @@ void spectrum_t::RenderCurve(ID2D1DeviceContext * deviceContext) noexcept
             hr = CreateCurve(Points, false, Curve.GetAddressOf());
 
             if (SUCCEEDED(hr))
-                deviceContext->DrawGeometry(Curve.Get(), _CurvePeakLineStyle._Brush.Get(), _CurvePeakLineStyle._Thickness);
+                deviceContext->DrawGeometry(Curve.Get(), _CurvePeakLineStyle.Brush.Get(), _CurvePeakLineStyle._Thickness);
 
             Curve.Reset();
         }
@@ -324,7 +324,7 @@ void spectrum_t::RenderCurve(ID2D1DeviceContext * deviceContext) noexcept
             hr = CreateCurve(Points, true, Curve.GetAddressOf());
 
             if (SUCCEEDED(hr))
-                deviceContext->FillGeometry(Curve.Get(), _CurveAreaStyle._Brush.Get());
+                deviceContext->FillGeometry(Curve.Get(), _CurveAreaStyle.Brush.Get());
 
             Curve.Reset();
         }
@@ -335,7 +335,7 @@ void spectrum_t::RenderCurve(ID2D1DeviceContext * deviceContext) noexcept
             hr = CreateCurve(Points, false, Curve.GetAddressOf());
 
             if (SUCCEEDED(hr))
-                deviceContext->DrawGeometry(Curve.Get(), _CurveLineStyle._Brush.Get(), _CurveLineStyle._Thickness);
+                deviceContext->DrawGeometry(Curve.Get(), _CurveLineStyle.Brush.Get(), _CurveLineStyle._Thickness);
 
             Curve.Reset();
         }
@@ -372,10 +372,10 @@ void spectrum_t::RenderRadialBars(ID2D1DeviceContext * deviceContext) noexcept
 
     ComPtr<ID2D1PathGeometry> Path;
 
-    ID2D1Brush * BarPeakAreaBrush = _BarPeakAreaStyle._Brush.Get();
-    ID2D1Brush * BarPeakTopBrush  = _BarPeakTopStyle._Brush.Get();
-    ID2D1Brush * BarAreaBrush     = _BarAreaStyle._Brush.Get();
-    ID2D1Brush * BarTopBrush      = _BarTopStyle._Brush.Get();
+    ID2D1Brush * BarPeakAreaBrush = _BarPeakAreaStyle.Brush.Get();
+    ID2D1Brush * BarPeakTopBrush  = _BarPeakTopStyle.Brush.Get();
+    ID2D1Brush * BarAreaBrush     = _BarAreaStyle.Brush.Get();
+    ID2D1Brush * BarTopBrush      = _BarTopStyle.Brush.Get();
 
     for (const auto & fb : _Processor->FrequencyBands)
     {
@@ -421,7 +421,7 @@ void spectrum_t::RenderRadialBars(ID2D1DeviceContext * deviceContext) noexcept
 
                     const FLOAT Opacity = ((_State._PeakMode == PeakMode::FadeOut) || (_State._PeakMode == PeakMode::FadingAIMP)) ? (FLOAT) fb.Opacity : _BarPeakTopStyle._Opacity;
 
-                    _BarPeakTopStyle._Brush->SetOpacity(Opacity);
+                    _BarPeakTopStyle.Brush->SetOpacity(Opacity);
 
                     deviceContext->FillGeometry(Path.Get(), BarPeakTopBrush);
 
@@ -509,7 +509,7 @@ void spectrum_t::RenderRadialCurve(ID2D1DeviceContext * deviceContext) noexcept
             hr = CreateRadialCurve(Points, InnerRadius, true, Curve.GetAddressOf());
 
             if (SUCCEEDED(hr))
-                deviceContext->FillGeometry(Curve.Get(), _CurvePeakAreaStyle._Brush.Get());
+                deviceContext->FillGeometry(Curve.Get(), _CurvePeakAreaStyle.Brush.Get());
 
             Curve.Reset();
         }
@@ -520,7 +520,7 @@ void spectrum_t::RenderRadialCurve(ID2D1DeviceContext * deviceContext) noexcept
             hr = CreateRadialCurve(Points, InnerRadius, false, Curve.GetAddressOf());
 
             if (SUCCEEDED(hr))
-                deviceContext->DrawGeometry(Curve.Get(), _CurvePeakLineStyle._Brush.Get(), _CurvePeakLineStyle._Thickness);
+                deviceContext->DrawGeometry(Curve.Get(), _CurvePeakLineStyle.Brush.Get(), _CurvePeakLineStyle._Thickness);
 
             Curve.Reset();
         }
@@ -538,7 +538,7 @@ void spectrum_t::RenderRadialCurve(ID2D1DeviceContext * deviceContext) noexcept
             hr = CreateRadialCurve(Points, InnerRadius, true, Curve.GetAddressOf());
 
             if (SUCCEEDED(hr))
-                deviceContext->FillGeometry(Curve.Get(), _CurveAreaStyle._Brush.Get());
+                deviceContext->FillGeometry(Curve.Get(), _CurveAreaStyle.Brush.Get());
 
             Curve.Reset();
         }
@@ -549,7 +549,7 @@ void spectrum_t::RenderRadialCurve(ID2D1DeviceContext * deviceContext) noexcept
             hr = CreateRadialCurve(Points, InnerRadius, false, Curve.GetAddressOf());
 
             if (SUCCEEDED(hr))
-                deviceContext->DrawGeometry(Curve.Get(), _CurveLineStyle._Brush.Get(), _CurveLineStyle._Thickness);
+                deviceContext->DrawGeometry(Curve.Get(), _CurveLineStyle.Brush.Get(), _CurveLineStyle._Thickness);
 
             Curve.Reset();
         }
@@ -587,104 +587,12 @@ void spectrum_t::RenderNyquistFrequencyMarker(ID2D1DeviceContext * deviceContext
     // Draw the line
     deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
 
-    deviceContext->DrawLine(D2D1_POINT_2F(x, 0.f), D2D1_POINT_2F(x, _ClientSize.height), _NyquistMarkerStyle._Brush.Get(), _NyquistMarkerStyle._Thickness, nullptr);
+    deviceContext->DrawLine(D2D1_POINT_2F(x, 0.f), D2D1_POINT_2F(x, _ClientSize.height), _NyquistMarkerStyle.Brush.Get(), _NyquistMarkerStyle._Thickness, nullptr);
 }
 
 /// <summary>
 /// Renders the peak frequencies in the spectrum.
 /// </summary>
-#ifdef v1
-void spectrum_t::RenderPeaks(ID2D1DeviceContext * deviceContext) noexcept
-{
-/*
-    // Test data
-    _Processor->Peaks.clear();
-
-    _Processor->Peaks.push_back( { 0, 0.5, _State._LoFrequency, 0. });
-    _Processor->Peaks.push_back( { _Processor->FrequencyBands.size() - 1, 0.5, _State._HiFrequency, 0. });
-*/
-    const auto BandCount = (float) _Processor->FrequencyBands.size();
-
-    D2D1_MATRIX_3X2_F Transform;
-
-    deviceContext->GetTransform(&Transform);
-
-    const D2D1::Matrix3x2F TransformMatrix(Transform._11, Transform._12, Transform._21, Transform._22, Transform._31, Transform._32);
-
-    deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
-
-    _TextStyle.SetHorizontalAlignment(_GraphOptions->_FlipHorizontally ? DWRITE_TEXT_ALIGNMENT_TRAILING : DWRITE_TEXT_ALIGNMENT_LEADING);
-    _TextStyle.SetVerticalAlignment(_GraphOptions->_FlipVertically ? DWRITE_PARAGRAPH_ALIGNMENT_NEAR : DWRITE_PARAGRAPH_ALIGNMENT_FAR);
-
-    const auto FlipX = _GraphOptions->_FlipHorizontally ? -1.f :  1.f;
-    const auto FlipY = _GraphOptions->_FlipVertically   ?  1.f : -1.f;
-
-    auto DrawLabel = [&](size_t bandIndex, const D2D1_POINT_2F & pt, float offset)
-    {
-        const auto & fb = _Processor->FrequencyBands[bandIndex];
-
-        const auto Anchor = TransformMatrix.TransformPoint(pt);
-
-        D2D1_RECT_F r { Anchor.x + (offset * FlipX), Anchor.y + (offset * FlipY), Anchor.x + (100.f * FlipX), Anchor.y + (100.f * FlipY) };
-
-        deviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
-
-        deviceContext->DrawTextW(fb.Label, (UINT32) ::wcslen(fb.Label), _TextStyle._TextFormat.Get(), r, _TextStyle._Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
-
-        deviceContext->SetTransform(Transform);
-    };
-
-    if (_State._VisualizationType == VisualizationType::Bars)
-    {
-        auto t = _ClientSize.width / BandCount;
-
-        // Use the full width of the graph?
-        if (_GraphOptions->_HorizontalAlignment != HorizontalAlignment::Fit)
-            t = std::floor(t);
-
-        const float BarWidth      = std::max(t, 2.f); // In DIP
-        const float SpectrumWidth = BarWidth * BandCount;
-
-        const float Radius  = BarWidth / 2.f;
-        const float HOffset = GetHOffset(_GraphOptions->_HorizontalAlignment, _ClientSize.width - SpectrumWidth) + Radius;
-        const float Offset  = Radius * 2.f;
-
-        for (const auto & Peak : _Processor->Peaks)
-        {
-            float x = HOffset + ((float) Peak.BandIndex * BarWidth);
-            float y = std::min((float) (Peak.Value * _ClientSize.height), _ClientSize.height);
-
-            const D2D1_POINT_2F Center = { x, y  };
-
-            deviceContext->FillEllipse(D2D1::Ellipse(Center, Radius, Radius), _PeakBrush.Get());
-
-            // Draw the text untransformed.
-            DrawLabel(Peak.BandIndex, Center, Offset);
-        }
-    }
-    else
-    if (_State._VisualizationType == VisualizationType::Curve)
-    {
-        const float BandWidth = _ClientSize.width / BandCount;
-        const float Radius    = BandWidth / 2.f;
-        const float Offset    = Radius * 2.f;
-
-        for (const auto & Peak : _Processor->Peaks)
-        {
-            float x = ((float) Peak.BandIndex + 0.5f) * BandWidth;
-            float y = std::min((float) (Peak.Value * _ClientSize.height), _ClientSize.height);
-
-            // Draw the circle.
-            const D2D1_POINT_2F Center = { x, y  };
-
-            deviceContext->FillEllipse(D2D1::Ellipse(Center, Radius, Radius), _PeakBrush.Get());
-
-            // Draw the text untransformed.
-            DrawLabel(Peak.BandIndex, Center, Offset);
-        }
-    }
-}
-#else
 void spectrum_t::RenderPeaks(ID2D1DeviceContext* deviceContext) noexcept
 {
 /*
@@ -694,8 +602,6 @@ void spectrum_t::RenderPeaks(ID2D1DeviceContext* deviceContext) noexcept
     _Processor->Peaks.push_back( { 0, 0.5, _State._LoFrequency, 0. });
     _Processor->Peaks.push_back( { _Processor->FrequencyBands.size() - 1, 0.5, _State._HiFrequency, 0. });
 */
-    const auto BandCount = _Processor->FrequencyBands.size();
-
     const bool IsBars  = _State._VisualizationType == VisualizationType::Bars;
     const bool IsCurve = _State._VisualizationType == VisualizationType::Curve;
 
@@ -713,11 +619,13 @@ void spectrum_t::RenderPeaks(ID2D1DeviceContext* deviceContext) noexcept
     const bool FlipHorizontally = _GraphOptions->_FlipHorizontally;
     const bool FlipVertically   = _GraphOptions->_FlipVertically;
 
-    _TextStyle.SetHorizontalAlignment(FlipHorizontally ? DWRITE_TEXT_ALIGNMENT_TRAILING  : DWRITE_TEXT_ALIGNMENT_LEADING);
-    _TextStyle.SetVerticalAlignment  (FlipVertically   ? DWRITE_PARAGRAPH_ALIGNMENT_NEAR : DWRITE_PARAGRAPH_ALIGNMENT_FAR);
+    _PeakTextStyle.SetHorizontalAlignment(FlipHorizontally ? DWRITE_TEXT_ALIGNMENT_TRAILING  : DWRITE_TEXT_ALIGNMENT_LEADING);
+    _PeakTextStyle.SetVerticalAlignment  (FlipVertically   ? DWRITE_PARAGRAPH_ALIGNMENT_NEAR : DWRITE_PARAGRAPH_ALIGNMENT_FAR);
 
-    const float Width      = _ClientSize.width;
-    const float Height     = _ClientSize.height;
+    const float Width  = _ClientSize.width;
+    const float Height = _ClientSize.height;
+
+    const auto BandCount = _Processor->FrequencyBands.size();
 
     float BandWidth = Width / (float) BandCount;
     float XOffset   = 0.f;
@@ -759,7 +667,7 @@ void spectrum_t::RenderPeaks(ID2D1DeviceContext* deviceContext) noexcept
 
         deviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
 
-        deviceContext->DrawTextW(fb.Label, (UINT32) std::wcslen(fb.Label), _TextStyle._TextFormat.Get(), Bounds, _TextStyle._Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_NONE);
+        deviceContext->DrawTextW(fb.Label, (UINT32) std::wcslen(fb.Label), _PeakTextStyle.TextFormat.Get(), Bounds, _PeakTextStyle.Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_NONE);
 
         deviceContext->SetTransform(OriginalTransform);
     };
@@ -776,12 +684,12 @@ void spectrum_t::RenderPeaks(ID2D1DeviceContext* deviceContext) noexcept
 
         const auto Center = D2D1::Point2F(x, y);
 
-        deviceContext->FillEllipse(D2D1::Ellipse(Center, Radius, Radius), _PeakBrush.Get());
+        deviceContext->FillEllipse(D2D1::Ellipse(Center, Radius, Radius), _PeakMarkerStyle.Brush.Get());
 
         DrawLabel(Peak.BandIndex, Center);
     }
 }
-#endif
+
 /// <summary>
 /// Renders diagnostics information.
 /// </summary>
@@ -808,7 +716,7 @@ void spectrum_t::RenderDiagnostics(ID2D1DeviceContext * deviceContext) const noe
     {
         deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
-        ID2D1Brush * Brush = _WindowFunctionStyle._Brush.Get();
+        ID2D1Brush * Brush = _WindowFunctionStyle.Brush.Get();
 
         const FLOAT y1 = _ClientRect.bottom;
         const FLOAT y2 = _ClientRect.top + 1.f;
@@ -845,7 +753,7 @@ void spectrum_t::RenderDiagnostics(ID2D1DeviceContext * deviceContext) const noe
 
         deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
-        ID2D1Brush * Brush = _WeighingFunctionStyle._Brush.Get();
+        ID2D1Brush * Brush = _WeighingFunctionStyle.Brush.Get();
 
         const FLOAT x1 = _ClientRect.left;
         const FLOAT x2 = _ClientRect.right;
@@ -915,9 +823,6 @@ HRESULT spectrum_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceCon
         (void) deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), _DebugBrush.GetAddressOf());
 #endif
 
-    if (_PeakBrush == nullptr)
-        (void) deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), _PeakBrush.GetAddressOf());
-
     if (_State._ColorsHaveChanged || _State._SizeHasChanged)
     {
         DeleteColorDependentResources();
@@ -953,8 +858,6 @@ void spectrum_t::DeleteDeviceSpecificResources() noexcept
 
     DeleteColorDependentResources();
     DeleteSizeDependentResources();
-
-    _PeakBrush.Reset();
 
 #ifdef _DEBUG
     _DebugBrush.Reset();
@@ -999,7 +902,7 @@ HRESULT spectrum_t::CreateColorDependentResources(ID2D1DeviceContext * deviceCon
 
     const auto InitializeStyle = [this, deviceContext, & StyleManager](style_t & style, VisualElement element, const WCHAR * text = L"") noexcept -> HRESULT
     {
-        if (style._Brush != nullptr)
+        if (style.Brush != nullptr)
             return S_OK;
 
         style = *StyleManager.GetStyle(element);
@@ -1011,7 +914,7 @@ HRESULT spectrum_t::CreateColorDependentResources(ID2D1DeviceContext * deviceCon
 
     const auto InitializeRadialStyle = [this, deviceContext, &StyleManager](style_t & style, VisualElement element) noexcept -> HRESULT
     {
-        if (style._Brush != nullptr)
+        if (style.Brush != nullptr)
             return S_OK;
 
         constexpr D2D1_POINT_2F Center = { };
@@ -1159,7 +1062,12 @@ HRESULT spectrum_t::CreateColorDependentResources(ID2D1DeviceContext * deviceCon
     if (FAILED(hr))
         return hr;
 
-    hr = InitializeStyle(_TextStyle, VisualElement::XAxisText, L"999.9k");
+    hr = InitializeStyle(_PeakMarkerStyle, VisualElement::PeakMarker);
+
+    if (FAILED(hr))
+        return hr;
+
+    hr = InitializeStyle(_PeakTextStyle, VisualElement::PeakText, L"0");
 
     if (FAILED(hr))
         return hr;
@@ -1172,7 +1080,8 @@ HRESULT spectrum_t::CreateColorDependentResources(ID2D1DeviceContext * deviceCon
 /// </summary>
 void spectrum_t::DeleteColorDependentResources() noexcept
 {
-    _TextStyle.DeleteDeviceSpecificResources();
+    _PeakTextStyle.DeleteDeviceSpecificResources();
+    _PeakMarkerStyle.DeleteDeviceSpecificResources();
 
     _WeighingFunctionStyle.DeleteDeviceSpecificResources();
     _WindowFunctionStyle.DeleteDeviceSpecificResources();

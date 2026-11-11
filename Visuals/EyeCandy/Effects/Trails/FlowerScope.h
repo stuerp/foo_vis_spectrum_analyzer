@@ -44,12 +44,6 @@ namespace FlowerScope
         static constexpr size_t FlowerCount      = 18;
         static constexpr size_t RenderCurveCount = CurveCount * 2;
 
-        struct band_t
-        {
-            double Energy = 0.;
-            double SmoothedEnergy = 0.;
-        };
-
         struct curve_t
         {
             std::vector<D2D1_POINT_2F> Points;
@@ -89,36 +83,44 @@ namespace FlowerScope
         void DeleteDeviceDependentResources() noexcept;
 
     private:
-        std::array<band_t, BandCount> _Bands{ };
         std::vector<double> _LeftSamples;
         std::vector<double> _RightSamples;
+
+        double _SampleRate = 44100.;
+
+        double _Rhythm            = 0.;
+        double _StereoCorrelation = 1.;
+        double _StereoPhase       = 0.;
+        double _HarmonicCenter    = 0.;
+
+        double _RhythmPulse       = 0.;
+
+        double _SmoothedRhythm            = 0.;
+        double _SmoothedStereoCorrelation = 1.;
+        double _SmoothedStereoPhase       = 0.;
+        double _SmoothedHarmonicCenter    = 0.;
 
     private:
         std::vector<curve_t> _Curves;
 
-        double _SampleRate = 44100.;
-        double _Rhythm = 0.;
-        double _SmoothedRhythm = 0.;
-        double _RhythmPulse = 0.;
-        double _HarmonicCenter = 0.;
-        double _SmoothedHarmonic = 0.;
-        double _StereoCorrelation = 1.;
-        double _SmoothedCorrelation = 1.;
-        double _StereoPhase = 0.;
-        double _SmoothedPhase = 0.;
         double _Rotation = 0.;
         double _BassGlow = 0.;
+
         size_t _CurvePointCount = 640;
         size_t _CurveBasePetals = 2;
         double _CurveExtent = 0.;
         double _CurveStereoWidth = 0.;
+
         double _FlowerCenterX = 0.;
         double _FlowerCenterY = 0.;
+
         double _PaletteTime = 0.;
         double _FlowerTime = 0.;
+
         size_t _FlowerA = 0;
         size_t _FlowerB = 1;
         double _FlowerBlend = 0.;
+
         size_t _PaletteA = 0;
         size_t _PaletteB = 1;
         double _PaletteBlend = 0.;
@@ -126,7 +128,5 @@ namespace FlowerScope
     private:
         ComPtr<ID2D1SolidColorBrush> _Brush;
         ComPtr<ID2D1StrokeStyle> _StrokeStyle;
-        ComPtr<ID2D1BitmapRenderTarget> _BackBufferRenderTarget;
-        ComPtr<ID2D1Bitmap> _BackBuffer;
     };
 }

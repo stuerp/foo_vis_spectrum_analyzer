@@ -73,14 +73,14 @@ private:
 
     style_t _BarBackgroundStyle;
 
-    style_t _PeakStyle;
-    style_t _Peak0dBStyle;
-    style_t _MaxPeakStyle;
-    style_t _PeakTextStyle;
+    style_t _BarPeakStyle;
+    style_t _Bar0dBPeakStyle;
+    style_t _BarMaxPeakStyle;
+    style_t _BarPeakTextStyle;
 
-    style_t _RMSStyle;
-    style_t _RMS0dBStyle;
-    style_t _RMSTextStyle;
+    style_t _BarRMSStyle;
+    style_t _Bar0dBRMSStyle;
+    style_t _BarRMSTextStyle;
 
     style_t _NameStyle;
 

@@ -56,19 +56,6 @@ namespace InterferenceMoire
         void DeleteDeviceDependentResources() noexcept;
 
     private:
-        std::vector<double> _Samples;
-
-        static constexpr size_t BandCount = 12;
-
-        std::array<double, BandCount> _BandEnergy{ };
-        std::array<double, BandCount> _SmoothedBandEnergy{ };
-        std::array<double, BandCount> _PreviousBandEnergy{ };
-
-        std::vector<uint32_t> _Pixels;
-
-        UINT32 _PixelWidth = 0;
-        UINT32 _PixelHeight = 0;
-
         double _PreviousPulse = 0.;
         double _Time = 0.;
 
@@ -88,8 +75,5 @@ namespace InterferenceMoire
         double _HueShift = 0.;
         double _PaletteSpread = .22;
         double _Saturation = .78;
-
-    private:
-        ComPtr<ID2D1Bitmap> _Bitmap;
     };
 }

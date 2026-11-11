@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2026.11.10) P. Stuer **/
+/** $VER: Resources.h (2026.11.11) P. Stuer **/
 
 #pragma once
 
@@ -125,6 +125,20 @@
 
 #pragma endregion
 
+#pragma region Peak Detection
+
+#define IDC_PEAK_DETECTION_GROUP        2100
+
+#define IDC_PEAK_DETECTION              2102
+#define IDC_NUM_PEAKS                   2104
+#define IDC_MIN_PEAK_LEVEL              2106
+#define IDC_MIN_PEAK_PROMINENCE         2108
+#define IDC_BAND_SPAN                   2110
+#define IDC_MIN_PEAK_DISTANCE           2112
+#define IDC_INTERPOLATE_FREQUENCY       2114
+
+#pragma endregion
+
 #pragma region Brown-Puckette CQT
 
 #define IDC_BP_GROUP                    2300
@@ -202,8 +216,6 @@
 
 #define IDC_BANDWIDTH                   2232
 #define IDC_BANDWIDTH_SPIN              2234
-
-#define IDC_RENDER_PEAKS                2236
 
 #pragma endregion
 

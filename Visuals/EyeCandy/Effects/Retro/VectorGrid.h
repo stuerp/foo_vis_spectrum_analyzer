@@ -46,13 +46,7 @@ namespace VectorGrid
         void SetTrebleResponse(double value) noexcept { _TrebleResponse = std::clamp(value, 0., 3.); }
         double GetTrebleResponse() const noexcept { return _TrebleResponse; }
 
-        void SetTheme(ColorTheme theme) noexcept { SetColorTheme(theme); }
-        ColorTheme GetTheme() const noexcept { return GetColorTheme(); }
-        void NextTheme() noexcept { NextColorTheme(); }
-        void PreviousTheme() noexcept { PreviousColorTheme(); }
-
     private:
-        static constexpr size_t MaximumFrameCount = 2048;
         static constexpr size_t MaximumColumns = 49;
         static constexpr size_t MaximumRows = 72;
 

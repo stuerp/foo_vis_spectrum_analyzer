@@ -36,6 +36,71 @@ namespace Starfield
     /// <summary>
     /// 
     /// </summary>
+    void effect_t::Reset() noexcept
+    {
+        DeleteDeviceDependentResources();
+
+        Projection.Width       = (double) _Width;
+        Projection.Height      = (double) _Height;
+        Projection.AspectRatio = (_Height > 0.f) ? (double) _Width / (double) _Height : 1.;
+
+        World  = {};
+        Camera = {};
+        Object = {};
+
+        Projection.LensOffsetX = 0.;
+        Projection.LensOffsetY = 0.;
+
+        _BassState      = 0.;
+        _SubBassState   = 0.;
+        _MidState       = 0.;
+
+        _MidLevel      = 0.;
+        _SmoothedMidLevel    = 0.;
+
+        _PreviousMidLevel  = 0.;
+        _PreviousBassLevel = 0.;
+
+        _BeatAverage        = 0.;
+        _BeatPulse          = 0.;
+        _BeatCooldown       = 0.;
+
+        _MidDirectionCooldown = 0.;
+
+        _CameraRollVelocity  = 0.;
+        _CameraRollDirection = 1.;
+
+        _FlightYaw           = 0.;
+        _FlightPitch         = 0.;
+        _FlightYawVelocity   = 0.;
+        _FlightPitchVelocity = 0.;
+
+        _Stars.clear();
+
+        const size_t Count = [&]() noexcept
+        {
+            switch (_Quality)
+            {
+                case Quality::Low:
+                    return (size_t) 475;
+
+                default:
+                case Quality::Medium:
+                    return (size_t) 950;
+
+                case Quality::High:
+                    return (size_t) 1900;
+            }
+        }();
+
+        _Stars.resize(Count);
+
+        for (size_t i = 0; i < Count; ++i)
+            RespawnStar(_Stars[i], i, true);
+    }
+    /// <summary>
+    /// 
+    /// </summary>
     void effect_t::Render(ID2D1RenderTarget * renderTarget, double deltaTime, audio_chunk & chunk) noexcept
     {
         const HRESULT hr = CreateDeviceDependentResources(renderTarget);
@@ -99,27 +164,28 @@ namespace Starfield
     /// </summary>
     void effect_t::AnalyzeAudio(const audio_chunk & chunk)
     {
+        _HasAudio = false;
+
         _Peak       = 0.;
         _RMS        = 0.;
 
-        _BassEnergy = 0.;
-        _MidEnergy  = 0.;
-
-        _HasAudio = false;
+        _BassLevel = 0.;
+        _MidLevel  = 0.;
 
         if (chunk.is_empty())
             return;
 
-        const size_t FrameCount   = chunk.get_sample_count();
-        const size_t ChannelCount = chunk.get_channel_count();
-        const size_t SampleRate   = chunk.get_sample_rate();
+        const auto FrameCount   = chunk.get_sample_count();
+        const auto ChannelCount = chunk.get_channel_count();
+        const auto SampleRate   = chunk.get_sample_rate();
 
-        // Analyze only the most recent 4096 sample frames.
-        const size_t MaxFrames = std::min<size_t>(FrameCount, 4096);
-        const size_t FrameIndex = FrameCount - MaxFrames;
+        // Analyze only the most recent frames of the chunk.
+        const auto MaxFrames = std::min<size_t>(FrameCount, 4096);
 
         if (MaxFrames < 8)
             return;
+
+        const auto FrameIndex = FrameCount - MaxFrames;
 
         const audio_sample * Frame = chunk.get_data() + (FrameIndex * ChannelCount);
         const audio_sample * const EndFrame = Frame + (MaxFrames * ChannelCount);
@@ -185,12 +251,12 @@ namespace Starfield
         const double FramesScale = 1. / (double) MaxFrames;
 
         _RMS        = std::sqrt(Sum     * FramesScale);
-        _BassEnergy = std::sqrt(SumBass * FramesScale);
-        _MidEnergy  = std::sqrt(SumMid  * FramesScale);
+        _BassLevel = std::sqrt(SumBass * FramesScale);
+        _MidLevel  = std::sqrt(SumMid  * FramesScale);
 
         // Compress the bass and mid energy nonlinear into ranges useful for visualization.
-        _BassEnergy = Clamp(std::log1p(_BassEnergy * 36.) / std::log1p(36.)); // Gain 36
-        _MidEnergy  = Clamp(std::log1p(_MidEnergy  * 18.) / std::log1p(18.)); // Gain 18
+        _BassLevel = Clamp(std::log1p(_BassLevel * 36.) / std::log1p(36.)); // Gain 36
+        _MidLevel  = Clamp(std::log1p(_MidLevel  * 18.) / std::log1p(18.)); // Gain 18
 
         _HasAudio = (_Peak > 1.0e-5) || (_RMS > 1.0e-6);
     }
@@ -207,25 +273,28 @@ namespace Starfield
         {
             switch (_Speed)
             {
-                case EyeCandy::Speed::Slow:
+                case Speed::Slow:
                     return 0.82;
 
-                case EyeCandy::Speed::Fast:
-                    return 2.45;
-
-                case EyeCandy::Speed::Normal:
                 default:
+                case Speed::Normal:
                     return 1.35;
+
+                case Speed::Fast:
+                    return 2.45;
             }
         }();
 
         _AnimationTime  += deltaTime * SpeedFactor;
-        _TransitionTime += deltaTime; // Cycle through galaxy-inspired color themes every five seconds.
 
-        while (_TransitionTime >= TransitionInterval)
         {
-            _TransitionTime -= TransitionInterval;
-            _ThemeIndex = (_ThemeIndex + 1) % ThemeCount;
+            _NextThemeTransitionTime += deltaTime; // Cycle through galaxy-inspired color themes every five seconds.
+
+            while (_NextThemeTransitionTime >= ThemeTransitionInterval)
+            {
+                _NextThemeTransitionTime -= ThemeTransitionInterval;
+                _ThemeIndex = (_ThemeIndex + 1) % ThemeCount;
+            }
         }
 
         // Apply temporal smoothing. Choose a different response rate based on a rising or falling signal.
@@ -251,7 +320,7 @@ namespace Starfield
                 constexpr double AttackRate  = 42.0;
                 constexpr double ReleaseRate = 12.0;
 
-                _SmoothedBass = ExponentialSmoothing(_SmoothedBass, _BassEnergy, deltaTime, (_BassEnergy > _SmoothedBass) ? AttackRate : ReleaseRate);
+                _SmoothedBassLevel = ExponentialSmoothing(_SmoothedBassLevel, _BassLevel, deltaTime, (_BassLevel > _SmoothedBassLevel) ? AttackRate : ReleaseRate);
             }
 
             {
@@ -259,7 +328,7 @@ namespace Starfield
                 constexpr double AttackRate  = 6.0;
                 constexpr double ReleaseRate = 2.5;
 
-                _SmoothedMid = ExponentialSmoothing(_SmoothedMid, _MidEnergy, deltaTime, (_MidEnergy > _SmoothedMid) ? AttackRate : ReleaseRate);
+                _SmoothedMidLevel = ExponentialSmoothing(_SmoothedMidLevel, _MidLevel, deltaTime, (_MidLevel > _SmoothedMidLevel) ? AttackRate : ReleaseRate);
             }
 
             {
@@ -269,27 +338,27 @@ namespace Starfield
                 constexpr double AttackRate  = 5.00;
                 constexpr double ReleaseRate = 0.85;
 
-                _BeatAverage = ExponentialSmoothing(_BeatAverage, _BassEnergy, deltaTime, (_BassEnergy < _BeatAverage) ? AttackRate : ReleaseRate);
+                _BeatAverage = ExponentialSmoothing(_BeatAverage, _BassLevel, deltaTime, (_BassLevel < _BeatAverage) ? AttackRate : ReleaseRate);
             }
         }
 
         {
-            const double BassRise         = std::max(0., _BassEnergy - _PreviousBass);  // Detects sudden changes.
-            const double BassAboveAverage = std::max(0., _SmoothedBass - _BeatAverage); // Detects relative strengt.
+            const double BassRise         = std::max(0., _BassLevel   - _PreviousBassLevel);  // Detects sudden changes.
+            const double BassAboveAverage = std::max(0., _SmoothedBassLevel - _BeatAverage);         // Detects relative strengt.
 
             // BassRise receives much more weight because the desired effect is a sudden acceleration on the leading edge of a bass hit.
             const double AttackStrength = Clamp((BassAboveAverage * 2.5) + (BassRise * 9.0));
 
-            _PreviousBass = _BassEnergy;
+            _PreviousBassLevel = _BassLevel;
 
             {
                 _BeatCooldown = std::max(0., _BeatCooldown - deltaTime);
-                _BeatPulse *= std::exp(-deltaTime * 13.0);
+                _BeatPulse   *= std::exp(-deltaTime * 13.0);
 
                 if (_HasAudio && (_BeatCooldown <= 0.0) && (BassRise > 0.008) && (AttackStrength > 0.10))
                 {
-                    _BeatPulse = std::max(_BeatPulse, AttackStrength);
                     _BeatCooldown = 0.085;
+                    _BeatPulse    = std::max(_BeatPulse, AttackStrength);
                 }
             }
         }
@@ -298,19 +367,22 @@ namespace Starfield
         {
             constexpr double MaximumRotationSpeed = 14.0;
 
-            const double MidRise = std::max(0., _MidEnergy - _PreviousMid);
+            const double MidRise = std::max(0., _MidLevel - _PreviousMidLevel);
             const double MidSway = (std::sin(_AnimationTime * 0.57) * 0.64) + (std::sin(_AnimationTime * 0.193) * 0.36);
 
-            _MidDirectionCooldown = std::max(0., _MidDirectionCooldown - deltaTime);
-
-            if (_HasAudio && (_MidDirectionCooldown <= 0.) && (MidRise > 0.025) && (_SmoothedMid > 0.12))
             {
-                _CameraRollDirection = -_CameraRollDirection;
-                _CameraRollVelocity = _CameraRollDirection * std::min(MaximumRotationSpeed, 7.5 + (_SmoothedMid * 6.5));
-                _MidDirectionCooldown = 0.55 + ((1. - _SmoothedMid) * 0.85);
+                _MidDirectionCooldown = std::max(0., _MidDirectionCooldown - deltaTime);
+
+                if (_HasAudio && (_MidDirectionCooldown <= 0.) && (MidRise > 0.025) && (_SmoothedMidLevel > 0.12))
+                {
+                    _CameraRollDirection = -_CameraRollDirection;
+                    _CameraRollVelocity  = _CameraRollDirection * std::min(MaximumRotationSpeed, 7.5 + (_SmoothedMidLevel * 6.5));
+
+                    _MidDirectionCooldown = 0.55 + ((1. - _SmoothedMidLevel) * 0.85);
+                }
             }
 
-            const double TargetVelocity = std::clamp(_CameraRollDirection * (2.4 + (_SmoothedMid * 10.5)) + (MidSway * _SmoothedMid * 3.6), -MaximumRotationSpeed, MaximumRotationSpeed);
+            const double TargetVelocity = std::clamp(_CameraRollDirection * (2.4 + (_SmoothedMidLevel * 10.5)) + (MidSway * _SmoothedMidLevel * 3.6), -MaximumRotationSpeed, MaximumRotationSpeed);
 
             _CameraRollVelocity = ExponentialSmoothing(_CameraRollVelocity, TargetVelocity, deltaTime, 4.8);
             _CameraRollVelocity = std::clamp(_CameraRollVelocity, -MaximumRotationSpeed, MaximumRotationSpeed);
@@ -322,7 +394,7 @@ namespace Starfield
             if (_CameraRoll < -180.)
                 _CameraRoll += 360.;
 
-            _PreviousMid = _MidEnergy;
+            _PreviousMidLevel = _MidLevel;
         }
 
         // Simulate independent spaceship steering. Slow layered oscillators create wide left and right turns while the smaller pitch range moves the nose gently up and down.
@@ -368,7 +440,7 @@ namespace Starfield
 
         // Keep normal movement restrained so the short bass impulse remains clearly visible as acceleration.
         {
-            const double BaseSpeed    = 0.18 + (_SmoothedRMS * 0.72) + (_SmoothedBass * 0.22) + (_SmoothedPeak * 0.12);
+            const double BaseSpeed    = 0.18 + (_SmoothedRMS * 0.72) + (_SmoothedBassLevel * 0.22) + (_SmoothedPeak * 0.12);
             const double BeatSpeed    = _BeatPulse * 3.20;
             const double ForwardSpeed = (BaseSpeed + BeatSpeed) * SpeedFactor;
 
@@ -378,71 +450,6 @@ namespace Starfield
         }
     }
 
-    /// <summary>
-    /// 
-    /// </summary>
-    void effect_t::Reset() noexcept
-    {
-        DeleteDeviceDependentResources();
-
-        Projection.Width       = (double) _Width;
-        Projection.Height      = (double) _Height;
-        Projection.AspectRatio = (_Height > 0.f) ? (double) _Width / (double) _Height : 1.;
-
-        World  = {};
-        Camera = {};
-        Object = {};
-
-        Projection.LensOffsetX = 0.;
-        Projection.LensOffsetY = 0.;
-
-        _BassState = 0.;
-        _SubBassState   = 0.;
-        _MidState  = 0.;
-
-        _MidEnergy = 0.;
-
-        _SmoothedMid = 0.;
-        _PreviousMid = 0.;
-
-        _MidDirectionCooldown = 0.;
-
-        _CameraRollVelocity  = 0.;
-        _CameraRollDirection = 1.;
-
-        _FlightYaw           = 0.;
-        _FlightPitch         = 0.;
-        _FlightYawVelocity   = 0.;
-        _FlightPitchVelocity = 0.;
-
-        _PreviousBass = 0.;
-        _BeatAverage  = 0.;
-        _BeatPulse    = 0.;
-        _BeatCooldown = 0.;
-
-        _Stars.clear();
-
-        const size_t Count = [&]() noexcept
-        {
-            switch (_Quality)
-            {
-                case EyeCandy::Quality::Low:
-                    return size_t{ 450 };
-
-                case EyeCandy::Quality::High:
-                    return size_t{ 1800 };
-
-                case EyeCandy::Quality::Medium:
-                default:
-                    return size_t{ 950 };
-            }
-        }();
-
-        _Stars.resize(Count);
-
-        for (size_t i = 0; i < Count; ++i)
-            RespawnStar(_Stars[i], i, true);
-    }
 
     /// <summary>
     /// Generates work for the worker threads.
@@ -634,7 +641,7 @@ namespace Starfield
         if (Difference < -0.5f)
             Difference += 1.f;
 
-        const float Blend = SmoothStep(0.f, (float) ThemeTransitionTime, (float) std::min(_TransitionTime, ThemeTransitionTime));
+        const float Blend = SmoothStep(0.f, (float) ThemeTransitionTime, (float) std::min(_NextThemeTransitionTime, ThemeTransitionTime));
 
         return Fraction(StartHue + Difference * Blend);
     }
@@ -654,7 +661,7 @@ namespace Starfield
 
         _BackgroundBrush->SetOpacity((float) Clamp(0.72 + (_SmoothedRMS * 0.4) + (_BeatPulse * 0.18)));
 
-        renderTarget->FillRectangle(_Rectangle, _BackgroundBrush.Get());
+        renderTarget->FillRectangle(_ViewPort, _BackgroundBrush.Get());
     }
 
     /// <summary>
@@ -723,7 +730,7 @@ namespace Starfield
 
             const float Depth       = (float) Clamp(1. - (Star.Z - Projection.NearPlane) / (Projection.FarPlane - Projection.NearPlane));
             const float Brightness  = SmoothStep(0.f, 1.f, Depth);
-            const float Radius      = (float) Star.Size * Lerp(0.35f, 2.45f, Brightness) * (1.f + (Pulse * Brightness * 1.20f) + ((float) _SmoothedBass * 0.22f));
+            const float Radius      = (float) Star.Size * Lerp(0.35f, 2.45f, Brightness) * (1.f + (Pulse * Brightness * 1.20f) + ((float) _SmoothedBassLevel * 0.22f));
 
             const D2D1_COLOR_F Color = GetStarColor(Star, Brightness);
 
@@ -754,7 +761,7 @@ namespace Starfield
         const float ColorShift = (float) _BeatPulse * 0.035f;
 
         const float H = Fraction(CurrentThemeHue() + (float) (star.HueOffset * 0.035f) + ColorShift + (float) (_AnimationTime * 0.0025));
-        const float S = (float) Clamp(0.12 + std::abs(star.HueOffset) * 0.42 + _SmoothedBass * 0.12);
+        const float S = (float) Clamp(0.12 + std::abs(star.HueOffset) * 0.42 + _SmoothedBassLevel * 0.12);
         const float V = (float) Clamp(star.Brightness * Lerp(0.30, 1.0, depthBrightness) * (1.0 + _BeatPulse * depthBrightness * 0.65));
         const float A = (float) Clamp(Lerp(0.22, 1., depthBrightness));
 
@@ -768,7 +775,7 @@ namespace Starfield
     {
         const float Radius = std::min(_Width, _Height) * (0.045f + (float) (_BeatPulse * 0.28));
 
-        const float Opacity = (float) Clamp(0.08 + (_SmoothedBass * 0.18) + (_BeatPulse * 1.05));
+        const float Opacity = (float) Clamp(0.08 + (_SmoothedBassLevel * 0.18) + (_BeatPulse * 1.05));
 
         ComPtr<ID2D1RadialGradientBrush> FlashBrush;
 
@@ -836,7 +843,7 @@ namespace Starfield
         for (const star_t & Star : _Stars)
         {
             // Extend the tail backward along the Z axis. Beat pulses enlarge this distance, producing the forward-jump sensation.
-            const double trailDepth = Lerp(0.035, 0.24, Pulse) * Star.Speed * (1.0 + (_SmoothedRMS * 2.4) + (_SmoothedBass * 0.65));
+            const double trailDepth = Lerp(0.035, 0.24, Pulse) * Star.Speed * (1.0 + (_SmoothedRMS * 2.4) + (_SmoothedBassLevel * 0.65));
             const double tailZ      = std::min(Projection.FarPlane, std::max(Star.PreviousZ, Star.Z + trailDepth));
 
             point3d_t HeadPoint { Star.X, Star.Y, Star.Z };

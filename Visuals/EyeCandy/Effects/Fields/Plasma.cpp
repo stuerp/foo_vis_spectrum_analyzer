@@ -48,6 +48,8 @@ namespace Plasma
         _RasterWidth  = std::max((uint32_t) std::lround(_Width  * Scale / Divider), 1u);
         _RasterHeight = std::max((uint32_t) std::lround(_Height * Scale / Divider), 1u);
 
+        _Stride = _RasterWidth * BytesPerPixel;
+
         _Pixels.resize((size_t) _RasterWidth * _RasterHeight);
 
         // Make sure the Direct2D bitmap gets recreated.
@@ -72,23 +74,23 @@ namespace Plasma
         if (!std::isfinite(deltaTime) || deltaTime <= 0. || deltaTime > MaximumFrameTime)
             deltaTime = DefaultFrameTime;
 
-        // Update the pixel matrix.
+        // Update the raster.
         {
-            _Processor.Process(chunk, deltaTime);
+            Process(chunk, deltaTime);
 
             {
                 const double SpeedFactor = [&]() noexcept
                 {
                     switch (_Speed)
                     {
-                        case EyeCandy::Speed::Slow:
+                        case Speed::Slow:
                             return 0.45;
 
                         default:
-                        case EyeCandy::Speed::Normal:
+                        case Speed::Normal:
                             return 0.75;
 
-                        case EyeCandy::Speed::Fast:
+                        case Speed::Fast:
                             return 1.15;
                     }
                 }();
@@ -98,14 +100,14 @@ namespace Plasma
 
             _Interaction.Impulse *= std::exp(-2.6 * deltaTime);
 
-            if (_AnimationTime > _NextTransitionTime)
+            if (_AnimationTime > _NextThemeTransitionTime)
             {
                 ++_NextThemeIndex;
 
                 if (_NextThemeIndex == Field::theme_t::BuiltInCount)
                     _NextThemeIndex = 0;
 
-                _NextTransitionTime = _AnimationTime + TransitionInterval;
+                _NextThemeTransitionTime = _AnimationTime + ThemeTransitionInterval;
             }
 
             if (_ThemeIndex != _NextThemeIndex)
@@ -127,13 +129,9 @@ namespace Plasma
 
         // Render the bitmap.
         {
-            _BackBuffer->CopyFromMemory(nullptr, _Pixels.data(), _RasterWidth * BytesPerPixel);
+            _BackBuffer->CopyFromMemory(nullptr, _Pixels.data(), _Stride);
 
-            renderTarget->Clear(Black);
-
-            const auto Size = renderTarget->GetSize();
-
-            renderTarget->DrawBitmap(_BackBuffer.Get(), _Rectangle);
+            renderTarget->DrawBitmap(_BackBuffer.Get(), _ViewPort);
         }
     }
 
@@ -159,7 +157,7 @@ namespace Plasma
             return;
 
         const double ClampedZoom = std::clamp(_Interaction.Zoom, .50, 2.50); // Prevent extreme or invalid scaling.
-        const double CoordinateScale = (2.5 - (.50 * _Processor._BassEnergy)) / ClampedZoom;
+        const double CoordinateScale = (2.5 - (.50 * _BassLevel)) / ClampedZoom;
 
         work_t Work
         {
@@ -171,18 +169,18 @@ namespace Plasma
             .CoordinateScale      = CoordinateScale,
             .HorizontalScale      = CoordinateScale * ((double) _RasterWidth / (double) _RasterHeight),
 
-            .HorizontalFrequency  = 2.2 + (1.8 * _Processor._MidEnergy),
-            .DiagonalFrequency    = 2.7 + (1.2 * _Processor._BassEnergy),
-            .RadialFrequency      = 7.  + (3.0 * _Processor._BassEnergy),
+            .HorizontalFrequency  = 2.2 + (1.8 * _MidLevel),
+            .DiagonalFrequency    = 2.7 + (1.2 * _BassLevel),
+            .RadialFrequency      = 7.  + (3.0 * _BassLevel),
 
-            .HorizontalPhase      = time * (0.70 + _Processor._TrebleEnergy * 0.70),
-            .DiagonalPhase        = time * (0.55 + _Processor._MidEnergy),
-            .RadialPhase          = time * (1.10 + _Processor._Peak),
+            .HorizontalPhase      = time * (0.70 + _TrebleLevel * 0.70),
+            .DiagonalPhase        = time * (0.55 + _MidLevel),
+            .RadialPhase          = time * (1.10 + _Peak),
             .DetailPhase          = time *  0.42,
             .RipplePhase          = time *  9.00,
-            .ColorPhase           = time * (0.12 + _Processor._TrebleEnergy * 2.00),
+            .ColorPhase           = time * (0.12 + _TrebleLevel * 2.00),
 
-            .BalanceOffset        = .28 * _Processor._Balance,
+            .BalanceOffset        = .28 * _Balance,
             .RadialCenterX        = .65 * std::sin(time * .31),
             .RadialCenterY        = .55 * std::cos(time * .27),
             .HasImpulse           = (_Interaction.Impulse != 0.)
@@ -291,18 +289,18 @@ namespace Plasma
         const double PlasmaIntensity = Clamp(value);
 
         // Shape the loudness response independently from the analyzer. The default exponent of .5 reproduces the original square-root response.
-        const double LoudnessResponse = std::pow(Clamp(_Processor._Loudness), Colorization.LoudnessExponent);
+        const double LoudnessResponse = std::pow(Clamp(_Loudness), Colorization.LoudnessExponent);
 
         // Map plasma intensity across the theme palette, then shift its hue independently according to the energy in each frequency band.
         const double H =
             _Theme.BaseHue +
             _Theme.HueSpan   * PlasmaIntensity +
-            _Theme.BassHue   * _Processor._BassEnergy +
-            _Theme.MidHue    * _Processor._MidEnergy +
-            _Theme.TrebleHue * _Processor._TrebleEnergy;
+            _Theme.BassHue   * _BassLevel +
+            _Theme.MidHue    * _MidLevel +
+            _Theme.TrebleHue * _TrebleLevel;
 
         // Treble can increase saturation to make high-frequency activity appear sharper and more colorful.
-        const double S = Clamp(_Theme.Saturation + (Colorization.TrebleSaturation * _Processor._TrebleEnergy));
+        const double S = Clamp(_Theme.Saturation + (Colorization.TrebleSaturation * _TrebleLevel));
 
         // Shape brightness across the plasma field. With the default settings, middle intensities are brighter than either end of the palette.
         const double Frequency           = Colorization.IntensityCurveFrequency * PlasmaIntensity;
@@ -310,7 +308,7 @@ namespace Plasma
         const double IntensityBrightness = Colorization.IntensityBrightnessBase + (Colorization.IntensityBrightnessSpan * std::sin(Frequency + Phase));
 
         // Separate the continuous loudness response from short transient flashes.
-        const double AudioBrightness = Colorization.MinimumBrightness + (Colorization.LoudnessBrightness * LoudnessResponse) + (Colorization.PeakBrightness * _Processor._Peak);
+        const double AudioBrightness = Colorization.MinimumBrightness + (Colorization.LoudnessBrightness * LoudnessResponse) + (Colorization.PeakBrightness * _Peak);
 
         const double V = Clamp(_Theme.Brightness * AudioBrightness * IntensityBrightness);
 
@@ -319,22 +317,22 @@ namespace Plasma
         HSVToRGB(H, S, V, R, G, B);
 
         // Apply frequency-specific RGB accents after HSV conversion.
-        R = Clamp(R + _Theme.BassRed    * _Processor._BassEnergy);
-        G = Clamp(G + _Theme.MidGreen   * _Processor._MidEnergy);
-        B = Clamp(B + _Theme.TrebleBlue * _Processor._TrebleEnergy);
+        R = Clamp(R + _Theme.BassRed    * _BassLevel);
+        G = Clamp(G + _Theme.MidGreen   * _MidLevel);
+        B = Clamp(B + _Theme.TrebleBlue * _TrebleLevel);
 
         const double BrightnessFactor = [&]() noexcept
         {
             switch (_Brightness)
             {
-                case EyeCandy::Brightness::Low:
+                case Brightness::Low:
                     return .50;
 
                 default:
-                case EyeCandy::Brightness::Medium:
+                case Brightness::Medium:
                     return 1.00;
 
-                case EyeCandy::Brightness::High:
+                case Brightness::High:
                     return 1.50;
             }
         }();
@@ -359,7 +357,12 @@ namespace Plasma
         try
         {
             for (size_t i = 0; i < WorkerCount; ++i)
-                _Workers.emplace_back(&effect_t::Worker, this);
+            {
+                _Workers.emplace_back([this]() noexcept
+                {
+                    Worker();
+                });
+            }
         }
         catch (...)
         {

@@ -1,5 +1,5 @@
 
-/** $VER: TransformPage.cpp (2026.11.10) P. Stuer - Implements a configuration dialog page. **/
+/** $VER: TransformPage.cpp (2026.11.11) P. Stuer - Implements a configuration dialog page. **/
 
 #include "pch.h"
 
@@ -53,6 +53,16 @@ BOOL transform_page_t::OnInitDialog(CWindow w, LPARAM lParam) noexcept
         { IDC_REASSIGNMENT_SHARPENING, "Produces a sharper spectrum by relocating energy to a bin that represents more accurately the frequency at the cost of extra processing." },
 
         { IDC_KERNEL_SIZE, "Determines the size of the Lanczos kernel. The kernel is used to create a smooth transition between the FFT coefficients resulting in a visual pleasing result." },
+
+        // Peak Detection
+        { IDC_PEAK_DETECTION, "Enables peak detection. A peak is a local maximum level in the spectrum." },
+
+        { IDC_NUM_PEAKS, "Specifies the maximum number of peaks that will be detected." },
+        { IDC_MIN_PEAK_LEVEL, "The minimum normalized level before a frequency is considered a local maximum." },
+        { IDC_MIN_PEAK_PROMINENCE, "The minimum required prominence of a frequency to be considered a local maximum." },
+        { IDC_BAND_SPAN, "The number of frequency bands on each side of the candidate band that are evaluated when detecting a local maximum." },
+        { IDC_MIN_PEAK_DISTANCE, "The minimum required distance between two peaks." },
+        { IDC_INTERPOLATE_FREQUENCY, "Enable this setting to interpolate the candidate frequency with its neighbors." },
 
         // Brown-Puckette CQT
         { IDC_BW_OFFSET, "Offsets the bandwidth of the Brown-Puckette CQT" },
@@ -173,6 +183,63 @@ void transform_page_t::InitializeControls() noexcept
         w.SetPos32(_State->_KernelSize);
     }
 
+    // Peak Detection
+
+    {
+        {
+            auto ne = std::make_shared<numeric_edit_t>();
+
+            ne->Initialize(GetDlgItem(IDC_NUM_PEAKS));
+
+            _NumericEdits.push_back(ne);
+
+            SetInteger(IDC_NUM_PEAKS, (int64_t) _State->_MaxPeakCount);
+        }
+
+        {
+            auto ne = std::make_shared<numeric_edit_t>();
+
+            ne->Initialize(GetDlgItem(IDC_MIN_PEAK_LEVEL));
+
+            _NumericEdits.push_back(ne);
+
+            SetInteger(IDC_MIN_PEAK_LEVEL, (int64_t) (_State->_MinPeakLevel * 100.));
+        }
+
+        {
+            auto ne = std::make_shared<numeric_edit_t>();
+
+            ne->Initialize(GetDlgItem(IDC_MIN_PEAK_PROMINENCE));
+
+            _NumericEdits.push_back(ne);
+
+            SetInteger(IDC_MIN_PEAK_PROMINENCE, (int64_t) (_State->_MinPeakProminence * 100.));
+        }
+
+        {
+            auto ne = std::make_shared<numeric_edit_t>();
+
+            ne->Initialize(GetDlgItem(IDC_BAND_SPAN));
+
+            _NumericEdits.push_back(ne);
+
+            SetInteger(IDC_BAND_SPAN, (int64_t) _State->_BandSpan);
+        }
+
+        {
+            auto ne = std::make_shared<numeric_edit_t>();
+
+            ne->Initialize(GetDlgItem(IDC_MIN_PEAK_DISTANCE));
+
+            _NumericEdits.push_back(ne);
+
+            SetDouble(IDC_MIN_PEAK_DISTANCE, _State->_MinPeakDistance);
+        }
+
+        SendDlgItemMessageW(IDC_PEAK_DETECTION, BM_SETCHECK, _State->_DetectPeaks);
+        SendDlgItemMessageW(IDC_INTERPOLATE_FREQUENCY, BM_SETCHECK, _State->_InterpolateFrequency);
+    }
+
     // Window Function
     {
         auto w = (CComboBox) GetDlgItem(IDC_WINDOW_FUNCTION);
@@ -255,6 +322,8 @@ void transform_page_t::InitializeControls() noexcept
 /// </summary>
 void transform_page_t::UpdateControls() noexcept
 {
+    const bool IsBars         = (_State->_VisualizationType == VisualizationType::Bars);
+    const bool IsCurve        = (_State->_VisualizationType == VisualizationType::Curve);
     const bool IsPeakMeter    = (_State->_VisualizationType == VisualizationType::PeakMeter);
     const bool IsBalanceMeter = (_State->_VisualizationType == VisualizationType::BalanceMeter);
     const bool IsOscilloscope = (_State->_VisualizationType == VisualizationType::Oscilloscope);
@@ -269,6 +338,8 @@ void transform_page_t::UpdateControls() noexcept
     if (SupportsTransform)
     {
         // Transform
+        GetDlgItem(IDC_METHOD).EnableWindow(TRUE);
+
         bool HasParameter = (_State->_WindowFunction == WindowFunctionType::PowerOfSine)
                          || (_State->_WindowFunction == WindowFunctionType::PowerOfCircle)
                          || (_State->_WindowFunction == WindowFunctionType::Gaussian)
@@ -291,6 +362,11 @@ void transform_page_t::UpdateControls() noexcept
                 GetDlgItem(Iter).EnableWindow(IsStandard);
 
             GetDlgItem(IDC_REASSIGNMENT_SHARPENING).EnableWindow(IsFFT && (_State->_MappingMethod == CoefficientMapping::Standard));
+
+            GetDlgItem(IDC_PEAK_DETECTION).EnableWindow(IsBars || IsCurve);
+
+            for (const auto & Iter : { IDC_NUM_PEAKS, IDC_MIN_PEAK_LEVEL, IDC_MIN_PEAK_PROMINENCE, IDC_BAND_SPAN, IDC_MIN_PEAK_DISTANCE, IDC_INTERPOLATE_FREQUENCY })
+                GetDlgItem(Iter).EnableWindow((IsBars || IsCurve) && _State->_DetectPeaks);
         }
 
         // Brown-Puckette CQT
@@ -321,6 +397,7 @@ void transform_page_t::UpdateControls() noexcept
             IDC_MAPPING_METHOD, IDC_AGGREGATION_METHOD,
             IDC_SMOOTH_LOWER_FREQUENCIES, IDC_SMOOTH_GAIN_TRANSITION, IDC_REASSIGNMENT_SHARPENING,
             IDC_KERNEL_SIZE, IDC_KERNEL_SIZE_SPIN,
+            IDC_PEAK_DETECTION, IDC_NUM_PEAKS, IDC_MIN_PEAK_LEVEL, IDC_MIN_PEAK_PROMINENCE, IDC_BAND_SPAN, IDC_MIN_PEAK_DISTANCE, IDC_INTERPOLATE_FREQUENCY,
             IDC_BW_OFFSET, IDC_BW_CAP, IDC_BW_AMOUNT, IDC_GRANULAR_BW,
             IDC_KERNEL_SHAPE, IDC_KERNEL_SHAPE_PARAMETER, IDC_KERNEL_ASYMMETRY,
             IDC_FBO, IDC_TR, IDC_IIR_BW, IDC_CONSTANT_Q, IDC_COMPENSATE_BW, IDC_PREWARPED_Q,
@@ -439,7 +516,7 @@ void transform_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
     if ((_State == nullptr) || _IgnoreNotifications || (code != EN_CHANGE))
         return;
 
-    auto ChangedSettings = ConfigurationChanges::All;
+    auto ChangedSettings = ConfigurationChanges::Renderer;
 
     WCHAR Text[MAX_PATH] = { };
 
@@ -472,13 +549,13 @@ void transform_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
                 }
             }
             #pragma warning (default: 4061)
+            ChangedSettings = ConfigurationChanges::All;
             break;
         }
 
         case IDC_HOP_SIZE_FRACTION:
         {
             _State->_HopSizeFraction = std::clamp(::_wtoi(Text) / 100., MinHopSizeFraction, MaxHopSizeFraction);
-
             return;
         }
 
@@ -488,6 +565,38 @@ void transform_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
             break;
         }
 
+        // Peak Detection
+        case IDC_NUM_PEAKS:
+        {
+            _State->_MaxPeakCount = std::clamp((size_t) ::_wtoi(Text), MinPeakCount, MaxPeakCount);
+            break;
+        }
+
+        case IDC_MIN_PEAK_LEVEL:
+        {
+            _State->_MinPeakLevel = std::clamp((double) ::_wtoi(Text) / 100., MinPeakLevel, MaxPeakLevel);
+            break;
+        }
+
+        case IDC_MIN_PEAK_PROMINENCE:
+        {
+            _State->_MinPeakProminence = std::clamp((double) ::_wtof(Text) / 100., MinPeakProminence, MaxPeakProminence);
+            break;
+        }
+
+        case IDC_BAND_SPAN:
+        {
+            _State->_BandSpan = std::clamp((size_t) ::_wtoi(Text), MinBandSpan, MaxBandSpan);
+            break;
+        }
+
+        case IDC_MIN_PEAK_DISTANCE:
+        {
+            _State->_MinPeakDistance = std::clamp(::_wtof(Text), MinPeakDistance, MaxPeakDistance);
+            break;
+        }
+
+        // Window
         case IDC_WINDOW_PARAMETER:
         {
             _State->_WindowParameter = std::clamp(::_wtof(Text), MinWindowParameter, MaxWindowParameter);
@@ -510,30 +619,35 @@ void transform_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
         case IDC_BW_OFFSET:
         {
             _State->_BandwidthOffset = std::clamp(::_wtof(Text), MinBandwidthOffset, MaxBandwidthOffset);
+            ChangedSettings = ConfigurationChanges::All;
             break;
         }
 
         case IDC_BW_CAP:
         {
             _State->_BandwidthCap = std::clamp(::_wtof(Text), MinBandwidthCap, MaxBandwidthCap);
+            ChangedSettings = ConfigurationChanges::All;
             break;
         }
 
         case IDC_BW_AMOUNT:
         {
             _State->_BandwidthAmount = std::clamp(::_wtof(Text), MinBandwidthAmount, MaxBandwidthAmount);
+            ChangedSettings = ConfigurationChanges::All;
             break;
         }
 
         case IDC_KERNEL_SHAPE_PARAMETER:
         {
             _State->_KernelShapeParameter = std::clamp(::_wtof(Text), MinWindowParameter, MaxWindowParameter);
+            ChangedSettings = ConfigurationChanges::All;
             break;
         }
 
         case IDC_KERNEL_ASYMMETRY:
         {
             _State->_KernelAsymmetry = std::clamp(::_wtof(Text), MinWindowSkew, MaxWindowSkew);
+            ChangedSettings = ConfigurationChanges::All;
             break;
         }
 
@@ -541,18 +655,21 @@ void transform_page_t::OnEditChange(UINT code, int id, CWindow) noexcept
         case IDC_FBO:
         {
             _State->_FilterBankOrder = std::clamp((size_t) ::_wtoi(Text), MinFilterBankOrder, MaxFilterBankOrder);
+            ChangedSettings = ConfigurationChanges::All;
             break;
         }
 
         case IDC_TR:
         {
             _State->_TimeResolution = std::clamp(::_wtof(Text), MinTimeResolution, MaxTimeResolution);
+            ChangedSettings = ConfigurationChanges::All;
             break;
         }
 
         case IDC_IIR_BW:
         {
             _State->_IIRBandwidth = std::clamp(::_wtof(Text), MinIIRBandwidth, MaxIIRBandwidth);
+            ChangedSettings = ConfigurationChanges::All;
             break;
         }
     }
@@ -568,7 +685,7 @@ void transform_page_t::OnEditLostFocus(UINT code, int id, CWindow) noexcept
     if ((_State == nullptr) || _IgnoreNotifications)
         return;
 
-    auto ChangedSettings = ConfigurationChanges::All;
+    auto ChangedSettings = ConfigurationChanges::Renderer;
 
     switch (id)
     {
@@ -595,74 +712,128 @@ void transform_page_t::OnEditLostFocus(UINT code, int id, CWindow) noexcept
                 }
             }
             #pragma warning (default: 4061)
+            ChangedSettings = ConfigurationChanges::All;
             break;
         }
 
         case IDC_HOP_SIZE_FRACTION:
         {
-            SetInteger(id, (int64_t) (_State->_HopSizeFraction * 100.)); break;
+            SetInteger(id, (int64_t) (_State->_HopSizeFraction * 100.));
+            break;
         }
 
         case IDC_KERNEL_SIZE:
         {
-            SetInteger(id, _State->_KernelSize); break;
+            SetInteger(id, _State->_KernelSize);;
+            break;
         }
 
+        // Peak Detection
+        case IDC_NUM_PEAKS:
+        {
+            SetInteger(id, (int64_t) _State->_MaxPeakCount);;
+            break;
+        }
+
+        case IDC_MIN_PEAK_LEVEL:
+        {
+            SetInteger(id, (int64_t) (_State->_MinPeakLevel * 100.));
+            break;
+        }
+
+        case IDC_MIN_PEAK_PROMINENCE:
+        {
+            SetInteger(id, (int64_t) (_State->_MinPeakProminence * 100.));
+            break;
+        }
+
+        case IDC_BAND_SPAN:
+        {
+            SetInteger(id, (int64_t) _State->_BandSpan);
+            break;
+        }
+
+        case IDC_MIN_PEAK_DISTANCE:
+        {
+            SetDouble(id, _State->_MinPeakDistance);
+            break;
+        }
+
+        // Window
         case IDC_WINDOW_PARAMETER:
         {
-            SetDouble(id, _State->_WindowParameter); break;
+            SetDouble(id, _State->_WindowParameter);
+            break;
         }
 
         case IDC_WINDOW_SKEW:
         {
-            SetDouble(id, _State->_WindowSkew); break;
+            SetDouble(id, _State->_WindowSkew);
+            break;
         }
 
         case IDC_REACTION_ALIGNMENT:
         {
-            SetDouble(id, _State->_ReactionAlignment); break;
+            SetDouble(id, _State->_ReactionAlignment);
+            break;
         }
 
         // Brown-Puckette CQT
         case IDC_BW_OFFSET:
         {
-            SetDouble(id, _State->_BandwidthOffset); break;
+            SetDouble(id, _State->_BandwidthOffset);
+            ChangedSettings = ConfigurationChanges::All;
+            break;
         }
 
         case IDC_BW_CAP:
         {
-            SetDouble(id, _State->_BandwidthCap); break;
+            SetDouble(id, _State->_BandwidthCap);
+            ChangedSettings = ConfigurationChanges::All;
+            break;
         }
 
         case IDC_BW_AMOUNT:
         {
-            SetDouble(id, _State->_BandwidthAmount); break;
+            SetDouble(id, _State->_BandwidthAmount);
+            ChangedSettings = ConfigurationChanges::All;
+            break;
         }
 
         case IDC_KERNEL_SHAPE_PARAMETER:
         {
-            SetDouble(id, _State->_KernelShapeParameter); break;
+            SetDouble(id, _State->_KernelShapeParameter);
+            ChangedSettings = ConfigurationChanges::All;
+            break;
         }
 
         case IDC_KERNEL_ASYMMETRY:
         {
-            SetDouble(id, _State->_KernelAsymmetry); break;
+            SetDouble(id, _State->_KernelAsymmetry);
+            ChangedSettings = ConfigurationChanges::All;
+            break;
         }
 
         // SWIFT / Analog-style
         case IDC_FBO:
         {
-            SetInteger(id, (int64_t) _State->_FilterBankOrder); break;
+            SetInteger(id, (int64_t) _State->_FilterBankOrder);
+            ChangedSettings = ConfigurationChanges::All;
+            break;
         }
 
         case IDC_TR:
         {
-            SetDouble(id, _State->_TimeResolution); break;
+            SetDouble(id, _State->_TimeResolution);
+            ChangedSettings = ConfigurationChanges::All;
+            break;
         }
 
         case IDC_IIR_BW:
         {
-            SetDouble(id, _State->_IIRBandwidth); break;
+            SetDouble(id, _State->_IIRBandwidth);
+            ChangedSettings = ConfigurationChanges::All;
+            break;
         }
     }
 
@@ -703,6 +874,25 @@ void transform_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
         case IDC_REASSIGNMENT_SHARPENING:
         {
             _State->_UseReassignmentSharpening = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+
+            ChangedSettings = ConfigurationChanges::Renderer;
+            break;
+        }
+
+        // Peak Detection
+        case IDC_PEAK_DETECTION:
+        {
+            _State->_DetectPeaks = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+
+            UpdateControls();
+
+            ChangedSettings = ConfigurationChanges::Renderer;
+            break;
+        }
+
+        case IDC_INTERPOLATE_FREQUENCY:
+        {
+            _State->_InterpolateFrequency = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
 
             ChangedSettings = ConfigurationChanges::Renderer;
             break;

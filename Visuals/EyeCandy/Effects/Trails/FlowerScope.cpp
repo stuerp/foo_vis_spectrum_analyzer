@@ -67,7 +67,9 @@ namespace FlowerScope
             }
         }
 
-        renderTarget->DrawBitmap(_BackBuffer.Get(), _Rectangle);
+        {
+            renderTarget->DrawBitmap(_BackBuffer.Get(), _ViewPort);
+        }
     }
 
     /// <summary>
@@ -80,23 +82,26 @@ namespace FlowerScope
             for (auto & Band : _Bands)
                 Band.Energy = 0.;
 
-            _Rhythm = 0.;
+            _Rhythm            = 0.;
             _StereoCorrelation = 1.;
-            _StereoPhase = 0.;
+            _StereoPhase       = 0.;
 
             return;
         }
 
-        const size_t FrameCount   = chunk.get_sample_count();
-        const size_t ChannelCount = chunk.get_channel_count();
+        const audio_sample * const Frames = chunk.get_data();
+
+        const auto FrameCount   = chunk.get_sample_count();
+        const auto ChannelCount = chunk.get_channel_count();
 
         _SampleRate = (double) chunk.get_sample_rate();
 
-        if ((channels[0] >= ChannelCount) || (channels[1] >= ChannelCount) || (FrameCount < 16))
+        if ((FrameCount < 16) || (channels[0] >= ChannelCount) || (channels[1] >= ChannelCount))
             return;
 
-        const size_t MaxFrames = std::min<size_t>(FrameCount, (_Quality == EyeCandy::Quality::High) ? 1024 : 512);
-        const size_t FrameStep = std::max<size_t>(1, FrameCount / MaxFrames);
+        // Analyze only the most recent frames of the chunk.
+        const auto MaxFrames = std::min<size_t>(FrameCount, (_Quality == Quality::High) ? 1024 : 512);
+        const auto FrameStep = std::max<size_t>(1, FrameCount / MaxFrames);
 
         _LeftSamples .resize(MaxFrames);
         _RightSamples.resize(MaxFrames);
@@ -111,8 +116,6 @@ namespace FlowerScope
 
         {
             const double WindowScale = TwoPi / (double)(MaxFrames - 1);
-
-            const audio_sample * Frames = chunk.get_data();
 
             for (size_t i = 0; i < MaxFrames; ++i)
             {
@@ -151,14 +154,14 @@ namespace FlowerScope
 
         const double MaxFrequency = std::min(HiFrequency, _SampleRate * 0.5);
 
-        std::array<double, BandCount> RawEnergies{ };
+        std::array<double, BandCount> RawEnergies { };
 
         double WeightedBand = 0.;
         double EnergySum    = 0.;
 
         for (size_t i = 0; i < BandCount; ++i)
         {
-            const double Amount = (double) i / (double) (BandCount - 1);
+            const double Amount = (double) i * InverseBandCount; // [0, 1]
             const double CenterFrequency = LoFrequency * std::pow(MaxFrequency / LoFrequency, Amount);
             const double AngularStep = TwoPi * CenterFrequency / _SampleRate;
 
@@ -191,7 +194,7 @@ namespace FlowerScope
             _Bands[i].Energy = RawEnergies[PreviousBand] * .2 + RawEnergies[i] * .6 + RawEnergies[NextBand] * .2;
         }
 
-        _HarmonicCenter = (EnergySum > 1.e-9) ? WeightedBand / EnergySum / (double) (BandCount - 1) : 0.;
+        _HarmonicCenter = (EnergySum > 1.e-9) ? WeightedBand / EnergySum * InverseBandCount : 0.;
     }
 
     /// <summary>
@@ -217,46 +220,55 @@ namespace FlowerScope
 
         _AnimationTime += deltaTime * SpeedFactor;
 
-        for (auto & Band : _Bands)
-            Band.SmoothedEnergy = ExponentialSmoothing(Band.SmoothedEnergy, Band.Energy, deltaTime, Band.Energy > Band.SmoothedEnergy ? 11. : 2.6);
+        {
+            for (auto & Band : _Bands)
+                Band.SmoothedEnergy = ExponentialSmoothing(Band.SmoothedEnergy, Band.Energy, deltaTime, Band.Energy > Band.SmoothedEnergy ? 11. : 2.6);
 
-        _SmoothedRhythm   = ExponentialSmoothing(_SmoothedRhythm, _Rhythm, deltaTime, _Rhythm > _SmoothedRhythm ? 15. : 3.2);
-        _RhythmPulse      = std::max(_SmoothedRhythm, _RhythmPulse * std::pow(.86, deltaTime * 60.));
-        _SmoothedHarmonic = ExponentialSmoothing(_SmoothedHarmonic, _HarmonicCenter, deltaTime, 2.4);
+            _SmoothedRhythm            = ExponentialSmoothing(_SmoothedRhythm,            _Rhythm,            deltaTime, (_Rhythm > _SmoothedRhythm) ? 15. : 3.2);
+            _SmoothedHarmonicCenter    = ExponentialSmoothing(_SmoothedHarmonicCenter,    _HarmonicCenter,    deltaTime, 2.4);
+            _SmoothedStereoCorrelation = ExponentialSmoothing(_SmoothedStereoCorrelation, _StereoCorrelation, deltaTime, 4.2);
+            _SmoothedStereoPhase       = ExponentialSmoothing(_SmoothedStereoPhase,       _StereoPhase,       deltaTime, 4.8);
+        }
 
-        const double BassEnergy = (_Bands[0].SmoothedEnergy + _Bands[1].SmoothedEnergy + _Bands[2].SmoothedEnergy) / 3.;
+        _RhythmPulse = std::max(_SmoothedRhythm, _RhythmPulse * std::pow(.86, deltaTime * 60.));
 
-        _BassGlow            = ExponentialSmoothing(_BassGlow, BassEnergy, deltaTime, BassEnergy > _BassGlow ? 14. : 3.);
-        _SmoothedCorrelation = ExponentialSmoothing(_SmoothedCorrelation, _StereoCorrelation, deltaTime, 4.2);
-        _SmoothedPhase       = ExponentialSmoothing(_SmoothedPhase, _StereoPhase, deltaTime, 4.8);
+        {
+            const double BassEnergy = (_Bands[0].SmoothedEnergy + _Bands[1].SmoothedEnergy + _Bands[2].SmoothedEnergy) / 3.;
+
+            _BassGlow = ExponentialSmoothing(_BassGlow, BassEnergy, deltaTime, BassEnergy > _BassGlow ? 14. : 3.);
+        }
 
         _Rotation    += deltaTime * SpeedFactor * (.08 + _SmoothedRhythm * .42);
         _PaletteTime += deltaTime;
 
-        constexpr double PaletteDuration    = 4.5;
-        constexpr double TransitionDuration = 1.5;
+        {
+            constexpr double PaletteDuration    = 4.5;
+            constexpr double TransitionDuration = 1.5;
 
-        const double PalettePosition = _PaletteTime / PaletteDuration;
-        const size_t PaletteIndex    = (size_t) std::floor(PalettePosition);
-        const double PaletteFraction = Fraction(PalettePosition);
+            const double PalettePosition = _PaletteTime / PaletteDuration;
+            const size_t PaletteIndex    = (size_t) std::floor(PalettePosition);
+            const double PaletteFraction = Fraction(PalettePosition);
 
-        _PaletteA =  PaletteIndex      % PaletteCount;
-        _PaletteB = (PaletteIndex + 1) % PaletteCount;
-        _PaletteBlend = SmoothStep(1. - TransitionDuration / PaletteDuration, 1., PaletteFraction);
+            _PaletteA =  PaletteIndex      % PaletteCount;
+            _PaletteB = (PaletteIndex + 1) % PaletteCount;
+            _PaletteBlend = SmoothStep(1. - TransitionDuration / PaletteDuration, 1., PaletteFraction);
+        }
 
-        _FlowerTime += deltaTime;
+        {
+            _FlowerTime += deltaTime;
 
-        constexpr double FlowerDuration = 7.;
-        constexpr double FlowerTransitionDuration = 2.;
+            constexpr double FlowerDuration = 7.;
+            constexpr double FlowerTransitionDuration = 2.;
 
-        const double FlowerPosition = _FlowerTime / FlowerDuration;
-        const size_t FlowerIndex    = (size_t) std::floor(FlowerPosition);
-        const double FlowerFraction = Fraction(FlowerPosition);
+            const double FlowerPosition = _FlowerTime / FlowerDuration;
+            const size_t FlowerIndex    = (size_t) std::floor(FlowerPosition);
+            const double FlowerFraction = Fraction(FlowerPosition);
 
-        _FlowerA  = FlowerIndex      % FlowerCount;
-        _FlowerB = (FlowerIndex + 1) % FlowerCount;
+            _FlowerA  = FlowerIndex      % FlowerCount;
+            _FlowerB = (FlowerIndex + 1) % FlowerCount;
 
-        _FlowerBlend = SmoothStep(1. - FlowerTransitionDuration / FlowerDuration, 1., FlowerFraction);
+            _FlowerBlend = SmoothStep(1. - FlowerTransitionDuration / FlowerDuration, 1., FlowerFraction);
+        }
     }
 
     /// <summary>
@@ -264,7 +276,7 @@ namespace FlowerScope
     /// </summary>
     void effect_t::GenerateCurves() noexcept
     {
-        _CurvePointCount = (_Quality == EyeCandy::Quality::Low) ? 320u : (_Quality == EyeCandy::Quality::High) ? 960u : 640u;
+        _CurvePointCount = (_Quality == Quality::Low) ? 320u : (_Quality == Quality::High) ? 960u : 640u;
 
         const double MotionTime     = _AnimationTime * .23;
         const double MotionX        = std::sin(MotionTime * 3.) * .58 + std::sin(MotionTime * 5. +  .7) * .28 + std::cos(MotionTime * 7. - .3) * .14;
@@ -280,8 +292,8 @@ namespace FlowerScope
         const double VerticalSpace   = std::min(_FlowerCenterY, _Height - _FlowerCenterY);
 
         _CurveExtent      = std::max(1., std::min(HorizontalSpace, VerticalSpace) * 1.16);
-        _CurveBasePetals  = 2u + (size_t)std::lround(_SmoothedHarmonic * 8.);
-        _CurveStereoWidth = std::sqrt(std::clamp((1. - _SmoothedCorrelation) * .5, 0., 1.));
+        _CurveBasePetals  = 2u + (size_t)std::lround(_SmoothedHarmonicCenter * 8.);
+        _CurveStereoWidth = std::sqrt(std::clamp((1. - _SmoothedStereoCorrelation) * .5, 0., 1.));
 
         _Curves.resize(RenderCurveCount);
 
@@ -331,27 +343,27 @@ namespace FlowerScope
         const double Response   = std::pow(BandEnergy, .72);
         const size_t Petals     = std::max<size_t>(2, _CurveBasePetals + FlowerPetalOffset(Flower) + LayerIndex % 3);
         const double Radius     = _CurveExtent * (.48 + Layer * .12 + Response * .18 + _RhythmPulse * .08);
-        const double Twist      = _SmoothedPhase * (1.2 + Layer * 2.6) + _CurveStereoWidth * (.35 + Layer * .8);
-        const double Bend       = _SmoothedPhase * (.12 + Layer * .19);
+        const double Twist      = _SmoothedStereoPhase * (1.2 + Layer * 2.6) + _CurveStereoWidth * (.35 + Layer * .8);
+        const double Bend       = _SmoothedStereoPhase * (.12 + Layer * .19);
         const double Turns      = (Petals & 1u) ? TwoPi : Pi * 2.;
 
         for (size_t j = 0; j <= _CurvePointCount; ++j)
         {
-            const double Amount = (double) j / (double) _CurvePointCount;
+            const double Amount = (double) j / (double) _CurvePointCount; // [0, 1]
 
             const double Theta      = Amount * Turns;
             const double Petal      = FlowerPattern(Flower, Theta, (double)Petals, Twist, Layer);
             const double StereoBend = 1. + Bend * std::sin(Theta * ((double)Petals + 1.) - _Rotation * 1.7);
             const double Radial     = Radius * Petal * StereoBend;
-            const double Rotation   = _Rotation * (.38 + Layer * .16) + _SmoothedPhase * Layer;
+            const double Rotation   = _Rotation * (.38 + Layer * .16) + _SmoothedStereoPhase * Layer;
 
             const double X = Radial * std::cos(Theta + Rotation) + Radius * _CurveStereoWidth * .08 * std::sin(Theta * 3. + Twist);
-            const double Y = Radial * std::sin(Theta + Rotation) + Radius * _SmoothedPhase    * .08 * std::cos(Theta * 2. - Twist);
+            const double Y = Radial * std::sin(Theta + Rotation) + Radius * _SmoothedStereoPhase    * .08 * std::cos(Theta * 2. - Twist);
 
             Curve.Points[j] = D2D1::Point2F((float)(_FlowerCenterX + X), (float)(_FlowerCenterY + Y));
         }
 
-        const double ColorValue = Fraction(_SmoothedHarmonic + Layer * .36 + _SmoothedPhase * .11 + _AnimationTime * .006);
+        const double ColorValue = Fraction(_SmoothedHarmonicCenter + Layer * .36 + _SmoothedStereoPhase * .11 + _AnimationTime * .006);
 
         const D2D1_COLOR_F ColorA = Colorize(_PaletteA, ColorValue);
         const D2D1_COLOR_F ColorB = Colorize(_PaletteB, ColorValue);
@@ -382,14 +394,14 @@ namespace FlowerScope
         const auto GlowA = GlowProfile(_PaletteA);
         const auto GlowB = GlowProfile(_PaletteB);
 
-        const double LayerWave = .72 + .28 * std::sin((double)LayerIndex * 1.61803398875 + _Rotation * 2.);
+        const double LayerWave = .72 + .28 * std::sin((double) LayerIndex * Phi + (_Rotation * 2.));
         const double LayerGlow = (.78 + LayerWave * .42) * (1. + Response * .2);
 
         const double BassBloom = 1. + _BassGlow * (1.15 + (1. - Layer) * .70);
         const double BassCore  = 1. + _BassGlow * (0.28 +       Layer  * .16);
 
-        Curve.OuterGlow    = (float) (Lerp(GlowA[0], GlowB[0], _PaletteBlend) * LayerGlow * BassBloom);
-        Curve.InnerGlow    = (float) (Lerp(GlowA[1], GlowB[1], _PaletteBlend) * (.85 + LayerWave * .3) * (1. + _BassGlow * .72));
+        Curve.OuterGlow    = (float)      (Lerp(GlowA[0], GlowB[0], _PaletteBlend) * LayerGlow * BassBloom);
+        Curve.InnerGlow    = (float)      (Lerp(GlowA[1], GlowB[1], _PaletteBlend) * (.85 + LayerWave * .30) * (1. + _BassGlow * .72));
 
         Curve.OuterOpacity = (float) Clamp(Lerp(GlowA[2], GlowB[2], _PaletteBlend) * (.72 + LayerWave * .55) * (1. + _BassGlow * .55));
         Curve.InnerOpacity = (float) Clamp(Lerp(GlowA[3], GlowB[3], _PaletteBlend) * (.82 + LayerWave * .36) * (1. + _BassGlow * .32));
@@ -482,9 +494,20 @@ namespace FlowerScope
 
         _Workers.reserve(WorkerCount);
 
-        for (size_t i = 0; i < WorkerCount; ++i)
+        try
         {
-            _Workers.emplace_back(&effect_t::Worker, this, i);
+            for (size_t i = 0; i < WorkerCount; ++i)
+            {
+                _Workers.emplace_back([this, i]() noexcept
+                {
+                    Worker(i);
+                });
+            }
+        }
+        catch (...)
+        {
+            StopWorkers();
+            throw;
         }
     }
 
@@ -556,7 +579,7 @@ namespace FlowerScope
         _Brush->SetColor(D2D1::ColorF(0.f, 0.f, 0.f, (float) Clamp(1. - Decay)));
         _Brush->SetOpacity(1.f);
 
-        renderTarget->FillRectangle(_Rectangle, _Brush.Get());
+        renderTarget->FillRectangle(_ViewPort, _Brush.Get());
     }
 
     /// <summary>

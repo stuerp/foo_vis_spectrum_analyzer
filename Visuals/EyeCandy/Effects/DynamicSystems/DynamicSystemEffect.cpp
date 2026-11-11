@@ -61,8 +61,8 @@ namespace DynamicSystem
         if (chunk.is_empty())
             return;
 
-        const size_t FrameCount   = chunk.get_sample_count();
-        const size_t ChannelCount = chunk.get_channel_count();
+        const auto FrameCount   = chunk.get_sample_count();
+        const auto ChannelCount = chunk.get_channel_count();
 
         // Initialize the energy accumulators.
         std::vector<double> ChannelPower(ChannelCount, 0.); // Total squared amplitude in a channel.
@@ -234,9 +234,9 @@ namespace DynamicSystem
         {
             switch (_Quality)
             {
-                case EyeCandy::Quality::Low: return 2;
-                case EyeCandy::Quality::High: return 6;
-                case EyeCandy::Quality::Medium:
+                case Quality::Low: return 2;
+                case Quality::High: return 6;
+                case Quality::Medium:
                 default: return 4;
             }
         }();
@@ -273,14 +273,14 @@ namespace DynamicSystem
         _ThemeElapsed += deltaTime;
         _ThemeResourceElapsed += deltaTime;
 
-        if (!_ThemeTransitionActive && (_ThemeElapsed >= ThemeInterval))
+        if (!_IsThemeTransitionActive && (_ThemeElapsed >= ThemeTransitionInterval))
         {
-            _ThemeElapsed = std::fmod(_ThemeElapsed, ThemeInterval);
+            _ThemeElapsed = std::fmod(_ThemeElapsed, ThemeTransitionInterval);
 
             BeginCurveThemeTransition((_CurveThemeTo + 1) % CurveThemes.size());
         }
 
-        if (!_ThemeTransitionActive)
+        if (!_IsThemeTransitionActive)
             return;
 
         _ThemeTransitionElapsed += deltaTime;
@@ -293,17 +293,17 @@ namespace DynamicSystem
         if (_ThemeResourceElapsed >= ThemeResourceUpdateInterval)
         {
             _ThemeResourceElapsed = std::fmod(_ThemeResourceElapsed, ThemeResourceUpdateInterval);
-            _ThemeResourcesDirty = true;
+            _IsThemeResourceDirty = true;
         }
 
         if (Progress >= 1.0)
         {
             _CurveThemeFrom = _CurveThemeTo;
 
-            _ThemeTransitionElapsed = ThemeTransitionDuration;
-            _ThemeBlend             = 1.;
-            _ThemeTransitionActive  = false;
-            _ThemeResourcesDirty    = true;
+            _ThemeTransitionElapsed  = ThemeTransitionDuration;
+            _ThemeBlend              = 1.;
+            _IsThemeTransitionActive = false;
+            _IsThemeResourceDirty    = true;
         }
     }
 
@@ -324,11 +324,12 @@ namespace DynamicSystem
         _CurveThemeFrom = _CurveThemeTo;
         _CurveThemeTo   = themeIndex;
 
-        _ThemeTransitionElapsed = 0.;
-        _ThemeResourceElapsed   = ThemeResourceUpdateInterval;
-        _ThemeBlend             = 0.;
-        _ThemeTransitionActive  = true;
-        _ThemeResourcesDirty    = true;
+        _ThemeTransitionElapsed  = 0.;
+        _ThemeResourceElapsed    = ThemeResourceUpdateInterval;
+        _ThemeBlend              = 0.;
+
+        _IsThemeTransitionActive = true;
+        _IsThemeResourceDirty    = true;
     }
 
     /// <summary>
@@ -342,7 +343,7 @@ namespace DynamicSystem
         const size_t First  = (Scaled < 1.) ? 0u : 1u;
         const float Amount  = (float)(Scaled - (double) First);
 
-        return LerpColor(theme.Colors[First], theme.Colors[First + 1], Amount);
+        return Lerp(theme.Colors[First], theme.Colors[First + 1], Amount);
     }
 
     /// <summary>
@@ -353,7 +354,7 @@ namespace DynamicSystem
         const D2D1_COLOR_F From = SampleCurveTheme(CurveThemes[_CurveThemeFrom], position);
         const D2D1_COLOR_F To   = SampleCurveTheme(CurveThemes[_CurveThemeTo],   position);
 
-        return LerpColor(From, To, (float) _ThemeBlend);
+        return Lerp(From, To, (float) _ThemeBlend);
     }
 
     /// <summary>
@@ -361,13 +362,13 @@ namespace DynamicSystem
     /// </summary>
     void effect_t::Fade(ID2D1RenderTarget * renderTarget, double deltaTime) noexcept
     {
-        const double Persistence = 0.935 + (0.030 * _PhaseEnergy);
+        const double Persistence = 0.935 + (_PhaseEnergy * 0.03);
         const double Decay       = std::pow(Persistence, (deltaTime * 60.));
 
         _Brush->SetColor(D2D1::ColorF(0.0015f, 0.0025f, 0.0060f, (float) Clamp(1. - Decay)));
         _Brush->SetOpacity(1.f);
 
-        renderTarget->FillRectangle(_Rectangle, _Brush.Get());
+        renderTarget->FillRectangle(_ViewPort, _Brush.Get());
     }
 
     /// <summary>
@@ -396,7 +397,7 @@ namespace DynamicSystem
 
             for (size_t j = 1; j <= _SplineSubdivision; ++j)
             {
-                const double Amount = (double) j / (double) _SplineSubdivision;
+                const double Amount = (double) j / (double) _SplineSubdivision; // [0, 1]
 
                 const point3d_t Spline = EvaluateSpline(p0, p1, p2, p3, Amount);
                 const point3d_t Linear

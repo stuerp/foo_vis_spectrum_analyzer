@@ -1,5 +1,5 @@
 
-/** $VER: Constants.h (2026.11.05) P. Stuer **/
+/** $VER: Constants.h (2026.11.11) P. Stuer **/
 
 #pragma once
 
@@ -164,6 +164,23 @@ inline constexpr double MaxHopSizeFraction = 1.; // %
 
 inline constexpr int MinKernelSize =  1;
 inline constexpr int MaxKernelSize = 64;
+
+// Peak Detection
+
+inline constexpr size_t MinPeakCount = 1;
+inline constexpr size_t MaxPeakCount = 10;
+
+inline constexpr double MinPeakLevel = 0.01; // 1%
+inline constexpr double MaxPeakLevel = 1.00; // 100%
+
+inline constexpr double MinPeakProminence = 0.01; // 1%
+inline constexpr double MaxPeakProminence = 1.00; // 100%
+
+inline constexpr size_t MinBandSpan =  1;
+inline constexpr size_t MaxBandSpan = 10;
+
+inline constexpr double MinPeakDistance =    1; // Hz
+inline constexpr double MaxPeakDistance = 1000; // Hz
 
 enum class TransformMethod
 {
@@ -447,7 +464,10 @@ enum class VisualElement : uint32_t
     StaticText                  = 40,
     StaticLines                 = 41,
 
-    Count                       = 42
+    PeakMarker                  = 42,
+    PeakText                    = 43,
+
+    Count                       = 44
 };
 
 enum class ColorSource : uint32_t

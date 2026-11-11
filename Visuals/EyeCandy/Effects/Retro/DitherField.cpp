@@ -1,5 +1,5 @@
 
-/** $VER: DitherField.cpp (2026.11.02) **/
+/** $VER: DitherField.cpp (2026.11.07) **/
 
 #include <pch.h>
 
@@ -32,10 +32,10 @@ namespace DitherField
     void effect_t::Reset() noexcept
     {
         _PreviousPulse = 0.;
-        _Time = 0.;
-        _FieldPhase = 0.;
-        _NoisePhase = 0.;
-        _HueShift = 0.;
+        _Time          = 0.;
+        _FieldPhase    = 0.;
+        _NoisePhase    = 0.;
+        _HueShift      = 0.;
         _PaletteSpread = .2;
 
         _RadialAudio = 0.;
@@ -46,13 +46,17 @@ namespace DitherField
         _DitherModeA = 0;
         _DitherModeB = 1;
 
-        _BandEnergy.fill(0.);
-        _SmoothedBandEnergy.fill(0.);
-        _PreviousBandEnergy.fill(0.);
+        for (auto & Band : _Bands)
+        {
+            Band.Energy         = 0.;
+            Band.SmoothedEnergy = 0.;
+            Band.PreviousEnergy = 0.;
+        }
 
         std::fill(_EnergyField.begin(), _EnergyField.end(), 0.f);
         std::fill(_ErrorBuffer.begin(), _ErrorBuffer.end(), 0.f);
-        std::fill(_DiffusedField.begin(), _DiffusedField.end(), (uint8_t)0);
+        std::fill(_DiffusedField.begin(), _DiffusedField.end(), (uint8_t) 0);
+
         std::fill(_Pixels.begin(), _Pixels.end(), 0xff050609u);
     }
 
@@ -73,22 +77,14 @@ namespace DitherField
 
         BuildEnergyField();
         BuildErrorDiffusion();
+
         RenderTexture();
 
-        if (!_Bitmap || _Pixels.empty())
-            return;
-
-        const D2D1_RECT_U Source = D2D1::RectU(0, 0, _PixelWidth, _PixelHeight);
-
-        hr = _Bitmap->CopyFromMemory(&Source, _Pixels.data(), _PixelWidth * sizeof(uint32_t));
-
-        if (FAILED(hr))
         {
-            DeleteDeviceDependentResources();
-            return;
-        }
+            _BackBuffer->CopyFromMemory(nullptr, _Pixels.data(), _Stride);
 
-        renderTarget->DrawBitmap(_Bitmap.Get(), _Rectangle, 1.f, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR);
+            renderTarget->DrawBitmap(_BackBuffer.Get(), _ViewPort);
+        }
     }
 
     /// <summary>
@@ -98,33 +94,40 @@ namespace DitherField
     {
         _HasAudio = false;
 
-        _Peak        =  0.;
-        _RMS         =  0.;
+        _Peak         = 0.;
+        _RMS          = 0.;
         _SpectralFlux = 0.;
 
         if (chunk.is_empty())
         {
-            _BandEnergy.fill(0.);
+            for (auto & Band : _Bands)
+                Band.Energy = 0.;
 
             return;
         }
 
-        const size_t MaxFrames = std::min<size_t>(chunk.get_sample_count(), 1536);
+        const audio_sample * const Frames = chunk.get_data();
 
-        const size_t ChannelCount = chunk.get_channel_count();
-        const size_t SampleRate   = chunk.get_sample_rate();
+        const auto FrameCount   = chunk.get_sample_count();
+        const auto ChannelCount = chunk.get_channel_count();
+        const auto SampleRate   = (double) chunk.get_sample_rate();
+
+        // Analyze only the most recent frames of the chunk.
+        const auto MaxFrames = std::min<size_t>(FrameCount, 1536);
 
         if (MaxFrames < 32)
             return;
 
-        _Samples.resize(MaxFrames);
+        if (_Samples.size() < MaxFrames)
+            _Samples.resize(MaxFrames);
 
-        double Sum = 0.;
+        auto Samples = std::span<double>(_Samples.data(), MaxFrames);
+
+        // Initialize the energy accumulators.
+        double Sum  = 0.;           // Full-audio band
 
         // Process all frames.
         {
-            const audio_sample * Frames = chunk.get_data();
-
             for (size_t i = 0; i < MaxFrames; ++i)
             {
                 double Mono = 0.;
@@ -137,7 +140,7 @@ namespace DitherField
                 // Apply a Hann window.
                 const double Window = .5 - .5 * std::cos(TwoPi * (double) i / ((double) MaxFrames - 1.));
 
-                _Samples[i] = Mono * Window;
+                Samples[i] = Mono * Window;
 
                 _Peak = std::max(_Peak, std::abs(Mono));
 
@@ -152,87 +155,124 @@ namespace DitherField
         if (!_HasAudio)
             return;
 
-        const double NyquistFrequency = (double) SampleRate * 0.5;
-        const double MaximumFrequency = std::min(HiFrequency, NyquistFrequency);
-
-        double MaximumEnergy = 0.;
-
-        for (size_t i = 0; i < BandCount; ++i)
+        // Perform a spectrum analysis of logarithmically spaced frequency bands.
         {
-            const double Amount = (double) i / (double) (BandCount - 1); // [0, 1]
+            const double NyquistFrequency = SampleRate * 0.5;
+            const double MaximumFrequency = std::min(HiFrequency, NyquistFrequency);
 
-            const double Frequency = LoFrequency * std::pow(MaximumFrequency / LoFrequency, Amount);
+            constexpr double TuningConstant = 90.;
+            const double LogarithmicScale  = 1. / std::log1p(TuningConstant);
 
-            // Configure the Goertzel detector.
-            const double Omega       = TwoPi * Frequency / (double) SampleRate;
-            const double Coefficient = 2. * std::cos(Omega);
+            double MaximumEnergy = 0.;
 
-            double q1 = 0., q2 = 0.;
-
-            for (double Sample : _Samples)
+            for (size_t i = 0; i < BandCount; ++i)
             {
-                const double q0 = Sample + Coefficient * q1 - q2;
+                const double BandAmount = (double) i * InverseBandCount; // [0, 1]
 
-                q2 = q1;
-                q1 = q0;
+                double Power = 0.;
+
+                {
+                    const double Frequency = LoFrequency * std::pow(MaximumFrequency / LoFrequency, BandAmount);
+
+                    // Configure the Goertzel detector.
+                    const double Omega       = TwoPi * Frequency / SampleRate;
+                    const double Coefficient = 2. * std::cos(Omega);
+
+                    double q1 = 0., q2 = 0.;
+
+                    for (double Sample : Samples)
+                    {
+                        const double q0 = Sample + Coefficient * q1 - q2;
+
+                        q2 = q1;
+                        q1 = q0;
+                    }
+
+                    // Convert the detector state to power.
+                    Power = std::max(0., q2 * q2 + q1 * q1 - Coefficient * q1 * q2);
+                }
+
+                const double Magnitude = std::sqrt(Power) / (double) MaxFrames;
+
+                // Compress (logarithmic) and shape the band energy.
+                _Bands[i].Energy = Clamp(std::log1p(Magnitude * TuningConstant) * LogarithmicScale);
+
+                // Track the highest frequency band energy.
+                MaximumEnergy = std::max(MaximumEnergy, _Bands[i].Energy);
             }
 
-            // Convert the detector state to power.
-            const double Power = std::max(0., q2 * q2 + q1 * q1 - Coefficient * q1 * q2);
-            const double Magnitude = std::sqrt(Power) / (double) MaxFrames;
+            // Normalize the spectrum.
+            if (MaximumEnergy > 1.0e-5)
+            {
+                const auto Normalization = 1. / std::max(0.30, MaximumEnergy);
 
-            _BandEnergy[i] = Clamp(std::log1p(Magnitude * 90.) / std::log1p(90.));
-
-            MaximumEnergy = std::max(MaximumEnergy, _BandEnergy[i]);
+                for (auto & Band : _Bands)
+                    Band.Energy = Clamp(Band.Energy * Normalization);
+            }
         }
 
-        if (MaximumEnergy > 1.e-5)
+        // Calculate the half-wave rectified spectral flux. It responds when spectral energy increases such as during drum hits, note attacks, sudden treble bursts and new musical events.
         {
-            for (double & Energy : _BandEnergy)
-                Energy = Clamp(Energy / std::max(.28, MaximumEnergy));
+            _SpectralFlux = 0.;
+
+            for (auto & Band : _Bands)
+            {
+                _SpectralFlux += std::max(0., Band.Energy - Band.PreviousEnergy);
+
+                Band.PreviousEnergy = Band.Energy; // Remember the band energy for the next chunk.
+            }
+
+            _SpectralFlux = Clamp(_SpectralFlux / (double) BandCount * 5.5); // Boost the spectral flux artificially to make it react more strongly.
         }
-
-        for (size_t i = 0; i < BandCount; ++i)
-        {
-            _SpectralFlux += std::max(0., _BandEnergy[i] - _PreviousBandEnergy[i]);
-
-            _PreviousBandEnergy[i] = _BandEnergy[i];
-        }
-
-        _SpectralFlux = Clamp(_SpectralFlux / (double) BandCount * 5.5);
     }
 
     /// <summary>
-    /// 
+    /// Prepares the visual parameters.
     /// </summary>
     void effect_t::Update(double deltaTime) noexcept
     {
-        const double SpeedFactor = (_Speed == Speed::Slow) ? .55 : (_Speed == Speed::Fast) ? 1.75 : 1.;
+        const double SpeedFactor = [&]() noexcept
+        {
+            switch (_Speed)
+            {
+                case Speed::Slow:
+                    return 0.55;
 
-        for (size_t i = 0; i < BandCount; ++i)
-            _SmoothedBandEnergy[i] = ExponentialSmoothing(_SmoothedBandEnergy[i], _HasAudio ? _BandEnergy[i] : 0., deltaTime, _BandEnergy[i] > _SmoothedBandEnergy[i] ? 18. : 3.5);
+                default:
+                case Speed::Normal:
+                    return 1.00;
 
-        _BassEnergy   = (_SmoothedBandEnergy[0] + _SmoothedBandEnergy[1] + _SmoothedBandEnergy[ 2]) / 3.;
-        _MidEnergy    = (_SmoothedBandEnergy[3] + _SmoothedBandEnergy[4] + _SmoothedBandEnergy[ 5] + _SmoothedBandEnergy[ 6] + _SmoothedBandEnergy[7]) * .2;
-        _TrebleEnergy = (_SmoothedBandEnergy[8] + _SmoothedBandEnergy[9] + _SmoothedBandEnergy[10] + _SmoothedBandEnergy[11]) * .25;
+                case Speed::Fast:
+                    return 1.75;
+            }
+        }();
+
+        {
+            for (auto & Band : _Bands)
+                Band.SmoothedEnergy = ExponentialSmoothing(Band.SmoothedEnergy, Band.Energy, deltaTime, Band.Energy > Band.SmoothedEnergy ? 18. : 3.5);
+
+            _BassLevel   = (_Bands[ 0].SmoothedEnergy + _Bands[ 1].SmoothedEnergy + _Bands[ 2].SmoothedEnergy + _Bands[ 3].SmoothedEnergy) * .25;
+            _MidLevel    = (_Bands[ 4].SmoothedEnergy + _Bands[ 5].SmoothedEnergy + _Bands[ 6].SmoothedEnergy + _Bands[ 7].SmoothedEnergy + _Bands[ 8].SmoothedEnergy) * .20;
+            _TrebleLevel = (_Bands[ 9].SmoothedEnergy + _Bands[10].SmoothedEnergy + _Bands[11].SmoothedEnergy) * .33;
+        }
 
         const double Pulse = std::max(_PreviousPulse * std::exp(-deltaTime * 8.), _SpectralFlux);
 
         _Time += deltaTime * SpeedFactor;
 
-        _FieldPhase += deltaTime * (.055 + _BassEnergy   * .30 + _MidEnergy * .18) * SpeedFactor;
-        _NoisePhase += deltaTime * (.120 + _TrebleEnergy * .52 + Pulse      * .17) * SpeedFactor;
+        _FieldPhase += deltaTime * (.055 + _BassLevel   * .30 + _MidLevel * .18) * SpeedFactor;
+        _NoisePhase += deltaTime * (.120 + _TrebleLevel * .52 + Pulse      * .17) * SpeedFactor;
 
-        const double TargetHue = (_BassEnergy * .08) + (_MidEnergy * .29) + (_TrebleEnergy * .55) + (Pulse * .10);
+        const double TargetHue = (_BassLevel * .08) + (_MidLevel * .29) + (_TrebleLevel * .55) + (Pulse * .10);
 
         _HueShift      = ExponentialSmoothing(_HueShift, TargetHue, deltaTime, TargetHue > _HueShift ? 9. : 3.);
-        _PaletteSpread = ExponentialSmoothing(_PaletteSpread, .16 + _MidEnergy * .27 + _TrebleEnergy * .22, deltaTime, 4.);
+        _PaletteSpread = ExponentialSmoothing(_PaletteSpread, .16 + _MidLevel * .27 + _TrebleLevel * .22, deltaTime, 4.);
 
-        const double TargetRadialAudio = _BassEnergy * .52 + _MidEnergy * .31 + _TrebleEnergy * .17 + Pulse * .22;
+        const double TargetRadialAudio = _BassLevel * .52 + _MidLevel * .31 + _TrebleLevel * .17 + Pulse * .22;
 
         _RadialAudio = ExponentialSmoothing(_RadialAudio, TargetRadialAudio, deltaTime, TargetRadialAudio > _RadialAudio ? 12. : 3.2);
-        _RadialScale = ExponentialSmoothing(_RadialScale, 1. + _BassEnergy * .18 + Pulse * .08, deltaTime, 5.);
-        _RadialTwist = ExponentialSmoothing(_RadialTwist, _MidEnergy * .8 + _TrebleEnergy * 1.4, deltaTime, 4.5);
+        _RadialScale = ExponentialSmoothing(_RadialScale, 1. + _BassLevel * .18 + Pulse * .08, deltaTime, 5.);
+        _RadialTwist = ExponentialSmoothing(_RadialTwist, _MidLevel * .8 + _TrebleLevel * 1.4, deltaTime, 4.5);
 
         constexpr double ModeDuration = 5.;
         constexpr double TransitionDuration = 1.25;
@@ -258,33 +298,33 @@ namespace DitherField
         if (_EnergyField.empty())
             return;
 
-        const double Aspect = (double) _PixelWidth / (double) _PixelHeight;
+        const double Aspect = (double) _RasterWidth / (double) _RasterHeight;
 
-        const double CenterX = std::sin(_Time * .17) * (.1 + _BassEnergy * .1);
-        const double CenterY = std::cos(_Time * .13) * (.08 + _MidEnergy * .08);
+        const double CenterX = std::sin(_Time * .17) * (.1 + _BassLevel * .1);
+        const double CenterY = std::cos(_Time * .13) * (.08 + _MidLevel * .08);
 
-        for (UINT32 y = 0; y < _PixelHeight; ++y)
+        for (UINT32 y = 0; y < _RasterHeight; ++y)
         {
-            const double py = ((double) y + .5) / (double) _PixelHeight - .5;
+            const double py = ((double) y + .5) / (double) _RasterHeight - .5;
 
-            for (UINT32 x = 0; x < _PixelWidth; ++x)
+            for (UINT32 x = 0; x < _RasterWidth; ++x)
             {
-                const double px = (((double) x + .5) / (double) _PixelWidth - .5) * Aspect;
+                const double px = (((double) x + .5) / (double) _RasterWidth - .5) * Aspect;
 
                 const double Radius = std::hypot(px - CenterX, py - CenterY);
                 const double Angle  = std::atan2(py - CenterY, px - CenterX);
 
                 const double ModulatedRadius = Radius * _RadialScale + std::sin(Angle * 3. + _FieldPhase * TwoPi) * _RadialAudio * .018;
                 const double RadialEnvelope = std::exp(-Radius * (1.8 - _RadialAudio * .45));
-                const double RadialPulse = .5 + .5 * std::cos(ModulatedRadius * TwoPi * (5.5 + _BassEnergy * 2.4) - _FieldPhase * TwoPi * (1.2 + _RadialAudio * .35));
+                const double RadialPulse = .5 + .5 * std::cos(ModulatedRadius * TwoPi * (5.5 + _BassLevel * 2.4) - _FieldPhase * TwoPi * (1.2 + _RadialAudio * .35));
                 const double RadialWarp = std::sin(ModulatedRadius * TwoPi * 2.2 - _NoisePhase * TwoPi) * _RadialAudio * .13;
-                const double Wave = .5 + .5 * std::sin((px + RadialWarp) * TwoPi * (2.4 + _MidEnergy * .9) + _FieldPhase * TwoPi + std::sin(py * TwoPi * 2.) * .9);
-                const double Ripple = .5 + .5 * std::cos(ModulatedRadius * TwoPi * (7. + _BassEnergy * 2.2) - _FieldPhase * TwoPi * 1.3);
-                const double Spiral = .5 + .5 * std::sin(Angle * (4. + _TrebleEnergy * 2.) + ModulatedRadius * TwoPi * (5. + _RadialTwist) - _NoisePhase * TwoPi);
-                const double AudioLift = _BassEnergy * .1 + _MidEnergy * .11 + _TrebleEnergy * .07;
+                const double Wave = .5 + .5 * std::sin((px + RadialWarp) * TwoPi * (2.4 + _MidLevel * .9) + _FieldPhase * TwoPi + std::sin(py * TwoPi * 2.) * .9);
+                const double Ripple = .5 + .5 * std::cos(ModulatedRadius * TwoPi * (7. + _BassLevel * 2.2) - _FieldPhase * TwoPi * 1.3);
+                const double Spiral = .5 + .5 * std::sin(Angle * (4. + _TrebleLevel * 2.) + ModulatedRadius * TwoPi * (5. + _RadialTwist) - _NoisePhase * TwoPi);
+                const double AudioLift = _BassLevel * .1 + _MidLevel * .11 + _TrebleLevel * .07;
                 const double RadialLift = (RadialPulse - .5) * _RadialAudio * (.28 + RadialEnvelope * .22);
 
-                _EnergyField[(size_t) y * _PixelWidth + x] = (float) std::clamp(Wave * .35 + Ripple * .32 + Spiral * .2 + RadialPulse * .13 + AudioLift + RadialLift - .13, 0., 1.);
+                _EnergyField[(size_t) y * _RasterWidth + x] = (float) std::clamp(Wave * .35 + Ripple * .32 + Spiral * .2 + RadialPulse * .13 + AudioLift + RadialLift - .13, 0., 1.);
             }
         }
     }
@@ -299,14 +339,14 @@ namespace DitherField
 
         std::copy(_EnergyField.begin(), _EnergyField.end(), _ErrorBuffer.begin());
 
-        for (UINT32 y = 0; y < _PixelHeight; ++y)
+        for (UINT32 y = 0; y < _RasterHeight; ++y)
         {
             const bool Reverse = (y & 1) != 0;
 
-            for (UINT32 i = 0; i < _PixelWidth; ++i)
+            for (UINT32 i = 0; i < _RasterWidth; ++i)
             {
-                const UINT32 x = Reverse ? _PixelWidth - 1 - i : i;
-                const size_t Index = (size_t)y * _PixelWidth + x;
+                const UINT32 x = Reverse ? _RasterWidth - 1 - i : i;
+                const size_t Index = (size_t)y * _RasterWidth + x;
                 const float Old = Clamp(_ErrorBuffer[Index]);
                 const uint8_t New = Old >= .5f ? 1 : 0;
 
@@ -316,19 +356,19 @@ namespace DitherField
                 const int Direction = Reverse ? -1 : 1;
                 const int NextX = (int)x + Direction;
 
-                if (NextX >= 0 && NextX < (int)_PixelWidth)
+                if (NextX >= 0 && NextX < (int)_RasterWidth)
                     _ErrorBuffer[Index + Direction] += Error * (7.f / 16.f);
 
-                if (y + 1 < _PixelHeight)
+                if (y + 1 < _RasterHeight)
                 {
-                    const size_t Below = Index + _PixelWidth;
+                    const size_t Below = Index + _RasterWidth;
 
-                    if ((int) x - Direction >= 0 && (int) x - Direction < (int) _PixelWidth)
+                    if ((int) x - Direction >= 0 && (int) x - Direction < (int) _RasterWidth)
                         _ErrorBuffer[Below - Direction] += Error * (3.f / 16.f);
 
                     _ErrorBuffer[Below] += Error * (5.f / 16.f);
 
-                    if (NextX >= 0 && NextX < (int) _PixelWidth)
+                    if (NextX >= 0 && NextX < (int) _RasterWidth)
                         _ErrorBuffer[Below + Direction] += Error * (1.f / 16.f);
                 }
             }
@@ -406,7 +446,7 @@ namespace DitherField
 
         if (_Workers.empty())
         {
-            RenderRows(0, _PixelHeight);
+            RenderRows(0, _RasterHeight);
 
             return;
         }
@@ -440,9 +480,20 @@ namespace DitherField
 
         _Workers.reserve(WorkerCount);
 
-        for (size_t i = 0; i < WorkerCount; ++i)
+        try
         {
-            _Workers.emplace_back(&effect_t::Worker, this, i);
+            for (size_t i = 0; i < WorkerCount; ++i)
+            {
+                _Workers.emplace_back([this, i]() noexcept
+                {
+                    Worker(i);
+                });
+            }
+        }
+        catch (...)
+        {
+            StopWorkers();
+            throw;
         }
     }
 
@@ -492,8 +543,8 @@ namespace DitherField
                 Generation = _Generation;
             }
 
-            const UINT32 Begin = (UINT32) ((uint64_t) _PixelHeight *  workerIndex      / _Workers.size());
-            const UINT32 End   = (UINT32) ((uint64_t) _PixelHeight * (workerIndex + 1) / _Workers.size());
+            const UINT32 Begin = (UINT32) ((uint64_t) _RasterHeight *  workerIndex      / _Workers.size());
+            const UINT32 End   = (UINT32) ((uint64_t) _RasterHeight * (workerIndex + 1) / _Workers.size());
 
             RenderRows(Begin, End);
 
@@ -511,13 +562,17 @@ namespace DitherField
     /// </summary>
     void effect_t::RenderRows(UINT32 begin, UINT32 end) noexcept
     {
+        double WidthScale  = 1. / std::max<UINT32>(1, _RasterWidth  - 1);
+        double HeightScale = 1. / std::max<UINT32>(1, _RasterHeight - 1);
+
         for (UINT32 y = begin; y < end; ++y)
         {
-            uint32_t * Pixel = _Pixels.data() + (size_t) y * _PixelWidth;
+            size_t Index = (size_t) y * _RasterWidth;
 
-            for (UINT32 x = 0; x < _PixelWidth; ++x)
+            uint32_t * Pixel = _Pixels.data() + Index;
+
+            for (UINT32 x = 0; x < _RasterWidth; ++x, ++Index)
             {
-                const size_t Index = (size_t)y * _PixelWidth + x;
                 const double Energy = _EnergyField[Index];
 
                 const auto SampleMode = [&](size_t Mode) noexcept
@@ -530,20 +585,16 @@ namespace DitherField
 
                 const double Dither = Lerp(SampleMode(_DitherModeA), SampleMode(_DitherModeB), _DitherBlend);
 
-                const double Column = (double) x / std::max<UINT32>(1, _PixelWidth  - 1);
-                const double Row    = (double) y / std::max<UINT32>(1, _PixelHeight - 1);
+                const double Column = (double) x * WidthScale;
+                const double Row    = (double) y * HeightScale;
 
-                const double H = Fraction(.56 + _HueShift + (Column - .5) * _PaletteSpread + (Row - .5) * _PaletteSpread * .57);
-                const double S = Clamp(.68 + _TrebleEnergy * .26 + Energy * .08);
-                const double V = Clamp((.045 + Dither * .955) * _RenderBrightness);
+                const double H = Fraction(.56 + _HueShift + ((Column - .5) * _PaletteSpread) + ((Row - .5) * _PaletteSpread * .57));
+                const double S = Clamp(.68 + _TrebleLevel * .26 + Energy * .08);
+                const double V = Clamp((.045 + (Dither * .955)) * _RenderBrightness);
 
-                const D2D1_COLOR_F Color = HSVToColor((float)H, (float)S, (float)V);
+                const D2D1_COLOR_F Color = HSVToColor((float) H, (float) S, (float) V);
 
-                const uint32_t R = (uint32_t)std::clamp(Color.r * 255., 0., 255.);
-                const uint32_t G = (uint32_t)std::clamp(Color.g * 255., 0., 255.);
-                const uint32_t B = (uint32_t)std::clamp(Color.b * 255., 0., 255.);
-
-                *Pixel++ = 0xFF000000u | (R << 16) | (G << 8) | B;
+                *Pixel++ = PackColor(Color.r, Color.g, Color.b);
             }
         }
     }
@@ -563,15 +614,17 @@ namespace DitherField
         const UINT32 Width  = std::max<UINT32>(64, (UINT32) std::ceil(_Width  * Resolution));
         const UINT32 Height = std::max<UINT32>(64, (UINT32) std::ceil(_Height * Resolution));
 
-        if (_RenderTarget == renderTarget && _Bitmap && Width == _PixelWidth && Height == _PixelHeight)
+        if (_RenderTarget == renderTarget && _BackBuffer && Width == _RasterWidth && Height == _RasterHeight)
             return S_OK;
 
         DeleteDeviceDependentResources();
 
-        _PixelWidth = Width;
-        _PixelHeight = Height;
+        _RasterWidth  = Width;
+        _RasterHeight = Height;
 
-        const size_t PixelCount = (size_t)Width * Height;
+        _Stride = _RasterWidth * BytesPerPixel;
+
+        const size_t PixelCount = (size_t) Width * Height;
 
         _EnergyField.assign(PixelCount, 0.f);
         _ErrorBuffer.assign(PixelCount, 0.f);
@@ -580,14 +633,14 @@ namespace DitherField
 
         const auto Properties = D2D1::BitmapProperties(D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_IGNORE), 96.f, 96.f);
 
-        hr = renderTarget->CreateBitmap(D2D1::SizeU(Width, Height), _Pixels.data(), Width * sizeof(uint32_t), Properties, _Bitmap.ReleaseAndGetAddressOf());
+        hr = renderTarget->CreateBitmap(D2D1::SizeU(Width, Height), _Pixels.data(), Width * sizeof(uint32_t), Properties, _BackBuffer.ReleaseAndGetAddressOf());
 
         if (FAILED(hr))
             return hr;
 
         _RenderTarget = renderTarget;
 
-        Reset();
+//      Reset();
 
         return S_OK;
     }
@@ -599,13 +652,16 @@ namespace DitherField
     {
         _RenderTarget = nullptr;
 
-        _Bitmap.Reset();
+        _BackBuffer.Reset();
 
         _EnergyField.clear();
         _ErrorBuffer.clear();
         _DiffusedField.clear();
+
         _Pixels.clear();
-        _PixelWidth = _PixelHeight = 0;
+
+        _RasterWidth  = 0;
+        _RasterHeight = 0;
 
         __super::DeleteDeviceDependentResources();
     }

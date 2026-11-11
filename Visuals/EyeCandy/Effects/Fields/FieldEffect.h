@@ -4,7 +4,6 @@
 #pragma once
 
 #include "Effect.h"
-#include "EffectProcessor.h"
 
 #include <d2d1.h>
 #include <wrl/client.h>
@@ -406,34 +405,9 @@ namespace Field
         void DeleteDeviceDependentResources() noexcept;
 
     protected:
-        processor_t _Processor;
-
-    protected:
-        static constexpr size_t BytesPerPixel = sizeof(uint32_t);
-
-        // The raster size can be different than the render target size.
-        UINT32 _RasterWidth  = 0;
-        UINT32 _RasterHeight = 0;
-
-        std::vector<uint32_t> _Pixels;
-
-    protected:
-        static constexpr double TransitionInterval = 3.; // seconds
-
-        double _ThemeTime = 0.;
-
-        double _TransitionTime = 1.;
-
-        size_t _ThemeIndex = 0;
         theme_t _Theme { Field::theme_t::BuiltIn(_ThemeIndex) };
-
-        double _NextTransitionTime = TransitionInterval;
-        size_t _NextThemeIndex = 0;
 
         theme_t _FromTheme = { _Theme };
         theme_t _ToTheme{ _Theme };
-
-    protected:
-        ComPtr<ID2D1Bitmap> _BackBuffer;
     };
 }

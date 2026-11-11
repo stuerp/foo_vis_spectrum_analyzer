@@ -55,6 +55,8 @@ namespace GrayScottReactionDiffusion
             _RasterWidth  = std::max(64u, (uint32_t) std::lround((double) LongSide * AspectRatio));
         }
 
+        _Stride = _RasterWidth * BytesPerPixel;
+
         const size_t Count = (size_t) _RasterWidth * _RasterHeight;
 
         _Pixels.assign(Count, PackRGB(0., 0., 0.));
@@ -86,39 +88,59 @@ namespace GrayScottReactionDiffusion
         if (!std::isfinite(deltaTime) || deltaTime <= 0. || deltaTime > MaximumFrameTime)
             deltaTime = DefaultFrameTime;
 
-        _Processor.Process(chunk, deltaTime);
-
-        const double SpeedFactor = (_Speed == EyeCandy::Speed::Slow) ? .55 : (_Speed == EyeCandy::Speed::Fast) ? 1.45 : .90;
-
-        _AnimationTime += deltaTime * SpeedFactor;
-
-        _Interaction.Impulse *= std::exp(-2.8 * deltaTime);
-
-        if (_AnimationTime > _NextTransitionTime)
+        // Update the raster.
         {
-            _NextThemeIndex = (_NextThemeIndex + 1) % Field::theme_t::BuiltInCount;
-            _NextTransitionTime = _AnimationTime + TransitionInterval;
+            Process(chunk, deltaTime);
+
+            const double SpeedFactor = [&]() noexcept
+            {
+                switch (_Speed)
+                {
+                    case Speed::Slow:
+                        return 0.55;
+
+                    default:
+                    case Speed::Normal:
+                        return 0.90;
+
+                    case Speed::Fast:
+                        return 1.45;
+                }
+            }();
+
+            _AnimationTime += deltaTime * SpeedFactor;
+
+            _Interaction.Impulse *= std::exp(-2.8 * deltaTime);
+
+            if (_AnimationTime > _NextThemeTransitionTime)
+            {
+                _NextThemeIndex = (_NextThemeIndex + 1) % Field::theme_t::BuiltInCount;
+
+                _NextThemeTransitionTime = _AnimationTime + ThemeTransitionInterval;
+            }
+
+            if (_ThemeIndex != _NextThemeIndex)
+            {
+                _FromTheme      = _Theme;
+                _ToTheme        = Field::theme_t::BuiltIn(_NextThemeIndex);
+                _ThemeIndex     = _NextThemeIndex;
+                _TransitionTime = 0.;
+            }
+
+            _TransitionTime = std::min(_TransitionTime + deltaTime / .85, 1.);
+
+            if (_TransitionTime < 1.)
+                _Theme = Field::theme_t::Blend(_FromTheme, _ToTheme, _TransitionTime);
+
+            Update();
         }
 
-        if (_ThemeIndex != _NextThemeIndex)
+        // Render the bitmap.
         {
-            _FromTheme = _Theme;
-            _ToTheme = Field::theme_t::BuiltIn(_NextThemeIndex);
-            _ThemeIndex = _NextThemeIndex;
-            _TransitionTime = 0.;
+            _BackBuffer->CopyFromMemory(nullptr, _Pixels.data(), _Stride);
+
+            renderTarget->DrawBitmap(_BackBuffer.Get(), _ViewPort);
         }
-
-        _TransitionTime = std::min(_TransitionTime + deltaTime / .85, 1.);
-
-        if (_TransitionTime < 1.)
-            _Theme = Field::theme_t::Blend(_FromTheme, _ToTheme, _TransitionTime);
-
-        Update();
-
-        _BackBuffer->CopyFromMemory(nullptr, _Pixels.data(), _RasterWidth * BytesPerPixel);
-
-        renderTarget->Clear(Black);
-        renderTarget->DrawBitmap(_BackBuffer.Get(), _Rectangle, 1.f, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR);
     }
 
     /// <summary>
@@ -141,22 +163,22 @@ namespace GrayScottReactionDiffusion
             return;
 
         // Several well-known Gray-Scott regimes lie in this narrow feed/kill region. Audio moves smoothly through spots, mitosis and coral-like structures.
-        const double Feed = std::clamp(.0335 + .0075 * _Processor._MidEnergy + .0020 * std::sin(_AnimationTime * .13), .028, .046);
-        const double Kill = std::clamp(.0610 + .0060 * _Processor._TrebleEnergy - .0025 * _Processor._BassEnergy, .055, .069);
+        const double Feed = std::clamp(.0335 + .0075 * _MidLevel + .0020 * std::sin(_AnimationTime * .13), .028, .046);
+        const double Kill = std::clamp(.0610 + .0060 * _TrebleLevel - .0025 * _BassLevel, .055, .069);
 
         work_t Work
         {
             .Feed = Feed,
             .Kill = Kill,
             .DiffusionU = 1.,
-            .DiffusionV = .50 + .08 * _Processor._StereoWidth,
+            .DiffusionV = .50 + .08 * _StereoWidth,
             .TimeStep = .92
         };
 
         InjectAudio(_AnimationTime);
 
-        const size_t BaseSteps = (_Quality == EyeCandy::Quality::Low) ? 3u : (_Quality == EyeCandy::Quality::High) ? 7u : 5u;
-        const size_t Steps = BaseSteps + (size_t) std::lround(_Processor._Peak);
+        const size_t BaseSteps = (_Quality == Quality::Low) ? 3u : (_Quality == Quality::High) ? 7u : 5u;
+        const size_t Steps = BaseSteps + (size_t) std::lround(_Peak);
 
         for (size_t Step = 0; Step < Steps; ++Step)
         {
@@ -209,10 +231,10 @@ namespace GrayScottReactionDiffusion
     /// </summary>
     void effect_t::InjectAudio(double time) noexcept
     {
-        const double Transient = std::max(0., _Processor._Peak - _LastImpulse * .82);
+        const double Transient = std::max(0., _Peak - _LastImpulse * .82);
 
-        _LastImpulse = std::max(_Processor._Peak, _LastImpulse * .91);
-        _InjectionPhase += .035 + (_Processor._StereoWidth * .06);
+        _LastImpulse = std::max(_Peak, _LastImpulse * .91);
+        _InjectionPhase += .035 + (_StereoWidth * .06);
 
         if (Transient < .035 && _Interaction.Impulse < .02)
             return;
@@ -291,7 +313,10 @@ namespace GrayScottReactionDiffusion
         {
             for (size_t i = 0; i < WorkerCount; ++i)
             {
-                _Workers.emplace_back(&effect_t::Worker, this);
+                _Workers.emplace_back([this]() noexcept
+                {
+                    Worker();
+                });
             }
         }
         catch (...)
@@ -452,21 +477,35 @@ namespace GrayScottReactionDiffusion
     {
         const double Concentration = Clamp(v * 1.45 - u * .18 + .12);
         const double PatternLight  = .18 + .82 * std::pow(Clamp(v * 1.75 + edge * 2.2), .62);
-        const double AudioLight    = .36 + (.48 * std::sqrt(Clamp(_Processor._Loudness))) + (.16 * _Processor._Peak);
+        const double AudioLight    = .36 + (.48 * std::sqrt(Clamp(_Loudness))) + (.16 * _Peak);
 
-        const double H = _Theme.BaseHue + (_Theme.HueSpan * Concentration) + (_Theme.BassHue * _Processor._BassEnergy) + (_Theme.MidHue * _Processor._MidEnergy) + (_Theme.TrebleHue * _Processor._TrebleEnergy);
-        const double S = Clamp(_Theme.Saturation + (.20 * edge) + (.12 * _Processor._TrebleEnergy));
+        const double H = _Theme.BaseHue + (_Theme.HueSpan * Concentration) + (_Theme.BassHue * _BassLevel) + (_Theme.MidHue * _MidLevel) + (_Theme.TrebleHue * _TrebleLevel);
+        const double S = Clamp(_Theme.Saturation + (.20 * edge) + (.12 * _TrebleLevel));
         const double V = Clamp(_Theme.Brightness * PatternLight * AudioLight);
 
         double R, G, B;
 
         HSVToRGB(H, S, V, R, G, B);
 
-        R = Clamp(R + _Theme.BassRed    * _Processor._BassEnergy);
-        G = Clamp(G + _Theme.MidGreen   * _Processor._MidEnergy);
-        B = Clamp(B + _Theme.TrebleBlue * _Processor._TrebleEnergy);
+        R = Clamp(R + _Theme.BassRed    * _BassLevel);
+        G = Clamp(G + _Theme.MidGreen   * _MidLevel);
+        B = Clamp(B + _Theme.TrebleBlue * _TrebleLevel);
 
-        const double BrightnessFactor = (_Brightness == EyeCandy::Brightness::Low) ? .50 : (_Brightness == EyeCandy::Brightness::High) ? 1.50 : 1.;
+        const double BrightnessFactor = [&]() noexcept
+        {
+            switch (_Brightness)
+            {
+                case Brightness::Low:
+                    return .50;
+
+                default:
+                case Brightness::Medium:
+                    return 1.00;
+
+                case Brightness::High:
+                    return 1.50;
+            }
+        }();
 
         return PackRGB(R * BrightnessFactor, G * BrightnessFactor, B * BrightnessFactor);
     }

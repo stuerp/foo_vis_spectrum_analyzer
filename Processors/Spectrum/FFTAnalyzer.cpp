@@ -1,5 +1,5 @@
 
-/** $VER: FFTAnalyzer.cpp (2026.11.10) P. Stuer **/
+/** $VER: FFTAnalyzer.cpp (2026.11.11) P. Stuer **/
 
 #include "pch.h"
 
@@ -37,11 +37,11 @@ fft_analyzer_t::fft_analyzer_t(const state_t & state, size_t fftSize, uint32_t s
 /// <summary>
 /// Calculates the transform and returns the frequency bands.
 /// </summary>
-bool fft_analyzer_t::AnalyzeAudio(const audio_sample * frameData, size_t frameCount, uint32_t selectedChannels, frequency_bands_t & frequencyBands) noexcept
+bool fft_analyzer_t::AnalyzeAudio(const audio_sample * frames, size_t frameCount, uint32_t selectedChannels, frequency_bands_t & frequencyBands) noexcept
 {
 //  const auto Start = std::chrono::steady_clock::now();
 
-    Add(frameData, frameCount, selectedChannels);
+    Add(frames, frameCount, selectedChannels);
 
     Transform();
 
@@ -84,9 +84,9 @@ bool fft_analyzer_t::AnalyzeAudio(const audio_sample * frameData, size_t frameCo
 /// <summary>
 /// Calculates the transform without calculating the magnitudes.
 /// </summary>
-bool fft_analyzer_t::AnalyzeAudio(const audio_sample * frameData, size_t frameCount, uint32_t selectedChannels) noexcept
+bool fft_analyzer_t::AnalyzeAudio(const audio_sample * frames, size_t frameCount, uint32_t selectedChannels) noexcept
 {
-    Add(frameData, frameCount, selectedChannels);
+    Add(frames, frameCount, selectedChannels);
 
     Transform();
 
@@ -96,9 +96,9 @@ bool fft_analyzer_t::AnalyzeAudio(const audio_sample * frameData, size_t frameCo
 /// <summary>
 /// Adds multiple samples to the input buffer.
 /// </summary>
-void fft_analyzer_t::Add(const audio_sample * samples, size_t frameCount, uint32_t selectedChannels) noexcept
+void fft_analyzer_t::Add(const audio_sample * frames, size_t frameCount, uint32_t selectedChannels) noexcept
 {
-    if ((samples == nullptr) || (frameCount == 0))
+    if ((frames == nullptr) || (frameCount == 0))
         return;
 
     audio_sample * const Mono = _InputRing.data();
@@ -111,7 +111,7 @@ void fft_analyzer_t::Add(const audio_sample * samples, size_t frameCount, uint32
 
         _Next = (_Next + (frameCount % Size)) % Size;
 
-        samples += FramesToSkip * (size_t) _ChannelCount;
+        frames += FramesToSkip * (size_t) _ChannelCount;
 
         frameCount = Size;
     }
@@ -119,9 +119,9 @@ void fft_analyzer_t::Add(const audio_sample * samples, size_t frameCount, uint32
     for (size_t i = 0; i < frameCount; ++i)
     {
         // Downmix the selected channels to mono before adding the sample to the input ring buffer.
-        Mono[_Next] = Downmix(samples, selectedChannels);
+        Mono[_Next] = Downmix(frames, selectedChannels);
 
-        samples += _ChannelCount;
+        frames += _ChannelCount;
 
         if (++_Next == Size)
             _Next = 0;

@@ -13,27 +13,6 @@
 
 namespace VectorGrid
 {
-    namespace
-    {
-        constexpr double NearPlane           = 0.055;
-        constexpr double FarPlane            = 3.20;
-        constexpr double GridHalfWidth       = 2.65;
-        constexpr double CameraHeight        = 0.54;
-        constexpr double VerticalFieldOfView = 66.0;
-        constexpr double HorizonFraction     = 0.20;
-
-        double SpeedFactor(EyeCandy::Speed speed) noexcept
-        {
-            switch (speed)
-            {
-                case EyeCandy::Speed::Slow: return 0.55;
-                case EyeCandy::Speed::Fast: return 1.55;
-                case EyeCandy::Speed::Normal:
-                default: return 1.0;
-            }
-        }
-    }
-
     effect_t::effect_t()
     {
         StartWorkers();
@@ -48,6 +27,44 @@ namespace VectorGrid
     {
         return std::format(L"Vector Grid, {}, {} quality, {} speed",
             GetThemeName(GetColorTheme()), Qualities[(size_t) _Quality], Speeds[(size_t) _Speed]);
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    void effect_t::Reset() noexcept
+    {
+        switch (_Quality)
+        {
+            case Quality::Low:
+                _ColumnCount = 24;
+                _RowCount    = 36;
+                break;
+
+            default:
+            case Quality::Medium:
+                _ColumnCount = 32;
+                _RowCount    = 64;
+                break;
+
+            case Quality::High:
+                _ColumnCount = 48;
+                _RowCount    = 72;
+                break;
+        }
+
+        _CellCount = _ColumnCount * _RowCount;
+
+        _Grid.assign(_CellCount, {});
+
+        _Travel                 = 0.;
+        _WaveEnvelope           = 0.;
+        _MidEnvelope            = 0.;
+        _TrebleImpulse          = 0.;
+        _PreviousMidEnvelope    = 0.;
+        _PreviousTrebleEnvelope = 0.;
+        _BeatDeformation        = 0.;
+        _BeatPhase              = 0.;
     }
 
     /// <summary>
@@ -98,42 +115,14 @@ namespace VectorGrid
         RenderFrame(renderTarget, SetAlpha(_Palette.Horizon, Alpha));
     }
 
-    /// <summary>
-    /// 
-    /// </summary>
-    void effect_t::Reset() noexcept
+    namespace
     {
-        switch (_Quality)
-        {
-            case EyeCandy::Quality::Low:
-                _ColumnCount = 24;
-                _RowCount    = 36;
-                break;
-
-            case EyeCandy::Quality::High:
-                _ColumnCount = 48;
-                _RowCount    = 72;
-                break;
-
-            case EyeCandy::Quality::Medium:
-            default:
-                _ColumnCount = 32;
-                _RowCount    = 64;
-                break;
-        }
-
-        _CellCount = _ColumnCount * _RowCount;
-
-        _Grid.assign(_CellCount, {});
-
-        _Travel                 = 0.;
-        _WaveEnvelope           = 0.;
-        _MidEnvelope            = 0.;
-        _TrebleImpulse          = 0.;
-        _PreviousMidEnvelope    = 0.;
-        _PreviousTrebleEnvelope = 0.;
-        _BeatDeformation        = 0.;
-        _BeatPhase              = 0.;
+        constexpr double NearPlane           = 0.055;
+        constexpr double FarPlane            = 3.20;
+        constexpr double GridHalfWidth       = 2.65;
+        constexpr double CameraHeight        = 0.54;
+        constexpr double VerticalFieldOfView = 66.0;
+        constexpr double HorizonFraction     = 0.20;
     }
 
     /// <summary>
@@ -141,40 +130,47 @@ namespace VectorGrid
     /// </summary>
     void effect_t::AnalyzeAudio(const audio_chunk & chunk)
     {
+        _HasAudio = false;
+
         _Peak         = 0.;
         _RMS          = 0.;
 
-        _BassEnergy   = 0.;
-        _MidEnergy    = 0.;
-        _TrebleEnergy = 0.;
-
-        _Bands.fill(0.);
-
-        _HasAudio = false;
+        _BassLevel   = 0.;
+        _MidLevel    = 0.;
+        _TrebleLevel = 0.;
 
         if (chunk.is_empty())
+        {
+            for (auto & Band : _Bands)
+                Band.Energy = 0.;
+
+            return;
+        }
+
+        constexpr size_t MaximumFrameCount = 2048;
+
+        const audio_sample * const Frames = chunk.get_data();
+
+        const auto FrameCount   = chunk.get_sample_count();
+        const auto ChannelCount = chunk.get_channel_count();
+        const auto SampleRate   = (double) chunk.get_sample_rate();
+
+        // Analyze only the most recent frames of the chunk.
+        const auto MaxFrames = std::min(FrameCount, MaximumFrameCount);
+
+        if (MaxFrames < 32)
             return;
 
-        const size_t SampleCount  = chunk.get_sample_count();
-        const size_t ChannelCount = chunk.get_channel_count();
-        const double SampleRate   = (double) chunk.get_sample_rate();
-        const size_t FrameCount   = std::min(SampleCount, MaximumFrameCount);
+        const size_t FirstFrame = FrameCount - MaxFrames;
 
-        const audio_sample * Data = chunk.get_data();
-
-        if (!Data || ChannelCount == 0 || FrameCount < 32 || SampleRate <= 0.)
-            return;
-
-        const size_t FirstFrame = SampleCount - FrameCount;
-
-        std::array<double, MaximumFrameCount> Samples {};
+        std::array<double, MaximumFrameCount> Samples;
 
         double Sum  = 0.;
         double Peak = 0.;
 
-        for (size_t i = 0; i < FrameCount; ++i)
+        for (size_t i = 0; i < MaxFrames; ++i)
         {
-            const audio_sample * Frame = Data + (FirstFrame + i) * ChannelCount;
+            const audio_sample * Frame = Frames + (FirstFrame + i) * ChannelCount;
 
             double Mono = 0.;
 
@@ -185,7 +181,7 @@ namespace VectorGrid
 
             // Apply a Hann window.
             {
-                const double Window = 0.5 - (std::cos(TwoPi * (double) i / (double) (FrameCount - 1)) * 0.5);
+                const double Window = 0.5 - (std::cos(TwoPi * (double) i / (double) (MaxFrames - 1)) * 0.5);
 
                 Samples[i] = Mono * Window;
             }
@@ -195,7 +191,7 @@ namespace VectorGrid
         }
 
         _Peak = Peak;
-        _RMS  = std::sqrt(Sum / (double) FrameCount);
+        _RMS  = std::sqrt(Sum / (double) MaxFrames);
 
         _HasAudio = (_Peak > 1e-5) || (_RMS > 1e-6);
 
@@ -203,46 +199,119 @@ namespace VectorGrid
             return;
 
         const double NyquistFrequency = SampleRate * 0.5;
-        const double CenterStep       = std::pow(FrequencyRatio, 1. / (double) (FrequencyBandCount - 1));
+        const double CenterStep       = std::pow(FrequencyRatio, InverseBandCount);
 
         double Center = LoFrequency; // Hz
 
-        for (size_t i = 0; i < FrequencyBandCount; ++i)
+        for (size_t i = 0; i < BandCount; ++i)
         {
             const double Frequency = std::clamp(Center, LoFrequency, NyquistFrequency);
 
-            // Configure the Goertzel detector.
-            const double Omega       = TwoPi * Frequency / SampleRate;
-            const double Coefficient = 2. * std::cos(Omega);
+            double Power = 0.;
 
-            double q1 = 0., q2 = 0.;
-
-            for (size_t j = 0; j < FrameCount; ++j)
             {
-                const double q0 = Samples[j] + Coefficient * q1 - q2;
+                // Configure the Goertzel detector.
+                const double Omega       = TwoPi * Frequency / SampleRate;
+                const double Coefficient = 2. * std::cos(Omega);
 
-                q2 = q1;
-                q1 = q0;
+                double q1 = 0., q2 = 0.;
+
+                for (size_t j = 0; j < MaxFrames; ++j)
+                {
+                    const double q0 = Samples[j] + Coefficient * q1 - q2;
+
+                    q2 = q1;
+                    q1 = q0;
+                }
+
+                // Convert the detector state to power.
+                Power = std::max(0., q1 * q1 + q2 * q2 - Coefficient * q1 * q2);
             }
 
-            // Convert the detector state to power.
-            const double Power     = std::max(0., q1 * q1 + q2 * q2 - Coefficient * q1 * q2);
-            const double Magnitude = std::sqrt(Power) / (double) FrameCount;
+            const double Magnitude = std::sqrt(Power) / (double) MaxFrames;
 
-            _Bands[i] = Clamp(std::log1p(Magnitude * 110.) / std::log1p(110.));
+            _Bands[i].Energy = Clamp(std::log1p(Magnitude * 110.) / std::log1p(110.));
 
             Center *= CenterStep;
         }
 
-        const double Bass   = (_Bands[0] * 0.50) + (_Bands[1] * 0.32) + (_Bands[2] * 0.18);
+        const std::array<double, 12> Weights =
+        {
+            0.40, 0.30, 0.20, 0.10,
+            0.12, 0.18, 0.28, 0.24, 0.18,
+            0.25, 0.35, 0.40
+        };
 
-        _BassEnergy = Clamp(1. - std::exp(-Bass * 2.9 * _BassResponse));
+        const double Bass   = (_Bands[0].Energy * Weights[0]) + (_Bands[ 1].Energy * Weights[ 1]) + (_Bands[ 2].Energy * Weights[ 2]) + (_Bands[ 3].Energy * Weights[3]);
+        const double Mid    = (_Bands[4].Energy * Weights[4]) + (_Bands[ 5].Energy * Weights[ 5]) + (_Bands[ 6].Energy * Weights[ 6]) + (_Bands[ 7].Energy * Weights[7]) + (_Bands[ 8].Energy * Weights[8]);
+        const double Treble = (_Bands[9].Energy * Weights[9]) + (_Bands[10].Energy * Weights[10]) + (_Bands[11].Energy * Weights[11]);
 
-        const double Mid    = (_Bands[3] * 0.25) + (_Bands[4] * 0.42) + (_Bands[5] * 0.33);
-        const double Treble = (_Bands[6] * 0.46) + (_Bands[7] * 0.54);
+        _BassLevel   = Clamp(1. - std::exp(-Bass   * 2.90 * _BassResponse));
+        _MidLevel    = Clamp(1. - std::exp(-Mid    * 2.35 * _MidResponse));
+        _TrebleLevel = Clamp(1. - std::exp(-Treble * 2.55 * _TrebleResponse));
+/*
+        const std::array<double, 12> Weights =
+        {
+            0.34, 0.31, 0.23, 0.12,         // Emphasizing sub-bass and kick fundamentals.
+            0.10, 0.17, 0.27, 0.29, 0.17,   // Emphasizing the presence region.
+            0.42, 0.36, 0.22                // Emphasizing clarity while limiting the highest band.
+        };
 
+        _BassEnergy   = Clamp(1. - std::exp(-Bass   * 2.90 * _BassResponse));
         _MidEnergy    = Clamp(1. - std::exp(-Mid    * 2.35 * _MidResponse));
-        _TrebleEnergy = Clamp(1. - std::exp(-Treble * 2.55 * _TrebleResponse));
+        _TrebleLevel = Clamp(1. - std::exp(-Treble * 2.55 * _TrebleResponse));
+*/
+/*
+        // Frequency-weighted for music visualization:
+        // Bass:    Favors kick fundamentals and bass body while limiting subsonic rumble.
+        // Mid:     Favors the presence region for vocals, guitars, synths and percussion.
+        // Treble:  Favors cymbal clarity while limiting hiss in the highest band.
+
+        const std::array<double, 12> Weights =
+        {
+            0.12, 0.24, 0.38, 0.26,
+            0.10, 0.16, 0.24, 0.30, 0.20,
+            0.44, 0.36, 0.20
+        };
+
+        _BassEnergy   = Clamp(1. - std::exp(-Bass   * 2.90 * _BassResponse));
+        _MidEnergy    = Clamp(1. - std::exp(-Mid    * 2.35 * _MidResponse));
+        _TrebleLevel = Clamp(1. - std::exp(-Treble * 2.55 * _TrebleResponse));
+*/
+/*
+        // Tuned for EDM visualization:
+        // Bass emphasizes kick fundamentals and bass body.
+        // Mid emphasizes synth presence and snare attacks.
+        // Treble emphasizes hi-hats and cymbals while limiting high-frequency noise.
+
+        const std::array<double, 12> Weights =
+        {
+            0.08, 0.22, 0.42, 0.28,
+            0.08, 0.14, 0.23, 0.34, 0.21,
+            0.48, 0.37, 0.15
+        };
+
+        _BassEnergy   = Clamp(1. - std::exp(-Bass   * 3.20 * _BassResponse));
+        _MidEnergy    = Clamp(1. - std::exp(-Mid    * 2.30 * _MidResponse));
+        _TrebleLevel = Clamp(1. - std::exp(-Treble * 2.70 * _TrebleResponse));
+*/
+/*
+        // Tuned for acoustic music visualization:
+        // Bass balances low fundamentals with the body of acoustic instruments.
+        // Mid emphasizes natural instrument and vocal presence.
+        // Treble emphasizes articulation while limiting string and microphone noise.
+
+        const std::array<double, 12> Weights =
+        {
+            0.12, 0.23, 0.32, 0.33,
+            0.16, 0.23, 0.27, 0.22, 0.12,
+            0.50, 0.33, 0.17
+        };
+
+        _BassEnergy   = Clamp(1. - std::exp(-Bass   * 2.55 * _BassResponse));
+        _MidEnergy    = Clamp(1. - std::exp(-Mid    * 2.50 * _MidResponse));
+        _TrebleLevel = Clamp(1. - std::exp(-Treble * 2.25 * _TrebleResponse));
+*/
     }
 
     /// <summary>
@@ -255,27 +324,43 @@ namespace VectorGrid
 
         UpdateThemeTransition(deltaTime);
 
-        const double Speed = SpeedFactor(_Speed);
+        const double SpeedFactor = [&]() noexcept
+        {
+            switch (_Speed)
+            {
+                case Speed::Slow:
+                    return 0.50;
 
-        _AnimationTime += deltaTime * Speed;
+                default:
+                case Speed::Normal:
+                    return 1.00;
 
-        _SmoothedPeak   = ExponentialSmoothing(_SmoothedPeak,   _Peak,         deltaTime, (_Peak         > _SmoothedPeak)   ? 24. : 5.);
-        _SmoothedRMS    = ExponentialSmoothing(_SmoothedRMS,    _RMS,          deltaTime, (_RMS          > _SmoothedRMS)    ? 18. : 4.);
+                case Speed::Fast:
+                    return 1.50;
+            }
+        }();
 
-        _SmoothedBass   = ExponentialSmoothing(_SmoothedBass,   _BassEnergy,   deltaTime, (_BassEnergy   > _SmoothedBass)   ? 34. : 4.5);
-        _SmoothedMid    = ExponentialSmoothing(_SmoothedMid,    _MidEnergy,    deltaTime, (_MidEnergy    > _SmoothedMid)    ? 20. : 5.);
-        _SmoothedTreble = ExponentialSmoothing(_SmoothedTreble, _TrebleEnergy, deltaTime, (_TrebleEnergy > _SmoothedTreble) ? 18. : 6.);
-
-        for (size_t i = 0; i < FrequencyBandCount; ++i)
-            _SmoothedBands[i] = ExponentialSmoothing(_SmoothedBands[i], _Bands[i], deltaTime, _Bands[i] > _SmoothedBands[i] ? 20. : 5.);
-
-        _BeatAverage  = ExponentialSmoothing(_BeatAverage,  _BassEnergy, deltaTime, 1.45);
-        _BeatEnvelope = ExponentialSmoothing(_BeatEnvelope, _BassEnergy, deltaTime, (_BassEnergy > _BeatEnvelope) ? 38. : 8.);
-
-        const double Attack = std::max(0., _BeatEnvelope - _PreviousBassEnvelope);
+        _AnimationTime += deltaTime * SpeedFactor;
 
         {
-            _PreviousBassEnvelope = _BeatEnvelope;
+            _SmoothedPeak   = ExponentialSmoothing(_SmoothedPeak,   _Peak,         deltaTime, (_Peak         > _SmoothedPeak)   ? 24. : 5.);
+            _SmoothedRMS    = ExponentialSmoothing(_SmoothedRMS,    _RMS,          deltaTime, (_RMS          > _SmoothedRMS)    ? 18. : 4.);
+
+            _SmoothedBassLevel   = ExponentialSmoothing(_SmoothedBassLevel,   _BassLevel,   deltaTime, (_BassLevel   > _SmoothedBassLevel)   ? 34. : 4.5);
+            _SmoothedMidLevel    = ExponentialSmoothing(_SmoothedMidLevel,    _MidLevel,    deltaTime, (_MidLevel    > _SmoothedMidLevel)    ? 20. : 5.);
+            _SmoothedTrebleLevel = ExponentialSmoothing(_SmoothedTrebleLevel, _TrebleLevel, deltaTime, (_TrebleLevel > _SmoothedTrebleLevel) ? 18. : 6.);
+
+            for (auto & Band : _Bands)
+                Band.SmoothedEnergy = ExponentialSmoothing(Band.SmoothedEnergy, Band.Energy, deltaTime, Band.Energy > Band.SmoothedEnergy ? 20. : 5.);
+        }
+
+        _BeatAverage  = ExponentialSmoothing(_BeatAverage,  _BassLevel, deltaTime, 1.45);
+        _BeatEnvelope = ExponentialSmoothing(_BeatEnvelope, _BassLevel, deltaTime, (_BassLevel > _BeatEnvelope) ? 38. : 8.);
+
+        const double Attack = std::max(0., _BeatEnvelope - _PreviousBeatEnvelope);
+
+        {
+            _PreviousBeatEnvelope = _BeatEnvelope;
 
             _BeatCooldown = std::max(0., _BeatCooldown - deltaTime);
 
@@ -297,11 +382,11 @@ namespace VectorGrid
             const double ImpulseTarget = Clamp((Attack * 8. * _BassResponse) + (_BeatPulse * 0.82));
 
             _BassImpulse = ExponentialSmoothing(_BassImpulse, ImpulseTarget, deltaTime, (ImpulseTarget > _BassImpulse) ? 48. : 10.);
-            _CameraShake = ExponentialSmoothing(_CameraShake, Clamp((_BassImpulse * 0.68) + (_BeatPulse * 0.42) + (_SmoothedBass * 0.08)), deltaTime, 9.);
+            _CameraShake = ExponentialSmoothing(_CameraShake, Clamp((_BassImpulse * 0.68) + (_BeatPulse * 0.42) + (_SmoothedBassLevel * 0.08)), deltaTime, 9.);
         }
 
         {
-            const double WaveTarget = std::clamp(_SmoothedBass * 0.78 + _BassImpulse * 0.90 + _SmoothedMid * 0.22, 0., 1.35);
+            const double WaveTarget = std::clamp(_SmoothedBassLevel * 0.78 + _BassImpulse * 0.90 + _SmoothedMidLevel * 0.22, 0., 1.35);
 
             _WaveEnvelope = ExponentialSmoothing(_WaveEnvelope, WaveTarget, deltaTime, WaveTarget > _WaveEnvelope ? 28. : 5.5);
             _CameraKick   = ExponentialSmoothing(_CameraKick, _BassImpulse, deltaTime, _BassImpulse > _CameraKick ? 34. : 7.);
@@ -321,26 +406,26 @@ namespace VectorGrid
 
         // Midrange adds rolling cross-grid motion, while treble attacks create short, fine ripples.
         {
-            const double MidAttack    = std::max(0., _SmoothedMid - _PreviousMidEnvelope);
+            const double MidAttack    = std::max(0., _SmoothedMidLevel - _PreviousMidEnvelope);
 
-            _PreviousMidEnvelope = _SmoothedMid;
+            _PreviousMidEnvelope = _SmoothedMidLevel;
 
-            const double MidTarget = std::clamp(_SmoothedMid * 0.82 + MidAttack * 5.2, 0., 1.25);
+            const double MidTarget = std::clamp(_SmoothedMidLevel * 0.82 + MidAttack * 5.2, 0., 1.25);
 
             _MidEnvelope = ExponentialSmoothing(_MidEnvelope, MidTarget, deltaTime, MidTarget > _MidEnvelope ? 24. : 6.5);
         }
 
         {
-            const double TrebleAttack = std::max(0., _SmoothedTreble - _PreviousTrebleEnvelope);
-            _PreviousTrebleEnvelope = _SmoothedTreble;
+            const double TrebleAttack = std::max(0., _SmoothedTrebleLevel - _PreviousTrebleEnvelope);
+            _PreviousTrebleEnvelope = _SmoothedTrebleLevel;
 
-            const double TrebleTarget = std::clamp(_SmoothedTreble * 0.48 + TrebleAttack * 9.5, 0., 1.35);
+            const double TrebleTarget = std::clamp(_SmoothedTrebleLevel * 0.48 + TrebleAttack * 9.5, 0., 1.35);
 
             _TrebleImpulse = ExponentialSmoothing(_TrebleImpulse, TrebleTarget, deltaTime, TrebleTarget > _TrebleImpulse ? 42. : 12.);
         }
 
         // Keep the grid advancing towards the camera even during silence. Audio adds acceleration, but is not required for the perspective motion itself.
-        const double TravelSpeed = (0.72 + (_SmoothedRMS * 0.32) + (_SmoothedBass * 0.48) + (_MidEnvelope * 0.18) + (_TrebleImpulse * 0.10) + (_BassImpulse * 0.58)) * Speed;
+        const double TravelSpeed = (0.72 + (_SmoothedRMS * 0.32) + (_SmoothedBassLevel * 0.48) + (_MidEnvelope * 0.18) + (_TrebleImpulse * 0.10) + (_BassImpulse * 0.58)) * SpeedFactor;
 
         _Travel = std::fmod(_Travel + (TravelSpeed * deltaTime), 1.);
 
@@ -372,10 +457,10 @@ namespace VectorGrid
         const double DistanceFade = SmoothStep(0.02f, 0.92f, (float) NearWeight);
 
         // All surface deformation is audio-driven. In silence the grid remains flat while its perspective rows continue travelling towards the camera.
-        const double AudioActivity = Clamp((_SmoothedRMS * 2.8) + (_SmoothedBass * 1.4) + (_MidEnvelope * 0.65) + (_TrebleImpulse * 0.35) + (_BassImpulse * 0.85));
+        const double AudioActivity = Clamp((_SmoothedRMS * 2.8) + (_SmoothedBassLevel * 1.4) + (_MidEnvelope * 0.65) + (_TrebleImpulse * 0.35) + (_BassImpulse * 0.85));
 
-        const double BassWave      = std::sin(z * 7.4             - _AnimationTime * 3.15 + (x * 0.92)) * (_SmoothedBass  * 0.125 + _BassImpulse * 0.085 + AudioActivity * 0.012);
-        const double BassSwell     = std::cos(z * 3.15            - _AnimationTime * 1.55)              * (_SmoothedBass  * 0.070 + _BassImpulse * 0.055);
+        const double BassWave      = std::sin(z * 7.4             - _AnimationTime * 3.15 + (x * 0.92)) * (_SmoothedBassLevel  * 0.125 + _BassImpulse * 0.085 + AudioActivity * 0.012);
+        const double BassSwell     = std::cos(z * 3.15            - _AnimationTime * 1.55)              * (_SmoothedBassLevel  * 0.070 + _BassImpulse * 0.055);
         const double CrossWave     = std::sin(x * 3.2  + z * 4.7  + _AnimationTime * 1.65)              * (_SmoothedRMS   * 0.048);
         const double MidWave       = std::cos(x * 5.8  - z * 3.1  + _AnimationTime * 2.35)              * (_MidEnvelope   * 0.082);
         const double MidFold       = std::sin(x * 7.2  + z * 5.4  - _AnimationTime * 2.8)               * (_MidEnvelope   * 0.035);
@@ -455,7 +540,7 @@ namespace VectorGrid
         _SunBrush->SetGradientOriginOffset(D2D1::Point2F(0.f, -Radius * 0.12f));
         _SunBrush->SetRadiusX(Radius);
         _SunBrush->SetRadiusY(Radius);
-        _SunBrush->SetOpacity((float)std::clamp(0.68 + _SmoothedMid * 0.10 + _BeatPulse * 0.08, 0., 0.90));
+        _SunBrush->SetOpacity((float)std::clamp(0.68 + _SmoothedMidLevel * 0.10 + _BeatPulse * 0.08, 0., 0.90));
 
         renderTarget->FillEllipse(D2D1::Ellipse(Center, Radius, Radius), _SunBrush.Get());
 
@@ -506,7 +591,7 @@ namespace VectorGrid
                 const float Intensity = Clamp(0.76f + Perspective * (0.14f + (WaveAccent * 0.16f) + (Mid * 0.18f) + (Treble * 0.08f) + (Beat * 0.08f)));
                 const float Thickness = WaveAccent * 0.42f;
 
-                const D2D1_COLOR_F Color = LerpColor(_Palette.Lateral, _Palette.Horizon, Thickness);
+                const D2D1_COLOR_F Color = Lerp(_Palette.Lateral, _Palette.Horizon, Thickness);
 
                 DrawGlowLine(renderTarget, a.Position, b.Position, Color, Intensity, 0.44f + Perspective * 0.66f);
             }
@@ -518,7 +603,7 @@ namespace VectorGrid
             const double NormalizedColumn = (double) Column / (double) (_ColumnCount - 1);
             const double Edge = std::abs(NormalizedColumn * 2. - 1.);
 
-            const D2D1_COLOR_F Color = LerpColor(_Palette.Longitudinal, _Palette.Accent, (float) (1. - Edge) * 0.38f);
+            const D2D1_COLOR_F Color = Lerp(_Palette.Longitudinal, _Palette.Accent, (float) (1. - Edge) * 0.38f);
 
             for (size_t row = 1; row < _RowCount; ++row)
             {
@@ -597,7 +682,7 @@ namespace VectorGrid
 
         renderTarget->DrawLine(from, to, _GlowBrush.Get(), strokeWidth * 2.25f, _RoundStrokeStyle.Get());
 
-        const D2D1_COLOR_F WhiteCore = LerpColor(color, White, 0.08f);
+        const D2D1_COLOR_F WhiteCore = Lerp(color, White, 0.08f);
 
         _CoreLineBrush->SetColor(SetAlpha(WhiteCore, Clamp(intensity * 1.28f)));
 
@@ -743,7 +828,7 @@ namespace VectorGrid
         if (FAILED(hr))
             return hr;
 
-        if (!_ThemeResourcesDirty && _GlowBrush && _CoreLineBrush && _SkyBrush && _SunBrush && _FlashBrush && _RoundStrokeStyle)
+        if (!_IsThemeResourceDirty && _GlowBrush && _CoreLineBrush && _SkyBrush && _SunBrush && _FlashBrush && _RoundStrokeStyle)
             return S_OK;
 
         hr = renderTarget->CreateSolidColorBrush(_Palette.Horizon, _GlowBrush.ReleaseAndGetAddressOf());
@@ -763,10 +848,10 @@ namespace VectorGrid
 
         const D2D1_GRADIENT_STOP SkyStops[] =
         {
-            { 0.00f, LerpColor(_Palette.BackgroundTop,    Black, 0.992f) },
-            { 0.58f, LerpColor(_Palette.BackgroundTop,    Black, 0.985f) },
-            { 0.86f, LerpColor(_Palette.BackgroundBottom, Black, 0.972f) },
-            { 1.00f, LerpColor(_Palette.BackgroundBottom, Black, 0.950f) }
+            { 0.00f, Lerp(_Palette.BackgroundTop,    Black, 0.992f) },
+            { 0.58f, Lerp(_Palette.BackgroundTop,    Black, 0.985f) },
+            { 0.86f, Lerp(_Palette.BackgroundBottom, Black, 0.972f) },
+            { 1.00f, Lerp(_Palette.BackgroundBottom, Black, 0.950f) }
         };
 
         hr = renderTarget->CreateGradientStopCollection(SkyStops, _countof(SkyStops), D2D1_GAMMA_2_2, D2D1_EXTEND_MODE_CLAMP, _SkyStops.ReleaseAndGetAddressOf());
@@ -781,8 +866,8 @@ namespace VectorGrid
 
         const D2D1_GRADIENT_STOP SunStops[] =
         {
-            { 0.00f, LerpColor(_Palette.Sun, White, 0.72f) },
-            { 0.18f, LerpColor(_Palette.Sun, White, 0.38f) },
+            { 0.00f, Lerp(_Palette.Sun, White, 0.72f) },
+            { 0.18f, Lerp(_Palette.Sun, White, 0.38f) },
             { 0.55f, SetAlpha (_Palette.Sun,    0.88f) },
             { 1.00f, SetAlpha (_Palette.Accent, 0.00f) }
         };
@@ -797,32 +882,37 @@ namespace VectorGrid
         if (FAILED(hr))
             return hr;
 
-        const D2D1_GRADIENT_STOP FlashStops[] =
         {
-            { 0.00f, D2D1::ColorF(0xFFFFFF, 0.88f) },
-            { 0.24f, SetAlpha(_Palette.Accent, 0.54f) },
-            { 0.62f, SetAlpha(_Palette.Longitudinal, 0.20f) },
-            { 1.00f, SetAlpha(_Palette.BackgroundBottom, 0.00f) }
-        };
+            const D2D1_GRADIENT_STOP FlashStops[] =
+            {
+                { 0.00f, D2D1::ColorF(0xFFFFFF, 0.88f) },
+                { 0.24f, SetAlpha(_Palette.Accent, 0.54f) },
+                { 0.62f, SetAlpha(_Palette.Longitudinal, 0.20f) },
+                { 1.00f, SetAlpha(_Palette.BackgroundBottom, 0.00f) }
+            };
 
-        hr = renderTarget->CreateGradientStopCollection(FlashStops, _countof(FlashStops), D2D1_GAMMA_2_2, D2D1_EXTEND_MODE_CLAMP, _FlashStops.ReleaseAndGetAddressOf());
+            hr = renderTarget->CreateGradientStopCollection(FlashStops, _countof(FlashStops), D2D1_GAMMA_2_2, D2D1_EXTEND_MODE_CLAMP, _FlashStops.ReleaseAndGetAddressOf());
 
-        if (FAILED(hr))
-            return hr;
+            if (FAILED(hr))
+                return hr;
 
-        hr = renderTarget->CreateRadialGradientBrush(D2D1::RadialGradientBrushProperties(D2D1::Point2F(_CenterX, _CenterY), D2D1::Point2F(0.f, 0.f), 100.f, 100.f), _FlashStops.Get(), _FlashBrush.ReleaseAndGetAddressOf());
+            hr = renderTarget->CreateRadialGradientBrush(D2D1::RadialGradientBrushProperties(D2D1::Point2F(_CenterX, _CenterY), D2D1::Point2F(0.f, 0.f), 100.f, 100.f), _FlashStops.Get(), _FlashBrush.ReleaseAndGetAddressOf());
 
-        if (FAILED(hr))
-            return hr;
+            if (FAILED(hr))
+                return hr;
+        }
 
-        const auto StrokeProperties = D2D1::StrokeStyleProperties(D2D1_CAP_STYLE_ROUND, D2D1_CAP_STYLE_ROUND, D2D1_CAP_STYLE_ROUND, D2D1_LINE_JOIN_ROUND, 10.f, D2D1_DASH_STYLE_SOLID, 0.f);
+        {
+            const auto Properties = D2D1::StrokeStyleProperties(D2D1_CAP_STYLE_ROUND, D2D1_CAP_STYLE_ROUND, D2D1_CAP_STYLE_ROUND, D2D1_LINE_JOIN_ROUND, 10.f, D2D1_DASH_STYLE_SOLID, 0.f);
 
-        hr = _D2DFactory->CreateStrokeStyle(StrokeProperties, nullptr, 0, _RoundStrokeStyle.ReleaseAndGetAddressOf());
+            hr = _D2DFactory->CreateStrokeStyle(Properties, nullptr, 0, _RoundStrokeStyle.ReleaseAndGetAddressOf());
 
-        if (FAILED(hr))
-            return hr;
+            if (FAILED(hr))
+                return hr;
+        }
 
-        _ThemeResourcesDirty = false;
+        _IsThemeResourceDirty = false;
+
         _RenderTarget = renderTarget;
 
         return S_OK;
@@ -838,12 +928,16 @@ namespace VectorGrid
         _GlowBrush.Reset();
         _CoreLineBrush.Reset();
         _HorizonBrush.Reset();
+
         _SkyStops.Reset();
         _SkyBrush.Reset();
+
         _SunStops.Reset();
         _SunBrush.Reset();
+
         _FlashStops.Reset();
         _FlashBrush.Reset();
+
         _RoundStrokeStyle.Reset();
 
         __super::DeleteDeviceDependentResources();

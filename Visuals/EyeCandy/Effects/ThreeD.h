@@ -278,7 +278,7 @@ namespace EyeCandy
         if (IsFromVisible == IsToVisible)
             return IsFromVisible;
 
-        const double Amount = (ClippingDepth - FromDepth) / (ToDepth - FromDepth);
+        const double Amount = (ClippingDepth - FromDepth) / (ToDepth - FromDepth); // [0, 1]
         const point3d_t Intersection = Add(from, Multiply(Subtract(to, from), Amount));
 
         if (IsFromVisible)
