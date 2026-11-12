@@ -1,5 +1,5 @@
 
-/** $VER: Spectrogram.cpp (2026.11.11) P. Stuer - Represents a spectrum analysis as a 2D heat map **/
+/** $VER: Spectrogram.cpp (2026.11.12) P. Stuer - Represents a spectrum analysis as a 2D heat map **/
 
 #include "pch.h"
 
@@ -731,33 +731,14 @@ void spectrogram_t::Reset() noexcept
 /// </summary>
 HRESULT spectrogram_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept
 {
-    // Recreate the render target if the per-monitor DPI changes.
-    bool HasDPIChanged = false;
-
-    if (_BitmapRenderTarget != nullptr)
-    {
-        FLOAT DPIX, DPIY;
-
-        _BitmapRenderTarget->GetDpi(&DPIX, &DPIY);
-
-        HasDPIChanged = (DPIX != _DPIX) || (DPIY != _DPIY);
-    }
-
 #ifdef _DEBUG
     if (_DebugBrush == nullptr)
         (void) deviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Green), _DebugBrush.GetAddressOf());
 #endif
 
-    if (_State._ColorsHaveChanged || _State._SizeHasChanged || HasDPIChanged)
+    if (_State._ColorsHaveChanged || _State._SizeHasChanged)
     {
         DeleteColorDependentResources();
-
-        if (HasDPIChanged)
-        {
-            _X = 0.f;
-            _Y = 0.f;
-            _TimeLabels.clear();
-        }
 
         Initialize();
 
@@ -766,7 +747,7 @@ HRESULT spectrogram_t::CreateDeviceSpecificResources(ID2D1DeviceContext * device
         if (FAILED(hr))
             return hr;
 
-        if (_State._SizeHasChanged || HasDPIChanged)
+        if (_State._SizeHasChanged)
         {
             DeleteSizeDependentResources();
 
