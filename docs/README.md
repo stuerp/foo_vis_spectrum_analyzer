@@ -669,9 +669,51 @@ When enabled, the band power part only gets used when number of FFT bins to sum 
 
 Smooths the frequency slope of the aggregation modes.
 
+`Reassignment sharpening`
+
+[Reassignment sharpening](https://en.wikipedia.org/wiki/Reassignment_method) produces a sharper spectrum by relocating energy to a bin
+that represents more accurately the frequency at the cost of extra processing.
+
+It works for an FFT and Composite FFT using Standard coefficient mapping.
+
 `Lanczos kernel`
 
 Determines the size of the Lanczos kernel. The kernel is used to create a smooth transition between the FFT coefficients resulting in a visual pleasing result.
+
+#### Peak Detection group
+
+Peak detection identifies the strongest local maxima in the current frequency spectrum. Its purpose is to answer at which frequencies does the current audio have
+its most prominent spectral peaks. For every detected peak, A marker and its corresponding frequency is drawn. Typical detected peaks represent:
+
+- a steady test tone,
+- a musical fundamental,
+- prominent harmonics,
+- strong resonances,
+- dominant components within broadband audio.
+
+`Max. peaks`
+
+Specifies the maximum number of peaks that will be detected.
+
+`Min. peak level`
+
+The minimum normalized level before a frequency is considered a local maximum.
+
+`Min. peak prominence`
+
+The minimum required prominence of a frequency to be considered a local maximum.
+
+`Band span`
+
+The number of frequency bands on each side of the candidate band that are evaluated when detecting a local maximum.
+
+`Max. peaks`
+
+The minimum required distance between two peaks.
+
+`Interpolate frequency`
+
+Enable this setting to interpolate the candidate frequency with its neighbors.
 
 #### Brown-Puckette CQT Mapping group
 

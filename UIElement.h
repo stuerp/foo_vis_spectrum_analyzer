@@ -1,5 +1,5 @@
 
-/** $VER: UIElement.h (2026.11.04) P. Stuer **/
+/** $VER: UIElement.h (2026.11.11) P. Stuer **/
 
 #pragma once
 
@@ -23,8 +23,9 @@ public:
     uielement_t() = default;
 
     uielement_t(const uielement_t &) = delete;
-    uielement_t & operator=(const uielement_t &) = delete;
     uielement_t(uielement_t &&) = delete;
+
+    uielement_t & operator=(const uielement_t &) = delete;
     uielement_t & operator=(uielement_t &&) = delete;
 
     virtual ~uielement_t() noexcept;
@@ -281,17 +282,17 @@ private:
         IDM_PRESET_NAME,
     };
 
-    HANDLE _hThread { nullptr };
-    HANDLE _hStopRendering { nullptr };
+    HANDLE _hThread = NULL;
+    HANDLE _hStopRendering = NULL;
 
     CToolTipCtrl _ToolTipControl;
 
-    graph_t * _TrackingGraph { nullptr };
+    graph_t * _TrackingGraph = nullptr;
     TTTOOLINFOW _TrackingToolInfo { };
     POINT _LastMousePos { };
-    size_t _LastBandIndex { ~(size_t) 0 };
+    size_t _LastBandIndex = ~(size_t) 0;
 
-    bool _IsConfigurationChanged { false }; // True when the render thread has changed the configuration (e.g. because a change in artwork).
+    bool _IsConfigurationChanged = false; // True when the render thread has changed the configuration (e.g. because a change in artwork).
 
     fb2k::CCoreDarkModeHooks _DarkMode;
 
@@ -307,9 +308,9 @@ private:
 
     #pragma region Render thread
 
-    UINT _DPI { 96 };
+    UINT _DPI = USER_DEFAULT_SCREEN_DPI;
 
-    double _DisplayRefreshRate = { 0. };
+    double _DisplayRefreshRate = 0.;
 
 #ifdef _DEBUG
     static constexpr int64_t RefreshRates[] = { 1, 5, 20, 30, 60, 100, 200 };

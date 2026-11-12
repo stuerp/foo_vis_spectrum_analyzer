@@ -106,6 +106,7 @@ v0.14.0.0-alpha6, 2026-11-xx
   - Produces a sharper spectrum by relocating energy to a bin that represents more accurately the frequency at the cost of extra processing.
   - Works for an FFT and Composite FFT using Standard coefficient mapping.
   - Disabled by default.
+- Improved: Streamlined the high-DPI calculations.
 
 You can read the full history [here](docs/History.md).
 

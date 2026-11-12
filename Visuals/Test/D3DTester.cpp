@@ -98,7 +98,7 @@ HRESULT d3d_tester_t::CreatePipeline() noexcept
             return hr;
         }
 
-        hr = _RenderContext._D3DDevice->CreateVertexShader(VertextShaderByteCode->GetBufferPointer(), VertextShaderByteCode->GetBufferSize(), nullptr, _VertexShader.GetAddressOf());
+        hr = _RenderContext.D3DDevice->CreateVertexShader(VertextShaderByteCode->GetBufferPointer(), VertextShaderByteCode->GetBufferSize(), nullptr, _VertexShader.GetAddressOf());
 
         if (FAILED(hr))
             return hr;
@@ -118,7 +118,7 @@ HRESULT d3d_tester_t::CreatePipeline() noexcept
             return hr;
         }
 
-        hr = _RenderContext._D3DDevice->CreatePixelShader(PixelShaderByteCode->GetBufferPointer(), PixelShaderByteCode->GetBufferSize(), nullptr, _PixelShader.GetAddressOf());
+        hr = _RenderContext.D3DDevice->CreatePixelShader(PixelShaderByteCode->GetBufferPointer(), PixelShaderByteCode->GetBufferSize(), nullptr, _PixelShader.GetAddressOf());
 
         if (FAILED(hr))
             return hr;
@@ -132,7 +132,7 @@ HRESULT d3d_tester_t::CreatePipeline() noexcept
             { "COLOR",    0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, sizeof(float) * 2, D3D11_INPUT_PER_VERTEX_DATA, 0 },
         };
 
-        HRESULT hr = _RenderContext._D3DDevice->CreateInputLayout(ied, _countof(ied), VertextShaderByteCode->GetBufferPointer(), VertextShaderByteCode->GetBufferSize(), _InputLayout.GetAddressOf());
+        HRESULT hr = _RenderContext.D3DDevice->CreateInputLayout(ied, _countof(ied), VertextShaderByteCode->GetBufferPointer(), VertextShaderByteCode->GetBufferSize(), _InputLayout.GetAddressOf());
 
         if (FAILED(hr))
             return hr;
@@ -164,7 +164,7 @@ HRESULT d3d_tester_t::CreatePipeline() noexcept
             .SysMemSlicePitch = 0,
         };
 
-        return _RenderContext._D3DDevice->CreateBuffer(&bd, &sd, _VertexBuffer.GetAddressOf());
+        return _RenderContext.D3DDevice->CreateBuffer(&bd, &sd, _VertexBuffer.GetAddressOf());
     }
 }
 /*
@@ -246,7 +246,7 @@ void d3d_tester_t::Render3D() noexcept
         _VertexBuffer.Get()
     };
 
-    auto * dc = _RenderContext._D3DDeviceContext;
+    auto * dc = _RenderContext.D3DDeviceContext;
 
     dc->IASetInputLayout(_InputLayout.Get());
 

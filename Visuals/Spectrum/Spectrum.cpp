@@ -151,6 +151,17 @@ void spectrum_t::RenderBars(ID2D1DeviceContext * deviceContext) noexcept
 
     const FLOAT HOffset = GetHOffset(_GraphOptions->_HorizontalAlignment, _ClientSize.width - SpectrumWidth);
 
+const FLOAT PixelsPerDIP = _DPIX / USER_DEFAULT_SCREEN_DPI;
+const FLOAT Pixel = 1.f / PixelsPerDIP;                             // Size of a device pixel, in DIP
+const FLOAT Gap = std::max(std::floor(PixelsPerDIP), 1.f) * Pixel;  // Gap between the bars, a whole number of device pixels, in DIP
+
+const auto Snap = [&, PixelsPerDIP](FLOAT x) noexcept -> FLOAT
+{
+    const FLOAT DeviceX = std::round(((_Transform._11 * x) + _Transform._31) * PixelsPerDIP);
+
+    return ((DeviceX / PixelsPerDIP) - _Transform._31) / _Transform._11;
+};
+
     FLOAT x1 = HOffset;
     FLOAT x2 = x1 + BarWidth;
 
@@ -165,7 +176,11 @@ void spectrum_t::RenderBars(ID2D1DeviceContext * deviceContext) noexcept
         x1 = std::clamp(x1, 0.f, _ClientSize.width);
         x2 = std::clamp(x2, 0.f, _ClientSize.width);
 
-        D2D1_RECT_F Rect = { x1, 0.f, x2 - 1.f, _ClientSize.height};
+//      D2D1_RECT_F Rect = { x1, 0.f, x2 - 1.f, _ClientSize.height};
+        D2D1_RECT_F Rect = { Snap(x1), 0.f, Snap(x2) - Gap, _ClientSize.height};
+
+        if (Rect.right - Rect.left < Pixel)
+            Rect.right = Rect.left + Pixel; // Always draw at least 1 device pixel.
 
         // Draw the bar background, even above the Nyquist frequency, if it's the first visualization to be rendered.
         if (_IsFirst)

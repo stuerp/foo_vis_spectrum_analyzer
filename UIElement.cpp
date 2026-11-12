@@ -67,7 +67,7 @@ LRESULT uielement_t::OnCreate(LPCREATESTRUCT cs) noexcept
     if (FAILED(hr))
         return -1;
 
-    (void) GetDPI(m_hWnd, _DPI);
+//  (void) GetDPI(m_hWnd, _DPI);
 
     // Create the visualisation stream.
     try
@@ -380,6 +380,8 @@ BOOL uielement_t::OnMouseWheel(UINT flags, short wheelDelta, CPoint pt) noexcept
 /// </summary>
 LRESULT uielement_t::OnDPIChanged(UINT dpiX, UINT dpiY, PRECT newRect) noexcept
 {
+    Log.AtDebug().Write("DPI changed to (%d,%d).", dpiX, dpiY);
+
     _DPI = dpiX;
 
     DeleteDeviceSpecificResources();

@@ -367,13 +367,12 @@ void state_t::Reset() noexcept
 /// </summary>
 state_t & state_t::operator=(const state_t & other) noexcept
 {
-    _Bounds = other._Bounds;
+    _Bounds    = other._Bounds;
     _PageIndex = other._PageIndex;
 
-    _TargetRefreshRate = other._TargetRefreshRate;
-
+    _TargetRefreshRate    = other._TargetRefreshRate;
     _UseHardwareRendering = other._UseHardwareRendering;
-    _UseAntialiasing = other._UseAntialiasing;
+    _UseAntialiasing      = other._UseAntialiasing;
 
 //  _UseZeroTrigger_Deprecated = other._UseZeroTrigger_Deprecated;
     _WindowDuration = other._WindowDuration;
@@ -498,53 +497,11 @@ state_t & state_t::operator=(const state_t & other) noexcept
 
     #pragma endregion
 
-    #pragma region Rendering
-
-//      _BackColor_Deprecated = other._BackColor_Deprecated;
-//      _UseCustomBackColor_Deprecated = other._UseCustomBackColor_Deprecated;
-
-        // X axis
-//      _XAxisMode_Deprecated = other._XAxisMode_Deprecated;
-//      _XAxisTop_Deprecated = other._XAxisTop_Deprecated;
-//      _XAxisBottom_Deprecated = other._XAxisBottom_Deprecated;
-
-//      _XTextColor_Deprecated = other._XTextColor_Deprecated;
-//      _UseCustomXTextColor_Deprecated = other._UseCustomXTextColor_Deprecated;
-
-//      _XLineColor_Deprecated = other._XLineColor_Deprecated;
-//      _UseCustomXLineColor_Deprecated = other._UseCustomXLineColor_Deprecated;
-
-        // Y axis
-//      _YAxisMode_Deprecated = other._YAxisMode_Deprecated;
-//      _YAxisLeft_Deprecated = other._YAxisLeft_Deprecated;
-//      _YAxisRight_Deprecated = other._YAxisRight_Deprecated;
-
-//      _YTextColor_Deprecated = other._YTextColor_Deprecated;
-//      _UseCustomYTextColor_Deprecated = other._UseCustomYTextColor_Deprecated;
-
-//      _YLineColor_Deprecated = other._YLineColor_Deprecated;
-//      _UseCustomYLineColor_Deprecated = other._UseCustomYLineColor_Deprecated;
-
-//      _AmplitudeLo_Deprecated = other._AmplitudeLo_Deprecated;
-//      _AmplitudeHi_Deprecated = other._AmplitudeHi_Deprecated;
-//      _AmplitudeStep_Deprecated = other._AmplitudeStep_Deprecated;
-
-//      _UseAbsolute_Deprecated = other._UseAbsolute_Deprecated;
-
-//      _Gamma_Deprecated = other._Gamma_Deprecated;
-
-    #pragma endregion
-
     #pragma region Graph Common
 
         // Common
-//      _ColorScheme_Deprecated = other._ColorScheme_Deprecated;
-
         _SmoothingMethod = other._SmoothingMethod;
         _SmoothingFactor = other._SmoothingFactor;
-
-//      _GradientStops = other._GradientStops;                  // Deprecated
-//      _CustomGradientStops_Deprecated = other._CustomGradientStops_Deprecated;
 
         _ShowToolTipsAlways     = other._ShowToolTipsAlways;
         _SuppressMirrorImage    = other._SuppressMirrorImage;
@@ -558,8 +515,6 @@ state_t & state_t::operator=(const state_t & other) noexcept
         _TransparencyThreshold = other._TransparencyThreshold;
 
         _ColorOrder = other._ColorOrder;
-
-//      _BackgroundMode_Deprecated = other._BackgroundMode_Deprecated;
 
         _ShowArtworkOnBackground = other._ShowArtworkOnBackground;
         _ArtworkType = other._ArtworkType;
@@ -594,16 +549,10 @@ state_t & state_t::operator=(const state_t & other) noexcept
     _VisualizationType = other._VisualizationType;
 
     // Bars
-//  _DrawBandBackground_Deprecated = other._DrawBandBackground_Deprecated;
-//  _LightBandColor_Deprecated = other._LightBandColor_Deprecated;
-//  _DarkBandColor_Deprecated = other._DarkBandColor_Deprecated;
-
     _LEDMode = other._LEDMode;
     _LEDLight = other._LEDLight;
     _LEDGap = other._LEDGap;
     _LEDIntegralSize = other._LEDIntegralSize;
-
-//  _HorizontalGradient_Deprecated = other._HorizontalGradient_Deprecated;
 
     _PeakMode                = other._PeakMode;
     _HoldDuration                = other._HoldDuration;
@@ -616,18 +565,12 @@ state_t & state_t::operator=(const state_t & other) noexcept
     _AngularVelocity = other._AngularVelocity;
 
     // Curve
-//  _LineWidth_Deprecated = other._LineWidth_Deprecated;
-//  _LineColor_Deprecated = other._LineColor_Deprecated;
-//  _UseCustomLineColor_Deprecated = other._UseCustomLineColor_Deprecated;
-//  _PeakLineColor_Deprecated = other._PeakLineColor_Deprecated;
-//  _UseCustomPeakLineColor_Deprecated = other._UseCustomPeakLineColor_Deprecated;
-//  _AreaOpacity_Deprecated = other._AreaOpacity_Deprecated;
 
     // Spectrogram
-    _IsScrollingSpectrogram = other._IsScrollingSpectrogram;
+    _IsScrollingSpectrogram  = other._IsScrollingSpectrogram;
     _IsHorizontalSpectrogram = other._IsHorizontalSpectrogram;
-    _UseSpectrumBarMetrics = other._UseSpectrumBarMetrics;
-    _SpectrogramLegend = other._SpectrogramLegend;
+    _UseSpectrumBarMetrics   = other._UseSpectrumBarMetrics;
+    _SpectrogramLegend       = other._SpectrogramLegend;
 
     // Peak Meter
     _IsHorizontalPeakMeter = other._IsHorizontalPeakMeter;
@@ -683,7 +626,7 @@ state_t & state_t::operator=(const state_t & other) noexcept
     // Not serialized
     _UserInterfaceColors  = other._UserInterfaceColors; // Keep this: It makes sure the render thread has color information at startup.
 
-    _FFTSize             = other._FFTSize;
+    _FFTSize              = other._FFTSize;
     _ActivePresetName     = other._ActivePresetName;
 
     return *this;

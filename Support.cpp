@@ -22,6 +22,8 @@ using Microsoft::WRL::ComPtr;
 
 #pragma hdrstop
 
+static void ExamineDPIAwarenessContext(const module_t & module, HWND hwnd) noexcept;
+
 /// <summary>
 /// Initialize our DPI awareness.
 /// </summary>
@@ -35,55 +37,13 @@ HRESULT InitializeDpiAwareness() noexcept
 /// </summary>
 HRESULT GetDPI(HWND hWnd, UINT & dpi) noexcept
 {
+    assert(hWnd);
+
     auto Module = module_t(L"user32.dll");
 
-    {
-        typedef DPI_AWARENESS_CONTEXT (WINAPI * GetThreadDpiAwarenessContext_t)(HWND hwnd);
-
-        #pragma warning(disable: 4191) // 'type cast': unsafe conversion from 'FARPROC' to 'GetDPI::GetThreadDpiAwarenessContext_'
-        const auto GetThreadDpiAwarenessContext_ = (GetThreadDpiAwarenessContext_t) Module.GetFunctionAddress("GetThreadDpiAwarenessContext"); // Windows 10 or higher
-
-        if (GetThreadDpiAwarenessContext_ != nullptr)
-        {
-            const DPI_AWARENESS_CONTEXT Context = GetThreadDpiAwarenessContext_(hWnd);
-
-            switch ((size_t) Context)
-            {
-                case (size_t) DPI_AWARENESS_CONTEXT_UNAWARE:
-                {
-                    Log.AtDebug().Write("DPI unaware.");
-                    break;
-                }
-
-                case (size_t) DPI_AWARENESS_CONTEXT_SYSTEM_AWARE:
-                {
-                    Log.AtDebug().Write("System DPI unaware.");
-                    break;
-                }
-
-                case (size_t) DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE:
-                {
-                    Log.AtDebug().Write("Per monitor DPI aware.");
-                    break;
-                }
-
-                case (size_t) DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2:
-                {
-                    Log.AtDebug().Write("Per monitor DPI aware v2.");
-                    break;
-                }
-
-                case (size_t) DPI_AWARENESS_CONTEXT_UNAWARE_GDISCALED:
-                {
-                    Log.AtDebug().Write("DPI unaware with improved quality of GDI-based content.");
-                    break;
-                }
-
-                default:
-                    Log.AtDebug().Write("Unknown DPI Awareness Context.");
-            }
-        }
-    }
+#ifdef _DEBUG
+    ExamineDPIAwarenessContext(Module, hWnd);
+#endif
 
     {
         typedef UINT (WINAPI * GetDpiForWindow_t)(HWND hwnd);
@@ -94,6 +54,15 @@ HRESULT GetDPI(HWND hWnd, UINT & dpi) noexcept
         if (GetDpiForWindow_ != nullptr)
         {
             dpi = GetDpiForWindow_(hWnd);
+
+            // Define DEBUG_DPI to test rendering at other DPI settings without changing the system.
+            #define DEBUG_DPI 192
+
+            #ifdef DEBUG_DPI
+            dpi = DEBUG_DPI;
+            #endif
+
+            assert(dpi);
 
             return S_OK;
         }
@@ -141,3 +110,50 @@ HRESULT EvaluateTitleFormatScript(const std::wstring & script, pfc::string & res
 
     return S_OK;
 }
+
+/// <summary>
+/// 
+/// </summary>
+#ifdef _DEBUG
+static void ExamineDPIAwarenessContext(const module_t & module, HWND hWnd) noexcept
+{
+    typedef DPI_AWARENESS_CONTEXT (WINAPI * GetThreadDpiAwarenessContext_t)(HWND hwnd);
+    typedef BOOL (WINAPI * AreDpiAwarenessContextsEqual_t)(DPI_AWARENESS_CONTEXT dpiContextA, DPI_AWARENESS_CONTEXT dpiContextB);
+
+    #pragma warning(disable: 4191) // 'type cast': unsafe conversion from 'FARPROC' to 'GetDPI::GetThreadDpiAwarenessContext_'
+    const auto GetThreadDpiAwarenessContext_ = (GetThreadDpiAwarenessContext_t) module.GetFunctionAddress("GetThreadDpiAwarenessContext"); // Windows 10 or higher
+    const auto AreDpiAwarenessContextsEqual_ = (AreDpiAwarenessContextsEqual_t) module.GetFunctionAddress("AreDpiAwarenessContextsEqual"); // Windows 10 or higher
+
+    if (GetThreadDpiAwarenessContext_ != nullptr)
+    {
+        const DPI_AWARENESS_CONTEXT Context = GetThreadDpiAwarenessContext_(hWnd);
+
+        if (AreDpiAwarenessContextsEqual_(Context, DPI_AWARENESS_CONTEXT_UNAWARE))
+        {
+            Log.AtDebug().Write("DPI unaware.");
+        }
+        else
+        if (AreDpiAwarenessContextsEqual_(Context, DPI_AWARENESS_CONTEXT_SYSTEM_AWARE))
+        {
+            Log.AtDebug().Write("System DPI unaware.");
+        }
+        else
+        if (AreDpiAwarenessContextsEqual_(Context, DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE))
+        {
+            Log.AtDebug().Write("Per monitor DPI aware.");
+        }
+        else
+        if (AreDpiAwarenessContextsEqual_(Context, DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2))
+        {
+            Log.AtDebug().Write("Per monitor DPI aware v2.");
+        }
+        else
+        if (AreDpiAwarenessContextsEqual_(Context, DPI_AWARENESS_CONTEXT_UNAWARE_GDISCALED))
+        {
+            Log.AtDebug().Write("DPI unaware with improved quality of GDI-based content.");
+        }
+        else
+            Log.AtDebug().Write("Unknown DPI Awareness Context.");
+    }
+}
+#endif

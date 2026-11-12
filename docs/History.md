@@ -3,7 +3,9 @@
 
 v0.14.0.0-alpha5, 2026-11-06
 
-- New: Peak detector. It identifies the strongest local maxima in the current frequency spectrum. (*EXPERIMENTAL*)
+- New: Peak detector. It identifies the strongest local maxima in the current frequency spectrum.
+  - Enable it using the configuration dialog on the Transform page.
+  - Two new styles (Peak Marker and Peak Text) allow you to customize the rendering.
 - New: Alternate full screen mode for DUI. It reuses the current window (and preset) instead of starting a second instance.
   - Enable it using the configuration dialog on the Common page.
   - Double click the left mouse button to enter fullscreen mode. Doubleclick again or press Escape to exit.

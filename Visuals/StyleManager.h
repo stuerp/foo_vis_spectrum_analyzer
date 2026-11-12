@@ -16,18 +16,18 @@ using json = nlohmann::ordered_json;
 
 #pragma warning(default: 4868)
 
-class style_manager_t
+class style_manager_t final
 {
 public:
     style_manager_t();
 
     style_manager_t(const style_manager_t & other);
-    style_manager_t & operator=(const style_manager_t & other);
-
     style_manager_t(const style_manager_t && other) = delete;
+
+    style_manager_t & operator=(const style_manager_t & other);
     style_manager_t & operator=(const style_manager_t && other) = delete;
 
-    virtual ~style_manager_t() noexcept { }
+    ~style_manager_t() noexcept = default;
 
     void Reset() noexcept;
 

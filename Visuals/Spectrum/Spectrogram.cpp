@@ -1,5 +1,5 @@
 
-/** $VER: Spectrogram.cpp (2026.11.08) P. Stuer - Represents a spectrum analysis as a 2D heat map **/
+/** $VER: Spectrogram.cpp (2026.11.11) P. Stuer - Represents a spectrum analysis as a 2D heat map **/
 
 #include "pch.h"
 
@@ -736,10 +736,9 @@ HRESULT spectrogram_t::CreateDeviceSpecificResources(ID2D1DeviceContext * device
 
     if (_BitmapRenderTarget != nullptr)
     {
-        FLOAT DPIX = 96.f;
-        FLOAT DPIY = 96.f;
+        FLOAT DPIX, DPIY;
 
-        deviceContext->GetDpi(&DPIX, &DPIY);
+        _BitmapRenderTarget->GetDpi(&DPIX, &DPIY);
 
         HasDPIChanged = (DPIX != _DPIX) || (DPIY != _DPIY);
     }
@@ -805,11 +804,11 @@ HRESULT spectrogram_t::CreateSizeDependentResources(ID2D1DeviceContext * deviceC
         {
             deviceContext->GetDpi(&_DPIX, &_DPIY);
 
-            _PixelWidth   = 96.f / _DPIX;
-            _PixelHeight  = 96.f / _DPIY;
+            _PixelWidth   = USER_DEFAULT_SCREEN_DPI / _DPIX;
+            _PixelHeight  = USER_DEFAULT_SCREEN_DPI / _DPIY;
 
-            const D2D1_SIZE_F DIPSize   = D2D1::SizeF(_BitmapSize.width, _BitmapSize.height);
-            const D2D1_SIZE_U PixelSize = D2D1::SizeU((UINT32) std::ceil(_BitmapSize.width * _DPIX / 96.f), (UINT32) std::ceil(_BitmapSize.height * _DPIY / 96.f));
+            const auto DIPSize   = D2D1::SizeF(_BitmapSize.width, _BitmapSize.height);
+            const auto PixelSize = D2D1::SizeU((UINT32) std::ceil(_BitmapSize.width * _DPIX / USER_DEFAULT_SCREEN_DPI), (UINT32) std::ceil(_BitmapSize.height * _DPIY / USER_DEFAULT_SCREEN_DPI));
 
             HRESULT hr = deviceContext->CreateCompatibleRenderTarget(DIPSize, PixelSize, _BitmapRenderTarget.GetAddressOf());
 

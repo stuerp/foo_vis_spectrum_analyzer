@@ -14,7 +14,7 @@ HRESULT render_context_t::CreateD3DRenderTarget(UINT width, UINT height, FLOAT d
 {
     ReleaseD3DRenderTarget();
 
-    assert(_D3DDevice); assert(_D2DDeviceContext);
+    assert(D3DDevice); assert(D2DDeviceContext);
 
     const D3D11_TEXTURE2D_DESC td =
     {
@@ -28,12 +28,12 @@ HRESULT render_context_t::CreateD3DRenderTarget(UINT width, UINT height, FLOAT d
         .BindFlags  = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE,
     };
 
-    HRESULT hr = _D3DDevice->CreateTexture2D(&td, nullptr, _D3DTexture.GetAddressOf());
+    HRESULT hr = D3DDevice->CreateTexture2D(&td, nullptr, _D3DTexture.GetAddressOf());
 
     if (FAILED(hr))
         return hr;
 
-    hr = _D3DDevice->CreateRenderTargetView(_D3DTexture.Get(), nullptr, _D3DRenderTargetView.GetAddressOf());
+    hr = D3DDevice->CreateRenderTargetView(_D3DTexture.Get(), nullptr, _D3DRenderTargetView.GetAddressOf());
 
     if (FAILED(hr))
     {
@@ -55,7 +55,7 @@ HRESULT render_context_t::CreateD3DRenderTarget(UINT width, UINT height, FLOAT d
 
     const D2D1_BITMAP_PROPERTIES1 bp = D2D1::BitmapProperties1(D2D1_BITMAP_OPTIONS_NONE, D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED), dpiX, dpiY);
 
-    hr = _D2DDeviceContext->CreateBitmapFromDxgiSurface(Surface.Get(), &bp, _D3DBitmap.GetAddressOf());
+    hr = D2DDeviceContext->CreateBitmapFromDxgiSurface(Surface.Get(), &bp, _D3DBitmap.GetAddressOf());
 
     if (FAILED(hr))
     {
@@ -91,17 +91,17 @@ void render_context_t::ReleaseD3DRenderTarget() noexcept
 /// </summary>
 void render_context_t::Begin3D() noexcept
 {
-    assert(_D3DDeviceContext); assert(_D3DRenderTargetView);
+    assert(D3DDeviceContext); assert(_D3DRenderTargetView);
 
     constexpr FLOAT ClearColor[4] = { 0.f, 0.f, 0.f, 0.f };
 
     ID3D11RenderTargetView * RenderTargets[1] = { _D3DRenderTargetView.Get() };
 
-    _D3DDeviceContext->OMSetRenderTargets(_countof(RenderTargets), RenderTargets, nullptr);
+    D3DDeviceContext->OMSetRenderTargets(_countof(RenderTargets), RenderTargets, nullptr);
 
-    _D3DDeviceContext->RSSetViewports(1, &_D3DViewport);
+    D3DDeviceContext->RSSetViewports(1, &_D3DViewport);
 
-    _D3DDeviceContext->ClearRenderTargetView(_D3DRenderTargetView.Get(), ClearColor);
+    D3DDeviceContext->ClearRenderTargetView(_D3DRenderTargetView.Get(), ClearColor);
 }
 
 /// <summary>
@@ -109,11 +109,11 @@ void render_context_t::Begin3D() noexcept
 /// </summary>
 void render_context_t::End3D() noexcept
 {
-    assert(_D3DDeviceContext);
+    assert(D3DDeviceContext);
 
     ID3D11RenderTargetView * RenderTargets[1] = { nullptr };
 
-    _D3DDeviceContext->OMSetRenderTargets(_countof(RenderTargets), RenderTargets, nullptr);
+    D3DDeviceContext->OMSetRenderTargets(_countof(RenderTargets), RenderTargets, nullptr);
 }
 
 /// <summary>
@@ -121,7 +121,7 @@ void render_context_t::End3D() noexcept
 /// </summary>
 void render_context_t::Composite3D(const D2D1_RECT_F & destinationRectangle, FLOAT opacity) noexcept
 {
-    assert(_D2DDeviceContext); assert(_D3DBitmap);
+    assert(D2DDeviceContext); assert(_D3DBitmap);
 
-    _D2DDeviceContext->DrawBitmap(_D3DBitmap.Get(), destinationRectangle, opacity, D2D1_INTERPOLATION_MODE_LINEAR, nullptr, nullptr);
+    D2DDeviceContext->DrawBitmap(_D3DBitmap.Get(), destinationRectangle, opacity, D2D1_INTERPOLATION_MODE_LINEAR, nullptr, nullptr);
 }

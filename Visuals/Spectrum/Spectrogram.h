@@ -135,9 +135,6 @@ private:
     FLOAT _X = 0.f;
     FLOAT _Y = 0.f;
 
-    FLOAT _DPIX = 96.f;
-    FLOAT _DPIY = 96.f;
-
     D2D1_RECT_F _BitmapRect { }; // In pixels
     D2D1_SIZE_F _BitmapSize { }; // In pixels
 

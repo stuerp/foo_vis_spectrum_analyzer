@@ -668,8 +668,8 @@ HRESULT uielement_t::CreateDeviceIndependentResources() noexcept
     }
 
     // Store the Direct3D device and device context in the render context.
-    _RenderContext._D3DDevice        = _D3DDevice.Get();
-    _RenderContext._D3DDeviceContext = _D3DDeviceContext.Get();
+    _RenderContext.D3DDevice        = _D3DDevice.Get();
+    _RenderContext.D3DDeviceContext = _D3DDeviceContext.Get();
 
     // Initialize the device independent resources of the frame counter.
     hr = _FrameCounter.CreateDeviceIndependentResources();
@@ -691,8 +691,8 @@ HRESULT uielement_t::CreateDeviceIndependentResources() noexcept
 /// </summary>
 void uielement_t::DeleteDeviceIndependentResources() noexcept
 {
-    _RenderContext._D3DDevice = nullptr;
-    _RenderContext._D3DDeviceContext = nullptr;
+    _RenderContext.D3DDevice = nullptr;
+    _RenderContext.D3DDeviceContext = nullptr;
 
     _FrameCounter.DeleteDeviceIndependentResources();
 
@@ -757,7 +757,7 @@ HRESULT uielement_t::CreateDeviceSpecificResources() noexcept
             _D2DDeviceContext->SetDpi((FLOAT) _DPI, (FLOAT) _DPI);
 
             // Store the Direct2D device context in the render context.
-            _RenderContext._D2DDeviceContext = _D2DDeviceContext.Get();
+            _RenderContext.D2DDeviceContext = _D2DDeviceContext.Get();
         }
 
         if (_SwapChain == nullptr)
@@ -867,7 +867,7 @@ void uielement_t::DeleteDeviceSpecificResources() noexcept
 
     _RenderContext.ReleaseD3DRenderTarget();
 
-    _RenderContext._D2DDeviceContext = nullptr;
+    _RenderContext.D2DDeviceContext = nullptr;
 
     _BackBuffer.Reset();
     _CompositionVisual.Reset();

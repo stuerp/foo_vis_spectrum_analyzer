@@ -1,5 +1,5 @@
 
-/** $VER: Support.h (2026.10.02) P. Stuer **/
+/** $VER: Support.h (2026.11.11) P. Stuer **/
 
 #pragma once
 
@@ -36,7 +36,7 @@ HRESULT EvaluateTitleFormatScript(const std::wstring & script, pfc::string & res
 /// </remarks>
 [[nodiscard]] inline constexpr FLOAT PointsToDIPs(const FLOAT points) noexcept
 {
-    constexpr FLOAT DIPSPerInch = 96.0f;
+    constexpr FLOAT DIPSPerInch   = (FLOAT) USER_DEFAULT_SCREEN_DPI;
     constexpr FLOAT PointsPerInch = 72.0f;
 
     return points * DIPSPerInch / PointsPerInch;

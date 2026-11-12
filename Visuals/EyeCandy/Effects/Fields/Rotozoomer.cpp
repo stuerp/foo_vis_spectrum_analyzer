@@ -832,7 +832,7 @@ namespace Rotozoomer
 
         _Pixels.assign((size_t) Width * Height, 0xFF000000u);
 
-        const auto Properties = D2D1::BitmapProperties(D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_IGNORE), 96.f, 96.f);
+        const auto Properties = D2D1::BitmapProperties(D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_IGNORE), USER_DEFAULT_SCREEN_DPI, USER_DEFAULT_SCREEN_DPI);
 
         hr = renderTarget->CreateBitmap(D2D1::SizeU(Width, Height), _Pixels.data(), Width * sizeof(uint32_t), Properties, _BackBuffer.ReleaseAndGetAddressOf());
 

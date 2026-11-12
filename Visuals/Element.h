@@ -1,5 +1,5 @@
 
-/** $VER: Element.h (2026.11.01) P. Stuer - Base class for all visual elements (both graph and visualizations). **/
+/** $VER: Element.h (2026.11.12) P. Stuer - Base class for all visual elements (both graph and visualizations). **/
 
 #pragma once
 
@@ -28,8 +28,8 @@ public:
     virtual const D2D1_RECT_F & GetRect() const noexcept { return _Rect; }
     virtual const D2D1_RECT_F & GetClientRect() const noexcept { return _Rect; };
 
-    virtual void SetTransform(ID2D1DeviceContext * deviceContext, const D2D1_RECT_F & rect) const noexcept;
-    virtual void ResetTransform(ID2D1DeviceContext * deviceContext) const noexcept;
+    virtual void SetTransform(ID2D1DeviceContext * deviceContext, const D2D1_RECT_F & rect) noexcept;
+    virtual void ResetTransform(ID2D1DeviceContext * deviceContext) noexcept;
 
     virtual void OnConfigurationChanged(ConfigurationChanges configurationChanges) noexcept { }
 
@@ -59,4 +59,9 @@ protected:
 
     FLOAT _CenterX  = 0.f;
     FLOAT _CenterY  = 0.f;
+
+    FLOAT _DPIX     = USER_DEFAULT_SCREEN_DPI;
+    FLOAT _DPIY     = USER_DEFAULT_SCREEN_DPI;
+
+    D2D1::Matrix3x2F _Transform { };
 };

@@ -1,13 +1,11 @@
 
-/** $VER: CompositeFFTAnalyzer.cpp (2026.10.31) P. Stuer */
+/** $VER: CompositeFFTAnalyzer.cpp (2026.11.11) P. Stuer */
 
 #include "pch.h"
 
 #include "CompositeFFTAnalyzer.h"
 
-#include <array>
 #include <bit>
-#include <cmath>
 #include <limits>
 
 #pragma hdrstop
@@ -84,85 +82,6 @@ composite_fft_analyzer_t::composite_fft_analyzer_t(const state_t & state, uint32
     _HighTier.Analyzer = std::make_unique<fft_analyzer_t>(state, BaseFFTSize,      sampleRate, channelCount, channelSetup, windowFunction, brownPucketteKernel);
 }
 
-/// <summary>
-/// Analyzes the audio and returns the composited frequency bands. Fixed cross-fade regions.
-/// </summary>
-#ifdef v1
-bool composite_fft_analyzer_t::AnalyzeAudio(const audio_sample * frames, size_t frameCount, uint32_t selectedChannels, frequency_bands_t & frequencyBands) noexcept
-{
-    auto ProcessTier = [&](fft_tier_t & tier) noexcept -> bool
-    {
-        CopyBands(frequencyBands, tier.Bands);
-
-        return tier.Analyzer->AnalyzeAudio(frames, frameCount, selectedChannels, tier.Bands);
-    };
-
-    if (!ProcessTier(_LowTier))
-        return false;
-
-    if (!ProcessTier(_MidTier))
-        return false;
-
-    if (!ProcessTier(_HighTier))
-        return false;
-
-    const double LogMin  = std::log(_State._LoFrequency);
-    const double LogMax  = std::log(_State._HiFrequency);
-
-    const double LogSpan = LogMax - LogMin;
-
-    const double CrossFade1Begin = std::exp(LogMin + 0.18 * LogSpan);
-    const double CrossFade1End   = std::exp(LogMin + 0.28 * LogSpan);
-
-    const double CrossFade2Begin = std::exp(LogMin + 0.55 * LogSpan);
-    const double CrossFade2End   = std::exp(LogMin + 0.70 * LogSpan);
-
-    const double CrossFade1Span = CrossFade1End - CrossFade1Begin;
-    const double CrossFade2Span = CrossFade2End - CrossFade2Begin;
-
-    // Merge the magnitudes.
-    for (size_t i = 0; i < frequencyBands.size(); ++i)
-    {
-        const double Frequency = frequencyBands[i].Center;
-
-        const double MagnitudeLow  = _LowTier .Bands[i].Magnitude;
-        const double MagnitudeMid  = _MidTier .Bands[i].Magnitude;
-        const double MagnitudeHigh = _HighTier.Bands[i].Magnitude;
-
-        if (Frequency <= CrossFade1Begin)
-        {
-            frequencyBands[i].Magnitude = MagnitudeLow;
-        }
-        else
-        if (Frequency < CrossFade1End)
-        {
-            // Low to Mid cross-fade.
-            const double t = Smoothstep((Frequency - CrossFade1Begin) / CrossFade1Span);
-
-            frequencyBands[i].Magnitude = std::lerp(MagnitudeLow, MagnitudeMid, t);
-        }
-        else
-        if (Frequency <= CrossFade2Begin)
-        {
-            frequencyBands[i].Magnitude = MagnitudeMid;
-        }
-        else
-        if (Frequency < CrossFade2End)
-        {
-            // Mid to High cross-fade.
-            const double t = Smoothstep((Frequency - CrossFade2Begin) / CrossFade2Span);
-
-            frequencyBands[i].Magnitude = std::lerp(MagnitudeMid, MagnitudeHigh, t);
-        }
-        else
-        {
-            frequencyBands[i].Magnitude = MagnitudeHigh;
-        }
-    }
-
-    return true;
-}
-#endif
 /// <summary>
 /// Analyzes the audio and returns the composited frequency bands. Cross-fade regions are derived from the FFT bin width. 
 /// </summary>

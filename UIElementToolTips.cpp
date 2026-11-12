@@ -30,7 +30,10 @@ void uielement_t::OnMouseMove(UINT, CPoint pt) noexcept
 
     if (_TrackingGraph == nullptr)
     {
-        _TrackingGraph = GetGraph(pt);
+        const FLOAT ScaledX = (FLOAT) ::MulDiv((int) pt.x, USER_DEFAULT_SCREEN_DPI, (int) _DPI);
+        const FLOAT ScaledY = (FLOAT) ::MulDiv((int) pt.y, USER_DEFAULT_SCREEN_DPI, (int) _DPI);
+
+        _TrackingGraph = GetGraph(CPoint((int) ScaledX, (int) ScaledY));
 
         if (_TrackingGraph == nullptr)
             return;
@@ -51,9 +54,6 @@ void uielement_t::OnMouseMove(UINT, CPoint pt) noexcept
 
         _LastMousePos = pt;
         _LastBandIndex = ~(size_t) 0;
-
-        const FLOAT ScaledX = (FLOAT) ::MulDiv((int) pt.x, USER_DEFAULT_SCREEN_DPI, (int) _DPI);
-        const FLOAT ScaledY = (FLOAT) ::MulDiv((int) pt.y, USER_DEFAULT_SCREEN_DPI, (int) _DPI);
 
         std::wstring Text;
         size_t BandIndex;
@@ -151,7 +151,12 @@ void uielement_t::OnMouseMove(UINT, CPoint pt) noexcept
 /// </summary>
 void uielement_t::OnMouseLeave() noexcept
 {
-    POINT pt; GetCursorPos(&pt); HWND hWndNew = WindowFromPoint(pt);
+/*
+    POINT pt;
+
+    ::GetCursorPos(&pt);
+
+    HWND hWndNew = ::WindowFromPoint(pt);
 
     if (hWndNew == _ToolTipControl.m_hWnd)
     {
@@ -159,7 +164,7 @@ void uielement_t::OnMouseLeave() noexcept
 
         return;
     }
-
+*/
     DeleteTrackingToolTip();
 }
 

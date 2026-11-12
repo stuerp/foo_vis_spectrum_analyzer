@@ -280,7 +280,7 @@ namespace CliffordAttractor
 
         DeleteDeviceDependentResources();
 
-        const D2D1_BITMAP_PROPERTIES Properties = D2D1::BitmapProperties(D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED), 96.f, 96.f);
+        const auto Properties = D2D1::BitmapProperties(D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED), USER_DEFAULT_SCREEN_DPI, USER_DEFAULT_SCREEN_DPI);
 
         hr = renderTarget->CreateBitmap(D2D1::SizeU(RequiredWidth, RequiredHeight), nullptr, 0, Properties, _BackBuffer.ReleaseAndGetAddressOf());
 
