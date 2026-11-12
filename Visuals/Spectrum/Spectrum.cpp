@@ -150,17 +150,14 @@ void spectrum_t::RenderBars(ID2D1DeviceContext * deviceContext) noexcept
     const FLOAT SpectrumWidth = BarWidth * (FLOAT) _Processor->FrequencyBands.size();
 
     const FLOAT HOffset = GetHOffset(_GraphOptions->_HorizontalAlignment, _ClientSize.width - SpectrumWidth);
+    const FLOAT Gap     = ToDIPs(std::max(std::floor(_PixelsPerDIP), 1.f)); // Gap between the bars, a whole number of device pixels, in DIP.
 
-const FLOAT PixelsPerDIP = _DPIX / USER_DEFAULT_SCREEN_DPI;
-const FLOAT Pixel = 1.f / PixelsPerDIP;                             // Size of a device pixel, in DIP
-const FLOAT Gap = std::max(std::floor(PixelsPerDIP), 1.f) * Pixel;  // Gap between the bars, a whole number of device pixels, in DIP
+    const auto Snap = [&](FLOAT x) noexcept -> FLOAT
+    {
+        const FLOAT PixelX = ToPixels(std::round(((_Transform._11 * x) + _Transform._31)));
 
-const auto Snap = [&, PixelsPerDIP](FLOAT x) noexcept -> FLOAT
-{
-    const FLOAT DeviceX = std::round(((_Transform._11 * x) + _Transform._31) * PixelsPerDIP);
-
-    return ((DeviceX / PixelsPerDIP) - _Transform._31) / _Transform._11;
-};
+        return (ToDIPs(PixelX) - _Transform._31) / _Transform._11;
+    };
 
     FLOAT x1 = HOffset;
     FLOAT x2 = x1 + BarWidth;
@@ -173,14 +170,10 @@ const auto Snap = [&, PixelsPerDIP](FLOAT x) noexcept -> FLOAT
 
     for (const auto & fb : _Processor->FrequencyBands)
     {
-        x1 = std::clamp(x1, 0.f, _ClientSize.width);
-        x2 = std::clamp(x2, 0.f, _ClientSize.width);
-
-//      D2D1_RECT_F Rect = { x1, 0.f, x2 - 1.f, _ClientSize.height};
         D2D1_RECT_F Rect = { Snap(x1), 0.f, Snap(x2) - Gap, _ClientSize.height};
 
-        if (Rect.right - Rect.left < Pixel)
-            Rect.right = Rect.left + Pixel; // Always draw at least 1 device pixel.
+        if (Rect.right - Rect.left < _DIPsPerPixel)
+            Rect.right = Rect.left + _DIPsPerPixel;
 
         // Draw the bar background, even above the Nyquist frequency, if it's the first visualization to be rendered.
         if (_IsFirst)

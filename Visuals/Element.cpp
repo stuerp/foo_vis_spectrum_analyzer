@@ -25,6 +25,9 @@ void element_t::InitializeMetrics(const D2D1_RECT_F & rect) noexcept
 
     // The Direct2D device context was set to the correct DPI upon creation.
     _RenderContext.D2DDeviceContext->GetDpi(&_DPIX, &_DPIY);
+
+    _PixelsPerDIP = _DPIX / USER_DEFAULT_SCREEN_DPI;
+    _DIPsPerPixel = USER_DEFAULT_SCREEN_DPI / _DPIX;
 }
 
 /// <summary>
@@ -46,7 +49,9 @@ void element_t::SetTransform(ID2D1DeviceContext * deviceContext, const D2D1_RECT
 
     const D2D1::Matrix3x2F Translate = D2D1::Matrix3x2F::Translation(rect.left, rect.top);
 
-    deviceContext->SetTransform(_Transform * Translate);
+    _Transform = _Transform * Translate;
+
+    deviceContext->SetTransform(_Transform);
 }
 
 /// <summary>

@@ -690,40 +690,47 @@ namespace FlowerScope
                 return S_OK;
         }
 
-        hr = renderTarget->CreateSolidColorBrush(Black, _Brush.ReleaseAndGetAddressOf());
+        {
+            hr = renderTarget->CreateSolidColorBrush(Black, _Brush.ReleaseAndGetAddressOf());
 
-        if (FAILED(hr))
-            return hr;
+            if (FAILED(hr))
+                return hr;
+        }
 
-        const auto Properties = D2D1::StrokeStyleProperties(D2D1_CAP_STYLE_FLAT, D2D1_CAP_STYLE_FLAT, D2D1_CAP_STYLE_FLAT, D2D1_LINE_JOIN_ROUND, 10.f, D2D1_DASH_STYLE_SOLID, 0.f);
+        {
+            const auto Properties = D2D1::StrokeStyleProperties(D2D1_CAP_STYLE_FLAT, D2D1_CAP_STYLE_FLAT, D2D1_CAP_STYLE_FLAT, D2D1_LINE_JOIN_ROUND, 10.f, D2D1_DASH_STYLE_SOLID, 0.f);
 
-        hr = _D2DFactory->CreateStrokeStyle(Properties, nullptr, 0, _StrokeStyle.ReleaseAndGetAddressOf());
+            hr = _D2DFactory->CreateStrokeStyle(Properties, nullptr, 0, _StrokeStyle.ReleaseAndGetAddressOf());
 
-        if (FAILED(hr))
-            return hr;
+            if (FAILED(hr))
+                return hr;
+        }
 
-        const D2D1_SIZE_U RequiredPixelSize = D2D1::SizeU(std::max<UINT32>(1u, (UINT32)std::ceil(_Width)), std::max<UINT32>(1u, (UINT32)std::ceil(_Height)));
-        const D2D1_SIZE_F DesiredSize       = D2D1::SizeF(_Width, _Height);
+        {
+            const auto DIPSize   = D2D1::SizeF(_Width, _Height);
+            const auto PixelSize = D2D1::SizeU((UINT32) _Width, (UINT32) _Height);
 
-        hr = renderTarget->CreateCompatibleRenderTarget(&DesiredSize, &RequiredPixelSize, nullptr, D2D1_COMPATIBLE_RENDER_TARGET_OPTIONS_NONE, _BackBufferRenderTarget.ReleaseAndGetAddressOf());
+            hr = renderTarget->CreateCompatibleRenderTarget(&DIPSize, &PixelSize, nullptr, D2D1_COMPATIBLE_RENDER_TARGET_OPTIONS_NONE, _BackBufferRenderTarget.ReleaseAndGetAddressOf());
 
-        if (FAILED(hr))
-            return hr;
+            if (FAILED(hr))
+                return hr;
 
-        _BackBufferRenderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+            _BackBufferRenderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
-        _BackBufferRenderTarget->BeginDraw();
-        _BackBufferRenderTarget->Clear(Black);
+            _BackBufferRenderTarget->BeginDraw();
 
-        hr = _BackBufferRenderTarget->EndDraw();
+            _BackBufferRenderTarget->Clear(Black);
 
-        if (FAILED(hr))
-            return hr;
+            hr = _BackBufferRenderTarget->EndDraw();
 
-        hr = _BackBufferRenderTarget->GetBitmap(_BackBuffer.ReleaseAndGetAddressOf());
+            if (FAILED(hr))
+                return hr;
 
-        if (FAILED(hr))
-            return hr;
+            hr = _BackBufferRenderTarget->GetBitmap(_BackBuffer.ReleaseAndGetAddressOf());
+
+            if (FAILED(hr))
+                return hr;
+        }
 
         _RenderTarget = renderTarget;
 

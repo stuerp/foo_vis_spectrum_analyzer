@@ -472,15 +472,10 @@ namespace DynamicSystem
         }
 
         {
-            const D2D1_SIZE_U RequiredPixelSize = D2D1::SizeU
-            (
-                std::max<UINT32>(1u, (UINT32) std::ceil(_Width)),
-                std::max<UINT32>(1u, (UINT32) std::ceil(_Height))
-            );
+            const auto DIPSize   = D2D1::SizeF(_Width, _Height);
+            const auto PixelSize = D2D1::SizeU((UINT32) _Width, (UINT32) _Height);
 
-            const D2D1_SIZE_F DesiredSize = D2D1::SizeF(_Width, _Height);
-
-            hr = renderTarget->CreateCompatibleRenderTarget(&DesiredSize, &RequiredPixelSize, nullptr, D2D1_COMPATIBLE_RENDER_TARGET_OPTIONS_NONE, _BackBufferRenderTarget.ReleaseAndGetAddressOf());
+            hr = renderTarget->CreateCompatibleRenderTarget(&DIPSize, &PixelSize, nullptr, D2D1_COMPATIBLE_RENDER_TARGET_OPTIONS_NONE, _BackBufferRenderTarget.ReleaseAndGetAddressOf());
 
             if (FAILED(hr))
                 return hr;

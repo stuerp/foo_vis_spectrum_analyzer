@@ -675,33 +675,38 @@ namespace HarmonicHarp
                 return S_OK;
         }
 
-        hr = renderTarget->CreateSolidColorBrush(White, _Brush.ReleaseAndGetAddressOf());
+        {
+            hr = renderTarget->CreateSolidColorBrush(White, _Brush.ReleaseAndGetAddressOf());
 
-        if (FAILED(hr))
-            return hr;
+            if (FAILED(hr))
+                return hr;
+        }
 
-        const D2D1_SIZE_U PixelSize   = D2D1::SizeU(std::max<UINT32>(1, (UINT32) std::ceil(_Width)), std::max<UINT32>(1, (UINT32) std::ceil(_Height)));
-        const D2D1_SIZE_F DesiredSize = D2D1::SizeF(_Width, _Height);
+        {
+            const auto DIPSize   = D2D1::SizeF(_Width, _Height);
+            const auto PixelSize = D2D1::SizeU((UINT32) _Width, (UINT32) _Height);
 
-        hr = renderTarget->CreateCompatibleRenderTarget(&DesiredSize, &PixelSize, nullptr, D2D1_COMPATIBLE_RENDER_TARGET_OPTIONS_NONE, _BackBufferRenderTarget.ReleaseAndGetAddressOf());
+            hr = renderTarget->CreateCompatibleRenderTarget(&DIPSize, &PixelSize, nullptr, D2D1_COMPATIBLE_RENDER_TARGET_OPTIONS_NONE, _BackBufferRenderTarget.ReleaseAndGetAddressOf());
 
-        if (FAILED(hr))
-            return hr;
+            if (FAILED(hr))
+                return hr;
 
-        _BackBufferRenderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+            _BackBufferRenderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
-        _BackBufferRenderTarget->BeginDraw();
-        _BackBufferRenderTarget->Clear(D2D1::ColorF(.001f, .002f, .006f, 1.f));
+            _BackBufferRenderTarget->BeginDraw();
 
-        hr = _BackBufferRenderTarget->EndDraw();
+            _BackBufferRenderTarget->Clear(D2D1::ColorF(.001f, .002f, .006f, 1.f));
 
-        if (FAILED(hr))
-            return hr;
+            hr = _BackBufferRenderTarget->EndDraw();
 
-        hr = _BackBufferRenderTarget->GetBitmap(_BackBuffer.ReleaseAndGetAddressOf());
+            if (FAILED(hr))
+                return hr;
 
-        if (FAILED(hr))
-            return hr;
+            hr = _BackBufferRenderTarget->GetBitmap(_BackBuffer.ReleaseAndGetAddressOf());
+
+            if (FAILED(hr))
+                return hr;
+        }
 
         _RenderTarget = renderTarget;
 

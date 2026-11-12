@@ -197,10 +197,10 @@ void fft_analyzer_t::Transform() noexcept
 
     // Correct the DC and the Nyquist bins because they do not have a mirror frequency. Effectively normalization factor 1/N.
     {
-    _Coefficients.front() *= 0.5;           // DC bin
+        _Coefficients.front() *= 0.5;           // DC bin
 
-    if ((_FFTSize % 2) == 0)
-        _Coefficients[_FFTSize / 2] *= 0.5; // Nyquist bin
+        if ((_FFTSize % 2) == 0)
+            _Coefficients[_FFTSize / 2] *= 0.5; // Nyquist bin
     }
 
     if (_State._UseReassignmentSharpening && (_State._MappingMethod == CoefficientMapping::Standard))
@@ -281,6 +281,7 @@ void fft_analyzer_t::Reassign(double norm) noexcept
         // Stop processing if we're looking at silence.
         if (MaximumPower == 0.)
         {
+            std::fill(_ReassignedPower.begin(), _ReassignedPower.end(), 0.);
             std::fill(_ReassignedCoefficients.begin(), _ReassignedCoefficients.end(), std::complex<double>{});
             return;
         }
@@ -291,8 +292,13 @@ void fft_analyzer_t::Reassign(double norm) noexcept
         const double MinimumPower = MaximumPower * MinimumRelativePower;
         const double CorrectionScale = (double) _FFTSize / (Pi * (double) (_FFTSize - 1));
 
-        // Clear the buffer that will receive the relocated energy.
+        // Clear the buffers that will receive the relocated energy.
         std::fill(_ReassignedPower.begin(), _ReassignedPower.end(), 0.);
+        std::fill(_ReassignedCoefficients.begin(), _ReassignedCoefficients.end(), std::complex<double>{});
+
+    #ifdef _DEBUG
+        double AcceptedPower = 0.;
+    #endif
 
         // Process each bin.
         for (size_t i = 0; i < BinCount; ++i)
@@ -302,11 +308,22 @@ void fft_analyzer_t::Reassign(double norm) noexcept
             if (Power < MinimumPower)
                 continue;
 
+    #ifdef _DEBUG
+            AcceptedPower += Power;
+    #endif
+
+            // DC and Nyquist do not have distinct positive and negative frequency components, so keep their energy in place.
+            if ((i == 0) || (((_FFTSize % 2) == 0) && (i == BinCount - 1)))
+            {
+                _ReassignedPower[i] += Power;
+                continue;
+            }
+
             // Estimate where the energy belongs.
             const auto Ratio = _DerivativeCoefficients[i] * std::conj(_Coefficients[i]) / Power;
 
-            // Calculate the bin displacement.
-            double Correction = std::imag(Ratio) * CorrectionScale;
+            // Calculate the bin displacement. Use a negative sign with a forward FFT using exp(-j * 2 * Pi * k * n / N).
+            double Correction = -std::imag(Ratio) * CorrectionScale;
 
             if (!std::isfinite(Correction) || (std::abs(Correction) > MaximumCorrection))
                 Correction = 0.;
@@ -321,6 +338,21 @@ void fft_analyzer_t::Reassign(double norm) noexcept
             _ReassignedPower[LoBin] += Power * (1. - Fraction);
             _ReassignedPower[HiBin] += Power * Fraction;
         }
+
+    #ifdef _DEBUG
+        // Verify that all accepted power was preserved by the reassignment.
+        {
+            double ReassignedPower = 0.;
+
+            for (size_t i = 0; i < BinCount; ++i)
+                ReassignedPower += _ReassignedPower[i];
+
+            const double Scale = std::max(1., AcceptedPower);
+            const double Error = std::abs(ReassignedPower - AcceptedPower);
+
+            assert(Error <= Scale * 1e-12);
+        }
+    #endif
 
         // Convert power back to magnitude.
         for (size_t i = 0; i < BinCount; ++i)

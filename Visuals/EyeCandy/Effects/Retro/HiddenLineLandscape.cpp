@@ -826,7 +826,7 @@ namespace HiddenLineLandscape
         const float FamilyOpacity = _LandscapeBrush->GetOpacity();
         const D2D1_COLOR_F ContourColor = _LandscapeBrush->GetColor();
         const D2D1_SIZE_F RenderSize = renderTarget->GetSize();
-        const D2D1_SIZE_U PixelSize = renderTarget->GetPixelSize();
+        const auto PixelSize = renderTarget->GetPixelSize();
         const float PixelWidth = (RenderSize.width > 0.f) ? ((float)PixelSize.width / RenderSize.width) : 1.f;
         const float PixelHeight = (RenderSize.height > 0.f) ? ((float)PixelSize.height / RenderSize.height) : 1.f;
         const float SafePixelWidth = std::max(PixelWidth, 0.0001f);

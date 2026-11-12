@@ -767,23 +767,27 @@ namespace Swarm
         if (FAILED(hr))
             return hr;
 
-        hr = renderTarget->CreateSolidColorBrush(Black, _Brush.ReleaseAndGetAddressOf());
+        {
+            hr = renderTarget->CreateSolidColorBrush(Black, _Brush.ReleaseAndGetAddressOf());
 
-        if (FAILED(hr))
-            return hr;
-
-        const auto Style = D2D1::StrokeStyleProperties(D2D1_CAP_STYLE_ROUND, D2D1_CAP_STYLE_ROUND, D2D1_CAP_STYLE_ROUND, D2D1_LINE_JOIN_ROUND, 10.f, D2D1_DASH_STYLE_SOLID, 0.f);
-
-        hr = _D2DFactory->CreateStrokeStyle(Style, nullptr, 0, _StrokeStyle.ReleaseAndGetAddressOf());
-
-        if (FAILED(hr))
-            return hr;
+            if (FAILED(hr))
+                return hr;
+        }
 
         {
-            const auto DesiredSize = D2D1::SizeF(_Width, _Height);
+            const auto Properties = D2D1::StrokeStyleProperties(D2D1_CAP_STYLE_ROUND, D2D1_CAP_STYLE_ROUND, D2D1_CAP_STYLE_ROUND, D2D1_LINE_JOIN_ROUND, 10.f, D2D1_DASH_STYLE_SOLID, 0.f);
+
+            hr = _D2DFactory->CreateStrokeStyle(Properties, nullptr, 0, _StrokeStyle.ReleaseAndGetAddressOf());
+
+            if (FAILED(hr))
+                return hr;
+        }
+
+        {
+            const auto DIPSize   = D2D1::SizeF(_Width, _Height);
             const auto PixelSize = D2D1::SizeU((UINT32) _Width, (UINT32) _Height);
 
-            hr = renderTarget->CreateCompatibleRenderTarget(&DesiredSize, &PixelSize, nullptr, D2D1_COMPATIBLE_RENDER_TARGET_OPTIONS_NONE, _BackBufferRenderTarget.ReleaseAndGetAddressOf());
+            hr = renderTarget->CreateCompatibleRenderTarget(&DIPSize, &PixelSize, nullptr, D2D1_COMPATIBLE_RENDER_TARGET_OPTIONS_NONE, _BackBufferRenderTarget.ReleaseAndGetAddressOf());
 
             if (FAILED(hr))
                 return hr;

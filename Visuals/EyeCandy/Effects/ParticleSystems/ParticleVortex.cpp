@@ -958,31 +958,29 @@ namespace ParticleVortex
         }
 
         {
-            const D2D1_SIZE_F DesiredSize      = D2D1::SizeF(_Width, _Height);
-            const D2D1_SIZE_U DesiredPixelSize = D2D1::SizeU((UINT32) _Width, (UINT32) _Height);
+            const auto DIPSize   = D2D1::SizeF(_Width, _Height);
+            const auto PixelSize = D2D1::SizeU((UINT32) _Width, (UINT32) _Height);
 
-            hr = renderTarget->CreateCompatibleRenderTarget(&DesiredSize, &DesiredPixelSize, nullptr, D2D1_COMPATIBLE_RENDER_TARGET_OPTIONS_NONE, _BackBufferRenderTarget.ReleaseAndGetAddressOf());
+            hr = renderTarget->CreateCompatibleRenderTarget(&DIPSize, &PixelSize, nullptr, D2D1_COMPATIBLE_RENDER_TARGET_OPTIONS_NONE, _BackBufferRenderTarget.ReleaseAndGetAddressOf());
 
             if (FAILED(hr))
                 return hr;
 
-            {
-                _BackBufferRenderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+            _BackBufferRenderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
-                _BackBufferRenderTarget->BeginDraw();
+            _BackBufferRenderTarget->BeginDraw();
 
-                _BackBufferRenderTarget->Clear(Black);
+            _BackBufferRenderTarget->Clear(Black);
 
-                hr = _BackBufferRenderTarget->EndDraw();
+            hr = _BackBufferRenderTarget->EndDraw();
 
-                if (FAILED(hr))
-                    return hr;
+            if (FAILED(hr))
+                return hr;
 
-                hr = _BackBufferRenderTarget->GetBitmap(_BackBuffer.ReleaseAndGetAddressOf());
+            hr = _BackBufferRenderTarget->GetBitmap(_BackBuffer.ReleaseAndGetAddressOf());
 
-                if (FAILED(hr))
-                    return hr;
-            }
+            if (FAILED(hr))
+                return hr;
         }
 
         _RenderTarget = renderTarget;

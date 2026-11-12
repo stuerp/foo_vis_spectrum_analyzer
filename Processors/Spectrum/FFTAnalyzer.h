@@ -14,6 +14,10 @@
 
 #include "FFT.h"
 
+#if defined(_DEBUG)
+class fft_analyzer_test_t;
+#endif
+
 /// <summary>
 /// Implements a Fast Fourier Transform analyzer.
 /// </summary>
@@ -44,6 +48,10 @@ public:
     {
         return _FFTSize;
     }
+
+#if defined(_DEBUG)
+    friend class fft_analyzer_test_t;
+#endif
 
 private:
     void Add(const audio_sample * frames, size_t frameCount, uint32_t channels) noexcept;

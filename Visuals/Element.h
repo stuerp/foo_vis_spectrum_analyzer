@@ -38,6 +38,9 @@ public:
 
     static FLOAT GetHOffset(HorizontalAlignment horizontalAlignment, FLOAT width) noexcept;
 
+    inline FLOAT ToDIPs(FLOAT pixels) const noexcept { return pixels * _DIPsPerPixel; }
+    inline FLOAT ToPixels(FLOAT dips) const noexcept { return dips * _PixelsPerDIP; }
+
 protected:
     void InitializeMetrics(const D2D1_RECT_F & rect) noexcept;
 
@@ -62,6 +65,9 @@ protected:
 
     FLOAT _DPIX     = USER_DEFAULT_SCREEN_DPI;
     FLOAT _DPIY     = USER_DEFAULT_SCREEN_DPI;
+
+    FLOAT _PixelsPerDIP = 1.f;
+    FLOAT _DIPsPerPixel = 1.f;
 
     D2D1::Matrix3x2F _Transform { };
 };

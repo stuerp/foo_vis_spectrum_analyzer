@@ -75,7 +75,7 @@ void spectrogram_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 
                 if (_State._IsScrollingSpectrogram)
                 {
-                    const FLOAT SplitX = std::min(_X + _PixelWidth, _BitmapWidth);
+                    const FLOAT SplitX = std::min(_X + _DIPsPerPixel, _BitmapWidth);
 
                     const FLOAT DstWidth = _BitmapSize.width * (_BitmapWidth - SplitX) / _BitmapWidth;
 
@@ -152,7 +152,7 @@ void spectrogram_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 
                 if (_State._IsScrollingSpectrogram)
                 {
-                    const FLOAT SplitY = std::min(_Y + _PixelHeight, _BitmapHeight);
+                    const FLOAT SplitY = std::min(_Y + _DIPsPerPixel, _BitmapHeight);
 
                     const FLOAT DstHeight = _BitmapSize.height * (_BitmapHeight - SplitY) / _BitmapHeight;
 
@@ -231,7 +231,7 @@ void spectrogram_t::Render(ID2D1DeviceContext * deviceContext) noexcept
     {
         if (_State._IsHorizontalSpectrogram)
         {
-            UINT32 PixelX = (UINT32) std::lround(_X / _PixelWidth) + 1;
+            UINT32 PixelX = (UINT32) std::lround(ToPixels(_X)) + 1;
 
             if (PixelX >= _BitmapPixelSize.width)
             {
@@ -241,11 +241,11 @@ void spectrogram_t::Render(ID2D1DeviceContext * deviceContext) noexcept
                     _TimeLabels.clear();
             }
 
-            _X = (FLOAT) PixelX * _PixelWidth;
+            _X = ToDIPs((FLOAT) PixelX);
         }
         else
         {
-            UINT32 PixelY = (UINT32) std::lround(_Y / _PixelHeight) + 1;
+            UINT32 PixelY = (UINT32) std::lround(ToPixels(_Y)) + 1;
 
             if (PixelY >= _BitmapPixelSize.height)
             {
@@ -255,7 +255,7 @@ void spectrogram_t::Render(ID2D1DeviceContext * deviceContext) noexcept
                     _TimeLabels.clear();
             }
 
-            _Y = (FLOAT) PixelY * _PixelHeight;
+            _Y = ToDIPs((FLOAT) PixelY);
         }
 
         _PlaybackTime = _State._PreviousPlaybackTime;
@@ -420,7 +420,7 @@ bool spectrogram_t::RenderSpectrum(ID2D1BitmapRenderTarget * renderTarget) noexc
             const FLOAT Bandwidth = _BitmapHeight / (FLOAT) Bands.size();
 
             const FLOAT x1 = _X;
-            const FLOAT x2 = std::min(_X + _PixelWidth, _BitmapWidth);
+            const FLOAT x2 = std::min(_X + _DIPsPerPixel, _BitmapWidth);
 
             FLOAT y1 = 0.f;
             FLOAT y2 = Bandwidth;
@@ -451,7 +451,7 @@ bool spectrogram_t::RenderSpectrum(ID2D1BitmapRenderTarget * renderTarget) noexc
             FLOAT x2 = x1 + Bandwidth;
 
             const FLOAT y1 = _Y;
-            const FLOAT y2 = std::min(_Y + _PixelHeight, _BitmapHeight);
+            const FLOAT y2 = std::min(_Y + _DIPsPerPixel, _BitmapHeight);
 
             for (const auto & fb : Bands)
             {
@@ -485,14 +485,14 @@ bool spectrogram_t::RenderSpectrum(ID2D1BitmapRenderTarget * renderTarget) noexc
     {
         if (IsHorizontalSpectrogram)
         {
-            const FLOAT dx = (FlipHorizontally ? 1.f : -1.f) * _PixelWidth; // Move the labels 1 physical pixel to the left or to the right.
+            const FLOAT dx = ToDIPs(FlipHorizontally ? 1.f : -1.f); // Move the labels 1 physical pixel to the left or to the right.
 
             for (auto & Label : _TimeLabels)
                 Label.X += dx;
         }
         else
         {
-            const FLOAT dy = (FlipVertically ? -1.f : 1.f) * _PixelHeight; // Move the labels 1 physical pixel upwards or downwards.
+            const FLOAT dy = ToDIPs(FlipVertically ? -1.f : 1.f); // Move the labels 1 physical pixel upwards or downwards.
 
             for (auto & Label : _TimeLabels)
                 Label.Y += dy;
@@ -572,13 +572,13 @@ void spectrogram_t::RenderNyquistFrequencyMarker(ID2D1BitmapRenderTarget * rende
     {
         const FLOAT y = msc::Map(Scale, MinScale, MaxScale, 0.f, _BitmapHeight);
 
-        renderTarget->FillRectangle(D2D1_RECT_F(_X, y, std::min(_X + _PixelWidth, _BitmapWidth), y + _NyquistMarkerStyle._Thickness), _NyquistMarkerStyle.Brush.Get());
+        renderTarget->FillRectangle(D2D1_RECT_F(_X, y, std::min(_X + _DIPsPerPixel, _BitmapWidth), y + _NyquistMarkerStyle._Thickness), _NyquistMarkerStyle.Brush.Get());
     }
     else
     {
         const FLOAT x = msc::Map(Scale, MinScale, MaxScale, 0.f, _BitmapWidth);
 
-        renderTarget->FillRectangle(D2D1_RECT_F(x, _Y, x + _NyquistMarkerStyle._Thickness, std::min(_Y + _PixelHeight, _BitmapHeight)), _NyquistMarkerStyle.Brush.Get());
+        renderTarget->FillRectangle(D2D1_RECT_F(x, _Y, x + _NyquistMarkerStyle._Thickness, std::min(_Y + _DIPsPerPixel, _BitmapHeight)), _NyquistMarkerStyle.Brush.Get());
     }
 }
 
@@ -783,13 +783,8 @@ HRESULT spectrogram_t::CreateSizeDependentResources(ID2D1DeviceContext * deviceC
     {
         if (_BitmapRenderTarget == nullptr)
         {
-            deviceContext->GetDpi(&_DPIX, &_DPIY);
-
-            _PixelWidth   = USER_DEFAULT_SCREEN_DPI / _DPIX;
-            _PixelHeight  = USER_DEFAULT_SCREEN_DPI / _DPIY;
-
             const auto DIPSize   = D2D1::SizeF(_BitmapSize.width, _BitmapSize.height);
-            const auto PixelSize = D2D1::SizeU((UINT32) std::ceil(_BitmapSize.width * _DPIX / USER_DEFAULT_SCREEN_DPI), (UINT32) std::ceil(_BitmapSize.height * _DPIY / USER_DEFAULT_SCREEN_DPI));
+            const auto PixelSize = D2D1::SizeU((UINT32) std::ceil(ToPixels(_BitmapSize.width)), (UINT32) std::ceil(ToPixels(_BitmapSize.height)));
 
             HRESULT hr = deviceContext->CreateCompatibleRenderTarget(DIPSize, PixelSize, _BitmapRenderTarget.GetAddressOf());
 
@@ -816,8 +811,8 @@ HRESULT spectrogram_t::CreateSizeDependentResources(ID2D1DeviceContext * deviceC
 
             _BitmapPixelSize = _Bitmap->GetPixelSize();
 
-            _BitmapWidth  = (FLOAT) _BitmapPixelSize.width  * _PixelWidth;  // In DIPs
-            _BitmapHeight = (FLOAT) _BitmapPixelSize.height * _PixelHeight; // In DIPs
+            _BitmapWidth  = ToDIPs((FLOAT) _BitmapPixelSize.width);
+            _BitmapHeight = ToDIPs((FLOAT) _BitmapPixelSize.height);
         }
     }
 
