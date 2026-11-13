@@ -1,5 +1,5 @@
 
-/** $VER: numeric_edit_t.h (2023.11.30) P. Stuer - Implements a numeric edit box using WTL. **/
+/** $VER: numeric_edit_t.h (2026.11.11) P. Stuer - Implements a numeric edit box using WTL. **/
 
 #pragma once
 
@@ -67,6 +67,5 @@ public:
     END_MSG_MAP()
 
 private:
-    bool _IsSubclassed { false };
-    int _Value { 0 };
+    bool _IsSubclassed = false;
 };

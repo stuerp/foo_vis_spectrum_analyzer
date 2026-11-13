@@ -1,5 +1,5 @@
 
-/** $VER: VisualizationPageLayout.h (2026.09.21) P. Stuer - Defines the layout of a configuration dialog page. **/
+/** $VER: VisualizationPageLayout.h (2026.11.05) P. Stuer - Defines the layout of a configuration dialog page. **/
 
 #pragma once
 
@@ -12,7 +12,7 @@
 #define Y_E01    0
 
 // Combobox
-#define W_E02    86
+#define W_E02    100
 #define H_E02    H_CBX
 #define X_E02    X_E01 + W_E01 + IX
 #define Y_E02    Y_E01
@@ -25,13 +25,13 @@
 
     #pragma region Peak Mode
     // Label
-    #define W_A11    42
+    #define W_A11    44
     #define H_A11    H_LBL
     #define X_A11    X_B13 + 5
     #define Y_A11    Y_B13 + 11
 
     // Combobox
-    #define W_A12    60
+    #define W_A12    58
     #define H_A12    H_CBX
     #define X_A12    X_A11 + W_A11 + IX
     #define Y_A12    Y_A11
@@ -39,7 +39,7 @@
 
     #pragma region Hold time (ms)
     // Label
-    #define W_A51    42
+    #define W_A51    44
     #define H_A51    H_LBL
     #define X_A51    X_A11
     #define Y_A51    Y_A12 + H_A12 + IY
@@ -51,15 +51,15 @@
     #define Y_A52    Y_A51
 
     // Label: Unit
-    #define W_A55    42
+    #define W_A55    16
     #define H_A55    H_LBL
     #define X_A55    X_A52 + W_A52 + IX
     #define Y_A55    Y_A52
     #pragma endregion
 
-    #pragma region Fall rate (dB/s)
+    #pragma region Fall speed (dB/s)
     // Label
-    #define W_A53    42
+    #define W_A53    44
     #define H_A53    H_LBL
     #define X_A53    X_A51
     #define Y_A53    Y_A52 + H_A52 + IY
@@ -71,14 +71,14 @@
     #define Y_A54    Y_A53
 
     // Label: Unit
-    #define W_A56    42
+    #define W_A56    16
     #define H_A56    H_LBL
     #define X_A56    X_A54 + W_A54 + IX
     #define Y_A56    Y_A54
     #pragma endregion
 
     // Checkbox: Reset on track change
-    #define W_A58    100
+    #define W_A58    106
     #define H_A58    H_CHB
     #define X_A58    X_A53
     #define Y_A58    Y_A54 + H_A54 + IY

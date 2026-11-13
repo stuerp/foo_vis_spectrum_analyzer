@@ -1,9 +1,9 @@
 
-/** $VER: Constants.h (2026.10.11) P. Stuer **/
+/** $VER: Constants.h (2026.11.11) P. Stuer **/
 
 #pragma once
 
-#include <stdint.h>
+#include "Effects.h"
 
 enum class VisualizationType
 {
@@ -11,15 +11,16 @@ enum class VisualizationType
     Curve = 1,
     Spectrogram = 2,
     PeakMeter = 3,
-    LevelMeter = 4,
+    BalanceMeter = 4,
     RadialBars = 5,
     RadialCurve = 6,
     Oscilloscope = 7,
     BitMeter = 8,
     Goniometer = 9,
+    EyeCandy = 10,
 
-    Tester = 10,
-    D3DTester = 11,
+    Tester = 11,
+    D3DTester = 12,
 
     Min = Bars,
     Max = D3DTester,
@@ -107,32 +108,32 @@ enum class FitMode
 };
 
 // Visualization
-inline constexpr double MinHoldTime =   0.; // s
-inline constexpr double MaxHoldTime =   5.; // s
+inline constexpr double MinHoldDuration =   0.; // s
+inline constexpr double MaxHoldDuration =   5.; // s
 
-inline constexpr double MinFallRate =   0.; // dB/s
-inline constexpr double MaxFallRate = 120.; // dB/s
+inline constexpr double MinFallSpeed    =   0.; // dB/s
+inline constexpr double MaxFallSpeed    = 240.; // dB/s
 
-inline constexpr FLOAT MinLEDSize =  0.f;   // DIPs
-inline constexpr FLOAT MaxLEDSize = 32.f;   // DIPs
+inline constexpr FLOAT MinLEDSize       =  0.f;   // DIPs
+inline constexpr FLOAT MaxLEDSize       = 32.f;   // DIPs
 
-inline constexpr FLOAT MinLEDGap =  0.f;    // DIPs
-inline constexpr FLOAT MaxLEDGap = 32.f;    // DIPs
+inline constexpr FLOAT MinLEDGap        =  0.f;    // DIPs
+inline constexpr FLOAT MaxLEDGap        = 32.f;    // DIPs
 
-inline constexpr double MinRMSWindow = 0.;  // s
-inline constexpr double MaxRMSWindow = 3.;  // s
+inline constexpr double MinRMSWindow    = 0.;  // s
+inline constexpr double MaxRMSWindow    = 3.;  // s
 
-inline constexpr FLOAT MinBarGap =   0.f;   // DIPs
-inline constexpr FLOAT MaxBarGap = std::numeric_limits<FLOAT>::max(); // DIPs
+inline constexpr FLOAT MinBarGap        =   0.f;   // DIPs
+inline constexpr FLOAT MaxBarGap        = std::numeric_limits<FLOAT>::max(); // DIPs
 
-inline constexpr FLOAT MinBarSize =   0.f;  // DIPs
-inline constexpr FLOAT MaxBarSize = std::numeric_limits<FLOAT>::max(); // DIPs
+inline constexpr FLOAT MinBarSize       =   0.f;  // DIPs
+inline constexpr FLOAT MaxBarSize       = std::numeric_limits<FLOAT>::max(); // DIPs
 
-inline constexpr double MinInnerRadius =   0.;  // DIPs
-inline constexpr double MaxInnerRadius = 100.;  // DIPs
+inline constexpr double MinInnerRadius  =   0.;  // DIPs
+inline constexpr double MaxInnerRadius  = 100.;  // DIPs
 
-inline constexpr double MinOuterRadius =   0.;  // DIPs
-inline constexpr double MaxOuterRadius = 100.;  // DIPs
+inline constexpr double MinOuterRadius  =   0.;  // DIPs
+inline constexpr double MaxOuterRadius  = 100.;  // DIPs
 
 inline constexpr double MinAngularVelocity = -360.; // Degrees
 inline constexpr double MaxAngularVelocity =  360.; // Degrees
@@ -158,18 +159,41 @@ inline constexpr int MaxFFTSize = 32768;
 inline constexpr double MinFFTDuration =    1.; // ms
 inline constexpr double MaxFFTDuration = 2000.; // ms
 
+inline constexpr double MinHopSizeFraction = 0.; // %
+inline constexpr double MaxHopSizeFraction = 1.; // %
+
 inline constexpr int MinKernelSize =  1;
 inline constexpr int MaxKernelSize = 64;
+
+// Peak Detection
+
+inline constexpr size_t MinPeakCount = 1;
+inline constexpr size_t MaxPeakCount = 10;
+
+inline constexpr double MinPeakLevel = 0.01; // 1%
+inline constexpr double MaxPeakLevel = 1.00; // 100%
+
+inline constexpr double MinPeakProminence = 0.01; // 1%
+inline constexpr double MaxPeakProminence = 1.00; // 100%
+
+inline constexpr size_t MinBandSpan =  1;
+inline constexpr size_t MaxBandSpan = 10;
+
+inline constexpr double MinPeakDistance =    1; // Hz
+inline constexpr double MaxPeakDistance = 1000; // Hz
 
 enum class TransformMethod
 {
     FFT = 0,
-    CQT = 1,
-    SWIFT = 2,
-    AnalogStyle = 3,
+    CQT,
+    SWIFT,
+    AnalogStyle,
+    CompositeFFT,
 
     Min = FFT,
-    Max = AnalogStyle,
+    Max = CompositeFFT,
+
+    Invalid = -1
 };
 
 enum class FFTMode
@@ -269,7 +293,7 @@ inline constexpr int MaxNote                = 143;
 inline constexpr int MinBandsPerOctave      =  1;
 inline constexpr int MaxBandsPerOctave      = 48;
 
-inline constexpr double MinPitch            =    16.35; // Hz, C0
+inline constexpr double MinPitch            =    16.35;  // Hz, C0
 inline constexpr double MaxPitch            = 63'217.06; // Hz, B11
 
 inline constexpr int MinTranspose           = -24;
@@ -296,12 +320,13 @@ inline constexpr int MaxXAxisDecimals       = 3;
 enum class FrequencyDistribution
 {
     Linear = 0,
-    Octaves = 1,
-    AveePlayer = 2,
-    Mel = 3,
+    Octaves,
+    AveePlayer,
+    Mel,
+    Decades,
 
     Min = Linear,
-    Max = Mel,
+    Max = Decades,
 };
 
 enum class ScalingFunction
@@ -427,7 +452,7 @@ enum class VisualElement : uint32_t
     BarLeftRightIndicator       = 30,
     BarMidSideIndicator         = 31,
 
-    Signal                  = 32,
+    Signal                      = 32,
 
     BarSign                     = 35,
     BarMantissa                 = 36,
@@ -439,7 +464,10 @@ enum class VisualElement : uint32_t
     StaticText                  = 40,
     StaticLines                 = 41,
 
-    Count                       = 42
+    PeakMarker                  = 42,
+    PeakText                    = 43,
+
+    Count                       = 44
 };
 
 enum class ColorSource : uint32_t
@@ -541,7 +569,7 @@ enum class VisualizationTypes : uint64_t
     Curve           = 1 << (int) VisualizationType::Curve,
     Spectrogram     = 1 << (int) VisualizationType::Spectrogram,
     PeakMeter       = 1 << (int) VisualizationType::PeakMeter,
-    LevelMeter      = 1 << (int) VisualizationType::LevelMeter,
+    BalanceMeter    = 1 << (int) VisualizationType::BalanceMeter,
     RadialBars      = 1 << (int) VisualizationType::RadialBars,
     RadialCurve     = 1 << (int) VisualizationType::RadialCurve,
     Oscilloscope    = 1 << (int) VisualizationType::Oscilloscope,
@@ -760,11 +788,92 @@ namespace crossover
     };
 }
 
+struct effect_descriptor_t
+{
+    EyeCandy::Effect Id;
+    std::wstring Name;
+};
+
+struct effect_category_t
+{
+    EyeCandy::Category Id;
+    std::wstring Name;
+
+    std::vector<effect_descriptor_t> Effects;
+};
+
+const std::vector<effect_category_t> EffectCategories
+{
+    {
+        EyeCandy::Category::DynamicSystems,
+        L"Dynamic Systems",
+        {
+            { EyeCandy::Effect::AizawaAttractor,            L"Aizawa Attractor" },
+            { EyeCandy::Effect::HalvorsenAttractor,         L"Halvorsen Attractor" },
+            { EyeCandy::Effect::LorenzAttractor,            L"Lorenz Attractor" },
+            { EyeCandy::Effect::RosslerAttractor,           L"R\u00F6ssler Attractor" },
+            { EyeCandy::Effect::ThomasAttractor,            L"Thomas Attractor" },
+            { EyeCandy::Effect::DoublePendulum,             L"Double Pendulum" },
+            { EyeCandy::Effect::ChuaCircuit,                L"Chua Circuit" },
+            { EyeCandy::Effect::DuffingOscillator,          L"Duffing Oscillator" },
+            { EyeCandy::Effect::VanDerPolOscillator,        L"Van der Pol Oscillator" },
+        }
+    },
+    {
+        EyeCandy::Category::Fields,
+        L"Fields",
+        {
+            { EyeCandy::Effect::Aurora,                     L"Aurora" },
+            { EyeCandy::Effect::FluidInk,                   L"Fluid Ink" },
+            { EyeCandy::Effect::Metaballs,                  L"Metaballs" },
+            { EyeCandy::Effect::Plasma,                     L"Plasma" },
+            { EyeCandy::Effect::Rotozoomer,                 L"Rotozoomer" },
+            { EyeCandy::Effect::GrayScottReactionDiffusion, L"Gray-Scott Reaction Diffusion" },
+        }
+    },
+    {
+        EyeCandy::Category::ParticleSystems,
+        L"Particle Systems",
+        {
+            { EyeCandy::Effect::AudioGalaxy,                L"Audio Galaxy" },
+            { EyeCandy::Effect::Fireflies,                  L"Fireflies" },
+            { EyeCandy::Effect::Fireworks,                  L"Fireworks" },
+            { EyeCandy::Effect::ParticleVortex,             L"Particle Vortex" },
+            { EyeCandy::Effect::Starfield,                  L"Starfield" },
+            { EyeCandy::Effect::Swarm,                      L"Swarm" },
+        }
+    },
+    {
+        EyeCandy::Category::Retro,
+        L"Retro",
+        {
+            { EyeCandy::Effect::DitherField,                L"Dither Field" },
+            { EyeCandy::Effect::FlipDotMatrix,              L"Flip Dot Matrix" },
+            { EyeCandy::Effect::HiddenLineLandscape,        L"Hidden-line Landscape" },
+            { EyeCandy::Effect::InterferenceMoire,          L"Interference Moir\u00E9" },
+            { EyeCandy::Effect::NeonTunnel,                 L"Neon Tunnel" },
+            { EyeCandy::Effect::VectorGrid,                 L"Vector Grid" },
+            { EyeCandy::Effect::RotatingTunnel,             L"Rotating Tunnel" },
+        }
+    },
+    {
+        EyeCandy::Category::Trails,
+        L"Trails",
+        {
+            { EyeCandy::Effect::FlowerScope,                L"Flower Scope" },
+            { EyeCandy::Effect::HarmonicHarp,               L"Harmonic Harp" },
+            { EyeCandy::Effect::LissajousTrails,            L"Lissajous Trails" },
+            { EyeCandy::Effect::RibbonFlow,                 L"Ribbon Flow" },
+            { EyeCandy::Effect::Spirograph,                 L"Spirograph" },
+        }
+    },
+};
+
 enum class ConfigurationChanges : uint32_t
 {
     None = 0u,
 
-    RenderLoop          = 1 << 0, // Configuration change impacts the behavior of the render loop.
+    Renderer            = 1 << 0, // Configuration change impacts the behavior of the renderer.
     Layout              = 1 << 1, // Configuration change impacts the layout of the visualization.
 
     RefreshRate         = 1 << 2,

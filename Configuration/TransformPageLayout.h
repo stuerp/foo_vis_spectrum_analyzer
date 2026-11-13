@@ -1,5 +1,5 @@
 
-/** $VER: TransformPageLayout.h (2026.08.30) P. Stuer - Defines the layout of a configuration dialog page. **/
+/** $VER: TransformPageLayout.h (2026.11.11) P. Stuer - Defines the layout of a configuration dialog page. **/
 
 #pragma once
 
@@ -83,11 +83,13 @@
 #pragma endregion
 
 #pragma region FFT
+
 // Groupbox
 #define X_B00   X_B05
 #define Y_B00   Y_B05 + H_B05 + IY
 
-    #pragma region Size
+/** FFT Size **/
+
     // Label
     #define W_A03   64
     #define H_A03   H_LBL
@@ -99,9 +101,9 @@
     #define H_A04   H_CBX
     #define X_A04   X_A03 + W_A03 + IX
     #define Y_A04   Y_A03
-    #pragma endregion
 
-    #pragma region Size Parameter
+/** FFT Size Parameter **/
+
     // Label
     #define W_A61   64
     #define H_A61   H_LBL
@@ -119,23 +121,43 @@
     #define H_A60   H_LBL
     #define X_A60   X_A59 + W_A59 + IX
     #define Y_A60   Y_A59
-    #pragma endregion
 
-    #pragma region Mapping
+/** Hop size fraction **/
+
+    // Label
+    #define W_A80   64
+    #define H_A80   H_LBL
+    #define X_A80   X_A03
+    #define Y_A80   Y_A59 + H_A59 + IY
+
+    // Textbox
+    #define W_A81    30
+    #define H_A81    H_TBX
+    #define X_A81    X_A80 + W_A80 + IY
+    #define Y_A81    Y_A80
+
+    // Label
+    #define W_A82   4
+    #define H_A82   H_LBL
+    #define X_A82   X_A81 + W_A81 + IX
+    #define Y_A82   Y_A81
+
+/** Coefficient mapping **/
+
     // Label
     #define W_A65    64
     #define H_A65    H_LBL
-    #define X_A65    X_A03
-    #define Y_A65    Y_A59 + H_A59 + IY
+    #define X_A65    X_A80
+    #define Y_A65    Y_A81 + H_A81 + IY
 
     // Combobox
     #define W_A66    100
     #define H_A66    H_CBX
     #define X_A66    X_A65 + W_A65 + IX
     #define Y_A66    Y_A65
-    #pragma endregion
 
-    #pragma region Aggregation Method
+/** Coefficient aggregation **/
+
     // Label
     #define W_A15    64
     #define H_A15    H_LBL
@@ -147,40 +169,127 @@
     #define H_A16    H_CBX
     #define X_A16    X_A15 + W_A15 + IX
     #define Y_A16    Y_A15
-    #pragma endregion
 
-    #pragma region Smooth lower frequencies
-    // Checkbox
+/** Checkbox: Smooth lower frequencies **/
+
     #define W_A43    100
     #define H_A43    H_CHB
     #define X_A43    X_A15
     #define Y_A43    Y_A16 + H_A16 + IY
-    #pragma endregion
 
-    #pragma region Smooth gain transition
-    // Checkbox
+/** Checkbox: Smooth gain transition **/
+
     #define W_A44    100
     #define H_A44    H_CHB
     #define X_A44    X_A43
     #define Y_A44    Y_A43 + H_A43 + IY
-    #pragma endregion
 
-    #pragma region Lanczos Kernel
+/** Checkbox: Reassignment sharpening **/
+
+    #define W_A45    100
+    #define H_A45    H_CHB
+    #define X_A45    X_A44
+    #define Y_A45    Y_A44 + H_A44 + IY
+
+/** Lanczos Kernel **/
+
     // Label
     #define W_A39    64
     #define H_A39    H_LBL
     #define X_A39    X_A15
-    #define Y_A39    Y_A44 + H_A44 + IY
+    #define Y_A39    Y_A45 + H_A45 + IY
 
     // Textbox
     #define W_A40    30
     #define H_A40    H_TBX
     #define X_A40    X_A39 + W_A39 + IX
     #define Y_A40    Y_A39
-    #pragma endregion
 
 #define W_B00   W_B05
-#define H_B00   11 + H_A04 + IY + H_A59 + IY + H_A16 + IY + H_A43 + IY + H_A66 + IY + H_A44 + IY + H_A40 + 7
+#define H_B00   11 + H_A04 + IY + H_A59 + IY + H_A81 + IY + H_A16 + IY + H_A43 + IY + H_A66 + IY + H_A44+ IY + H_A45 + IY + H_A40 + 7
+#pragma endregion
+
+#pragma region Peak Detection
+
+// Groupbox
+#define X_B12   X_B00
+#define Y_B12   Y_B00 + H_B00 + IY
+
+    // Checkbox: Peak Detection
+    #define W_T01   70
+    #define H_T01   H_CHB
+    #define X_T01   X_B12 + 5
+    #define Y_T01   Y_B12 + 11
+
+    // Checkbox: Interpolate frequencies
+    #define W_D11    80
+    #define H_D11    H_CHB
+    #define X_D11    X_T01 + W_T01 + IX
+    #define Y_D11    Y_T01
+
+    // Label: No. of peaks
+    #define W_D01   72
+    #define H_D01   H_LBL
+    #define X_D01   X_T01
+    #define Y_D01   Y_T01 + H_T01 + IY
+
+    // Textbox
+    #define W_D02   30
+    #define H_D02   H_TBX
+    #define X_D02   X_D01 + W_D01 + IY
+    #define Y_D02   Y_D01
+
+    // Label: Min. peak level
+    #define W_D03   W_D01
+    #define H_D03   H_LBL
+    #define X_D03   X_D01
+    #define Y_D03   Y_D02 + H_D02 + IY
+
+    // Textbox
+    #define W_D04   30
+    #define H_D04   H_TBX
+    #define X_D04   X_D03 + W_D03 + IY
+    #define Y_D04   Y_D03
+
+    // Label: Min. peak prominence
+    #define W_D05   W_D01
+    #define H_D05   H_LBL
+    #define X_D05   X_D03
+    #define Y_D05   Y_D04 + H_D04 + IY
+
+    // Textbox
+    #define W_D06   30
+    #define H_D06   H_TBX
+    #define X_D06   X_D05 + W_D05 + IY
+    #define Y_D06   Y_D05
+
+    // Label: Band span
+    #define W_D07   W_D01
+    #define H_D07   H_LBL
+    #define X_D07   X_D05
+    #define Y_D07   Y_D06 + H_D06 + IY
+
+    // Textbox
+    #define W_D08   30
+    #define H_D08   H_TBX
+    #define X_D08   X_D07 + W_D07 + IY
+    #define Y_D08   Y_D07
+
+    // Label: Min. peak distance
+    #define W_D09   W_D01
+    #define H_D09   H_LBL
+    #define X_D09   X_D07
+    #define Y_D09   Y_D08 + H_D08 + IY
+
+    // Textbox
+    #define W_D10   40
+    #define H_D10   H_TBX
+    #define X_D10   X_D09 + W_D09 + IY
+    #define Y_D10   Y_D09
+
+#define W_B12   W_B00
+#define H_B12   11 + H_T01 + IY + H_D02 + IY + H_D04 + IY + H_D06 + IY + H_D08 + IY + H_D10 + 7
+
 #pragma endregion
 
 #pragma region Brown-Puckette CQT

@@ -1,5 +1,5 @@
 
-/** $VER: Goniometer.h (2026.10.10) P. Stuer - Implements a goniometer. **/
+/** $VER: Goniometer.h (2026.10.27) P. Stuer - Implements a goniometer visualization. **/
 
 #pragma once
 
@@ -16,19 +16,23 @@
 #include <d2d1_2.h>
 
 #include "Visualization.h"
-#include "AudioProcessor.h"
+#include "GoniometerProcessor.h"
 
-class goniometer_t : public visualization_t
+namespace Goniometer
+{
+
+class goniometer_t final : public visualization_t
 {
 public:
-    goniometer_t() = default;
+    goniometer_t(state_t & state, render_context_t & renderContext) : visualization_t(state, renderContext) { }
 
     goniometer_t(const goniometer_t &) = delete;
-    goniometer_t & operator=(const goniometer_t &) = delete;
     goniometer_t(goniometer_t &&) = delete;
+
+    goniometer_t & operator=(const goniometer_t &) = delete;
     goniometer_t & operator=(goniometer_t &&) = delete;
 
-    virtual ~goniometer_t();
+    virtual ~goniometer_t() noexcept;
 
     // element_t
     void Move(const D2D1_RECT_F & rect) noexcept override final;
@@ -38,7 +42,7 @@ public:
     void OnConfigurationChanged(ConfigurationChanges configurationChanges) noexcept override final;
 
     // visualization_t
-    void Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice = nullptr, ID3D11DeviceContext * d3dDeviceContext = nullptr) noexcept override final;
+    void Configure(graph_options_t * options, audio_processor_t * processor, bool isFirst, bool isLast) noexcept override final;
 
 private:
     HRESULT CreateDeviceIndependentResources() noexcept;
@@ -59,6 +63,9 @@ private:
     HRESULT CreateStaticContent() noexcept;
 
     void Initialize() noexcept { }
+
+private:
+    processor_t * _Processor;
 
     double _LowBand  { 0. }; // Hz
     double _HighBand { 0. }; // Hz
@@ -101,6 +108,6 @@ private:
     // Device dependent resources (Size dependent)
     ComPtr<ID2D1Bitmap1> _Bitmaps[2];
     ComPtr<ID2D1CommandList> _StaticContent;
-
-    audio_processor_t _AudioProcessor;
 };
+
+}

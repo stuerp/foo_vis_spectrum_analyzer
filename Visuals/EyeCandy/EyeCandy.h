@@ -1,18 +1,22 @@
 
-/** $VER: EyeCandy.h (2026.10.10) P. Stuer - Implements a visualizer focusing on eye candy. **/
+/** $VER: EyeCandy.h (2026.10.28) P. Stuer - Implements a visualizer focusing on eye candy. **/
 
 #pragma once
 
 #include <pch.h>
 
 #include "Visualization.h"
+#include "EyeCandyProcessor.h"
 
 #include "Effect.h"
+
+namespace EyeCandy
+{
 
 class eye_candy_t final : public visualization_t
 {
 public:
-    eye_candy_t() = default;
+    eye_candy_t(state_t & state, render_context_t & renderContext) : visualization_t(state, renderContext) { }
 
     eye_candy_t(const eye_candy_t &) = delete;
     eye_candy_t & operator=(const eye_candy_t &) = delete;
@@ -29,12 +33,18 @@ public:
     void OnConfigurationChanged(ConfigurationChanges configurationChanges) noexcept override final;
 
     // visualization_t
-    void Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice = nullptr, ID3D11DeviceContext * d3dDeviceContext = nullptr) noexcept override final;
-    void Initialize() noexcept;
+    void Configure(graph_options_t * options, audio_processor_t * processor, bool isFirst, bool isLast) noexcept override final;
+
+private:
+    processor_t * _Processor;
+
+    std::unique_ptr<EyeCandy::effect_t> _Effect;
+
+    EyeCandy::Effect _EffectId = EyeCandy::Effect::Plasma;
+    double _PlaybackTime = 0.;
 
 private:
     ComPtr<ID2D1SolidColorBrush> _Brush;
-
-private:
-    std::unique_ptr<effect_t> _Effect;
 };
+
+}

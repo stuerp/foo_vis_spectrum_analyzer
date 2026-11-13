@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.h (2026.10.10) P. Stuer -  Implements a spectrum analyzer visualization **/
+/** $VER: Spectrum.h (2026.11.11) P. Stuer -  Implements a spectrum analyzer visualization **/
 
 #pragma once
 
@@ -8,23 +8,28 @@
 #include <Windows.h>
 
 #include "Visualization.h"
+#include "SpectrumProcessor.h"
 
 #include "XAxis.h"
 #include "YAxis.h"
 
 #include <vector>
 
+namespace Spectrum
+{
+
 /// <summary>
 /// Implements the visualisation of the spectrum.
 /// </summary>
-class spectrum_t : public visualization_t
+class spectrum_t final : public visualization_t
 {
 public:
-    spectrum_t() = default;
+    spectrum_t(state_t & state, render_context_t & renderContext) : visualization_t(state, renderContext), _XAxis(state, renderContext), _YAxis(state, renderContext) { }
 
     spectrum_t(const spectrum_t &) = delete;
-    spectrum_t & operator=(const spectrum_t &) = delete;
     spectrum_t(spectrum_t &&) = delete;
+
+    spectrum_t & operator=(const spectrum_t &) = delete;
     spectrum_t & operator=(spectrum_t &&) = delete;
 
     virtual ~spectrum_t();
@@ -37,7 +42,7 @@ public:
     void OnConfigurationChanged(ConfigurationChanges configurationChanges) noexcept override final;
 
     // visualization_t
-    void Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice = nullptr, ID3D11DeviceContext * d3dDeviceContext = nullptr) noexcept override final;
+    void Configure(graph_options_t * options, audio_processor_t * analysis, bool isFirst, bool isLast) noexcept override final;
 
 private:
     HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept;
@@ -51,7 +56,7 @@ private:
 
     const D2D1_RECT_F & GetClientRect() const noexcept { return _ClientRect; }
 
-    void Initialize() noexcept;
+    void RecalculateSizeDependentParameters() noexcept;
 
     void RenderBars(ID2D1DeviceContext * deviceContext) noexcept;
     void RenderBar(ID2D1DeviceContext * deviceContext, D2D1_RECT_F & rect, const style_t & areaStyle, const style_t & topStyle, double value, double opacity) noexcept;
@@ -63,6 +68,8 @@ private:
     void RenderRadialCurve(ID2D1DeviceContext * deviceContext) noexcept;
 
     void RenderNyquistFrequencyMarker(ID2D1DeviceContext * deviceContext) const noexcept;
+
+    void RenderPeaks(ID2D1DeviceContext * deviceContext) noexcept;
 
     void RenderDiagnostics(ID2D1DeviceContext * deviceContext) const noexcept;
 
@@ -91,6 +98,8 @@ private:
     HRESULT CreateRadialCurve(const geometry_points_t & gp, FLOAT innerRadius, bool isFilled, ID2D1PathGeometry ** curve) const noexcept;
 
 private:
+    processor_t * _Processor;
+
     static constexpr FLOAT PaddingX = 0.f;
     static constexpr FLOAT PaddingY = 0.f;
 
@@ -102,7 +111,7 @@ private:
 
     FLOAT _LEDSize;
 
-    msc::chrono_t _Chrono;
+    msc::chrono_t _AnimationTimer;
 
     // Device-dependent resources
     ComPtr<ID2D1SolidColorBrush> _DebugBrush;
@@ -124,4 +133,13 @@ private:
 
     style_t _WindowFunctionStyle;
     style_t _WeighingFunctionStyle;
+
+    style_t _PeakMarkerStyle;
+    style_t _PeakTextStyle;
+
+    static constexpr double Pi    = std::numbers::pi;
+    static constexpr double TwoPi = 2. * Pi;
+    static constexpr double Pi2   = Pi * 0.5;
 };
+
+}

@@ -1,17 +1,21 @@
 
-/** $VER: Goniometer.cpp (2026.10.10) P. Stuer - Implements a goniometer. **/
+/** $VER: Goniometer.cpp (2026.11.06) P. Stuer - Implements a goniometer. **/
 
 #include <pch.h>
 
 #include "Goniometer.h"
+
 #include "Direct2D.h"
 
 #pragma hdrstop
 
+namespace Goniometer
+{
+
 /// <summary>
 /// Destroys this instance.
 /// </summary>
-goniometer_t::~goniometer_t()
+goniometer_t::~goniometer_t() noexcept
 {
     Reset();
 }
@@ -19,20 +23,12 @@ goniometer_t::~goniometer_t()
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void goniometer_t::Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device *, ID3D11DeviceContext *) noexcept
+void goniometer_t::Configure(graph_options_t * options, audio_processor_t * processor, bool isFirst, bool isLast) noexcept
 {
-    _State        = state;
-    _GraphOptions = graphOptions;
-    _Analysis     = analysis;
-
-    _LowBand  = _State->_LowBand;
-    _HighBand = _State->_HighBand;
-
-    _AudioProcessor.Initialize(state);
-
-    _AudioProcessor.SetColorMode(_State->_GoniometerColorMode);
-    _AudioProcessor.SetCrossoverMode(_State->_CrossoverMode);
-    _AudioProcessor.SetVisualGain(_State->_LowVisualGain, _State->_MidVisualGain, _State->_HighVisualGain);
+    _GraphOptions = options;
+    _Processor    = (processor_t *) processor;
+    _IsFirst      = isFirst;
+    _IsLast       = isLast;
 
     _SpriteDestinations.resize(0);
     _SpriteSources     .resize(0);
@@ -49,7 +45,7 @@ void goniometer_t::Move(const D2D1_RECT_F & rect) noexcept
 {
     InitializeMetrics(rect);
 
-    _TranslationMatrix = D2D1::Matrix3x2F::Translation(_Size.width / 2.f, _Size.height / 2.f);
+    _TranslationMatrix = D2D1::Matrix3x2F::Translation(_Rect.left + _CenterX, _Rect.top + _CenterY);
 }
 
 /// <summary>
@@ -62,19 +58,8 @@ void goniometer_t::Render(ID2D1DeviceContext * deviceContext) noexcept
     if (FAILED(hr))
         return;
 
-    // Process the chunk.
-    if (!_Analysis->_Chunk.is_empty())
-    {
-        const uint32_t ActiveChannelMask = _GraphOptions->_ActiveChannelMask;                               // Mask containing the channels selected by the user.
-        const uint32_t PairedChannelMask = analysis_t::ChannelPairs[(size_t) _GraphOptions->_ChannelPair];  // Mask containing the channels selected by the user as a channel pair.
-
-        _AudioProcessor.Process(_Analysis->_Chunk, ActiveChannelMask, PairedChannelMask, _LowBand, _HighBand);
-    }
-    else
-        _AudioProcessor.Reset();
-
     // Create the sprite batch from the audio points.
-    if (_AudioProcessor._PointCount != 0)
+    if (_Processor->_PointCount != 0)
         CreateSprites();
     else
         _SpriteBatch->Clear();
@@ -89,17 +74,17 @@ void goniometer_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 
         _DeviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
 
-        _DeviceContext->Clear();
+        _DeviceContext->Clear(); // Transparent
 
         // Draw a faded and blurred version of the previous bitmap.
-        if (_State->_HasPhosphorDecay)
+        if (_State._HasPhosphorDecay)
         {
             {
-                const FLOAT Opacity = (_State->_Afterglow != 0.f) ? std::expf(-(1000.f / (FLOAT) _State->_TargetRefreshRate) / _State->_Afterglow) : 0.f;
+                const FLOAT Opacity = (_State._Afterglow != 0.f) ? std::expf(-(1000.f / (FLOAT) _State._TargetRefreshRate) / _State._Afterglow) : 0.f;
 
                 _OpacityEffect->SetValue(D2D1_OPACITY_PROP_OPACITY, Opacity);
 
-                _BlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_STANDARD_DEVIATION, _State->_BlurSigma);
+                _BlurEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_STANDARD_DEVIATION, _State._BlurSigma);
             }
 
             _OpacityEffect->SetInput(0, _Bitmaps[_PrevBitmapIndex].Get());
@@ -119,7 +104,7 @@ void goniometer_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 
             hr = _DeviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::White), WhiteBrush.GetAddressOf());
 
-            const FLOAT x = 4.f + ((_Side - 8.f) / 2.f * (1.f + (FLOAT) _AudioProcessor.GetCorrelation()));
+            const FLOAT x = 4.f + ((_Side - 8.f) / 2.f * (1.f + (FLOAT) _Processor->GetCorrelation()));
             const FLOAT y = _Side - 4.f;
 
             const auto Circle = D2D1::Ellipse(D2D1::Point2F(x, y), 4.f, 4.f);
@@ -259,7 +244,7 @@ HRESULT goniometer_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceC
             return hr;
     }
 
-    if (_State->_ColorsHaveChanged || _State->_SizeHasChanged)
+    if (_State._ColorsHaveChanged || _State._SizeHasChanged)
     {
         DeleteColorDependentResources();
 
@@ -269,18 +254,16 @@ HRESULT goniometer_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceC
 
         if (FAILED(hr))
             return hr;
-    }
 
-    if (_State->_SizeHasChanged)
-    {
-        DeleteSizeDependentResources();
+        if (_State._SizeHasChanged)
+        {
+            DeleteSizeDependentResources();
 
-        Initialize();
+            hr = CreateSizeDependentResources(deviceContext);
 
-        hr = CreateSizeDependentResources(deviceContext);
-
-        if (FAILED(hr))
-            return hr;
+            if (FAILED(hr))
+                return hr;
+        }
     }
 
     return hr;
@@ -314,49 +297,74 @@ HRESULT goniometer_t::CreateSizeDependentResources(ID2D1DeviceContext * deviceCo
 
     HRESULT hr = S_OK;
 
-    if (_SignalStyle._Brush == nullptr)
-    {
-        _SignalStyle = *_State->_StyleManager.GetStyle(VisualElement::Signal);
+    auto & StyleManager = _GraphOptions->_UseLocalStyles ? _GraphOptions->_StyleManager : _State._StyleManager;
 
-        _SignalStyle.SetColor(_State);
+    if (_SignalStyle.Brush == nullptr)
+    {
+        _SignalStyle = *StyleManager.GetStyle(VisualElement::Signal);
+
+        _SignalStyle.SetColor(&_State);
 
         hr = _SignalStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", _HalfSide);
 
         if (FAILED(hr))
             return hr;
 
-        if (_AudioProcessor.GetColorMode() == goniometer::ColorMode::Mono)
+        if (_Processor->GetColorMode() == goniometer::ColorMode::Mono)
         {
-            _SignalStyle._CurrentColor = _SignalStyle._CustomColor;
+            if (_SignalStyle._ColorSource == ColorSource::Gradient)
+            {
+                D2D1_COLOR_F cm = { };
 
-            _AudioProcessor.SetMonoColor(_SignalStyle._CurrentColor);
+                // Find the first color that is in the middle of the gradient.
+                for (auto & gs : _SignalStyle.CurrentGradientStops)
+                {
+                    cm = gs.color;
+
+                    if (msc::InRange(gs.position, 1.f / 3.f, 2.f / 3.f))
+                        break;
+                }
+
+                _Processor->SetMonoColor(cm);
+            }
+            else
+            {
+                _Processor->SetMonoColor(_SignalStyle.CurrentColor);
+            }
         }
         else
-        if (_AudioProcessor.GetColorMode() == goniometer::ColorMode::Triband)
+        if (_Processor->GetColorMode() == goniometer::ColorMode::Triband)
         {
-            auto cl = _SignalStyle._CurrentGradientStops.front().color;
-            auto ch = _SignalStyle._CurrentGradientStops.back().color;
-
-            D2D1_COLOR_F cm = { };
-
-            // Find the first color that is in the middle of the gradient.
-            for (auto & gs : _SignalStyle._CurrentGradientStops)
+            if (_SignalStyle._ColorSource == ColorSource::Gradient)
             {
-                cm = gs.color;
+                auto cl = _SignalStyle.CurrentGradientStops.front().color;
+                auto ch = _SignalStyle.CurrentGradientStops.back().color;
 
-                if (msc::InRange(gs.position, 1.f / 3.f, 2.f / 3.f))
-                    break;
+                D2D1_COLOR_F cm = { };
+
+                // Find the first color that is in the middle of the gradient.
+                for (auto & gs : _SignalStyle.CurrentGradientStops)
+                {
+                    cm = gs.color;
+
+                    if (msc::InRange(gs.position, 1.f / 3.f, 2.f / 3.f))
+                        break;
+                }
+
+                _Processor->SetTriBandColors(cl, cm, ch);
             }
-
-            _AudioProcessor.SetTriBandColors(cl, cm, ch);
+            else
+            {
+                _Processor->SetTriBandColors(_SignalStyle.CurrentColor, _SignalStyle.CurrentColor, _SignalStyle.CurrentColor);
+            }
         }
     }
 
-    if (_StaticLinesStyle._Brush == nullptr)
+    if (_StaticLinesStyle.Brush == nullptr)
     {
-        _StaticLinesStyle = *_State->_StyleManager.GetStyle(VisualElement::StaticLines);
+        _StaticLinesStyle = *StyleManager.GetStyle(VisualElement::StaticLines);
 
-        _StaticLinesStyle.SetColor(_State);
+        _StaticLinesStyle.SetColor(&_State);
 
         // The font style is created prescaled to counter the Scale transform in the command list.
         hr = _StaticLinesStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
@@ -365,17 +373,17 @@ HRESULT goniometer_t::CreateSizeDependentResources(ID2D1DeviceContext * deviceCo
             return hr;
     }
 
-    if (_StaticTextStyle._Brush == nullptr)
+    if (_StaticTextStyle.Brush == nullptr)
     {
-        _StaticTextStyle = *_State->_StyleManager.GetStyle(VisualElement::StaticText);
+        _StaticTextStyle = *StyleManager.GetStyle(VisualElement::StaticText);
 
-        _StaticTextStyle.SetColor(_State);
+        _StaticTextStyle.SetColor(&_State);
 
         // Create a temporary non-scaled version of the font.
         {
             (void) _StaticTextStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"L", 1.f);
 
-            _Radius = .98f - (_StaticTextStyle._Height / _HalfSide);
+            _Radius = .98f - (_StaticTextStyle.Height / _HalfSide);
 
             _StaticTextStyle.DeleteDeviceSpecificResources();
         }
@@ -395,8 +403,8 @@ HRESULT goniometer_t::CreateSizeDependentResources(ID2D1DeviceContext * deviceCo
             D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED) // Required for alpha transparency. Otherwise use D2D1_ALPHA_MODE_IGNORE.
         );
 
-        const FLOAT x = (_Size.width  - _Side) / 2.f;
-        const FLOAT y = (_Size.height - _Side) / 2.f;
+        const FLOAT x = _Rect.left + (_Size.width  - _Side) / 2.f;
+        const FLOAT y = _Rect.top  + (_Size.height - _Side) / 2.f;
 
         _DestinationRectangle = { x, y, x + _Side, y + _Side };
 
@@ -494,20 +502,20 @@ HRESULT goniometer_t::CreateSprites() noexcept
 {
     HRESULT hr = S_OK;
 
-    if (_SpriteDestinations.size() != _AudioProcessor._PointCount)
+    if (_SpriteDestinations.size() != _Processor->_PointCount)
     {
-        _SpriteDestinations.resize(_AudioProcessor._PointCount);
-        _SpriteSources     .resize(_AudioProcessor._PointCount);
-        _SpriteColors      .resize(_AudioProcessor._PointCount);
-        _SpriteTransforms  .resize(_AudioProcessor._PointCount);
+        _SpriteDestinations.resize(_Processor->_PointCount);
+        _SpriteSources     .resize(_Processor->_PointCount);
+        _SpriteColors      .resize(_Processor->_PointCount);
+        _SpriteTransforms  .resize(_Processor->_PointCount);
 
         std::fill(_SpriteSources.begin(),    _SpriteSources.end(),    SpriteRectangle);
         std::fill(_SpriteTransforms.begin(), _SpriteTransforms.end(), D2D1::Matrix3x2F::Identity());
     }
 
-    for (size_t i = 0; i < _AudioProcessor._PointCount; ++i)
+    for (size_t i = 0; i < _Processor->_PointCount; ++i)
     {
-        const auto & Point = _AudioProcessor._Points[i];
+        const auto & Point = _Processor->_Points[i];
 
         const FLOAT CenterX = _HalfSide + (Point.x * _HalfSide * _Radius);
         const FLOAT CenterY = _HalfSide + (Point.y * _HalfSide * _Radius);
@@ -518,7 +526,7 @@ HRESULT goniometer_t::CreateSprites() noexcept
 
     const auto SpriteCount = _SpriteBatch->GetSpriteCount();
 
-    if (SpriteCount != _AudioProcessor._PointCount)
+    if (SpriteCount != _Processor->_PointCount)
     {
         _SpriteBatch->Clear();
 
@@ -633,31 +641,31 @@ HRESULT goniometer_t::CreateStaticContent() noexcept
 
     // Draw the L-axis.
     {
-        _DeviceContext->DrawLine(D2D1::Point2F(-_Radius * Sin, -_Radius * Cos), D2D1::Point2F(_Radius * Sin, _Radius * Cos), _StaticLinesStyle._Brush.Get(), 1.f, _StaticStrokeStyle.Get());
+        _DeviceContext->DrawLine(D2D1::Point2F(-_Radius * Sin, -_Radius * Cos), D2D1::Point2F(_Radius * Sin, _Radius * Cos), _StaticLinesStyle.Brush.Get(), 1.f, _StaticStrokeStyle.Get());
 
         _StaticTextStyle.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
         _StaticTextStyle.SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_FAR);
 
         const D2D1_RECT_F TextRect = {-Sin, -Cos, -_Radius * Sin, -_Radius * Cos };
 
-        _DeviceContext->DrawText(L"L", 1u, _StaticTextStyle._TextFormat.Get(), TextRect, _StaticTextStyle._Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_NONE);
+        _DeviceContext->DrawText(L"L", 1u, _StaticTextStyle.TextFormat.Get(), TextRect, _StaticTextStyle.Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_NONE);
     }
 
     // Draw the R-axis.
     {
-        _DeviceContext->DrawLine(D2D1::Point2F(-_Radius * Sin, _Radius * Cos), D2D1::Point2F(_Radius * Sin, -_Radius * Cos), _StaticLinesStyle._Brush.Get(), 1.f, _StaticStrokeStyle.Get());
+        _DeviceContext->DrawLine(D2D1::Point2F(-_Radius * Sin, _Radius * Cos), D2D1::Point2F(_Radius * Sin, -_Radius * Cos), _StaticLinesStyle.Brush.Get(), 1.f, _StaticStrokeStyle.Get());
 
         _StaticTextStyle.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
         _StaticTextStyle.SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT_FAR);
 
         const D2D1_RECT_F TextRect = { _Radius * Sin, -_Radius * Cos, Sin, -Cos };
 
-        _DeviceContext->DrawText(L"R", 1u, _StaticTextStyle._TextFormat.Get(), TextRect, _StaticTextStyle._Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_NONE);
+        _DeviceContext->DrawText(L"R", 1u, _StaticTextStyle.TextFormat.Get(), TextRect, _StaticTextStyle.Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_NONE);
     }
 
     // Draw the S-axis.
     {
-        _DeviceContext->DrawLine(D2D1::Point2F(-_Radius, 0.f), D2D1::Point2F(_Radius, 0.f), _StaticLinesStyle._Brush.Get(), 1.f, _StaticStrokeStyle.Get());
+        _DeviceContext->DrawLine(D2D1::Point2F(-_Radius, 0.f), D2D1::Point2F(_Radius, 0.f), _StaticLinesStyle.Brush.Get(), 1.f, _StaticStrokeStyle.Get());
 
         {
             _StaticTextStyle.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
@@ -665,7 +673,7 @@ HRESULT goniometer_t::CreateStaticContent() noexcept
 
             const D2D1_RECT_F TextRect = { -_Radius, 0.f, -_Radius, 0.f };
 
-            _DeviceContext->DrawText(L"+S", 2u, _StaticTextStyle._TextFormat.Get(), TextRect, _StaticTextStyle._Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_NONE);
+            _DeviceContext->DrawText(L"+S", 2u, _StaticTextStyle.TextFormat.Get(), TextRect, _StaticTextStyle.Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_NONE);
         }
 
         {
@@ -673,13 +681,13 @@ HRESULT goniometer_t::CreateStaticContent() noexcept
 
             const D2D1_RECT_F TextRect = { _Radius, 0.f, _Radius, 0.f };
 
-            _DeviceContext->DrawText(L"-S", 2u, _StaticTextStyle._TextFormat.Get(), TextRect, _StaticTextStyle._Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_NONE);
+            _DeviceContext->DrawText(L"-S", 2u, _StaticTextStyle.TextFormat.Get(), TextRect, _StaticTextStyle.Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_NONE);
         }
     }
 
     // Draw the M-axis.
     {
-        _DeviceContext->DrawLine(D2D1::Point2F(0.f, -_Radius), D2D1::Point2F(0, _Radius), _StaticLinesStyle._Brush.Get(), 1.f, _StaticStrokeStyle.Get());
+        _DeviceContext->DrawLine(D2D1::Point2F(0.f, -_Radius), D2D1::Point2F(0, _Radius), _StaticLinesStyle.Brush.Get(), 1.f, _StaticStrokeStyle.Get());
 
         {
             _StaticTextStyle.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
@@ -687,7 +695,7 @@ HRESULT goniometer_t::CreateStaticContent() noexcept
 
             const D2D1_RECT_F TextRect = { 0.f, -_Radius, 0.f, -_Radius };
 
-            _DeviceContext->DrawText(L"+M", 2u, _StaticTextStyle._TextFormat.Get(), TextRect, _StaticTextStyle._Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_NONE);
+            _DeviceContext->DrawText(L"+M", 2u, _StaticTextStyle.TextFormat.Get(), TextRect, _StaticTextStyle.Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_NONE);
         }
 
         {
@@ -695,7 +703,7 @@ HRESULT goniometer_t::CreateStaticContent() noexcept
 
             const D2D1_RECT_F TextRect = { 0.f, _Radius, 0.f, _Radius };
 
-            _DeviceContext->DrawText(L"-M", 2u, _StaticTextStyle._TextFormat.Get(), TextRect, _StaticTextStyle._Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_NONE);
+            _DeviceContext->DrawText(L"-M", 2u, _StaticTextStyle.TextFormat.Get(), TextRect, _StaticTextStyle.Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_NONE);
         }
 /*
         _XAxisTextStyle.SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
@@ -711,7 +719,7 @@ HRESULT goniometer_t::CreateStaticContent() noexcept
     {
         auto Ellipse = D2D1::Ellipse(D2D1::Point2F(0.f, 0.f), _Radius, _Radius);
 
-        _DeviceContext->DrawEllipse(Ellipse, _StaticLinesStyle._Brush.Get(), 1.f, _StaticStrokeStyle.Get());
+        _DeviceContext->DrawEllipse(Ellipse, _StaticLinesStyle.Brush.Get(), 1.f, _StaticStrokeStyle.Get());
     }
 
     // Draw the middle circle (-6 dBFS).
@@ -720,7 +728,7 @@ HRESULT goniometer_t::CreateStaticContent() noexcept
 
         auto Ellipse = D2D1::Ellipse(D2D1::Point2F(0.f, 0.f), r, r);
 
-        _DeviceContext->DrawEllipse(Ellipse, _StaticLinesStyle._Brush.Get(), 1.f, _StaticStrokeStyle.Get());
+        _DeviceContext->DrawEllipse(Ellipse, _StaticLinesStyle.Brush.Get(), 1.f, _StaticStrokeStyle.Get());
     }
 
     // Draw the inner circle (-12 dBFS).
@@ -730,7 +738,7 @@ HRESULT goniometer_t::CreateStaticContent() noexcept
         auto Ellipse = D2D1::Ellipse(D2D1::Point2F(0.f, 0.f), r, r);
 
 
-        _DeviceContext->DrawEllipse(Ellipse, _StaticLinesStyle._Brush.Get(), 1.f, _StaticStrokeStyle.Get());
+        _DeviceContext->DrawEllipse(Ellipse, _StaticLinesStyle.Brush.Get(), 1.f, _StaticStrokeStyle.Get());
     }
 
     _DeviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
@@ -753,7 +761,9 @@ void goniometer_t::OnConfigurationChanged(ConfigurationChanges configurationChan
     if (!IsSet(configurationChanges, ConfigurationChanges::Goniometer))
         return;
 
-    _AudioProcessor.SetColorMode(_State->_GoniometerColorMode);
-    _AudioProcessor.SetCrossoverMode(_State->_CrossoverMode);
-    _AudioProcessor.SetVisualGain(_State->_LowVisualGain, _State->_MidVisualGain, _State->_HighVisualGain);
+    _Processor->SetColorMode(_State._GoniometerColorMode);
+    _Processor->SetCrossoverMode(_State._CrossoverMode);
+    _Processor->SetVisualGain(_State._LowVisualGain, _State._MidVisualGain, _State._HighVisualGain);
+}
+
 }

@@ -1,5 +1,5 @@
 
-/** $VER: Resources.h (2026.10.11) P. Stuer **/
+/** $VER: Resources.h (2026.11.13) P. Stuer **/
 
 #pragma once
 
@@ -7,12 +7,12 @@
 #define TOSTRING(x) TOSTRING_IMPL(x)
 
 #define NUM_FILE_MAJOR          0
-#define NUM_FILE_MINOR          13
+#define NUM_FILE_MINOR          14
 #define NUM_FILE_PATCH          0
 #define NUM_FILE_PRERELEASE     0
 
 #define NUM_PRODUCT_MAJOR       0
-#define NUM_PRODUCT_MINOR       13
+#define NUM_PRODUCT_MINOR       14
 #define NUM_PRODUCT_PATCH       0
 #define NUM_PRODUCT_PRERELEASE  0
 
@@ -74,7 +74,8 @@
 #define IDD_COMMON_PAGE                 1005
 #define IDD_GRAPHS_PAGE                 1006
 #define IDD_STYLES_PAGE                 1007
-#define IDD_PRESETS_PAGE                1008
+#define IDD_EYE_CANDY_PAGE              1008
+#define IDD_PRESETS_PAGE                1009
 
 #define IDD_CONFIGURATION               1099
 
@@ -110,14 +111,31 @@
 #define IDC_NUM_BINS_PARAMETER          2056
 #define IDC_NUM_BINS_PARAMETER_UNIT     2058
 
-#define IDC_MAPPING_METHOD              2060
-#define IDC_AGGREGATION_METHOD          2062
+#define IDC_HOP_SIZE_FRACTION           2060
 
-#define IDC_SMOOTH_LOWER_FREQUENCIES    2070
-#define IDC_SMOOTH_GAIN_TRANSITION      2072
+#define IDC_MAPPING_METHOD              2070
+#define IDC_AGGREGATION_METHOD          2072
 
-#define IDC_KERNEL_SIZE                 2080
-#define IDC_KERNEL_SIZE_SPIN            2084
+#define IDC_SMOOTH_LOWER_FREQUENCIES    2080
+#define IDC_SMOOTH_GAIN_TRANSITION      2082
+#define IDC_REASSIGNMENT_SHARPENING     2084
+
+#define IDC_KERNEL_SIZE                 2090
+#define IDC_KERNEL_SIZE_SPIN            2094
+
+#pragma endregion
+
+#pragma region Peak Detection
+
+#define IDC_PEAK_DETECTION_GROUP        2100
+
+#define IDC_PEAK_DETECTION              2102
+#define IDC_NUM_PEAKS                   2104
+#define IDC_MIN_PEAK_LEVEL              2106
+#define IDC_MIN_PEAK_PROMINENCE         2108
+#define IDC_BAND_SPAN                   2110
+#define IDC_MIN_PEAK_DISTANCE           2112
+#define IDC_INTERPOLATE_FREQUENCY       2114
 
 #pragma endregion
 
@@ -249,12 +267,14 @@
 #define IDC_SHOW_TOOLTIPS               6070
 #define IDC_SUPPRESS_MIRROR_IMAGE       6072
 #define IDC_VISUALIZE_DURING_PAUSE      6074
+#define IDC_ALT_FULLSCREEN              6076
+#define IDC_ALT_FULLSCREEN_ANIMATION    6078
 
 #pragma endregion
 
 #pragma region Artwork
 
-#define IDC_ARTWORK                     6078
+#define IDC_ARTWORK                     6080
 
 #define IDC_ARTWORK_BACKGROUND          6082
 
@@ -374,20 +394,13 @@
 
 #pragma region Visualization
 
-#define IDC_VISUALIZATION_LBL           7100
-#define IDC_VISUALIZATION               7102
+#define IDC_VISUALIZATION               7100
 
 // Peak Indicators
-#define IDC_PEAK_MODE_LBL               7108
 #define IDC_PEAK_MODE                   7110
-
-#define IDC_HOLD_TIME_LBL               7112
-#define IDC_HOLD_TIME                   7114
-
-#define IDC_ACCELERATION_LBL            7116
-#define IDC_FALL_RATE                   7118
-
-#define IDC_RESET_PEAKS                 7119
+#define IDC_HOLD_DURATION               7112
+#define IDC_FALL_SPEED                  7114
+#define IDC_RESET_PEAKS                 7116
 
 // LEDs
 #define IDC_LED_MODE                    7122
@@ -515,19 +528,29 @@
 #define IDC_FONT_SIZE_LBL               7560
 #define IDC_FONT_SIZE                   7562
 
+/** Eye Candy **/
+
+#define IDC_EFFECT_CATEGORY             7600
+#define IDC_EFFECT                      7602
+
+#define IDC_EFFECT_QUALITY              7604
+#define IDC_EFFECT_SPEED                7606
+#define IDC_EFFECT_BRIGHTNESS           7608
+#define IDC_EFFECT_DENSITY              7610
+
 /** Presets **/
 
-#define IDC_PRESETS_LBL                 7600
-#define IDC_PRESETS_ROOT                7602
-#define IDC_PRESETS_ROOT_SELECT         7604
-#define IDC_PRESET_NAMES                7606
+#define IDC_PRESETS_LBL                 7700
+#define IDC_PRESETS_ROOT                7702
+#define IDC_PRESETS_ROOT_SELECT         7704
+#define IDC_PRESET_NAMES                7706
 
-#define IDC_PRESET_NAME_LBL             7608
-#define IDC_PRESET_NAME                 7610
+#define IDC_PRESET_NAME_LBL             7708
+#define IDC_PRESET_NAME                 7710
 
-#define IDC_PRESET_LOAD                 7612
-#define IDC_PRESET_SAVE                 7614
-#define IDC_PRESET_DELETE               7616
+#define IDC_PRESET_LOAD                 7712
+#define IDC_PRESET_SAVE                 7714
+#define IDC_PRESET_DELETE               7716
 
 #define IDC_RESET                       9999
 

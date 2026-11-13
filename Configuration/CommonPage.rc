@@ -1,5 +1,5 @@
 
-/** $VER: CommonPage.rc (2026.10.09) P. Stuer **/
+/** $VER: CommonPage.rc (2026.11.08) P. Stuer **/
 
 #include "Resources.h"
 
@@ -17,16 +17,19 @@ style DS_SETFONT | DS_CONTROL | WS_CHILD | WS_CLIPCHILDREN
 {
     groupbox "Common", IDC_COMMON, X_B04, Y_B04, W_B04, H_B04, BS_GROUPBOX, WS_EX_TRANSPARENT
 
-        rtext           "Smoothing method:",        IDC_STATIC,                     X_A17, Y_A17 + 2, W_A17, H_A17
-        combobox                                    IDC_SMOOTHING_METHOD,           X_A18, Y_A18,     W_A18, H_A18, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+        rtext           "Smoothing method:",                IDC_STATIC,                     X_A17, Y_A17 + 2, W_A17, H_A17
+        combobox                                            IDC_SMOOTHING_METHOD,           X_A18, Y_A18,     W_A18, H_A18, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
 
-        rtext           "Smoothing factor:"         IDC_STATIC,                     X_A37, Y_A37 + 2, W_A37, H_A37
-        edittext                                    IDC_SMOOTHING_FACTOR,           X_A38, Y_A38,     W_A38, H_A38, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
+        rtext           "Smoothing factor:"                 IDC_STATIC,                     X_A37, Y_A37 + 2, W_A37, H_A37
+        edittext                                            IDC_SMOOTHING_FACTOR,           X_A38, Y_A38,     W_A38, H_A38, ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP
 
-        control         "Tool tips",                IDC_SHOW_TOOLTIPS,              "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_A87, Y_A87, W_A87, H_A87
-        control         "Suppress mirror image",    IDC_SUPPRESS_MIRROR_IMAGE,      "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_G19, Y_G19, W_G19, H_G19
+        control         "Tool tips",                        IDC_SHOW_TOOLTIPS,              "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_A87, Y_A87, W_A87, H_A87
+        control         "Suppress mirror image",            IDC_SUPPRESS_MIRROR_IMAGE,      "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_G19, Y_G19, W_G19, H_G19
 
-        control         "Visualize during pause",   IDC_VISUALIZE_DURING_PAUSE,     "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_A95, Y_A95, W_A95, H_A95
+        control         "Visualize during pause",           IDC_VISUALIZE_DURING_PAUSE,     "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_A95, Y_A95, W_A95, H_A95
+        control         "Alternate fullscreen mode",        IDC_ALT_FULLSCREEN,             "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_A96, Y_A96, W_A96, H_A96
+
+        control         "Animate fullscreen transition",    IDC_ALT_FULLSCREEN_ANIMATION,   "Button", BS_AUTOCHECKBOX | WS_TABSTOP, X_G50, Y_G50, W_G50, H_G50
 
     groupbox "Artwork", IDC_ARTWORK, X_B06, Y_B06, W_B06, H_B06, BS_GROUPBOX, WS_EX_TRANSPARENT
 

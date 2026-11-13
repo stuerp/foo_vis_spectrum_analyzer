@@ -1,20 +1,25 @@
 
-/** $VER: OscilloscopeBase.h (2026.09.25) P. Stuer - Implements a base class for an oscilloscope. **/
+/** $VER: OscilloscopeBase.h (2026.10.28) P. Stuer - Implements a base class for an oscilloscope. **/
 
 #pragma once
 
 #include <pch.h>
 
 #include "Visualization.h"
+#include "OscilloscopeProcessor.h"
+
+namespace Oscilloscope
+{
 
 class oscilloscope_base_t : public visualization_t
 {
 public:
-    oscilloscope_base_t() = default;
+    oscilloscope_base_t(state_t & state, render_context_t & renderContext) : visualization_t(state, renderContext) { }
 
     oscilloscope_base_t(const oscilloscope_base_t &) = delete;
-    oscilloscope_base_t & operator=(const oscilloscope_base_t &) = delete;
     oscilloscope_base_t(oscilloscope_base_t &&) = delete;
+
+    oscilloscope_base_t & operator=(const oscilloscope_base_t &) = delete;
     oscilloscope_base_t & operator=(oscilloscope_base_t &&) = delete;
 
     virtual ~oscilloscope_base_t() noexcept;
@@ -39,6 +44,8 @@ protected:
     static size_t FindZeroCrossing(const audio_sample * frames, size_t frameCount, uint32_t channelCount) noexcept;
 
 protected:
+    processor_t * _Processor;
+
     size_t _PrevBitmapIndex = 1; // Start drawing in bitmap 0.
 
     bool _SquareBitmaps = false;
@@ -67,3 +74,5 @@ protected:
     // Device dependent resources (Size dependent)
     ComPtr<ID2D1Bitmap1> _Bitmaps[2];
 };
+
+}

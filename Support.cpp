@@ -1,13 +1,15 @@
 
-/** $VER: Support.cpp (2026.09.30) P. Stuer **/
+/** $VER: Support.cpp (2026.11.08) P. Stuer **/
 
 #include "pch.h"
 
 #include "Support.h"
 #include "CustomTitleformatHook.h"
+#include "Log.h"
 
 #include "Module.h"
 
+#include <windef.h>
 #include <d2d1_2.h>
 
 #include <wrl/client.h>
@@ -19,6 +21,8 @@ using Microsoft::WRL::ComPtr;
 #pragma comment(lib, "shcore")
 
 #pragma hdrstop
+
+static void ExamineDPIAwarenessContext(const module_t & module, HWND hwnd) noexcept;
 
 /// <summary>
 /// Initialize our DPI awareness.
@@ -33,16 +37,37 @@ HRESULT InitializeDpiAwareness() noexcept
 /// </summary>
 HRESULT GetDPI(HWND hWnd, UINT & dpi) noexcept
 {
+    assert(hWnd);
+
     auto Module = module_t(L"user32.dll");
 
-    typedef UINT (WINAPI * GetDpiForWindow_t)(HWND hwnd);
+#ifdef _DEBUG
+    ExamineDPIAwarenessContext(Module, hWnd);
+#endif
 
-    #pragma warning(disable: 4191) // 'type cast': unsafe conversion from 'FARPROC' to 'GetDPI::GetDpiForWindow_t'
-    const auto GetDpiForWindow_ = (GetDpiForWindow_t) Module.GetFunctionAddress("GetDpiForWindow"); // Windows 10 or higher
+    {
+        typedef UINT (WINAPI * GetDpiForWindow_t)(HWND hwnd);
 
-    if (GetDpiForWindow_ != nullptr)
-        dpi = GetDpiForWindow_(hWnd);
-    else
+        #pragma warning(disable: 4191) // 'type cast': unsafe conversion from 'FARPROC' to 'GetDPI::GetDpiForWindow_t'
+        const auto GetDpiForWindow_ = (GetDpiForWindow_t) Module.GetFunctionAddress("GetDpiForWindow"); // Windows 10 or higher
+
+        if (GetDpiForWindow_ != nullptr)
+        {
+            dpi = GetDpiForWindow_(hWnd);
+
+            // Define DEBUG_DPI to test rendering at other DPI settings without changing the system.
+            #define DEBUG_DPI 192
+
+            #ifdef DEBUG_DPI
+            dpi = DEBUG_DPI;
+            #endif
+
+            assert(dpi);
+
+            return S_OK;
+        }
+    }
+
     {
         ComPtr<ID2D1Factory2> D2DFactory;
 
@@ -61,7 +86,7 @@ HRESULT GetDPI(HWND hWnd, UINT & dpi) noexcept
             dpi = (UINT) DPIX;
         }
         else
-            dpi = 72;
+            dpi = USER_DEFAULT_SCREEN_DPI;
     }
 
     return S_OK;
@@ -85,3 +110,50 @@ HRESULT EvaluateTitleFormatScript(const std::wstring & script, pfc::string & res
 
     return S_OK;
 }
+
+/// <summary>
+/// 
+/// </summary>
+#ifdef _DEBUG
+static void ExamineDPIAwarenessContext(const module_t & module, HWND hWnd) noexcept
+{
+    typedef DPI_AWARENESS_CONTEXT (WINAPI * GetThreadDpiAwarenessContext_t)(HWND hwnd);
+    typedef BOOL (WINAPI * AreDpiAwarenessContextsEqual_t)(DPI_AWARENESS_CONTEXT dpiContextA, DPI_AWARENESS_CONTEXT dpiContextB);
+
+    #pragma warning(disable: 4191) // 'type cast': unsafe conversion from 'FARPROC' to 'GetDPI::GetThreadDpiAwarenessContext_'
+    const auto GetThreadDpiAwarenessContext_ = (GetThreadDpiAwarenessContext_t) module.GetFunctionAddress("GetThreadDpiAwarenessContext"); // Windows 10 or higher
+    const auto AreDpiAwarenessContextsEqual_ = (AreDpiAwarenessContextsEqual_t) module.GetFunctionAddress("AreDpiAwarenessContextsEqual"); // Windows 10 or higher
+
+    if (GetThreadDpiAwarenessContext_ != nullptr)
+    {
+        const DPI_AWARENESS_CONTEXT Context = GetThreadDpiAwarenessContext_(hWnd);
+
+        if (AreDpiAwarenessContextsEqual_(Context, DPI_AWARENESS_CONTEXT_UNAWARE))
+        {
+            Log.AtDebug().Write("DPI unaware.");
+        }
+        else
+        if (AreDpiAwarenessContextsEqual_(Context, DPI_AWARENESS_CONTEXT_SYSTEM_AWARE))
+        {
+            Log.AtDebug().Write("System DPI unaware.");
+        }
+        else
+        if (AreDpiAwarenessContextsEqual_(Context, DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE))
+        {
+            Log.AtDebug().Write("Per monitor DPI aware.");
+        }
+        else
+        if (AreDpiAwarenessContextsEqual_(Context, DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2))
+        {
+            Log.AtDebug().Write("Per monitor DPI aware v2.");
+        }
+        else
+        if (AreDpiAwarenessContextsEqual_(Context, DPI_AWARENESS_CONTEXT_UNAWARE_GDISCALED))
+        {
+            Log.AtDebug().Write("DPI unaware with improved quality of GDI-based content.");
+        }
+        else
+            Log.AtDebug().Write("Unknown DPI Awareness Context.");
+    }
+}
+#endif

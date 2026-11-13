@@ -282,7 +282,7 @@ void presets_page_t::GetPreset(const std::wstring & presetName) noexcept
 
     *_State = NewState;
 
-    _State->_SizeHasChanged = true;
+    _State->_SizeHasChanged    = true;
     _State->_ColorsHaveChanged = true;
 
     InitializeControls();

@@ -1,5 +1,5 @@
 
-/** $VER: FrequenciesPage.cpp (2026.09.01) P. Stuer - Implements a configuration dialog page. **/
+/** $VER: FrequenciesPage.cpp (2026.11.05) P. Stuer - Implements a configuration dialog page. **/
 
 #include "pch.h"
 
@@ -53,7 +53,7 @@ void frequencies_page_t::InitializeControls() noexcept
 
         w.ResetContent();
 
-        for (const auto & x : { L"Linear", L"Octaves", L"AveePlayer", L"Mel" })
+        for (const auto & x : { L"Linear", L"Octaves", L"AveePlayer", L"Mel", L"Decades" })
             w.AddString(x);
 
         w.SetCurSel((int) _State->_FrequencyDistribution);
@@ -243,12 +243,12 @@ void frequencies_page_t::InitializeControls() noexcept
 void frequencies_page_t::UpdateControls() noexcept
 {
     const bool IsPeakMeter    = (_State->_VisualizationType == VisualizationType::PeakMeter);
-    const bool IsLevelMeter   = (_State->_VisualizationType == VisualizationType::LevelMeter);
+    const bool IsBalanceMeter = (_State->_VisualizationType == VisualizationType::BalanceMeter);
     const bool IsOscilloscope = (_State->_VisualizationType == VisualizationType::Oscilloscope);
     const bool IsBitMeter     = (_State->_VisualizationType == VisualizationType::BitMeter);
     const bool IsTester       = (_State->_VisualizationType == VisualizationType::Tester);
 
-    const bool SupportsFrequencies = !(IsPeakMeter || IsLevelMeter || IsOscilloscope || IsBitMeter || IsTester);
+    const bool SupportsFrequencies = !(IsPeakMeter || IsBalanceMeter || IsOscilloscope || IsBitMeter || IsTester);
 
     if (SupportsFrequencies)
     {
@@ -569,4 +569,25 @@ LRESULT frequencies_page_t::OnDeltaPos(LPNMHDR nmhd) noexcept
     NotifyParent(ChangedSettings);
 
     return 0;
+}
+
+/// <summary>
+/// Handles the notification when a button is clicked.
+/// </summary>
+void frequencies_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
+{
+/*
+    if (_State == nullptr)
+        return;
+
+    auto ChangedSettings = ConfigurationChanges::Renderer;
+
+    switch (id)
+    {
+        default:
+            return;
+    }
+
+    NotifyParent(ChangedSettings);
+*/
 }

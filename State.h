@@ -1,5 +1,5 @@
 
-/** $VER: State.h (2026.10.10) P. Stuer **/
+/** $VER: State.h (2026.11.10) P. Stuer **/
 
 #pragma once
 
@@ -7,20 +7,20 @@
 #include <WinSock2.h>
 #include <Windows.h>
 
+#include <vector>
+
 #include "Constants.h"
 #include "WindowFunctions.h"
 
+#include "Effect.h"
 #include "StyleManager.h"
 #include "GraphOptions.h"
 
 #include "Log.h"
 
-#include <vector>
-
 /// <summary>
 /// Represents the configuration of the component.
 /// </summary>
-#pragma warning(disable: 4820)
 class state_t
 {
 public:
@@ -28,7 +28,7 @@ public:
 
     state_t & operator=(const state_t & other) noexcept;
 
-    virtual ~state_t() noexcept { }
+    ~state_t() noexcept = default;
 
     void Reset() noexcept;
 
@@ -37,6 +37,13 @@ public:
 
     void FromJSON(const char * data, size_t size, bool isPreset = false);
     json ToJSON(bool isPreset = false) const;
+
+    bool IsSpectrumAnalyzer() const noexcept;
+    bool IsSlidingWindowTransform() const noexcept;
+    bool IsOscilloscope() const noexcept;
+
+    bool SupportsOverlappingGraphs() const noexcept;
+    bool OverlapGraphs() const noexcept;
 
 public:
     // Configuration Dialog
@@ -50,12 +57,13 @@ public:
 #endif
 
     int64_t _SleepTime;                                                 // Number of μs that the render thread is put to sleep to yield to the UI thread.
+    int64_t _ProbeTime;                                                 // Number of μs between probes to detect is the window is fully covered.
 
     bool _ShowFrameCounter;
-    bool _UseHardwareRendering;                                         // Deprecated
-    bool _UseAntialiasing;                                              // Deprecated
+    bool _UseHardwareRendering;                                         // Obsolete
+    bool _UseAntialiasing;                                              // Obsolete
 
-    size_t _WindowDuration;                                             // Deprecated, in μs
+    size_t _WindowDuration;                                             // Obsolete, in μs
 
     #pragma region Visualization
 
@@ -64,8 +72,8 @@ public:
         #pragma region Peaks
 
             PeakMode _PeakMode;
-            double _HoldTime;                                           // Peak hold time, in seconds
-            double _FallRate;                                           // Peak fall rate, in dB/s
+            double _HoldDuration;                                       // Peak hold duraction, in seconds
+            double _FallSpeed;                                          // Peak fall speed, in dB/s
             bool _ResetPeaksOnTrackChange;                              // Reset peaks on track change.
 
         #pragma endregion
@@ -123,7 +131,7 @@ public:
             FLOAT _Rotation;
             bool _HasPhosphorDecay;
             FLOAT _BlurSigma;
-            FLOAT _Afterglow;                                         // ms
+            FLOAT _Afterglow;                                           // ms
             uint32_t _FrameCount;
             bool _Downmix;                                              // Downmix the input audio to mono.
             bool _ZeroCrossingTrigger;                                  // Use a zero-crossing trigger.
@@ -149,7 +157,7 @@ public:
 
         TransformMethod _TransformMethod;                               // FFT, CQT, SWIFT, Analog Style
 
-        WindowFunction _WindowFunction;
+        WindowFunctionType _WindowFunction;
         double _WindowParameter;                                        // [0, 10], Parameter used for certain window functions like Gaussian and Kaiser windows. Defaults to 1.
         double _WindowSkew;                                             // [-1, 1], Adjusts how the window function reacts to samples. Positive values makes it skew towards latest samples while negative values skews towards earliest samples. Defaults to 0 (None).
         bool _Truncate;
@@ -165,13 +173,26 @@ public:
         FFTMode _FFTMode;                                               // bins
         size_t _FFTCustom;                                              // bins, Custom FFT size
         double _FFTDuration;                                            // ms, FFT size calculated based on the sample rate
+        double _HopSizeFraction;                                        // [0, 1]
 
-        int _KernelSize = 32;                                           // Lanczos interpolation kernel size, [1, 64]
-        AggregationMethod _AggregationMethod;
+        CoefficientMapping _MappingMethod;                              // Determines how the FFT coefficients are mapped to the frequency bands.
+        AggregationMethod _AggregationMethod;                           // Determines how the frequency bands are aggregated.
+
         bool _SmoothLowerFrequencies;                                   // When enabled, the bandpower part only gets used when number of FFT bins to sum for each band is at least two or more (rather than one in the case of this parameter is set to disabled, which of course, has artifacts on lower frequencies similar to ones seen in spectrum visualizations on YouTube videos generated by ZGameEditor Visualizer that comes with FL Studio like this), otherwise a sinc/Lanczos-interpolated spectrum.
         bool _SmoothGainTransition;                                     // Smoother frequency slope on sum modes
+        bool _UseReassignmentSharpening;                                // True if reassignment sharpening is required.
 
-        CoefficientMapping _MappingMethod;                              // Determines how the FFT coefficients are mapped to the frequency bins.
+        int _KernelSize = 32;                                           // Lanczos interpolation kernel size, [1, 64]
+
+        // Peak Detection
+        bool _DetectPeaks;                                              // True if the peak detection is enabled.
+
+        size_t _MaxPeakCount;                                           // Max. number of peaks to detect.
+        double _MinPeakLevel;                                           // [1, 100] %, Minimum amplitude before a frequency band is taken into account.
+        double _MinPeakProminence;                                      // [1, 100] %, Minimum required prominence to be considered a local maximum.
+        size_t _BandSpan;                                               // Number of frequency bands on each side evaluated when detecting a local maximum.
+        double _MinPeakDistance;                                        // Hz, Minimum required distance between two peaks.
+        bool _InterpolateFrequency;                                     // True if the candidate frequency should be interpolated with its neighbors.
 
         // Brown-Puckette CQT-specific
         double _BandwidthOffset;                                        // [0, 1], Transition smoothness
@@ -179,7 +200,7 @@ public:
         double _BandwidthAmount;                                        // [0, 256], Brown-Puckette kernel size
         bool _UseGranularBandwidth;                                     // True: Don't constrain bandwidth to powers of 2.
 
-        WindowFunction _KernelShape;
+        WindowFunctionType _KernelShape;
         double _KernelShapeParameter;                                   // [0, 10], Used for certain window functions like Gaussian and Kaiser windows. Defaults to 1.
         double _KernelAsymmetry;                                        // [-1, 1], Adjusts how the window function reacts to samples. Positive values makes it skew towards latest samples while negative values skews towards earliest samples. Defaults to 0 (None).
 
@@ -259,6 +280,8 @@ public:
         bool _ShowToolTipsAlways;                                       // True if tooltips should be displayed.
         bool _SuppressMirrorImage;                                      // True if the mirror image of the spectrum is not rendered.
         bool _VisualizeDuringPause;                                     // True if visualization should continue when playback is paused.
+        bool _AltFullscreen;                                            // True if the alternate fullscreen mode is enabled.
+        bool _AltFullscreenAnimation;                                   // True if the transition to fullscreen mode should be animated.
 
     #pragma endregion
 
@@ -302,6 +325,18 @@ public:
     std::vector<Channels> _ChannelOrder;
     #pragma endregion
 
+    #pragma region Eye Candy
+
+    EyeCandy::Category _EffectCategoryId;
+    EyeCandy::Effect _EffectId;
+
+    EyeCandy::Quality _EffectQuality;
+    EyeCandy::Speed _EffectSpeed;
+    EyeCandy::Brightness _EffectBrightness;
+    EyeCandy::Density _EffectDensity;
+
+    #pragma endregion
+
     std::wstring _PresetsDirectoryPath;
 
     #pragma region Not Serialized
@@ -315,7 +350,8 @@ public:
 
     std::vector<D2D1_COLOR_F> _UserInterfaceColors;
 
-    bool _SizeHasChanged;                                              // True if the DirectX resources need to be recreated, e.g. because the artwork colors changed or the size of the back buffer changed.
+    bool _SizeHasChanged;                                               // True if the DirectX resources need to be recreated, e.g. because the artwork colors changed or the size of the back buffer changed.
+    bool _ColorsHaveChanged;                                            // True if the colors have changed.
 
     #pragma endregion
 
@@ -332,11 +368,10 @@ public:
     #pragma region Render thread only
 
     std::vector<D2D1_COLOR_F> _ArtworkColors;                           // The colors extracted from the artwork bitmap.
-    bool _ColorsHaveChanged;                                            // True if the colors have changed.
 
-    size_t _BinCount;                                                   // The number of bins used by the spectrum analyzer.
+    size_t _FFTSize;                                                    // The number of bins used by the spectrum analyzer.
 
-    double _PlaybackTime;                                               // Spectrogram: Timestamp of the last rendered audio chunk.
+    double _PreviousPlaybackTime;                                       // Timestamp of the last rendered audio chunk.
     double _TrackTime;                                                  // Spectrogram
 
     bool _IsPaused;                                                     // Playback has been paused.

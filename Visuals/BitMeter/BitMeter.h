@@ -1,5 +1,5 @@
 
-/** $VER: BitMeter.h (2026.10.10) P. Stuer - Implements a bit meter visualization. **/
+/** $VER: BitMeter.h (2026.10.28) P. Stuer - Implements a bit meter visualization. **/
 
 #pragma once
 
@@ -16,15 +16,20 @@
 #include <d2d1_2.h>
 
 #include "Visualization.h"
+#include "BitmeterProcessor.h"
 
-class bit_meter_t : public visualization_t
+namespace BitMeter
+{
+
+class bit_meter_t final : public visualization_t
 {
 public:
-    bit_meter_t() = default;
+    bit_meter_t(state_t & state, render_context_t & renderContext) : visualization_t(state, renderContext) { }
 
     bit_meter_t(const bit_meter_t &) = delete;
-    bit_meter_t & operator=(const bit_meter_t &) = delete;
     bit_meter_t(bit_meter_t &&) = delete;
+
+    bit_meter_t & operator=(const bit_meter_t &) = delete;
     bit_meter_t & operator=(bit_meter_t &&) = delete;
 
     virtual ~bit_meter_t() noexcept;
@@ -37,10 +42,10 @@ public:
     void OnConfigurationChanged(ConfigurationChanges configurationChanges) noexcept override final;
 
     // visualization_t
-    void Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice = nullptr, ID3D11DeviceContext * d3dDeviceContext = nullptr) noexcept override final;
+    void Configure(graph_options_t * options, audio_processor_t * processor, bool isFirst, bool isLast) noexcept override final;
 
 private:
-    HRESULT CreateDeviceSpecificResources(_In_ ID2D1DeviceContext * deviceContext) noexcept;
+    HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept;
     void DeleteDeviceSpecificResources() noexcept;
 
     HRESULT CreateSizeDependentResources(ID2D1DeviceContext * deviceContext) noexcept;
@@ -54,8 +59,10 @@ private:
     void Initialize() noexcept;
 
 private:
-    size_t _MeasurementCount { 0 };
-    size_t _BitCount { 0 };
+    processor_t * _Processor;
+
+    size_t _MeasurementCount = 0;
+    size_t _BitCount         = 0;
 
     std::vector<std::wstring> _Labels;
 
@@ -83,3 +90,5 @@ private:
     static constexpr size_t ExponentBits =  8;
     #endif
 };
+
+}

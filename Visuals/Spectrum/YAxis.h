@@ -1,5 +1,5 @@
 
-/** $VER: YAxis.h (2026.10.10) P. Stuer - Implements the Y axis of a graph. **/
+/** $VER: YAxis.h (2026.10.28) P. Stuer - Implements the Y axis of a graph. **/
 
 #pragma once
 
@@ -12,23 +12,27 @@
 #include <Windows.h>
 
 #include "Visualization.h"
+#include "SpectrumProcessor.h"
 #include "State.h"
 
 #include <vector>
 #include <string>
 
+namespace Spectrum
+{
+
 /// <summary>
 /// Implements the Y axis of a graph.
 /// </summary>
-#pragma warning(disable: 4820)
-class y_axis_t : public visualization_t
+class y_axis_t final : public visualization_t
 {
 public:
-    y_axis_t() = default;
+    y_axis_t(state_t & state, render_context_t & renderContext) : visualization_t(state, renderContext) { }
 
     y_axis_t(const y_axis_t &) = delete;
-    y_axis_t & operator=(const y_axis_t &) = delete;
     y_axis_t(y_axis_t &&) = delete;
+
+    y_axis_t & operator=(const y_axis_t &) = delete;
     y_axis_t & operator=(y_axis_t &&) = delete;
 
     // element_t
@@ -37,14 +41,14 @@ public:
     void Reset() noexcept override final { }
 
     // visualization_t
-    void Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice = nullptr, ID3D11DeviceContext * d3dDeviceContext = nullptr) noexcept override final;
+    void Configure(graph_options_t * options, audio_processor_t * analysis, bool isFirst, bool isLast) noexcept override final;
 
     HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext, style_manager_t & styleManager) noexcept;
     void DeleteDeviceSpecificResources() noexcept;
 
     FLOAT GetTextWidth() const noexcept
     {
-        return _TextStyle._Width;
+        return _TextStyle.Width;
     }
 
 private:
@@ -54,9 +58,10 @@ private:
     HRESULT CreateColorDependentResources(ID2D1DeviceContext * deviceContext, style_manager_t & styleManager) noexcept;
     void DeleteColorDependentResources() noexcept;
 
-    void Initialize() noexcept;
+    void RecalculateSizeDependentParameters() noexcept;
 
 private:
+    processor_t * _Processor;
     bool _FlipVertically;
 
     struct label_t
@@ -77,3 +82,5 @@ private:
     style_t _LineStyle;
     style_t _TextStyle;
 };
+
+}

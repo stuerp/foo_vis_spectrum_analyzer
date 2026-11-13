@@ -1,0 +1,78 @@
+
+/** $VER: BalanceMeter.h (2026.10.28) P. Stuer - Implements a left/right/mid/side level meter. **/
+
+#pragma once
+
+#include <CppCoreCheck/Warnings.h>
+
+#pragma warning(disable: 4100 4625 4626 4710 4711 5045 ALL_CPPCORECHECK_WARNINGS)
+
+#define NOMINMAX
+
+#include <SDKDDKVer.h>
+#include <WinSock2.h>
+#include <Windows.h>
+
+#include <d2d1_2.h>
+
+#include "Visualization.h"
+#include "MeteringProcessor.h"
+
+namespace Metering
+{
+
+class balance_meter_t final : public visualization_t
+{
+public:
+    balance_meter_t(state_t & state, render_context_t & renderContext) : visualization_t(state, renderContext) { }
+
+    balance_meter_t(const balance_meter_t &) = delete;
+    balance_meter_t(balance_meter_t &&) = delete;
+
+    balance_meter_t & operator=(const balance_meter_t &) = delete;
+    balance_meter_t & operator=(balance_meter_t &&) = delete;
+
+    virtual ~balance_meter_t() noexcept;
+
+    // element_t
+    void Move(const D2D1_RECT_F & rect) noexcept override final;
+    void Render(ID2D1DeviceContext * deviceContext) noexcept override final;
+    void Reset() noexcept override final;
+
+    void OnConfigurationChanged(ConfigurationChanges configurationChanges) noexcept;
+
+    // visualization_t
+    void Configure(graph_options_t * options, audio_processor_t * analysis, bool isFirst, bool isLast) noexcept override final;
+
+private:
+    HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept;
+    void DeleteDeviceSpecificResources() noexcept;
+
+    HRESULT CreateSizeDependentResources(ID2D1DeviceContext * deviceContext) noexcept;
+    void DeleteSizeDependentResources() noexcept;
+
+    HRESULT CreateColorDependentResources(ID2D1DeviceContext * deviceContext) noexcept;
+    void DeleteColorDependentResources() noexcept;
+
+    HRESULT CreateOpacityMask(ID2D1DeviceContext * deviceContext) noexcept;
+
+    void Initialize() noexcept { }
+
+private:
+    processor_t * _Processor;
+
+private:
+    ComPtr<ID2D1Bitmap> _OpacityMask;
+
+    style_t _LeftRightStyle;
+    style_t _LeftRightIndicatorStyle;
+    style_t _MidSideStyle;
+    style_t _MidSideIndicatorStyle;
+    style_t _AxisStyle;
+
+#ifdef _DEBUG
+    ComPtr<ID2D1SolidColorBrush> _DebugBrush;
+#endif
+};
+
+}

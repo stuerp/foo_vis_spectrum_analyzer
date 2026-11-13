@@ -1,5 +1,5 @@
 
-/** $VER: UIElementRendering.cpp (2026.10.11) P. Stuer - UIElement methods that run on the render thread. **/
+/** $VER: UIElementRendering.cpp (2026.11.05) P. Stuer - UIElement methods that run on the render thread. **/
 
 #include "pch.h"
 
@@ -18,11 +18,17 @@
 
 #include "Log.h"
 
+#include <dwmapi.h>
+
 #pragma comment(lib, "dxgi")
 #pragma comment(lib, "dxguid")
 #pragma comment(lib, "dcomp")
+#pragma comment(lib, "dwmapi")
 
 #pragma hdrstop
+
+static bool HasVisiblePixels(HWND hWnd) noexcept;
+static bool IsFullyCoveredByTopLevelWindow(HWND hWnd) noexcept;
 
 static bool GetAudioChunk(audio_chunk & chunk, uint32_t sampleRate = 44100, uint32_t frameCount = 1024) noexcept;
 
@@ -34,13 +40,17 @@ void uielement_t::RenderThreadProc() noexcept
     msc::chrono_t Chrono;
 
     const int64_t SleepTime = Chrono.MicrosecondsToTicks(_RenderState._SleepTime);
+    const int64_t ProbeTime = Chrono.MicrosecondsToTicks(_RenderState._ProbeTime);
 
     int64_t Now = Chrono.Now();
 
-    int64_t MaxFrameTime = Chrono.SecondsToTicks(1.0 / (double) _RenderState._TargetRefreshRate);
+    int64_t MaxFrameTime  = Chrono.SecondsToTicks(1. / (double) _RenderState._TargetRefreshRate);
     int64_t NextFrameTime = Now + MaxFrameTime;
 
-    Log.AtDebug().Write("Render thread started: Target %d fps / Max. frame time %d ticks",  _RenderState._TargetRefreshRate, MaxFrameTime);
+    int64_t NextProbeTime = Now + ProbeTime;
+    bool IsCovered = false;
+
+    Log.AtDebug().Write("Render thread started: Target %d fps / Max. frame time: %d ticks",  _RenderState._TargetRefreshRate, MaxFrameTime);
 
     for (;;)
     {
@@ -71,44 +81,55 @@ void uielement_t::RenderThreadProc() noexcept
             }
         }
 
-        bool HaveArtworkColorsChanged = false;
-
-        if (_CriticalSection.TryEnter())
+        // Probe if the window is fully covered by another window.
+        if (IsWindowVisible() && !::IsIconic(_hParent) && (Chrono.Now() > NextProbeTime))
         {
-            ProcessEvents();
+            IsCovered = !HasVisiblePixels(m_hWnd);
 
-            if (!(!IsWindowVisible() || ::IsIconic(_hParent) || _IsFrozen))
-            {
-                _FrameCounter.NewFrame();
-
-                ProcessAudio();
-
-                Render();
-            }
-
-            if (_IsConfigurationChanged)
-            {
-                _UIState._ArtworkDominantColor = _RenderState._ArtworkDominantColor;
-                _UIState._ArtworkGradientStops = _RenderState._ArtworkGradientStops;
-
-                _IsConfigurationChanged = false;
-
-                HaveArtworkColorsChanged = true;
-            }
-
-            // Continue to animate the peak values unless the parent window is minized.
-            if (!_IsFrozen)
-                Animate(Chrono.Now());
-
-            _CriticalSection.Leave();
+            NextProbeTime = Chrono.Now() + ProbeTime;
         }
 
-        // Notify the configuration dialog about the changed artwork colors.
-        if (HaveArtworkColorsChanged)
+        if (!IsCovered)
         {
-            NotifyDialog(CC_COLORS);
+            bool HaveArtworkColorsChanged = false;
 
-            HaveArtworkColorsChanged = false;
+            if (_CriticalSection.TryEnter())
+            {
+                ProcessEvents();
+
+                if (!(!IsWindowVisible() || ::IsIconic(_hParent) || _IsFrozen))
+                {
+                    _FrameCounter.NewFrame();
+
+                    ProcessAudio();
+
+                    Render();
+                }
+
+                if (_IsConfigurationChanged)
+                {
+                    _UIState._ArtworkDominantColor = _RenderState._ArtworkDominantColor;
+                    _UIState._ArtworkGradientStops = _RenderState._ArtworkGradientStops;
+
+                    _IsConfigurationChanged = false;
+
+                    HaveArtworkColorsChanged = true;
+                }
+
+                // Continue to animate the peak values unless the parent window is minized.
+                if (!_IsFrozen)
+                    Animate();
+
+                _CriticalSection.Leave();
+            }
+
+            // Notify the configuration dialog about the changed artwork colors.
+            if (HaveArtworkColorsChanged)
+            {
+                NotifyDialog(CC_COLORS);
+
+                HaveArtworkColorsChanged = false;
+            }
         }
 
         // Determine the presentation time of the next frame.
@@ -138,14 +159,16 @@ void uielement_t::ProcessEvents() noexcept
 
     if (event_t::IsRaised(Flags, event_t::PlaybackNewTrack))
     {
-        _RenderState._PlaybackTime = 0.;
-        _RenderState._TrackTime = 0.;
+        _RenderState._PreviousPlaybackTime = 0.;
+        _RenderState._TrackTime            = 0.;
 
-        if (_RenderState._ResetPeaksOnTrackChange)
-        {
-            for (auto & Graph : _Grid)
-                Graph->_Analysis.ResetFFTPeaks();
-        }
+        _IsAnalysisTimeInitialized = false;
+
+        // Reset the measurements before starting a new track.
+        const auto Options = _RenderState._ResetPeaksOnTrackChange ? ResetOptions::All : ResetOptions::Value;
+
+        for (auto & Graph : _Grid)
+            Graph->_Processor->ResetMeasurements(Options);
 
         _RenderState._IsPaused = false;
 
@@ -163,11 +186,14 @@ void uielement_t::ProcessEvents() noexcept
     else
     if (event_t::IsRaised(Flags, event_t::PlaybackStopped))
     {
-        _RenderState._PlaybackTime = 0.;
-        _RenderState._TrackTime = 0.;
+        _RenderState._PreviousPlaybackTime = 0.;
+        _RenderState._TrackTime            = 0.;
+
+        // Reset the measurements when playback stops.
+        const auto Options = _RenderState._ResetPeaksOnTrackChange ? ResetOptions::All : ResetOptions::Value;
 
         for (auto & Graph : _Grid)
-            Graph->Initialize();
+            Graph->_Processor->ResetMeasurements(Options);
 
         _RenderState._IsPaused = false;
     }
@@ -182,16 +208,14 @@ void uielement_t::ProcessEvents() noexcept
         _RenderState._IsPaused = false;
     }
 
-    if (event_t::IsRaised(Flags, event_t::ArtworkColorsChanged))
-        _RenderState._ColorsHaveChanged = true;
-
-    if (event_t::IsRaised(Flags, event_t::UserInterfaceColorsChanged))
+    if (event_t::IsRaised(Flags, event_t::ArtworkColorsChanged) || event_t::IsRaised(Flags, event_t::UserInterfaceColorsChanged))
         _RenderState._ColorsHaveChanged = true;
 }
 
 /// <summary>
 /// Processes an audio chunk.
 /// </summary>
+#ifdef v1
 void uielement_t::ProcessAudio() noexcept
 {
     assert(!fb2k::is_main_thread());
@@ -201,7 +225,7 @@ void uielement_t::ProcessAudio() noexcept
 
     double PlaybackTime; // in seconds
 
-    if (!(_VisualisationStream->get_absolute_time(PlaybackTime) && (PlaybackTime != _RenderState._PlaybackTime)))
+    if (!(_VisualisationStream->get_absolute_time(PlaybackTime) && (PlaybackTime != _RenderState._PreviousPlaybackTime)))
         return; // Playback is paused.
 
     double WindowSize;   // in seconds
@@ -213,7 +237,7 @@ void uielement_t::ProcessAudio() noexcept
     {
         if (_RenderState._SampleRate != 0)
         {
-            const size_t FrameCount = (_RenderState._VisualizationType != VisualizationType::Oscilloscope) ? _RenderState._BinCount: _RenderState._FrameCount;
+            const size_t FrameCount = (_RenderState._VisualizationType != VisualizationType::Oscilloscope) ? _RenderState._FFTSize : _RenderState._FrameCount;
 
             WindowSize   = (double) FrameCount / (double) _RenderState._SampleRate;
             WindowOffset = PlaybackTime - (WindowSize * (0.5 + _RenderState._ReactionAlignment));
@@ -227,8 +251,8 @@ void uielement_t::ProcessAudio() noexcept
     }
     else
     {
-        WindowSize   = PlaybackTime - _RenderState._PlaybackTime;
-        WindowOffset = _RenderState._PlaybackTime;
+        WindowSize   = PlaybackTime - _RenderState._PreviousPlaybackTime;
+        WindowOffset = _RenderState._PreviousPlaybackTime;
     }
 
     audio_chunk_impl Chunk;
@@ -242,8 +266,202 @@ void uielement_t::ProcessAudio() noexcept
             Item->Process(Chunk);
     }
 
-    _RenderState._PlaybackTime = PlaybackTime;
+    _RenderState._PreviousPlaybackTime = PlaybackTime;
 }
+#else
+void uielement_t::ProcessAudio() noexcept
+{
+    assert(!fb2k::is_main_thread());
+
+    if (!_VisualisationStream.is_valid())
+        return;
+
+    double PlaybackTime = 0.; // In seconds
+
+    if (!_VisualisationStream->get_absolute_time(PlaybackTime) || !std::isfinite(PlaybackTime))
+        return;
+
+    // The sample rate is initially unknown. Request a small chunk so the stream format and sample-rate-dependent parameters can be initialized.
+    if (_RenderState._SampleRate == 0)
+    {
+        constexpr double InitializationWindow = 0.0005; // 500 μs
+
+        audio_chunk_impl Chunk;
+
+        if (_VisualisationStream->get_chunk_absolute(Chunk, PlaybackTime, InitializationWindow))
+        {
+            InitializeSampleRateDependentParameters(Chunk);
+/*
+            // Don't pass the startup chunk to the visualizations any more.
+            for (auto& Item : _Grid)
+                Item->Process(Chunk);
+*/
+        }
+
+        _RenderState._PreviousPlaybackTime = PlaybackTime;
+
+        _NextAnalysisTime = PlaybackTime;
+        _IsAnalysisTimeInitialized = true;
+
+        return;
+    }
+
+    const double SampleRate = (double) _RenderState._SampleRate;
+
+    double WindowSize   = 0.; // In seconds
+    double WindowOffset = 0.; // In seconds
+
+    if (UseHops())
+    {
+        // Helper
+        auto GetHopSize = [](size_t fftSize, double hopSizeFraction) noexcept -> size_t
+        {
+            if (fftSize == 0)
+                return 0;
+
+            if (std::isfinite(hopSizeFraction))
+                hopSizeFraction = std::clamp(hopSizeFraction, 0., 1.);
+            else
+                hopSizeFraction = 0.;
+
+            const double HopSize = (double) fftSize * hopSizeFraction;
+
+            return std::max<size_t>(1, (size_t) std::llround(HopSize));
+        };
+
+        // Each analysis requests a complete fixed-size window. Adjacent requests overlap according to the configured overlap percentage.
+        const size_t HopSize = GetHopSize(_RenderState._FFTSize, _RenderState._HopSizeFraction);
+
+        if (HopSize == 0)
+        {
+            _RenderState._PreviousPlaybackTime = PlaybackTime;
+
+            return;
+        }
+
+        const double HopDuration = (double) HopSize / SampleRate;
+
+        // Initialize the hop clock or reset it when playback moves backward, such as after a backward seek or track restart.
+        if (!_IsAnalysisTimeInitialized || (PlaybackTime < _RenderState._PreviousPlaybackTime))
+        {
+            _NextAnalysisTime = PlaybackTime;
+            _IsAnalysisTimeInitialized = true;
+        }
+
+        // Playback has not reached the next hop. This also handles paused playback because the playback timestamp stops advancing.
+        if (PlaybackTime < _NextAnalysisTime)
+        {
+            _RenderState._PreviousPlaybackTime = PlaybackTime;
+
+            return;
+        }
+
+        // Skip obsolete hops after a stall or slow render update. Process the latest hop that is not later than the playback position.
+        const double MissedHopCount = std::floor((PlaybackTime - _NextAnalysisTime) / HopDuration);
+
+        const double AnalysisTime = _NextAnalysisTime + (MissedHopCount * HopDuration);
+
+        _NextAnalysisTime = AnalysisTime + HopDuration;
+
+        // Anchor the fixed-size window to the hop-controlled timestamp. ReactionAlignment preserves the existing positioning behavior.
+        WindowSize   = (double) _RenderState._FFTSize / SampleRate;
+        WindowOffset = AnalysisTime - WindowSize * (0.5 + _RenderState._ReactionAlignment);
+
+        // A complete fixed-size window is not yet available.
+        if (WindowOffset < 0.)
+        {
+            _RenderState._PreviousPlaybackTime = PlaybackTime;
+
+            return;
+        }
+    }
+    else
+    if (_RenderState.IsSlidingWindowTransform())
+    {
+        if (!_IsAnalysisTimeInitialized)
+        {
+            _RenderState._PreviousPlaybackTime = PlaybackTime;
+
+            _NextAnalysisTime = PlaybackTime;
+            _IsAnalysisTimeInitialized = true;
+
+            return;
+        }
+
+        // Do nothing when playback is paused.
+        if (PlaybackTime == _RenderState._PreviousPlaybackTime)
+            return;
+
+        // Reset the analysis clock when the user seeks backwards.
+        if (PlaybackTime < _RenderState._PreviousPlaybackTime)
+        {
+            _RenderState._PreviousPlaybackTime = PlaybackTime;
+            _NextAnalysisTime = PlaybackTime;
+
+            return;
+        }
+
+        WindowSize   = PlaybackTime - _RenderState._PreviousPlaybackTime;
+        WindowOffset = _RenderState._PreviousPlaybackTime;
+    }
+    else
+    {
+        // Do nothing when playback is paused.
+        if (PlaybackTime == _RenderState._PreviousPlaybackTime)
+            return;
+
+        // Reset the analysis clock when the user seeks backwards.
+        if (PlaybackTime < _RenderState._PreviousPlaybackTime)
+        {
+            _RenderState._PreviousPlaybackTime = PlaybackTime;
+            _NextAnalysisTime = PlaybackTime;
+        }
+
+        const size_t FrameCount = _RenderState.IsOscilloscope() ? _RenderState._FrameCount :  _RenderState._FFTSize;
+
+        if (FrameCount == 0)
+        {
+            _RenderState._PreviousPlaybackTime = PlaybackTime;
+
+            return;
+        }
+
+        // Fixed-window visualizations always receive a complete, stable analysis window instead of a render-frame-sized chunk.
+        WindowSize   = (double) FrameCount / SampleRate;
+        WindowOffset = PlaybackTime - WindowSize * (0.5 + _RenderState._ReactionAlignment);
+
+        // A complete fixed-size window is not yet available.
+        if (WindowOffset < 0.)
+        {
+            _RenderState._PreviousPlaybackTime = PlaybackTime;
+            return;
+        }
+
+        _IsAnalysisTimeInitialized = true;
+    }
+
+    audio_chunk_impl Chunk;
+
+    if (_VisualisationStream->get_chunk_absolute(Chunk, WindowOffset, WindowSize))
+    {
+        const uint32_t PreviousSampleRate = _RenderState._SampleRate;
+
+        InitializeSampleRateDependentParameters(Chunk);
+
+        for (auto& Item : _Grid)
+            Item->Process(Chunk);
+
+        // Reinitialize the hop clock if the latest retrieved chunk has a different sample rate.
+        if (_RenderState._SampleRate != PreviousSampleRate)
+        {
+            _NextAnalysisTime = PlaybackTime;
+            _IsAnalysisTimeInitialized = true;
+        }
+    }
+
+    _RenderState._PreviousPlaybackTime = PlaybackTime;
+}
+#endif
 
 /// <summary>
 /// Renders a frame.
@@ -281,31 +499,48 @@ void uielement_t::Render() noexcept
         DeleteDeviceSpecificResources();
 
     // Reset the flags for the next loop.
-    _RenderState._SizeHasChanged    = false;
+    _RenderState._SizeHasChanged  = false;
     _RenderState._ColorsHaveChanged = false;
 }
 
 /// <summary>
 /// Updates the current and peak values of all the graphs.
 /// </summary>
-void uielement_t::Animate(int64_t now) noexcept
+void uielement_t::Animate() noexcept
 {
     assert(!fb2k::is_main_thread());
 
     if (_RenderState._PeakMode == PeakMode::None)
         return;
 
-    // Needs to be called even when no audio is playing to keep animating the decay of the peak indicators after the audio stops.
-    const bool IsStopped = (_RenderState._PlaybackTime == 0.);
+    // Keep animating after playback stops so existing peaks can finish decaying.
+    const bool IsStopped = (_RenderState._PreviousPlaybackTime == 0.);
 
     for (auto & Item : _Grid)
-        Item->_Analysis.UpdatePeakValues(IsStopped);
+        Item->_Processor->AnimatePeaks(IsStopped);
+}
+
+/// <summary>
+/// Returns true if we should use hops.
+/// </summary>
+bool uielement_t::UseHops() const noexcept
+{
+    if (_RenderState._HopSizeFraction == 0.)
+        return false;
+
+    if (!_RenderState.IsSpectrumAnalyzer())
+        return false;
+
+    if (_RenderState.IsSlidingWindowTransform())
+        return false;
+
+    return true;
 }
 
 /// <summary>
 /// Initializes the parameters that depend on the sample rate of the chunk.
 /// </summary>
-void uielement_t::InitializeSampleRateDependentParameters(const audio_chunk_impl & chunk) noexcept
+void uielement_t::InitializeSampleRateDependentParameters(const audio_chunk & chunk) noexcept
 {
     assert(!fb2k::is_main_thread());
 
@@ -314,26 +549,31 @@ void uielement_t::InitializeSampleRateDependentParameters(const audio_chunk_impl
 
     _RenderState._SampleRate = chunk.get_sample_rate();
 
-    Log.AtDebug().Write(STR_COMPONENT_BASENAME " chunk parameters: %dHz, %d channels (0x%04X), %d frames, %.1fms", _RenderState._SampleRate, chunk.get_channel_count(), chunk.get_channel_config(), chunk.get_sample_count(), chunk.get_duration() * 1000.);
-
     #pragma warning(disable: 4061)
 
     switch (_RenderState._FFTMode)
     {
         default:
-            _UIState._BinCount = _RenderState._BinCount = (size_t) (64. * ::exp2((long) _RenderState._FFTMode));
+            _UIState._FFTSize = _RenderState._FFTSize = (size_t) (64. * ::exp2((long) _RenderState._FFTMode));
             break;
 
         case FFTMode::FFTCustom:
-            _UIState._BinCount = _RenderState._BinCount = (_RenderState._FFTCustom > 0) ? (size_t) _RenderState._FFTCustom : 64;
+            _UIState._FFTSize = _RenderState._FFTSize = (_RenderState._FFTCustom > 0) ? (size_t) _RenderState._FFTCustom : 64;
             break;
 
         case FFTMode::FFTDuration:
-            _UIState._BinCount = _RenderState._BinCount = (_RenderState._FFTDuration > 0.) ? (size_t) (((double) _RenderState._SampleRate * _RenderState._FFTDuration) / 1000.) : 64;
+            _UIState._FFTSize = _RenderState._FFTSize = (_RenderState._FFTDuration > 0.) ? (size_t) (((double) _RenderState._SampleRate * _RenderState._FFTDuration) / 1000.) : 64;
             break;
     }
 
     #pragma warning(default: 4061)
+
+    Log.AtDebug().Write
+    (
+        STR_COMPONENT_BASENAME " %dHz, %d channels (0x%04X), %d frames, %.1fms, FFT %d, Hop size fraction %d%%",
+        _RenderState._SampleRate, chunk.get_channel_count(), chunk.get_channel_config(), chunk.get_sample_count(), chunk.get_duration() * 1000.,
+        _RenderState._FFTSize, (int) (_RenderState._HopSizeFraction * 100.)
+    );
 }
 
 /// <summary>
@@ -427,9 +667,11 @@ HRESULT uielement_t::CreateDeviceIndependentResources() noexcept
         }
     }
 
+    // Store the Direct3D device and device context in the render context.
     _RenderContext.D3DDevice        = _D3DDevice.Get();
     _RenderContext.D3DDeviceContext = _D3DDeviceContext.Get();
 
+    // Initialize the device independent resources of the frame counter.
     hr = _FrameCounter.CreateDeviceIndependentResources();
 
     if (FAILED(hr))
@@ -471,19 +713,19 @@ HRESULT uielement_t::CreateDeviceSpecificResources() noexcept
 {
     HRESULT hr = S_OK;
 
+    CRect cr;
+
+    GetClientRect(cr);
+
+    const auto Width  = (UINT32) cr.Width();
+    const auto Height = (UINT32) cr.Height();
+
+    if ((Width == 0) || (Height == 0))
+        return DXGI_ERROR_INVALID_CALL;
+
     // Create the device context.
     if (_D2DDeviceContext == nullptr)
     {
-        CRect cr;
-
-        GetClientRect(cr);
-
-        const auto Width  = (UINT32) cr.Width();
-        const auto Height = (UINT32) cr.Height();
-
-        if ((Width == 0) || (Height == 0))
-            return DXGI_ERROR_INVALID_CALL;
-
         // Create the Direct2D device and the device context and get the monitor refresh from the DXGI device.
         {
             ComPtr<IDXGIDevice1> DXGIDevice;
@@ -507,13 +749,14 @@ HRESULT uielement_t::CreateDeviceSpecificResources() noexcept
             if (FAILED(hr))
                 return hr;
 
-            GetDPI(m_hWnd, _DPI);
+            hr = GetDPI(m_hWnd, _DPI);
 
             if (FAILED(hr))
                 return hr;
 
             _D2DDeviceContext->SetDpi((FLOAT) _DPI, (FLOAT) _DPI);
 
+            // Store the Direct2D device context in the render context.
             _RenderContext.D2DDeviceContext = _D2DDeviceContext.Get();
         }
 
@@ -536,8 +779,6 @@ HRESULT uielement_t::CreateDeviceSpecificResources() noexcept
 
             if (FAILED(hr))
                 return hr;
-
-            _RenderContext.SwapChain = _SwapChain.Get();
         }
 
         // Set up DirectComposition.
@@ -576,20 +817,28 @@ HRESULT uielement_t::CreateDeviceSpecificResources() noexcept
         if (FAILED(hr))
             return hr;
 
-        _D2DDeviceContext->SetTarget(_BackBuffer.Get());
+        // Create the Direct3D render target.
+        hr = _RenderContext.CreateD3DRenderTarget(Width, Height, (FLOAT) _DPI, (FLOAT) _DPI);
 
-        _D2DDeviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
-        _D2DDeviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
-        _D2DDeviceContext->SetTextAntialiasMode(D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE); // https://learn.microsoft.com/en-us/windows/win32/direct2d/improving-direct2d-performance
+        if (FAILED(hr))
+            return hr;
 
-        // Initialize the size-dependent resources.
         {
-            const D2D1_SIZE_F SizeF = _D2DDeviceContext->GetSize(); // Gets the size in DPIs.
+            _D2DDeviceContext->SetTarget(_BackBuffer.Get());
 
-            _Grid.Resize(SizeF.width, SizeF.height);
-            _FrameCounter.Resize(SizeF.width, SizeF.height);
+            _D2DDeviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
+            _D2DDeviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+            _D2DDeviceContext->SetTextAntialiasMode(D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE); // https://learn.microsoft.com/en-us/windows/win32/direct2d/improving-direct2d-performance
 
-            _RenderState._SizeHasChanged = true;
+            // Initialize the size-dependent resources.
+            {
+                const D2D1_SIZE_F SizeF = _D2DDeviceContext->GetSize(); // Gets the size in DPIs.
+
+                _Grid.Resize(SizeF.width, SizeF.height);
+                _FrameCounter.Resize(SizeF.width, SizeF.height);
+
+                _RenderState._SizeHasChanged = true;
+            }
         }
     }
 
@@ -614,10 +863,10 @@ void uielement_t::DeleteDeviceSpecificResources() noexcept
         Item->Reset();
 
     _Artwork.DeleteWICResources();
-
     _FrameCounter.DeleteDeviceSpecificResources();
 
-    _RenderContext.SwapChain = nullptr;
+    _RenderContext.ReleaseD3DRenderTarget();
+
     _RenderContext.D2DDeviceContext = nullptr;
 
     _BackBuffer.Reset();
@@ -649,6 +898,9 @@ HRESULT uielement_t::ResizeSwapChain(UINT width, UINT height) noexcept
     // Resize the swap chain.
     HRESULT hr = _SwapChain->ResizeBuffers(0, width, height, DXGI_FORMAT_B8G8R8A8_UNORM, 0);
 
+    if (FAILED(hr))
+        return hr;
+
     // Recreate the Direct2D back buffer.
     hr = CreateBackBuffer();
 
@@ -657,6 +909,12 @@ HRESULT uielement_t::ResizeSwapChain(UINT width, UINT height) noexcept
 
     // Set the target buffer of the device context.
     _D2DDeviceContext->SetTarget(_BackBuffer.Get());
+
+    // Recreate the Direct3D render target.
+    hr = _RenderContext.CreateD3DRenderTarget(width, height, (FLOAT) _DPI, (FLOAT) _DPI);
+
+    if (FAILED(hr))
+        return hr;
 
     return S_OK;
 }
@@ -710,6 +968,179 @@ HRESULT uielement_t::CreateBackBuffer() noexcept
     return hr;
 }
 
+/// <summary>
+/// Returns true when the specified window has at least one drawable and visible pixel after child/sibling clipping and top-level-window occlusion.
+/// </summary>
+static bool HasVisiblePixels(HWND hWnd) noexcept
+{
+    if ((hWnd == NULL) || !::IsWindow(hWnd) || !::IsWindowVisible(hWnd))
+        return false;
+
+    RECT rc {};
+
+    if (!::GetClientRect(hWnd, &rc) || ::IsRectEmpty(&rc))
+        return false;
+
+    // Determine if there is any child and sibling clipping within the same window tree.
+    HDC hDC = ::GetDCEx(hWnd, nullptr, DCX_CACHE | DCX_CLIPSIBLINGS | DCX_CLIPCHILDREN);
+
+    if (hDC != NULL)
+    {
+        RECT ClipBox {};
+
+        const int RegionType = ::GetClipBox(hDC, &ClipBox);
+
+        ::ReleaseDC(hWnd, hDC);
+
+        if (RegionType == ERROR || RegionType == NULLREGION || ::IsRectEmpty(&ClipBox))
+            return false;
+    }
+
+    return !IsFullyCoveredByTopLevelWindow(hWnd);
+}
+
+/// <summary>
+/// Returns true if any opaque top-level windows above the element's root window completely cover the specified window.
+/// </summary>
+static bool IsFullyCoveredByTopLevelWindow(HWND hWnd) noexcept
+{
+    if ((hWnd == NULL) || !::IsWindow(hWnd))
+        return false;
+
+    RECT VisibleRect {};
+
+    if (!::GetClientRect(hWnd, &VisibleRect) || ::IsRectEmpty(&VisibleRect))
+        return true;
+
+    POINT Points[2] =
+    {
+        { VisibleRect.left,  VisibleRect.top    },
+        { VisibleRect.right, VisibleRect.bottom }
+    };
+
+    ::SetLastError(ERROR_SUCCESS);
+
+    if (::MapWindowPoints(hWnd, HWND_DESKTOP, Points, 2) == 0 && ::GetLastError() != ERROR_SUCCESS)
+        return false;
+
+    VisibleRect = { Points[0].x, Points[0].y, Points[1].x, Points[1].y };
+
+    // Clip the child rectangle to every ancestor client rectangle.
+    for (HWND hParent = ::GetParent(hWnd); hParent != nullptr; hParent = ::GetParent(hParent))
+    {
+        RECT ParentRect {};
+
+        if (!::GetClientRect(hParent, &ParentRect))
+            break;
+
+        POINT ParentPoints[2] =
+        {
+            { ParentRect.left,  ParentRect.top    },
+            { ParentRect.right, ParentRect.bottom }
+        };
+
+        ::SetLastError(ERROR_SUCCESS);
+
+        if (::MapWindowPoints(hParent, HWND_DESKTOP, ParentPoints, 2) == 0 && ::GetLastError() != ERROR_SUCCESS)
+            break;
+
+        ParentRect = { ParentPoints[0].x, ParentPoints[0].y, ParentPoints[1].x, ParentPoints[1].y };
+
+        RECT Intersection {};
+
+        if (!::IntersectRect(&Intersection, &VisibleRect, &ParentRect))
+            return true;
+
+        VisibleRect = Intersection;
+    }
+
+    HRGN hRemainingRegion = ::CreateRectRgnIndirect(&VisibleRect);
+
+    if (hRemainingRegion == NULL)
+        return false;
+
+    const HWND RootWindow = ::GetAncestor(hWnd, GA_ROOT);
+
+    // GetTopWindow(nullptr) starts at the top of the desktop z-order. Every top-level window encountered before RootWindow is above this component.
+    for (HWND hCoveringWindow = ::GetTopWindow(nullptr); hCoveringWindow != nullptr && hCoveringWindow != RootWindow; hCoveringWindow = ::GetWindow(hCoveringWindow, GW_HWNDNEXT))
+    {
+        if (!::IsWindowVisible(hCoveringWindow) || ::IsIconic(hCoveringWindow))
+            continue;
+
+        const LONG_PTR ExtendedStyle = ::GetWindowLongPtr(hCoveringWindow, GWL_EXSTYLE);
+
+        // WS_EX_TRANSPARENT and WS_EX_LAYERED windows may have transparent or per-pixel-alpha areas. Ignoring them to avoid false positives.
+        if ((ExtendedStyle & (WS_EX_TRANSPARENT | WS_EX_LAYERED)) != 0)
+            continue;
+
+        BOOL IsCloaked = FALSE;
+
+        const HRESULT hr = ::DwmGetWindowAttribute(hCoveringWindow, DWMWA_CLOAKED, &IsCloaked, sizeof(IsCloaked));
+
+        if (SUCCEEDED(hr) && IsCloaked)
+            continue;
+
+        RECT CoveringRect {};
+
+        if (FAILED(::DwmGetWindowAttribute(hCoveringWindow, DWMWA_EXTENDED_FRAME_BOUNDS, &CoveringRect, sizeof(CoveringRect))))
+        {
+            if (!::GetWindowRect(hCoveringWindow, &CoveringRect))
+                continue;
+        }
+
+        RECT Intersection{};
+
+        if (!::IntersectRect(&Intersection, &VisibleRect, &CoveringRect))
+            continue;
+
+        HRGN hCoveringRegion = ::CreateRectRgn(0, 0, 0, 0);
+
+        if (hCoveringRegion == nullptr)
+            continue;
+
+        const int RegionType = ::GetWindowRgn(hCoveringWindow, hCoveringRegion);
+
+        if (RegionType == ERROR)
+        {
+            ::SetRectRgn(hCoveringRegion, CoveringRect.left, CoveringRect.top, CoveringRect.right, CoveringRect.bottom);
+        }
+        else
+        if (RegionType == NULLREGION)
+        {
+            ::DeleteObject(hCoveringRegion);
+            continue;
+        }
+        else
+        {
+            // GetWindowRgn returns coordinates relative to GetWindowRect, not the DWM extended frame bounds used for the rectangle fallback.
+            RECT WindowRect{};
+
+            if (!::GetWindowRect(hCoveringWindow, &WindowRect))
+            {
+                ::DeleteObject(hCoveringRegion);
+                continue;
+            }
+
+            ::OffsetRgn(hCoveringRegion, WindowRect.left, WindowRect.top);
+        }
+
+        const int RemainingType = ::CombineRgn(hRemainingRegion, hRemainingRegion, hCoveringRegion, RGN_DIFF);
+
+        ::DeleteObject(hCoveringRegion);
+
+        if (RemainingType == NULLREGION)
+        {
+            ::DeleteObject(hRemainingRegion);
+
+            return true;
+        }
+    }
+
+    ::DeleteObject(hRemainingRegion);
+
+    return false;
+}
+
 #ifdef _DEBUG
 
 /// <summary>
@@ -742,11 +1173,14 @@ bool GetAudioChunk(audio_chunk & chunk, uint32_t sampleRate, uint32_t frameCount
     /** Bartlett
         Samples[i] = 1. - (double) i / (double) (frameCount - 1);
      **/
-        const double Frequency = 2'300.0;
+        constexpr double Frequency = 2'300.;
+
+        constexpr double Pi    = std::numbers::pi;
+        constexpr double TwoPi = 2. * Pi;
 
         const double t = (double) i / (double) sampleRate;
 
-        Samples[i] = (audio_sample) std::sin(2. * std::numbers::pi * Frequency * t);
+        Samples[i] = (audio_sample) std::sin(TwoPi * Frequency * t);
     }
  
     chunk = audio_chunk_impl(Samples, frameCount, ChannelCount, sampleRate);
@@ -776,7 +1210,7 @@ void uielement_t::RenderDebug() noexcept
     if (FAILED(hr))
         return;
 
-    std::wstring Text = msc::FormatText(L"%.2fs", _RenderState._PlaybackTime);
+    std::wstring Text = msc::FormatText(L"%.2fs", _RenderState._PreviousPlaybackTime);
 
     _D2DDeviceContext->DrawText(Text.c_str(), (UINT) Text.size(), TextFormat.Get(), Rect, _DebugBrush.Get(), D2D1_DRAW_TEXT_OPTIONS_NONE);
 }

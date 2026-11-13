@@ -1,15 +1,11 @@
 
-/** $VER: Grid.h (2026.09.25) P. Stuer - Implements a grid layout. **/
+/** $VER: Grid.h (2026.10.30) P. Stuer - Implements a grid layout. **/
 
 #pragma once
 
 #include <CppCoreCheck/Warnings.h>
 
 #pragma warning(disable: 4100 4625 4626 4710 4711 5045 ALL_CPPCORECHECK_WARNINGS)
-
-#include <SDKDDKVer.h>
-#include <WinSock2.h>
-#include <Windows.h>
 
 #include <vector>
 
@@ -38,6 +34,11 @@ public:
     {
         return _Items.end();
     } 
+
+    graph_t * operator[] (size_t index)
+    {
+        return _Items[index];
+    }
 
 private:
     grid_items_t _Items;

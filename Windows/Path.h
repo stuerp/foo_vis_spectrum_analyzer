@@ -1,5 +1,5 @@
 
-/** $VER: Path.h (2026.10.02) P. Stuer **/
+/** $VER: Path.h (2026.11.08) P. Stuer **/
 
 #pragma once
 
@@ -8,11 +8,12 @@
 #pragma warning(disable: 4100 4625 4626 4710 4711 5045 ALL_CPPCORECHECK_WARNINGS)
 
 #include <SDKDDKVer.h>
-#include <string>
 
 #include <pathcch.h>
 
 #pragma comment(lib, "pathcch")
+
+#include <string>
 
 class path_t final
 {
@@ -20,8 +21,9 @@ public:
     path_t() = default;
 
     path_t(const path_t &) = default;
-    path_t & operator =(const path_t &) = default;
     path_t(path_t &&) = default;
+
+    path_t & operator =(const path_t &) = default;
     path_t & operator =(path_t &&) = default;
 
     ~path_t() = default;
@@ -113,8 +115,17 @@ inline HRESULT path_t::AddExtension(const std::wstring & src, const std::wstring
 
     HRESULT hr = ::PathCchAddExtension(Data, _countof(Data), extension.c_str());
 
-    if (SUCCEEDED(hr))
-        dst._Text = Data;
+    if (FAILED(hr))
+        return hr;
+
+    if (hr == S_FALSE)
+    {
+        // The original string already has an extension.
+        ::wcscat_s(Data, _countof(Data), L".");
+        ::wcscat_s(Data, _countof(Data), extension.c_str());
+    }
+
+    dst._Text = Data;
 
     return hr;
 }

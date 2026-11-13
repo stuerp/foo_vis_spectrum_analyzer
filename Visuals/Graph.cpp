@@ -1,5 +1,5 @@
 
-/** $VER: Graph.cpp (2026.10.11) P. Stuer - Implements a graph on which the visualizations are rendered. **/
+/** $VER: Graph.cpp (2026.11.01) P. Stuer - Implements a graph on which the visualizations are rendered. **/
 
 #include "pch.h"
 
@@ -9,28 +9,31 @@
 #include "Direct2D.h"
 #include "DirectWrite.h"
 
+#include "SpectrumProcessor.h"
+
 #pragma hdrstop
 
 /// <summary>
 /// Configures this instance.
 /// </summary>
-void graph_t::Configure(graph_options_t * graphOptions, bool isFirst, bool isLast) noexcept
+void graph_t::Configure(graph_options_t * options, bool isFirst, bool isLast) noexcept
 {
-    _GraphOptions = graphOptions;
-    _IsFirst = isFirst;
-    _IsLast = isLast;
+    _GraphOptions = options;
+    _IsFirst      = isFirst;
+    _IsLast       = isLast;
 
-    _Description = graphOptions->_Description;
-
-    // Configure the analysis.
-    _Analysis.Configure(&_State, graphOptions);
+    _Description = options->_Description;
 
     // Configure the visualization.
     _Visualization.reset();
 
-    _Visualization = visualization_t::Create(_State);
+    _Processor = audio_processor_t::Create(_State);
 
-    _Visualization->Configure(&_State, graphOptions, &_Analysis, _IsFirst, _IsLast, _RenderContext.D3DDevice, _RenderContext.D3DDeviceContext);
+    _Processor->Configure(options);
+
+    _Visualization = visualization_t::Create(_State, _RenderContext);
+
+    _Visualization->Configure(options, _Processor.get(), _IsFirst, _IsLast);
 }
 
 /// <summary>
@@ -66,7 +69,7 @@ void graph_t::Reset() noexcept
 /// </summary>
 void graph_t::Process(const audio_chunk & chunk) noexcept
 {
-    _Analysis.Process(chunk); // Delegate it to the analysis.
+    _Processor->Process(chunk); // Delegate it to the audio processor.
 }
 
 /// <summary>
@@ -81,22 +84,20 @@ void graph_t::Render(artwork_t & artwork) noexcept
 
     RenderBackground(artwork);
 
+    if (_Visualization->UsesDirect3D())
     {
-        // FIXME
-        _RenderContext.D2DDeviceContext->EndDraw();
+        _RenderContext.Begin3D();
 
-        _Visualization->Render3D(_RenderContext);
+        _Visualization->Render3D();
 
-        // FIXME
-        _RenderContext.D2DDeviceContext->BeginDraw();
+        _RenderContext.End3D();
+
+        _RenderContext.Composite3D(_Rect);
     }
 
     _Visualization->Render(_RenderContext.D2DDeviceContext);
 
     RenderDescription();
-
-    // Erase the copy of the chunk.
-    _Analysis._Chunk.reset();
 }
 
 /// <summary>
@@ -104,7 +105,7 @@ void graph_t::Render(artwork_t & artwork) noexcept
 /// </summary>
 void graph_t::Initialize() noexcept
 {
-    _Analysis.Reset();
+    _Processor->Reset();
 }
 
 /// <summary>
@@ -112,7 +113,8 @@ void graph_t::Initialize() noexcept
 /// </summary>
 void graph_t::InitToolInfo(HWND hWnd, TTTOOLINFOW & ti) const noexcept
 {
-    ti = CToolInfo(TTF_IDISHWND | TTF_TRACK | TTF_ABSOLUTE, hWnd, (UINT_PTR) hWnd, nullptr, nullptr);
+//  ti = CToolInfo(TTF_IDISHWND | TTF_TRACK | TTF_ABSOLUTE, hWnd, (UINT_PTR) hWnd, nullptr, nullptr);
+    ti = CToolInfo(TTF_IDISHWND | TTF_TRACK | TTF_ABSOLUTE | TTF_TRANSPARENT, hWnd, (UINT_PTR) hWnd, nullptr, nullptr);
 
     ::SetRect(&ti.rect, (int) _Rect.left, (int) _Rect.top, (int) _Rect.right, (int) _Rect.bottom);
 }
@@ -122,18 +124,20 @@ void graph_t::InitToolInfo(HWND hWnd, TTTOOLINFOW & ti) const noexcept
 /// </summary>
 bool graph_t::GetToolTipText(FLOAT x, FLOAT y, std::wstring & toolTip, size_t & bandIndex) const noexcept
 {
+    auto * Processor = (Spectrum::processor_t *) _Processor.get();
+
     if ((_State._VisualizationType == VisualizationType::Bars) || (_State._VisualizationType == VisualizationType::Curve))
     {
         const rect_t & cr = (const rect_t &) _Visualization->GetClientRect();
 
-        FLOAT t = cr.Width() / (FLOAT) _Analysis._FrequencyBands.size();
+        FLOAT t = cr.Width() / (FLOAT) Processor->FrequencyBands.size();
 
         // Allow non-integer bar widths?
         if (_GraphOptions->_HorizontalAlignment != HorizontalAlignment::Fit)
             t = ::floor(t);
 
         const FLOAT BarWidth = std::max(t, 2.f);
-        const FLOAT SpectrumWidth = (_State._VisualizationType == VisualizationType::Bars) ? BarWidth * (FLOAT) _Analysis._FrequencyBands.size() : cr.Width();
+        const FLOAT SpectrumWidth = (_State._VisualizationType == VisualizationType::Bars) ? BarWidth * (FLOAT) Processor->FrequencyBands.size() : cr.Width();
         const FLOAT HOffset = GetHOffset(_GraphOptions->_HorizontalAlignment, cr.Width() - SpectrumWidth);
 
         const FLOAT x1 = cr.x1 + HOffset;
@@ -145,7 +149,7 @@ bool graph_t::GetToolTipText(FLOAT x, FLOAT y, std::wstring & toolTip, size_t & 
         if (_GraphOptions->_FlipHorizontally)
             x = (x2 + x1) - x;
 
-        bandIndex = std::clamp((size_t) ::floor(msc::Map(x, x1, x2, 0., (double) _Analysis._FrequencyBands.size())), (size_t) 0, _Analysis._FrequencyBands.size() - (size_t) 1);
+        bandIndex = std::clamp((size_t) ::floor(msc::Map(x, x1, x2, 0., (double) Processor->FrequencyBands.size())), (size_t) 0, Processor->FrequencyBands.size() - (size_t) 1);
     }
     else
     if (_State._VisualizationType == VisualizationType::Spectrogram)
@@ -160,20 +164,20 @@ bool graph_t::GetToolTipText(FLOAT x, FLOAT y, std::wstring & toolTip, size_t & 
             if (!_GraphOptions->_FlipVertically)
                 y = (cr.bottom + cr.top) - y;
 
-            bandIndex = std::clamp((size_t) ::floor(msc::Map(y, cr.top, cr.bottom, 0., (double) _Analysis._FrequencyBands.size())), (size_t) 0, _Analysis._FrequencyBands.size() - (size_t) 1);
+            bandIndex = std::clamp((size_t) ::floor(msc::Map(y, cr.top, cr.bottom, 0., (double) Processor->FrequencyBands.size())), (size_t) 0, Processor->FrequencyBands.size() - (size_t) 1);
         }
         else
         {
             if (!msc::InRange(x, cr.left, cr.right))
                 return false;
 
-            bandIndex = std::clamp((size_t) ::floor(msc::Map(x, cr.left, cr.right, 0., (double) _Analysis._FrequencyBands.size())), (size_t) 0, _Analysis._FrequencyBands.size() - (size_t) 1);
+            bandIndex = std::clamp((size_t) ::floor(msc::Map(x, cr.left, cr.right, 0., (double) Processor->FrequencyBands.size())), (size_t) 0, Processor->FrequencyBands.size() - (size_t) 1);
         }
     }
     else
         return false; // No tooltip available.
 
-    toolTip = _Analysis._FrequencyBands[bandIndex].Label;
+    toolTip = Processor->FrequencyBands[bandIndex].Label;
 
     return true;
 }
@@ -184,17 +188,14 @@ bool graph_t::GetToolTipText(FLOAT x, FLOAT y, std::wstring & toolTip, size_t & 
 void graph_t::RenderBackground(artwork_t & artwork) noexcept
 {
     if (_BackgroundStyle.IsEnabled())
-        _RenderContext.D2DDeviceContext->FillRectangle(_Rect, _BackgroundStyle._Brush.Get());
+        _RenderContext.D2DDeviceContext->FillRectangle(_Rect, _BackgroundStyle.Brush.Get());
 
     if (!_State._ShowArtworkOnBackground)
         return;
 
-    if ((_State._VisualizationType == VisualizationType::PeakMeter) || (_State._VisualizationType == VisualizationType::LevelMeter) || (_State._VisualizationType == VisualizationType::Oscilloscope))
+    if ((_State._VisualizationType == VisualizationType::PeakMeter) || (_State._VisualizationType == VisualizationType::BalanceMeter) || (_State._VisualizationType == VisualizationType::Oscilloscope))
         return;
-/*
-    if (artwork.Bitmap() == nullptr)
-        return;
-*/
+
     artwork.Render(_RenderContext, _State._FitWindow ? _Visualization->GetRect() : _Visualization->GetClientRect(), &_State);
 }
 
@@ -203,7 +204,7 @@ void graph_t::RenderBackground(artwork_t & artwork) noexcept
 /// </summary>
 void graph_t::RenderDescription() noexcept
 {
-    if ((_State._VisualizationType == VisualizationType::PeakMeter) || (_State._VisualizationType == VisualizationType::LevelMeter))
+    if ((_State._VisualizationType == VisualizationType::PeakMeter) || (_State._VisualizationType == VisualizationType::BalanceMeter))
         return;
 
     if (_Description.empty())
@@ -211,7 +212,7 @@ void graph_t::RenderDescription() noexcept
 
     ComPtr<IDWriteTextLayout> TextLayout;
 
-    HRESULT hr = DirectWriteFactory::Get()->CreateTextLayout(_Description.c_str(), (UINT32) _Description.length(), _DescriptionTextStyle._TextFormat.Get(), _Size.width, _Size.height, TextLayout.GetAddressOf());
+    HRESULT hr = DirectWriteFactory::Get()->CreateTextLayout(_Description.c_str(), (UINT32) _Description.length(), _DescriptionTextStyle.TextFormat.Get(), _Size.width, _Size.height, TextLayout.GetAddressOf());
 
     if (FAILED(hr))
         return;
@@ -235,10 +236,10 @@ void graph_t::RenderDescription() noexcept
     Rect.bottom = Rect.top  + TextMetrics.height + (Inset * 2.f);
 
     if (_DescriptionBackgroundStyle.IsEnabled())
-        _RenderContext.D2DDeviceContext->FillRoundedRectangle(D2D1::RoundedRect(Rect, Inset, Inset), _DescriptionBackgroundStyle._Brush.Get());
+        _RenderContext.D2DDeviceContext->FillRoundedRectangle(D2D1::RoundedRect(Rect, Inset, Inset), _DescriptionBackgroundStyle.Brush.Get());
 
     if (_DescriptionTextStyle.IsEnabled())
-        _RenderContext.D2DDeviceContext->DrawText(_Description.c_str(), (UINT) _Description.length(), _DescriptionTextStyle._TextFormat.Get(), Rect, _DescriptionTextStyle._Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_NONE);
+        _RenderContext.D2DDeviceContext->DrawText(_Description.c_str(), (UINT) _Description.length(), _DescriptionTextStyle.TextFormat.Get(), Rect, _DescriptionTextStyle.Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_NONE);
 }
 
 /// <summary>
@@ -246,7 +247,7 @@ void graph_t::RenderDescription() noexcept
 /// </summary>
 HRESULT graph_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept
 {
-    if (_State._SizeHasChanged)
+    if (_State._ColorsHaveChanged || _State._SizeHasChanged)
         DeleteDeviceSpecificResources();
 
     HRESULT hr = S_OK;
@@ -260,7 +261,7 @@ HRESULT graph_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContex
 
     const auto InitializeStyle = [this, deviceContext, & StyleManager](auto & style, VisualElement visualElement, const wchar_t * text) noexcept -> HRESULT
     {
-        if (style._Brush != nullptr)
+        if (style.Brush != nullptr)
             return S_OK;
 
         style = *StyleManager.GetStyle(visualElement);

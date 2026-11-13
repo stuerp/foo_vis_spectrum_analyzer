@@ -23,9 +23,9 @@ public:
     style_t() = default;
 
     style_t(const style_t &) noexcept;
-    style_t & operator=(const style_t & other) noexcept;
-
     style_t(const style_t &&) = delete;
+
+    style_t & operator=(const style_t & other) noexcept;
     style_t & operator=(const style_t && other) = delete;
 
     virtual ~style_t() = default;
@@ -76,14 +76,14 @@ public:
 
     void SetHorizontalAlignment(DWRITE_TEXT_ALIGNMENT ta) const noexcept
     {
-        if (_TextFormat)
-            _TextFormat->SetTextAlignment(ta);
+        if (TextFormat)
+            TextFormat->SetTextAlignment(ta);
     }
 
     void SetVerticalAlignment(DWRITE_PARAGRAPH_ALIGNMENT pa) const noexcept
     {
-        if (_TextFormat)
-            _TextFormat->SetParagraphAlignment(pa);
+        if (TextFormat)
+            TextFormat->SetParagraphAlignment(pa);
     }
 
     bool IsAmplitudeBased() const noexcept { return (_ColorSource == ColorSource::Gradient) && Has(style_t::Features::HorizontalGradient | style_t::Features::AmplitudeBasedColor); }
@@ -91,8 +91,8 @@ public:
     static HRESULT CreateAmplitudeMap(ColorScheme colorScheme, const std::vector<D2D1_GRADIENT_STOP> & gradientStops, std::vector<D2D1_COLOR_F> & colors) noexcept;
 
 public:
-    std::wstring _Name;
-    VisualizationTypes _UsedBy;                     // Determines which visualization uses the style.
+    std::wstring Name;
+    VisualizationTypes UsedBy;                      // Determines which visualization uses the style.
 
 #pragma region Serialized
 
@@ -114,14 +114,18 @@ public:
 #pragma endregion
 
     // Current input value for the DirectX resources
-    D2D1_COLOR_F _CurrentColor;
-    std::vector<D2D1_GRADIENT_STOP> _CurrentGradientStops;
-    std::vector<D2D1_COLOR_F> _AmplitudeMap;
+    D2D1_COLOR_F CurrentColor;
+    std::vector<D2D1_GRADIENT_STOP> CurrentGradientStops;
+    std::vector<D2D1_COLOR_F> AmplitudeMap;
 
     // DirectX resources
-    ComPtr<ID2D1Brush> _Brush;
-    ComPtr<IDWriteTextFormat> _TextFormat;
+    ComPtr<ID2D1Brush> Brush;
+    ComPtr<IDWriteTextFormat> TextFormat;
 
-    FLOAT _Width;
-    FLOAT _Height;
+    FLOAT Width;
+    FLOAT Height;
+
+    static constexpr double Pi    = std::numbers::pi;
+    static constexpr double TwoPi = 2. * Pi;
+    static constexpr double Pi2   = Pi * 0.5;
 };

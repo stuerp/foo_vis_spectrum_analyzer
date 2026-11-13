@@ -1,22 +1,25 @@
 
-/** $VER: Oscilloscope.h (2026.10.08) P. Stuer - Implements an oscilloscope. **/
+/** $VER: Oscilloscope.h (2026.10.28) P. Stuer - Implements an oscilloscope. **/
 
 #pragma once
 
 #include <pch.h>
 
 #include "OscilloscopeBase.h"
+#include "Downsampler.h"
 
-#include <Analyzers/Downsampler.h>
+namespace Oscilloscope
+{
 
-class oscilloscope_t : public oscilloscope_base_t
+class oscilloscope_t final : public oscilloscope_base_t
 {
 public:
-    oscilloscope_t() = default;
+    oscilloscope_t(state_t & state, render_context_t & renderContext) : oscilloscope_base_t(state, renderContext) { }
 
     oscilloscope_t(const oscilloscope_t &) = delete;
-    oscilloscope_t & operator=(const oscilloscope_t &) = delete;
     oscilloscope_t(oscilloscope_t &&) = delete;
+
+    oscilloscope_t & operator=(const oscilloscope_t &) = delete;
     oscilloscope_t & operator=(oscilloscope_t &&) = delete;
 
     virtual ~oscilloscope_t() noexcept;
@@ -27,7 +30,7 @@ public:
     void Reset() noexcept override final;
 
     // visualization_t
-    void Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice = nullptr, ID3D11DeviceContext * d3dDeviceContext = nullptr) noexcept override final;
+    void Configure(graph_options_t * options, audio_processor_t * analysis, bool isFirst, bool isLast) noexcept override final;
 
 private:
     HRESULT CreateDeviceIndependentResources() noexcept;
@@ -36,7 +39,7 @@ private:
     HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept;
     void DeleteDeviceSpecificResources() noexcept;
 
-    HRESULT CreateSignalGeometry(const audio_chunk_impl & chunk, const D2D1_SIZE_F & size, ComPtr<ID2D1PathGeometry> & geometry) noexcept;
+    HRESULT CreateSignalGeometry(const audio_chunk & chunk, const D2D1_SIZE_F & size, ComPtr<ID2D1PathGeometry> & geometry) noexcept;
     HRESULT CreateStaticContent(uint32_t axesCount) noexcept;
 
 private:
@@ -61,3 +64,5 @@ private:
     ComPtr<ID2D1CommandList> _StaticContext;
     size_t _AxesCount { 0 };
 };
+
+}

@@ -1,12 +1,11 @@
 
-/** $VER: Page.h (2026.10.03) P. Stuer - Implements a configuration dialog page. **/
+/** $VER: Page.h (2026.10.21) P. Stuer - Implements a configuration dialog page. **/
 
 #pragma once
 
 #include "pch.h"
 
 #include <sdk/coreDarkMode.h>
-#include <sdk/cfg_var.h>
 
 #include "DialogParameters.h"
 #include "State.h"
@@ -115,6 +114,5 @@ protected:
 
     std::vector<std::shared_ptr<numeric_edit_t>> _NumericEdits;
 
-private:
     fb2k::CCoreDarkModeHooks _DarkMode;
 };

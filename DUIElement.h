@@ -1,5 +1,5 @@
 
-/** $VER: DUIElement.h (2026.03.21) P. Stuer - Default User Interface support **/
+/** $VER: DUIElement.h (2026.11.04) P. Stuer - Default User Interface support **/
 
 #pragma once
 

@@ -1,5 +1,5 @@
 
-/** $VER: pch.h (2026.09.23) P. Stuer **/
+/** $VER: pch.h (2026.10.24) P. Stuer **/
 
 #pragma once
 
@@ -57,4 +57,4 @@ EXTERN_C IMAGE_DOS_HEADER __ImageBase;
 #define THIS_HINSTANCE ((HINSTANCE) &__ImageBase)
 #endif
 
- constexpr WCHAR NegativeInfinity[3] = { '-', 0x221E, '\0' };
+constexpr WCHAR NegativeInfinity[3] = { '-', 0x221E, '\0' };

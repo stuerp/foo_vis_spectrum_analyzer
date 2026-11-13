@@ -1,5 +1,5 @@
 
-/** $VER: XAxis.h (2026.10.10) P. Stuer - Implements the X axis of a graph. **/
+/** $VER: XAxis.h (2026.10.28) P. Stuer - Implements the X axis of a graph. **/
 
 #pragma once
 
@@ -12,39 +12,43 @@
 #include <Windows.h>
 
 #include "Visualization.h"
+#include "SpectrumProcessor.h"
 #include "State.h"
 
 #include <vector>
 #include <string>
 
+namespace Spectrum
+{
+
 /// <summary>
 /// Implements the X axis of a graph.
 /// </summary>
-#pragma warning(disable: 4820)
-class x_axis_t : public visualization_t
+class x_axis_t final : public visualization_t
 {
 public:
-    x_axis_t() = default;
+    x_axis_t(state_t & state, render_context_t & renderContext) : visualization_t(state, renderContext) { }
 
     x_axis_t(const x_axis_t &) = delete;
-    x_axis_t & operator=(const x_axis_t &) = delete;
     x_axis_t(x_axis_t &&) = delete;
+
+    x_axis_t & operator=(const x_axis_t &) = delete;
     x_axis_t & operator=(x_axis_t &&) = delete;
 
     // element_t
     void Move(const D2D1_RECT_F & rect) noexcept override final;
     void Render(ID2D1DeviceContext * deviceContext) noexcept override final;
-    void Reset() noexcept override final {}
+    void Reset() noexcept override final { }
 
     // visualization_t
-    void Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice = nullptr, ID3D11DeviceContext * d3dDeviceContext = nullptr) noexcept override final;
+    void Configure(graph_options_t * options, audio_processor_t * analysis, bool isFirst, bool isLast) noexcept override final;
 
     HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext, style_manager_t & styleManager) noexcept;
     void DeleteDeviceSpecificResources() noexcept;
 
     FLOAT GetTextHeight() const noexcept
     {
-        return _TextStyle._Height;
+        return _TextStyle.Height;
     }
 
 private:
@@ -54,9 +58,11 @@ private:
     HRESULT CreateColorDependentResources(ID2D1DeviceContext * deviceContext, style_manager_t & styleManager) noexcept;
     void DeleteColorDependentResources() noexcept;
 
-    void Initialize() noexcept;
+    void RecalculateSizeDependentParameters() noexcept;
 
 private:
+    processor_t * _Processor;
+
     size_t _BandCount { 0 };
     double _LoFrequency { 0. };
     double _HiFrequency { 0. };
@@ -65,6 +71,7 @@ private:
     {
         std::wstring Text;
         double Frequency { 0. };
+        size_t BandIndex { 0 };
         bool IsDimmed { false };
         bool IsHidden { false };
 
@@ -80,3 +87,5 @@ private:
     style_t _LineStyle;
     style_t _TextStyle;
 };
+
+}

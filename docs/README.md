@@ -67,7 +67,7 @@ Enjoy the show.
 
 ## Features
 
-- Fast Fourier (FFT), Constant-Q (CQT), Sliding Windowed Infinite Fourier (SWIFT) and Analog-style transforms
+- Fast Fourier (FFT), Constant-Q (CQT), Sliding Windowed Infinite Fourier (SWIFT), Analog-style and Composite Three-Tier FFT transforms
 - Multiple frequency range and smoothing options
 - Multiple graph types
 - Styling of all visual elements
@@ -245,7 +245,7 @@ This visualization uses the following settings:
 
 ##### Goniometer
 
-The goniometer is a specialized version of the oscilloscope in X/Y mode. It uses points instead of lines. The input signal can be filtered into a woofer, mid and tweeter frequency band.
+The goniometer is a specialized version of the oscilloscope in X/Y mode. It uses points instead of lines. The input signal can be filtered into a bass, mid and treble frequency band.
 
 ![Screenshot](assets/Goniometer.png?raw=true "Screenshot")
 
@@ -282,7 +282,7 @@ If, while playing a track, not all of the bits of the mantissa are used that may
 
 Some visualizations can display indicators for the peak values. The following settings determine how those peak indicators are animated.
 
-Set the visualization type to **Bars**, **Peak / RMS** or **Balance / Correlation** to enable these settings.
+Set the visualization type to **Bars**, **Curve**, **Radial Bars**, **Radial Curve**, **Peak / RMS** or **Balance / Correlation** to enable these settings.
 
 `Peak mode`
 
@@ -297,13 +297,13 @@ Determines how the peak indicators behave:
 | Fade Out    | Peaks gradually fade             |
 | Fading AIMP | Combination of AIMP and Fade Out |
 
-`Hold time`
+`Hold duration`
 
 Specifies how long a peak value will be held steady before it starts falling (in seconds).
 
-`Fall rate`
+`Fall speed`
 
-Specifies the rate at which the peak value decreases towards 0 (in dB/s).
+Specifies the rate at which the peak value decreases towards 0 (in dB/s). In peak modes that used fading this setting controls the speed of the fade.
 
 `Reset on track change`
 
@@ -553,6 +553,17 @@ CQT looks better for music because:
 - Sliding Windowed Infinite Fourier (SWIFT)
 - Analog-style
 
+#### Composite Three-Tier FFT
+
+This transform uses three standard FFT transforms with three different FFT sizes. The user specified FFT size is used for the high frequency tier;
+double and quadruple FFT sizes are used for the mid- and lower tier respectively. The magnitudes of the three tiers are composited before display.
+
+The larger FFT size for the lower tier allows for a better frequency resolutionin the bass. 
+
+> [!Note]
+> This transform will always force power-of-two FFT size as the base FFT size.
+> This transform is fairly compute intensive.
+
 #### Transform group
 
 `Method`
@@ -615,9 +626,32 @@ Specifies the number of bins used by the transforms as a number between 64 and 3
 - Select ''Custom'' to specify a number that is not a power of 2. This will consume a lot more CPU power.
 - Select ''Sample rate based'' to specify the size as a duration. F.e. 100ms of a track sampled at 44.1kHz will result in an FFT window of 4410 samples.
 
+`Hop size fraction`
+
+Specifies a hop size relative to the FFT size. A larger fraction (smaller hops) produce more frequent analysis updates.
+
+The hop size is the number of samples the analysis window shifts forward between consecutive FFT computations.
+
+- The default is 0% meaning no overlap. This is fast and has a lower computational load.
+- 50% is a standard, balanced default for general-use spectrum analysis and spectrograms.
+
+A large fraction has a high CPU impact.
+
+`Coefficient mapping`
+
+Determines how the FFT coefficients are mapped to the frequency bands.
+
+- Standard
+- Triangular Filter Bank
+- Brown-Puckette CQT
+- Gaussian
+
+> [!Note]
+> The `Triangular Filter Bank` mapping always uses frequencies generated from the [Mel scale](https://en.wikipedia.org/wiki/Mel_scale).
+
 `Coefficient aggregation`
 
-Determines which method is used to aggregate the coefficients of the FFT into frequency bins.
+Determines which method is used to aggregate the coefficients of the FFT before they get mapped to a frequency band.
 
 - Minimum
 - Maximum
@@ -627,17 +661,6 @@ Determines which method is used to aggregate the coefficients of the FFT into fr
 - Average
 - Median
 
-`Mapping`
-
-Determines how the FFT power coefficients are mapped to the frequency bins.
-
-- Standard
-- Triangular Filter Bank
-- Brown-Puckette CQT
-
-> [!Note]
-> The `Triangular Filter Bank` mapping always uses frequencies generated from the [Mel scale](https://en.wikipedia.org/wiki/Mel_scale).
-
 `Smooth lower frequencies`
 
 When enabled, the band power part only gets used when number of FFT bins to sum for each band is at least two or more.
@@ -646,9 +669,51 @@ When enabled, the band power part only gets used when number of FFT bins to sum 
 
 Smooths the frequency slope of the aggregation modes.
 
+`Reassignment sharpening`
+
+[Reassignment sharpening](https://en.wikipedia.org/wiki/Reassignment_method) produces a sharper spectrum by relocating energy to a bin
+that represents more accurately the frequency at the cost of extra processing.
+
+It works for an FFT and Composite FFT using Standard coefficient mapping.
+
 `Lanczos kernel`
 
 Determines the size of the Lanczos kernel. The kernel is used to create a smooth transition between the FFT coefficients resulting in a visual pleasing result.
+
+#### Peak Detection group
+
+Peak detection identifies the strongest local maxima in the current frequency spectrum. Its purpose is to answer at which frequencies does the current audio have
+its most prominent spectral peaks. For every detected peak, A marker and its corresponding frequency is drawn. Typical detected peaks represent:
+
+- a steady test tone,
+- a musical fundamental,
+- prominent harmonics,
+- strong resonances,
+- dominant components within broadband audio.
+
+`Max. peaks`
+
+Specifies the maximum number of peaks that will be detected.
+
+`Min. peak level`
+
+The minimum normalized level before a frequency is considered a local maximum.
+
+`Min. peak prominence`
+
+The minimum required prominence of a frequency to be considered a local maximum.
+
+`Band span`
+
+The number of frequency bands on each side of the candidate band that are evaluated when detecting a local maximum.
+
+`Max. peaks`
+
+The minimum required distance between two peaks.
+
+`Interpolate frequency`
+
+Enable this setting to interpolate the candidate frequency with its neighbors.
 
 #### Brown-Puckette CQT Mapping group
 
@@ -870,8 +935,9 @@ This page contains settings that the visualizations have in common.
 
 Determines how the spectrum coefficients and the Peak / RMS values are smoothed.
 
-- Average: Calculates a weighted average between the old and the new value of the peak. Uses the smoothing factor as a weight.
-- Peak: Retains the maximum between the old and the new value of the peak.
+- None: Does not smooth the raw amplitude. It results in a fully responsive display but is potentially flickery.
+- Average: Calculates a weighted average between the old and the new value of the peak. It uses the smoothing factor as a weight and causes a gradual attack and decay of the amplitude.
+- Peak: Retains the maximum between the old and the new value of the peak. This allows for instant attack with exponential peak and gradual decay of the amplitude. It preserves peaks and transients.
 
 `Smoothing factor`
 
@@ -891,6 +957,18 @@ Prevents the mirror image of the spectrum (anything above the Nyquist frequency)
 `Visualize during pause`
 
 Enable this option to continue visualization when playback is paused.
+
+`Alternate fullscreen mode`
+
+The Default User Interface (DUI) starts a second instance of the component when entering fullscreen mode. This second instance has its own settings which means you have to configure it seperately
+or load the same preset as used in the non-fullscreen version.
+
+Enable this setting to only use one instance. In fullscreen mode you can use the Page Up and Page Down key to switch between monitors. Press the Escape key or doubleclick the left mousebutton to
+exit fullscreen mode.
+
+`Animate fullscreen transition`
+
+Enable this setting to animate the transition to fullscreen mode and back.
 
 #### Artwork group
 
@@ -985,12 +1063,16 @@ Enable this setting to stack the graphs vertically instead of horizontally.
 
 Select to draw the graphs overlapped instead of stacked horizontally or vertically.
 
+The visualizations will be drawn over each other so it is up to you to disable any styles in the top visualization to allow the bottom visualization to remain visible. See `Use local styles`.
+
 > [!Note]
-> Only supported by the bar, curve, radial bar and radial curve visualization.
+> This mode is not supported by all visualizations.
 
 `Use local styles`
 
-Enable this setting to use local styles. A local style is tied to a graph. Each grah can have its own local style.
+Enable this setting to use local styles. A local style is tied to a graph. Each graph can have its own local style.
+
+Use this feature in combination with `Overlap graphs` to disable the background of a visualization or give each signal its own style.
 
 `Description`
 
@@ -1262,7 +1344,8 @@ Deletes the currently selected preset.
 
 **Q:** Why does the fullscreen version of the component not respect my settings when using DUI?
 
-**A:** In DUI the fullscreen version of the component is a completely new instance with its own settings. You have to configure it separately.
+**A:** The Default User Interface (DUI) starts a second instance of the component when entering fullscreen mode. This second instance has its own settings which means you have to configure it seperately
+or load the same preset as used in the non-fullscreen version. Enable the `Alternate fullscreen mode` to change that behavior.
 
 **Q:** What do the letters of the channel names mean?
 

@@ -83,7 +83,7 @@ void cui_element_t::ToggleFullScreen() noexcept
 {
     msc::lock_t Lock(_CriticalSection);
 
-    if (!_IsFullScreen)
+    if (!_FullScreen.IsActive)
     {
         HMONITOR hMonitor = ::MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTONEAREST);
 
@@ -110,7 +110,7 @@ void cui_element_t::ToggleFullScreen() noexcept
 
                 UpdateState(ConfigurationChanges::All);
 
-                _IsFullScreen = true;
+                _FullScreen.IsActive = true;
             }
         }
     }
@@ -129,7 +129,7 @@ void cui_element_t::ToggleFullScreen() noexcept
 
         UpdateState(ConfigurationChanges::All);
 
-        _IsFullScreen = false;
+        _FullScreen.IsActive = false;
     }
 }
 

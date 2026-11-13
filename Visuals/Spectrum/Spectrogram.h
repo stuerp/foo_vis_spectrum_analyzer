@@ -1,0 +1,180 @@
+
+/** $VER: Spectrogram.h (2026.11.12) P. Stuer - Represents a spectrum analysis as a 2D heat map. **/
+
+#pragma once
+
+#include <CppCoreCheck/Warnings.h>
+
+#pragma warning(disable: 4100 4625 4626 4710 4711 5045 ALL_CPPCORECHECK_WARNINGS)
+
+#define NOMINMAX
+
+#include <SDKDDKVer.h>
+#include <WinSock2.h>
+#include <Windows.h>
+
+#include <d2d1_2.h>
+
+#include "Visualization.h"
+#include "SpectrumProcessor.h"
+
+#include <deque>
+
+namespace Spectrum
+{
+
+class spectrogram_t final : public visualization_t
+{
+public:
+    spectrogram_t(state_t & state, render_context_t & renderContext) : visualization_t(state, renderContext) { }
+
+    spectrogram_t(const spectrogram_t &) = delete;
+    spectrogram_t(spectrogram_t &&) = delete;
+
+    spectrogram_t & operator=(const spectrogram_t &) = delete;
+    spectrogram_t & operator=(spectrogram_t &&) = delete;
+
+    virtual ~spectrogram_t();
+
+    // element_t
+    void Move(const D2D1_RECT_F & rect) noexcept override final;
+    void Render(ID2D1DeviceContext * deviceContext) noexcept override final;
+    void Reset() noexcept override final;
+
+    void OnConfigurationChanged(ConfigurationChanges configurationChanges) noexcept;
+
+    // visualization_t
+    void Configure(graph_options_t * options, audio_processor_t * analysis, bool isFirst, bool isLast) noexcept override final;
+
+private:
+    bool RenderSpectrum(ID2D1BitmapRenderTarget * renderTarget) noexcept;
+    void RenderNyquistFrequencyMarker(ID2D1BitmapRenderTarget * renderTarget) const noexcept;
+
+    void RenderTimeAxis(ID2D1DeviceContext * deviceContext, bool top) const noexcept;
+    void RenderFreqAxis(ID2D1DeviceContext * deviceContext, bool left) const noexcept;
+
+    HRESULT CreateDeviceSpecificResources(ID2D1DeviceContext * deviceContext) noexcept;
+    void DeleteDeviceSpecificResources() noexcept;
+
+    HRESULT CreateSizeDependentResources(ID2D1DeviceContext * deviceContext) noexcept;
+    void DeleteSizeDependentResources() noexcept;
+
+    HRESULT CreateColorDependentResources(ID2D1DeviceContext * deviceContext) noexcept;
+    void DeleteColorDependentResources() noexcept;
+
+    void CreateLegend(ID2D1BitmapRenderTarget * renderTarget) const noexcept;
+
+    void Initialize() noexcept;
+    void InitializeFrequencyAxis() noexcept;
+
+    static frequency_bands_t DecimateSpectrum(const frequency_bands_t & fb, size_t targetCount) noexcept;
+    static frequency_bands_t ResampleSpectrum(const frequency_bands_t & fb, size_t targetCount, int lobe = 3) noexcept;
+
+    // Lanczos-windowed sinc kernel
+    inline static double Lanczos(double x, int a) noexcept
+    {
+        if (std::abs(x) < 1.e-12)
+            return 1.;
+
+        if (std::abs(x) >= a)
+            return 0.;
+
+        const double PiX = Pi * x;
+
+        return (a * std::sin(PiX) * std::sin(PiX / a)) / (PiX * PiX);
+    }
+
+private:
+    processor_t * _Processor;
+
+    double _PlaybackTime = 0.;
+    double _TrackTime    = 0.;
+
+    double _LoFrequency  = 0.;
+    double _HiFrequency  = 0.;
+
+    struct time_label_t
+    {
+        time_label_t(const WCHAR * text, FLOAT x, FLOAT y = 0.f)
+        {
+            Text = text;
+            X = x;
+            Y = y;
+        }
+
+        std::wstring Text;
+        FLOAT X = 0.f;
+        FLOAT Y = 0.f;
+    };
+
+    std::deque<time_label_t> _TimeLabels;
+
+    struct freq_label_t
+    {
+        freq_label_t(const WCHAR * text, double frequency, bool isDimmed = false)
+        {
+            Text = text;
+            Frequency = frequency;
+            IsMinor = isDimmed;
+        }
+
+        std::wstring Text;
+        double Frequency = 0.;
+        bool IsMinor     = false;
+        bool IsHidden    = false;
+
+        D2D1_RECT_F Rect1 { };
+        D2D1_RECT_F Rect2 { };
+
+        FLOAT Tick = 0.f;
+    };
+
+    std::vector<freq_label_t> _FreqLabels;
+
+private:
+    FLOAT _X = 0.f;
+    FLOAT _Y = 0.f;
+
+    D2D1_RECT_F _BitmapRect { };        // In pixels
+    D2D1_SIZE_F _BitmapSize { };        // In pixels
+
+    D2D1_RECT_F _LegendRect { };        // In pixels
+    D2D1_SIZE_F _LegendSize { };        // In pixels
+
+    D2D1_SIZE_U _BitmapPixelSize { };   // In pixels
+
+    FLOAT _BitmapWidth  = 0.f; // In DIPs
+    FLOAT _BitmapHeight = 0.f; // In DIPs
+
+private:
+    ComPtr<ID2D1BitmapRenderTarget> _BitmapRenderTarget;
+    ComPtr<ID2D1Bitmap> _Bitmap;
+
+    ComPtr<ID2D1BitmapRenderTarget> _LegendBitmapRenderTarget;
+    ComPtr<ID2D1Bitmap> _LegendBitmap;
+
+#ifdef _DEBUG
+    ComPtr<ID2D1SolidColorBrush> _DebugBrush;
+#endif
+
+private:
+    style_t _SpectrogramStyle;
+    style_t _GradientStyle;
+
+    style_t _TimeLineStyle;
+    style_t _TimeTextStyle;
+
+    style_t _FreqLineStyle;
+    style_t _FreqTextStyle;
+
+    style_t _NyquistMarkerStyle;
+
+    static constexpr FLOAT GradientSize = 24.f;
+    static constexpr FLOAT TickSize     =  4.f;
+
+    static constexpr double Pi    = std::numbers::pi;
+    static constexpr double TwoPi = 2. * Pi;
+    static constexpr double Pi2   = Pi * 0.5;
+};
+
+}

@@ -1,16 +1,11 @@
 
-/** $VER: FrequenciesPage.h (2026.02.22) P. Stuer - Declares a configuration dialog page. **/
+/** $VER: FrequenciesPage.h (2026.11.05) P. Stuer - Declares a configuration dialog page. **/
 
 #pragma once
 
 #include "pch.h"
 
-#include <sdk/coreDarkMode.h>
-#include <sdk/cfg_var.h>
-
 #include "Page.h"
-#include "Resources.h"
-#include "State.h"
 
 class frequencies_page_t : public page_t
 {
@@ -29,6 +24,7 @@ public:
     void OnSelectionChanged(UINT, int, CWindow) noexcept override final;
     void OnEditChange(UINT, int, CWindow) noexcept override final;
     void OnEditLostFocus(UINT code, int id, CWindow) noexcept override final;
+    void OnButtonClick(UINT, int id, CWindow) noexcept override final;
 
     LRESULT OnDeltaPos(LPNMHDR nmhd) noexcept;
 

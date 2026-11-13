@@ -135,7 +135,12 @@ HRESULT artwork_t::GetColors(uint32_t colorCount, FLOAT lightnessThreshold, FLOA
     {
         const auto SetErrorColor = [&colors]()
         {
-            colors.assign(1, D2D1::ColorF(D2D1::ColorF::Red)); // Makes an error easier to detect.
+            auto GradientStops = gradient_t::GetBuiltIn(ColorScheme::Artwork);
+
+            colors.clear();
+
+            for (const auto & gs : GradientStops)
+                colors.push_back(gs.color);
         };
 
         if (_FormatConverter == nullptr)
@@ -236,7 +241,7 @@ void artwork_t::Render(render_context_t & renderContext, const D2D1_RECT_F & rec
 
         renderContext.D2DDeviceContext->GetDpi(&DPIX, &DPIY);
 
-        const FLOAT DPIScale = DPIX / 96.f;
+        const FLOAT DPIScale = DPIX / USER_DEFAULT_SCREEN_DPI;
 
         _ScaleEffect->SetInput(0, _Bitmap.Get());
         _ScaleEffect->SetValue(D2D1_SCALE_PROP_SCALE, D2D1::Vector2F(Scalar * DPIScale, Scalar * DPIScale));

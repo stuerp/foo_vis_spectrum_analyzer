@@ -1,5 +1,5 @@
 
-/** $VER: YAXis.cpp (2026.10.10) P. Stuer - Implements the Y axis of a graph. **/
+/** $VER: YAXis.cpp (2026.10.29) P. Stuer - Implements the Y axis of a graph. **/
 
 #include "pch.h"
 #include "YAxis.h"
@@ -9,16 +9,20 @@
 
 #pragma hdrstop
 
+namespace Spectrum
+{
+
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void y_axis_t::Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept
+void y_axis_t::Configure(graph_options_t * options, audio_processor_t * processor, bool isFirst, bool isLast) noexcept
 {
-    _State = state;
-    _GraphOptions = graphOptions;
-    _Analysis = analysis;
+    _GraphOptions = options;
+    _Processor    = (processor_t *) processor;
+    _IsFirst      = isFirst;
+    _IsLast       = isLast;
 
-    _FlipVertically = graphOptions->_FlipVertically;
+    _FlipVertically = _GraphOptions->_FlipVertically;
 
     _Labels.clear();
 
@@ -53,7 +57,7 @@ void y_axis_t::Move(const D2D1_RECT_F & rect) noexcept
 /// </summary>
 void y_axis_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 {
-    auto & StyleManager = _GraphOptions->_UseLocalStyles ? _GraphOptions->_StyleManager : _State->_StyleManager;
+    auto & StyleManager = _GraphOptions->_UseLocalStyles ? _GraphOptions->_StyleManager : _State._StyleManager;
 
     HRESULT hr = CreateDeviceSpecificResources(deviceContext, StyleManager);
 
@@ -68,16 +72,16 @@ void y_axis_t::Render(ID2D1DeviceContext * deviceContext) noexcept
     {
         // Draw the horizontal grid line.
         if (_LineStyle.IsEnabled())
-            deviceContext->DrawLine(Iter.PointL, Iter.PointR, _LineStyle._Brush.Get(), _LineStyle._Thickness, nullptr);
+            deviceContext->DrawLine(Iter.PointL, Iter.PointR, _LineStyle.Brush.Get(), _LineStyle._Thickness, nullptr);
 
         // Draw the text.
         if (!Iter.IsHidden && _TextStyle.IsEnabled() && (_GraphOptions->_YAxisMode != YAxisMode::None))
         {
             if (_GraphOptions->_YAxisLeft)
-                deviceContext->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle._TextFormat.Get(), Iter.RectL, _TextStyle._Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                deviceContext->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle.TextFormat.Get(), Iter.RectL, _TextStyle.Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
 
             if (_GraphOptions->_YAxisRight)
-                deviceContext->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle._TextFormat.Get(), Iter.RectR, _TextStyle._Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                deviceContext->DrawText(Iter.Text.c_str(), (UINT) Iter.Text.size(), _TextStyle.TextFormat.Get(), Iter.RectR, _TextStyle.Brush.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
         }
     }
 }
@@ -89,28 +93,26 @@ HRESULT y_axis_t::CreateDeviceSpecificResources(ID2D1DeviceContext * deviceConte
 {
     HRESULT hr = S_OK;
 
-    if (_State->_ColorsHaveChanged || _State->_SizeHasChanged)
+    if (_State._ColorsHaveChanged || _State._SizeHasChanged)
     {
         DeleteColorDependentResources();
-
-        Initialize();
 
         hr = CreateColorDependentResources(deviceContext, styleManager);
 
         if (FAILED(hr))
             return hr;
-    }
 
-    if (_State->_SizeHasChanged)
-    {
-        DeleteSizeDependentResources();
+        RecalculateSizeDependentParameters();
 
-        Initialize();
+        if (_State._SizeHasChanged)
+        {
+            DeleteSizeDependentResources();
 
-        hr = CreateSizeDependentResources(deviceContext, styleManager);
+            hr = CreateSizeDependentResources(deviceContext, styleManager);
 
-        if (FAILED(hr))
-            return hr;
+            if (FAILED(hr))
+                return hr;
+        }
     }
 
     return hr;
@@ -146,11 +148,11 @@ void y_axis_t::DeleteSizeDependentResources() noexcept
 /// </summary>
 HRESULT y_axis_t::CreateColorDependentResources(ID2D1DeviceContext * deviceContext, style_manager_t & styleManager) noexcept
 {
-    if (_LineStyle._Brush == nullptr)
+    if (_LineStyle.Brush == nullptr)
     {
         _LineStyle = *styleManager.GetStyle(VisualElement::HorizontalGridLine);
 
-        _LineStyle.SetColor(_State);
+        _LineStyle.SetColor(&_State);
 
         HRESULT hr = _LineStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"", 1.f);
 
@@ -158,11 +160,11 @@ HRESULT y_axis_t::CreateColorDependentResources(ID2D1DeviceContext * deviceConte
             return hr;
     }
 
-    if (_TextStyle._Brush == nullptr)
+    if (_TextStyle.Brush == nullptr)
     {
         _TextStyle = *styleManager.GetStyle(VisualElement::YAxisText);
 
-        _TextStyle.SetColor(_State);
+        _TextStyle.SetColor(&_State);
 
         HRESULT hr = _TextStyle.CreateDeviceSpecificResources(deviceContext, _Size, L"+999", 1.f);
 
@@ -185,12 +187,12 @@ void y_axis_t::DeleteColorDependentResources() noexcept
 /// <summary>
 /// Recalculates parameters that are render target and size-sensitive.
 /// </summary>
-void y_axis_t::Initialize() noexcept
+void y_axis_t::RecalculateSizeDependentParameters() noexcept
 {
     assert((_Size.width > 0.f) && (_Size.height > 0.f));
 
-    const FLOAT xl = _Rect.left  + (_GraphOptions->_YAxisLeft  ? _TextStyle._Width : 0.f); // Left axis
-    const FLOAT xr = _Rect.right - (_GraphOptions->_YAxisRight ? _TextStyle._Width : 0.f); // Right axis
+    const FLOAT xl = _Rect.left  + (_GraphOptions->_YAxisLeft  ? _TextStyle.Width : 0.f); // Left axis
+    const FLOAT xr = _Rect.right - (_GraphOptions->_YAxisRight ? _TextStyle.Width : 0.f); // Right axis
 
     // Calculate the position of the labels based on the height.
     D2D1_RECT_F OldRect = {  };
@@ -209,20 +211,22 @@ void y_axis_t::Initialize() noexcept
         Iter.PointL = D2D1_POINT_2F(xl, y);
         Iter.PointR = D2D1_POINT_2F(xr, y);
 
-        y -= (_TextStyle._Height / 2.f);
+        y -= (_TextStyle.Height / 2.f);
 
         if ((!_GraphOptions->_XAxisTop) && (y <_Rect.top))
             y = _Rect.top;
 
-        if ((!_GraphOptions->_XAxisBottom) && (y + _TextStyle._Height > _Rect.bottom))
-            y = _Rect.bottom - _TextStyle._Height;
+        if ((!_GraphOptions->_XAxisBottom) && (y + _TextStyle.Height > _Rect.bottom))
+            y = _Rect.bottom - _TextStyle.Height;
 
-        Iter.RectL = { _Rect.left, y, xl - 2.f,      y + _TextStyle._Height };
-        Iter.RectR = { xr + 2.f,     y, _Rect.right, y + _TextStyle._Height };
+        Iter.RectL = { _Rect.left, y, xl - 2.f,      y + _TextStyle.Height };
+        Iter.RectR = { xr + 2.f,     y, _Rect.right, y + _TextStyle.Height };
 
         Iter.IsHidden = (Iter.Amplitude != _Labels.front().Amplitude) && (Iter.Amplitude != _Labels.back().Amplitude) && IsOverlappingVertically(Iter.RectL, OldRect);
 
         if (!Iter.IsHidden)
             OldRect = Iter.RectL;
     }
+}
+
 }

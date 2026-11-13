@@ -1,28 +1,24 @@
 
-/** $VER: EyeCandy.cpp (2026.10.10) P. Stuer - Implements a visualizer focusing on eye candy. **/
+/** $VER: EyeCandy.cpp (2026.10.28) P. Stuer - Implements a visualizer focusing on eye candy. **/
 
 #include <pch.h>
 
 #include "EyeCandy.h"
 
-#include "DynamicSystems/LorenzAttractor.h"
-
-#pragma hdrstop
+namespace EyeCandy
+{
 
 /// <summary>
 /// Initializes this instance.
 /// </summary>
-void eye_candy_t::Configure(state_t * state, graph_options_t * graphOptions, analysis_t * analysis, bool isFirst, bool isLast, ID3D11Device * d3dDevice, ID3D11DeviceContext * d3dDeviceContext) noexcept
+void eye_candy_t::Configure(graph_options_t * options, audio_processor_t * processor, bool isFirst, bool isLast) noexcept
 {
-    _State = state;
-    _GraphOptions = graphOptions;
-    _Analysis = analysis;
+    _GraphOptions = options;
+    _Processor    = (processor_t *) processor;
+    _IsFirst      = isFirst;
+    _IsLast       = isLast;
 
     Reset();
-
-    _Effect = make_unique<lorenz_attractor_t>();
-
-    _Effect->Configure(state, graphOptions, analysis, isFirst, isLast, d3dDevice, d3dDeviceContext);
 }
 
 /// <summary>
@@ -30,7 +26,7 @@ void eye_candy_t::Configure(state_t * state, graph_options_t * graphOptions, ana
 /// </summary>
 void eye_candy_t::Move(const D2D1_RECT_F & rect) noexcept
 {
-    _Effect->Move(rect);
+    _Effect->Resize((rect.right - rect.left), (rect.bottom - rect.top));
 }
 
 /// <summary>
@@ -38,14 +34,23 @@ void eye_candy_t::Move(const D2D1_RECT_F & rect) noexcept
 /// </summary>
 void eye_candy_t::Render(ID2D1DeviceContext * deviceContext) noexcept
 {
-    _Effect->Render(deviceContext);
-}
+    if ((_EffectId != _State._EffectId) || (_Effect == nullptr))
+    {
+        _Effect = EyeCandy::effect_t::Create(_State._EffectId);
 
-/// <summary>
-/// Recalculates parameters that are render target and size-sensitive.
-/// </summary>
-void eye_candy_t::Initialize() noexcept
-{
+        _EffectId = _State._EffectId;
+    }
+
+    _Effect->SetQuality(_State._EffectQuality);
+    _Effect->SetSpeed(_State._EffectSpeed);
+    _Effect->SetBrightness(_State._EffectBrightness);
+    _Effect->SetDensity(_State._EffectDensity);
+
+    double DeltaTime = _State._PreviousPlaybackTime - _PlaybackTime;
+
+    _Effect->Render(deviceContext, DeltaTime, _Processor->_Chunk);
+
+    _PlaybackTime = _State._PreviousPlaybackTime;
 }
 
 /// <summary>
@@ -53,6 +58,14 @@ void eye_candy_t::Initialize() noexcept
 /// </summary>
 void eye_candy_t::Reset() noexcept
 {
+    if ((_EffectId != _State._EffectId) || (_Effect == nullptr))
+    {
+        _Effect = EyeCandy::effect_t::Create(_State._EffectId);
+
+        _EffectId = _State._EffectId;
+    }
+
+    _PlaybackTime = _State._PreviousPlaybackTime;
 }
 
 /// <summary>
@@ -63,5 +76,7 @@ void eye_candy_t::OnConfigurationChanged(ConfigurationChanges configurationChang
     if (!IsSet(configurationChanges, ConfigurationChanges::Layout))
         return;
 
-    _State->_SizeHasChanged = true;
+    _State._SizeHasChanged = true;
+}
+
 }

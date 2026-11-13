@@ -504,7 +504,7 @@ void gradient_stop_t::SetColor(const state_t * state) noexcept
     {
         if (state->_UserInterfaceColors.empty())
         {
-            color = D2D1_COLOR_F(D2D1::ColorF::Red);
+            color = D2D1_COLOR_F(D2D1::ColorF::Red); // Error
 
             return;
         }

@@ -1,0 +1,97 @@
+
+/** $VER: AnalogStyleAnalyzer.cpp (2025.10.05) P. Stuer - Based on TF3RDL's Analog-style spectrum analyzer, https://codepen.io/TF3RDL/pen/MWLzPoO **/
+
+#include "pch.h"
+
+#include "AnalogStyleAnalyzer.h"
+
+#include "Support.h"
+
+#pragma hdrstop
+
+/// <summary>
+/// Initializes a new instance.
+/// </summary>
+analog_style_analyzer_t::analog_style_analyzer_t(const state_t & state, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup, const window_function_t & windowFunction) : analyzer_t(state, sampleRate, channelCount, channelSetup, windowFunction)
+{
+}
+
+/// <summary>
+/// Initializes this instance.
+/// </summary>
+bool analog_style_analyzer_t::Initialize(const std::vector<frequency_band_t> & frequencyBands)
+{
+    assert(_SampleRate != 0);
+
+    const double TimeResolution =  _State._ConstantQ ? std::numeric_limits<double>::infinity() : _State._TimeResolution;
+
+    for (const frequency_band_t & fb : frequencyBands)
+    {
+        assert(fb.Low <= fb.Center && fb.Center <= fb.High);
+
+        // Biquad bandpass filter. Cascaded biquad bandpass is not Butterworth nor Bessel, rather it is something called "critically-damped" since each filter stage shares the same every biquad coefficients.
+        const double rad = Pi * fb.Center / (double) _SampleRate;
+
+        const double K = std::tan(rad);
+        const double Bandwidth = std::abs(fb.High - fb.Low) * _State._IIRBandwidth + (1. / (TimeResolution / 1000.));
+
+        const double QCompensationFactor = _State._UsePreWarpedQ ? rad / K : 1.;
+        const double Q = fb.Center / Bandwidth * QCompensationFactor / (_State._CompensateBandwidth ? ::sqrt(_State._FilterBankOrder) : 1.);
+        const double Norm = 1 / (1 + K / Q + K * K);
+
+        coef_t c = { };
+
+        c.a0 = K / Q * Norm;
+        c.a1 = 0.;
+        c.a2 = -c.a0;
+        c.b1 = 2. * (K * K - 1.)    * Norm;
+        c.b2 = (1. - K / Q + K * K) * Norm;
+
+        for (uint32_t i = 0; i < _State._FilterBankOrder; ++i)
+            c.z1[i] = c.z2[i] = c.Out[i] = 0.f;
+
+        _Coefs.push_back(c);
+    }
+
+    return true;
+}
+
+/// <summary>
+/// Calculates the Constant-Q Transform on the sample data and returns the frequency bands.
+/// </summary>
+bool analog_style_analyzer_t::AnalyzeAudio(const audio_sample * frames, size_t frameCount, uint32_t selectedChannels, frequency_bands_t & frequencyBands) noexcept
+{
+    for (auto & fb : frequencyBands)
+        fb.Magnitude = 0.;
+
+    const audio_sample * Samples = frames;
+    const size_t SampleCount = frameCount * _ChannelCount;
+
+    for (size_t i = 0; i < SampleCount; i += _ChannelCount, Samples += _ChannelCount)
+    {
+        const audio_sample Sample = Downmix(Samples, selectedChannels);
+
+        size_t k = 0;
+
+        for (auto & Coef : _Coefs)
+        {
+            double Value = (double) Sample;
+
+            for (uint32_t j = 0; j < _State._FilterBankOrder;)
+            {
+                Coef.Out[j] = (Value * Coef.a0) + Coef.z1[j];
+                Coef.z1[j]  = (Value * Coef.a1) + Coef.z2[j] - (Coef.b1 * Coef.Out[j]);
+                Coef.z2[j]  = (Value * Coef.a2)              - (Coef.b2 * Coef.Out[j]);
+
+                ++j;
+
+                Value = Coef.Out[j - 1];
+            }
+
+            frequencyBands[k].Magnitude = std::max(frequencyBands[k].Magnitude, ::abs(Value));
+            ++k;
+        }
+    }
+
+    return true;
+}

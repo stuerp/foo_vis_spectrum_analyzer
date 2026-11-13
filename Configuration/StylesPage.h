@@ -1,5 +1,5 @@
 
-/** $VER: StylesPage.h (2026.10.01) P. Stuer - Declares a configuration dialog page. **/
+/** $VER: StylesPage.h (2026.11.11) P. Stuer - Declares a configuration dialog page. **/
 
 #pragma once
 
@@ -121,6 +121,9 @@ private:
 
         VisualElement::WindowFunction,
         VisualElement::WeighingFunction,
+
+        VisualElement::PeakMarker,
+        VisualElement::PeakText,
 
         // Spectrogram
         VisualElement::Spectrogram,

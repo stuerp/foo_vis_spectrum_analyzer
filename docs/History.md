@@ -1,6 +1,61 @@
 
 # foo_vis_spectrum_analyzer History
 
+v0.14.0.0-alpha5, 2026-11-06
+
+- New: Peak detector. It identifies the strongest local maxima in the current frequency spectrum.
+  - Enable it using the configuration dialog on the Transform page.
+  - Two new styles (Peak Marker and Peak Text) allow you to customize the rendering.
+- New: Alternate full screen mode for DUI. It reuses the current window (and preset) instead of starting a second instance.
+  - Enable it using the configuration dialog on the Common page.
+  - Double click the left mouse button to enter fullscreen mode. Doubleclick again or press Escape to exit.
+  - You can use the Page Up and Page Down key to move the window between monitors.
+- New: Don't render anything to reduce CPU usage when component window is completely covered.
+- New: Balance / Correlation Meter uses the Fall Speed setting instead of a fixed decay speed.
+- New: Eye Candy effects: Rotozoomer, Dither Field, Flip Dot Matrix, Hidden-line Landscape, Interference Moiré, Flower Scope and Harmonic Harp.
+- Improved: Goniometer Mono and Triband modes react better to the color changes of the Signal style.
+- Improved: Oscilloscope and Goniometer now supports local styles and Overlap mode.
+- Changed: Various little tweaks and corrections to the peak marker animation.
+- Fixed: The input ring buffer did not handle non-radix 2 FFT's correctly.
+- Fixed: Static content did not always respond to color changes.
+- Fixed: Oscilloscope and Goniometer did not position themselves correctly in a multiple graph scenario.
+
+v0.14.0.0-alpha4, 2026-11-01
+
+- Improved: The composite three-tier FFT analyzer cross-fades between the tiers using ratios derived from the FFT's bin width instead of fixed ratios.
+- Fixed: Peak Meter static content did not react to changed color selections.
+- Fixed: Non-spectrum analyzers received many short audio chunks due to a bug in the FFT hop code. (Alpha3 regression).
+- Fixed: Spectrogram showed spectrum residue to the left and top when scrolling in high-DPI scenarios. (Confirmed fix).
+
+v0.14.0.0-alpha3, 2026-10-31, Halloween edition.
+
+- Changed: Refactored the whole audio processor hierarchy to facilitate maintenance, improve performance and make future expansion easier. Things may have gotten broken. Report any issues, please.
+- Improved: Decades frequency setting generates at least the requested number of frequency bands.
+- New: Hop size support for the spectrum analyzers.
+  - The `Hop size fraction` parameter specifies a hop size relative to the FFT size. Smaller hops (larger fraction) produce more frequent analysis updates.
+  - The default value is 0% which results in the old behavior.
+- Fixed: Styles that use the artwork colors were not correctly initialized at startup. (Regression)
+- Fixed: Peak Meter render bug when multiple graphs are used in the layout. It was caused by unfinished code for this use case.
+- Fixed: Spectrogram showed spectrum residue to the left and top when scrolling in high-DPI scenarios.
+- Fixed: Cosmetic error. The label of the top tick of a Y-axis of the spectrogram was cut off when the tick aligned with the top of the viewport.
+
+v0.14.0.0-alpha2, 2026-10-25
+
+- New: Composite three-tier FFT
+  - It uses all the settings of the normal FFT but it splits the spectrum into three logarithmic ranges.
+  - The bass tier uses four times the number of bins; the middle tier uses two times the number of bin.
+- New: Decades frequency distribution. It generates frequency bands whose center frequency is a multiple of 10, 100 or 1000 Hz.
+- Improved: The alignment of the X-axis frequency labels with the band centers.
+
+v0.14.0.0-alpha1, 2026-10-23
+
+- New: Eye Candy visualizer with multiple effects in the following 5 categories.
+  - Dynamic Systems: Aizawa Attractor, Halvorsen Attractor, Lorenz Attractor, Rössler Attractor, Thomas Attractor, Double Pendulum
+  - Fields: Aurora, Fluid Ink, Metaballs, Plasma
+  - Particle Systems: Audio Galaxy, Fireflies, Fireworks, Particle Vortex, Starfield, Swarm
+  - Retro: Neon Tunnel, Vector Grid
+  - Trails: Lissajous Trails, Ribbon Flow, Spirograph
+
 v0.13.0.0, 2026-10-11
 
 - Added: Artwork Fit Mode `Cover`.
@@ -215,7 +270,7 @@ v0.10.0.0-alpha7, 2026-03-01
 - Fixed: Oscilloscope did not implement all of the Y-axis settings.
 - Fixed: Oscilloscope did not render the chunk duration on the X-axis correctly.
 - Fixed: Oscilloscope did not render the vertical grid lines correctly.
-- Fixed: Spectrum visualization did not render the peak top correctly when the peak area style was set to None. [Git Issue 78](https://github.com/stuerp/foo_vis_spectrum_analyzer/issues/78)
+- Fixed: Spectrum visualization did not render the peak top correctly when the peak area style was set to None. [GitHub Issue 78](https://github.com/stuerp/foo_vis_spectrum_analyzer/issues/78)
 
 v0.10.0.0-alpha6, 2026-02-21
 

@@ -1,5 +1,5 @@
 
-/** $VER: Visualization.cpp (2026.10.11) P. Stuer - Base class for all visualization elements. **/
+/** $VER: Visualization.cpp (2026.10.28) P. Stuer - Base class for all visualization elements. **/
 
 #include "pch.h"
 
@@ -8,7 +8,7 @@
 #include "Spectrum.h"
 #include "Spectrogram.h"
 #include "PeakMeter.h"
-#include "LevelMeter.h"
+#include "BalanceMeter.h"
 #include "Oscilloscope.h"
 #include "OscilloscopeXY.h"
 #include "BitMeter.h"
@@ -21,7 +21,7 @@
 /// <summary>
 /// Creates an instance of the specified visualization.
 /// </summary>
-std::unique_ptr<visualization_t> visualization_t::Create(const state_t & state) noexcept
+std::unique_ptr<visualization_t> visualization_t::Create(state_t & state, render_context_t & renderContext) noexcept
 {
     switch (state._VisualizationType)
     {
@@ -31,34 +31,36 @@ std::unique_ptr<visualization_t> visualization_t::Create(const state_t & state) 
         case VisualizationType::Curve:
         case VisualizationType::RadialBars:
         case VisualizationType::RadialCurve:
-            return std::make_unique<spectrum_t>();
+            return std::make_unique<Spectrum::spectrum_t>(state, renderContext);
 
         case VisualizationType::Spectrogram:
-            return std::make_unique<spectrogram_t>();
+            return std::make_unique<Spectrum::spectrogram_t>(state, renderContext);
 
         case VisualizationType::PeakMeter:
-            return std::make_unique<peak_meter_t>();
+            return std::make_unique<Metering::peak_meter_t>(state, renderContext);
 
-        case VisualizationType::LevelMeter:
-            return std::make_unique<level_meter_t>();
+        case VisualizationType::BalanceMeter:
+            return std::make_unique<Metering::balance_meter_t>(state, renderContext);
 
         case VisualizationType::Oscilloscope:
             if (!state._XYMode)
-                return std::make_unique<oscilloscope_t>();
+                return std::make_unique<Oscilloscope::oscilloscope_t>(state, renderContext);
 
-            return std::make_unique<oscilloscope_xy_t>();
+            return std::make_unique<Oscilloscope::oscilloscope_xy_t>(state, renderContext);
 
         case VisualizationType::BitMeter:
-            return std::make_unique<bit_meter_t>();
+            return std::make_unique<BitMeter::bit_meter_t>(state, renderContext);
 
         case VisualizationType::Goniometer:
-            return std::make_unique<goniometer_t>();
+            return std::make_unique<Goniometer::goniometer_t>(state, renderContext);
+
+        case VisualizationType::EyeCandy:
+            return std::make_unique<EyeCandy::eye_candy_t>(state, renderContext);
 
         case VisualizationType::Tester:
-        //  return std::make_unique<tester_t>();
-            return std::make_unique<eye_candy_t>();
+            return std::make_unique<Test::tester_t>(state, renderContext);
 
         case VisualizationType::D3DTester:
-            return std::make_unique<d3d_tester_t>();
+            return std::make_unique<Test::d3d_tester_t>(state, renderContext);
     }
 }

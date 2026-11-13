@@ -1,5 +1,5 @@
 
-/** $VER: Element.h (2026.10.11) P. Stuer - Base class for all visual elements (both graph and visualizations). **/
+/** $VER: Element.h (2026.11.12) P. Stuer - Base class for all visual elements (both graph and visualizations). **/
 
 #pragma once
 
@@ -9,26 +9,27 @@
 
 #include "State.h"
 #include "Graphoptions.h"
-#include "Analysis.h"
+#include "BaseProcessor.h"
 #include "RenderContext.h"
 
 class element_t
 {
 public:
-    element_t() = default;
+    element_t(state_t & state, render_context_t & renderContext) : _State(state), _RenderContext(renderContext) { };
+
     virtual ~element_t() = default;
 
     virtual void Move(const D2D1_RECT_F & rect) noexcept { }
     virtual void Render(ID2D1DeviceContext * deviceContext) noexcept { }
     virtual void Reset() noexcept { };
 
-    virtual void Render3D(render_context_t & renderContext) noexcept { }
+    virtual void Render3D() noexcept { }
 
     virtual const D2D1_RECT_F & GetRect() const noexcept { return _Rect; }
     virtual const D2D1_RECT_F & GetClientRect() const noexcept { return _Rect; };
 
-    virtual void SetTransform(ID2D1DeviceContext * deviceContext, const D2D1_RECT_F & rect) const noexcept;
-    virtual void ResetTransform(ID2D1DeviceContext * deviceContext) const noexcept;
+    virtual void SetTransform(ID2D1DeviceContext * deviceContext, const D2D1_RECT_F & rect) noexcept;
+    virtual void ResetTransform(ID2D1DeviceContext * deviceContext) noexcept;
 
     virtual void OnConfigurationChanged(ConfigurationChanges configurationChanges) noexcept { }
 
@@ -37,20 +38,36 @@ public:
 
     static FLOAT GetHOffset(HorizontalAlignment horizontalAlignment, FLOAT width) noexcept;
 
+    inline FLOAT ToDIPs(FLOAT pixels) const noexcept { return pixels * _DIPsPerPixel; }
+    inline FLOAT ToPixels(FLOAT dips) const noexcept { return dips * _PixelsPerDIP; }
+
 protected:
     void InitializeMetrics(const D2D1_RECT_F & rect) noexcept;
 
 protected:
-    state_t * _State { nullptr };
-    graph_options_t * _GraphOptions { nullptr };
-    analysis_t * _Analysis { nullptr };
+    state_t & _State;
+    render_context_t & _RenderContext;
 
-    bool _IsFirst { false };
-    bool _IsLast { false };
+    graph_options_t * _GraphOptions = nullptr;
+    std::unique_ptr<audio_processor_t> _Processor;
+
+    bool _IsFirst = false;
+    bool _IsLast  = false;
 
     D2D1_RECT_F _Rect { };
     D2D1_SIZE_F _Size { };
 
-    FLOAT _HalfSide { 0.f };
-    FLOAT _Side { 0.f };
+    FLOAT _HalfSide = 0.f;
+    FLOAT _Side     = 0.f;
+
+    FLOAT _CenterX  = 0.f;
+    FLOAT _CenterY  = 0.f;
+
+    FLOAT _DPIX     = USER_DEFAULT_SCREEN_DPI;
+    FLOAT _DPIY     = USER_DEFAULT_SCREEN_DPI;
+
+    FLOAT _PixelsPerDIP = 1.f;
+    FLOAT _DIPsPerPixel = 1.f;
+
+    D2D1::Matrix3x2F _Transform { };
 };

@@ -1,5 +1,5 @@
 
-/** $VER: CommonPage.cpp (2026.10.11) P. Stuer - Implements a configuration dialog page. **/
+/** $VER: CommonPage.cpp (2026.11.08) P. Stuer - Implements a configuration dialog page. **/
 
 #include "pch.h"
 
@@ -21,6 +21,8 @@ BOOL common_page_t::OnInitDialog(CWindow w, LPARAM lParam) noexcept
         { IDC_SHOW_TOOLTIPS, "Enable the check box to see a tooltip with the center frequency and when appropriate, the name of the note, of the frequency band." },
         { IDC_SUPPRESS_MIRROR_IMAGE, "Prevents the mirror image of the spectrum (anything above the Nyquist frequency) from being rendered." },
         { IDC_VISUALIZE_DURING_PAUSE, "Continue visualization when playback is paused." },
+        { IDC_ALT_FULLSCREEN, "Enable to reuse the current component window instead of opening a second instance when going fullscreen." },
+        { IDC_ALT_FULLSCREEN_ANIMATION, "Enable to animate the fullscreen transition." },
 
         // Artwork
         { IDC_NUM_ARTWORK_COLORS, "Max. number of colors to select from the artwork. The colors can be used in a dynamic gradient." },
@@ -76,6 +78,8 @@ void common_page_t::InitializeControls() noexcept
         SendDlgItemMessageW(IDC_SHOW_TOOLTIPS, BM_SETCHECK, _State->_ShowToolTipsAlways);
         SendDlgItemMessageW(IDC_SUPPRESS_MIRROR_IMAGE, BM_SETCHECK, _State->_SuppressMirrorImage);
         SendDlgItemMessageW(IDC_VISUALIZE_DURING_PAUSE, BM_SETCHECK, _State->_VisualizeDuringPause);
+        SendDlgItemMessageW(IDC_ALT_FULLSCREEN, BM_SETCHECK, _State->_AltFullscreen);
+        SendDlgItemMessageW(IDC_ALT_FULLSCREEN_ANIMATION, BM_SETCHECK, _State->_AltFullscreenAnimation);
     }
 
     // Artwork
@@ -217,22 +221,24 @@ void common_page_t::UpdateControls() noexcept
 {
     const bool IsSpectrum     = (_State->_VisualizationType == VisualizationType::Bars) || (_State->_VisualizationType == VisualizationType::Curve);
     const bool IsPeakMeter    = (_State->_VisualizationType == VisualizationType::PeakMeter);
-    const bool IsLevelMeter   = (_State->_VisualizationType == VisualizationType::LevelMeter);
+    const bool IsBalanceMeter = (_State->_VisualizationType == VisualizationType::BalanceMeter);
     const bool IsOscilloscope = (_State->_VisualizationType == VisualizationType::Oscilloscope);
     const bool IsBitMeter     = (_State->_VisualizationType == VisualizationType::BitMeter);
     const bool IsTester       = (_State->_VisualizationType == VisualizationType::Tester);
 
     // Common
-    const bool SupportsFFT = !(IsPeakMeter || IsLevelMeter || IsOscilloscope || IsBitMeter || IsTester);
+    const bool SupportsFFT = !(IsPeakMeter || IsBalanceMeter || IsOscilloscope || IsBitMeter || IsTester);
 
     for (const auto Id : { IDC_SMOOTHING_METHOD, IDC_SHOW_TOOLTIPS, IDC_SUPPRESS_MIRROR_IMAGE })
         GetDlgItem(Id).EnableWindow(SupportsFFT);
+
+    GetDlgItem(IDC_ALT_FULLSCREEN_ANIMATION).EnableWindow(_State->_AltFullscreen);
 
     // Smoothing
     GetDlgItem(IDC_SMOOTHING_FACTOR).EnableWindow(SupportsFFT && (_State->_SmoothingMethod != SmoothingMethod::None));
 
     // Artwork
-    const bool SupportsArtworkOnBackground = !(IsPeakMeter || IsLevelMeter || IsOscilloscope || IsBitMeter);
+    const bool SupportsArtworkOnBackground = !(IsPeakMeter || IsBalanceMeter || IsOscilloscope || IsBitMeter);
 
     GetDlgItem(IDC_ARTWORK_BACKGROUND).EnableWindow(SupportsArtworkOnBackground);
 
@@ -248,8 +254,8 @@ void common_page_t::UpdateControls() noexcept
     GetDlgItem(IDC_ALLOW_UPSCALING).EnableWindow(SupportsArtworkOnBackground && _State->_ShowArtworkOnBackground && (_State->_FitMode != FitMode::Free));
 
     // Diagnostics
-    GetDlgItem(IDC_SHOW_WINDOW_FUNCTION).EnableWindow(IsSpectrum);
-    GetDlgItem(IDC_SHOW_WEIGHING_FUNCTION).EnableWindow(IsSpectrum);
+    GetDlgItem(IDC_SHOW_WINDOW_FUNCTION)  .EnableWindow(IsSpectrum);
+    GetDlgItem(IDC_SHOW_WEIGHING_FUNCTION).EnableWindow(IsSpectrum && (_State->_WeightingType != WeightingType::None));
 }
 
 /// <summary>
@@ -454,7 +460,7 @@ void common_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
         {
             _State->_ShowToolTipsAlways = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
 
-            ChangedSettings = ConfigurationChanges::RenderLoop;
+            ChangedSettings = ConfigurationChanges::Renderer;
             break;
         }
 
@@ -468,8 +474,24 @@ void common_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
         {
             _State->_VisualizeDuringPause = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
 
-            ChangedSettings = ConfigurationChanges::RenderLoop;
+            ChangedSettings = ConfigurationChanges::Renderer;
             break;
+        }
+
+        case IDC_ALT_FULLSCREEN:
+        {
+            _State->_AltFullscreen = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+
+            UpdateControls();
+
+            return;
+        }
+
+        case IDC_ALT_FULLSCREEN_ANIMATION:
+        {
+            _State->_AltFullscreenAnimation = (bool) SendDlgItemMessageW(id, BM_GETCHECK);
+
+            return;
         }
 
         case IDC_ARTWORK_BACKGROUND:
@@ -478,7 +500,7 @@ void common_page_t::OnButtonClick(UINT, int id, CWindow) noexcept
 
             UpdateControls();
 
-            ChangedSettings = ConfigurationChanges::RenderLoop;
+            ChangedSettings = ConfigurationChanges::Renderer;
             break;
         }
 

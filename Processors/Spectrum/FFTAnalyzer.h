@@ -1,0 +1,125 @@
+
+/** $VER: FFTAnalyzer.h (2026.11.11) P. Stuer **/
+
+#pragma once
+
+#include <CppCoreCheck/Warnings.h>
+
+#pragma warning(disable: 4100 4625 4626 4710 4711 5045 ALL_CPPCORECHECK_WARNINGS)
+
+#include <vector>
+
+#include "Analyzer.h"
+#include "FrequencyBand.h"
+
+#include "FFT.h"
+
+#if defined(_DEBUG)
+class fft_analyzer_test_t;
+#endif
+
+/// <summary>
+/// Implements a Fast Fourier Transform analyzer.
+/// </summary>
+class fft_analyzer_t final : public analyzer_t
+{
+public:
+    fft_analyzer_t() = delete;
+
+    fft_analyzer_t(const fft_analyzer_t &) = delete;
+    fft_analyzer_t(fft_analyzer_t &&) = delete;
+
+    fft_analyzer_t & operator=(const fft_analyzer_t &) = delete;
+    fft_analyzer_t & operator=(fft_analyzer_t &&) = delete;
+
+    virtual ~fft_analyzer_t() = default;
+
+    fft_analyzer_t(const state_t & state, size_t fftSize, uint32_t sampleRate, uint32_t channelCount, uint32_t channelSetup, const window_function_t & windowFunction, const window_function_t & brownPucketteKernel) noexcept;
+
+    bool AnalyzeAudio(const audio_sample * frames, size_t frameCount, uint32_t selectedChannels, frequency_bands_t & frequencyBands) noexcept override final;
+    bool AnalyzeAudio(const audio_sample * frames, size_t frameCount, uint32_t selectedChannels) noexcept;
+
+    const std::vector<std::complex<double>> & GetCoefficients() const noexcept
+    {
+        return _Coefficients;
+    }
+
+    size_t GetFFTSize() const noexcept
+    {
+        return _FFTSize;
+    }
+
+#if defined(_DEBUG)
+    friend class fft_analyzer_test_t;
+#endif
+
+private:
+    void Add(const audio_sample * frames, size_t frameCount, uint32_t channels) noexcept;
+    void Transform() noexcept;
+    void Reassign(double norm) noexcept;
+
+    void MapCoefficients(frequency_bands_t & freqBands) noexcept;
+    void MapCoefficientsUsingTFB(frequency_bands_t & freqBands) const noexcept;
+    void MapCoefficientsUsingBP(frequency_bands_t & freqBands) const noexcept;
+    void MapCoefficientsUsingGaussianFilter(frequency_bands_t & freqBands) const noexcept;
+
+    double Interpolate(const std::vector<std::complex<double>> & fftCoeffs, double value, int kernelSize) const noexcept;
+    void Reassign() noexcept;
+
+    /// <summary>
+    /// Gets the band index of the specified frequency.
+    /// </summary>
+    size_t GetFFTIndex(double frequency) const noexcept
+    {
+        return (size_t) (frequency / NyquistFrequency * ((double) _FFTSize * 0.5));
+    }
+
+    /// <summary>
+    /// Gets the frequency of the band specfied by the index.
+    /// </summary>
+    double GetFrequency(int index) const noexcept
+    {
+        return ((double) index * NyquistFrequency) / ((double) _FFTSize * 0.5);
+    }
+
+    /// <summary>
+    /// Gets the bin index of the coefficient corresponding to the specified frequency.
+    /// </summary>
+    double HzToBinIndex(double frequency) const noexcept
+    {
+        return frequency * (double) _FFTSize / _SampleRate;
+    }
+
+    /// <summary>
+    /// Gets the frequency corresponding to the specified coefficient bin index.
+    /// </summary>
+    double BinIndexToHz(size_t index) const noexcept
+    {
+        return (double) (index * _SampleRate) / (double) _FFTSize;
+    }
+
+private:
+    fft_t _FFT;
+    size_t _FFTSize;
+
+    // Wrap-around sample buffer
+    std::vector<audio_sample> _InputRing;
+    size_t _Next;   // Index of the next input sample
+
+    std::vector<std::complex<double>> _Samples;
+    std::vector<std::complex<double>> _Coefficients;
+
+    const window_function_t & _BrownPucketteKernel;
+
+    // Reassignment sharpening
+    fft_t _DerivativeFFT;
+
+    std::vector<std::complex<double>> _DerivativeSamples;
+    std::vector<std::complex<double>> _DerivativeCoefficients;
+    std::vector<std::complex<double>> _ReassignedCoefficients;
+    std::vector<double> _ReassignedPower;
+
+    static constexpr double Pi    = std::numbers::pi;
+    static constexpr double TwoPi = 2. * Pi;
+    static constexpr double Pi2   = Pi * 0.5;
+};

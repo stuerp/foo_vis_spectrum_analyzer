@@ -1,9 +1,11 @@
 
-/** $VER: State.cpp (2026.10.08) P. Stuer **/
+/** $VER: State.cpp (2026.11.11) P. Stuer **/
 
 #include "pch.h"
+
 #include "State.h"
 
+#include "Effects.h"
 #include "Gradient.h"
 #include "Resources.h"
 #include "Log.h"
@@ -43,8 +45,9 @@ void state_t::Reset() noexcept
     _Bounds = { };
     _PageIndex = 0;
 
-    _TargetRefreshRate = 60; // Hz
-    _SleepTime = 200; // μs
+    _TargetRefreshRate  = 60;       // Hz
+    _SleepTime          = 200;      // μs
+    _ProbeTime          = 500'000;  // μs
 
     _UseHardwareRendering = true;
     _UseAntialiasing = true;
@@ -55,7 +58,7 @@ void state_t::Reset() noexcept
     // Transform
     _TransformMethod = TransformMethod::FFT;
 
-    _WindowFunction = WindowFunction::Hann;
+    _WindowFunction = WindowFunctionType::Hann;
     _WindowParameter = 1.;
     _WindowSkew = 0.;
     _Truncate = true;
@@ -68,8 +71,18 @@ void state_t::Reset() noexcept
     _FFTMode = FFTMode::FFT4096;
     _FFTCustom = 4096;
     _FFTDuration = 100.;
+    _HopSizeFraction = 0.;
 
     _MappingMethod = CoefficientMapping::Standard;
+
+    // Peak Detection
+    _DetectPeaks          = false;
+    _MaxPeakCount         = 10;
+    _MinPeakLevel         = 0.05;
+    _MinPeakProminence    = 0.02;
+    _BandSpan             = 4;
+    _MinPeakDistance      = 25.0;
+    _InterpolateFrequency = true;
 
     // CQT
     _CQTBandwidthOffset = 1.;
@@ -82,7 +95,7 @@ void state_t::Reset() noexcept
     _BandwidthAmount = 6.;
     _UseGranularBandwidth = true;
 
-    _KernelShape = WindowFunction::Nuttall;
+    _KernelShape = WindowFunctionType::Nuttall;
     _KernelShapeParameter = 1.;
     _KernelAsymmetry = 0.;
 
@@ -113,8 +126,8 @@ void state_t::Reset() noexcept
     _Transpose = 0;
 
     _ScalingFunction = ScalingFunction::Logarithmic;
-    _SkewFactor = 0.0;
-    _Bandwidth = 0.5;
+    _SkewFactor      = 0.0;
+    _Bandwidth       = 0.5;
 
     // Filters
     _WeightingType = WeightingType::None;
@@ -130,20 +143,21 @@ void state_t::Reset() noexcept
 
     _WeightingAmount = 0.;
 
-    static constexpr double Woofer  =  220.; // Hz
-    static constexpr double Tweeter = 2500.; // Hz
+    static constexpr double Bass    =  220.; // Hz
+    static constexpr double Trebble = 2500.; // Hz
 
     _CrossoverMode = crossover::Mode::LinkwitzRiley4;
-    _LowBand       = Woofer;
-    _HighBand      = Tweeter;
+    _LowBand       = Bass;
+    _HighBand      = Trebble;
 
     _SmoothingMethod = SmoothingMethod::Average;
     _SmoothingFactor = 0.5;
 
-    _KernelSize             = 32;
-    _AggregationMethod      = AggregationMethod::Maximum;
-    _SmoothLowerFrequencies = true;
-    _SmoothGainTransition   = true;
+    _KernelSize                = 32;
+    _AggregationMethod         = AggregationMethod::Maximum;
+    _SmoothLowerFrequencies    = true;
+    _SmoothGainTransition      = true;
+    _UseReassignmentSharpening = false;
 
     // Rendering parameters
     _BackColor_Deprecated = D2D1::ColorF(D2D1::ColorF::Black);                  // Deprecated
@@ -183,9 +197,11 @@ void state_t::Reset() noexcept
 
     _CustomGradientStops_Deprecated = gradient_t::GetBuiltIn(ColorScheme::Custom);
 
-    _ShowToolTipsAlways = true;
-    _SuppressMirrorImage = true;
-    _VisualizeDuringPause = true;
+    _ShowToolTipsAlways     = true;
+    _SuppressMirrorImage    = true;
+    _VisualizeDuringPause   = true;
+    _AltFullscreen          = false;
+    _AltFullscreenAnimation = true;
 
     // Artwork
     _NumArtworkColors = 10;
@@ -213,10 +229,10 @@ void state_t::Reset() noexcept
 
     _GraphOptions.push_back(graph_options_t(L"Stereo"));
 
-    _GridRowCount = 1;
+    _GridRowCount    = 1;
     _GridColumnCount = 1;
-    _VerticalLayout = false;
-    _OverlapGraphs = false;
+    _VerticalLayout  = false;
+    _OverlapGraphs   = false;
 
     _ChannelOrder =
     {
@@ -264,9 +280,9 @@ void state_t::Reset() noexcept
 
     _HorizontalGradient_Deprecated = false;
 
-    _PeakMode = PeakMode::Classic;
-    _HoldTime = .5; // s
-    _FallRate = 20; // dB/s
+    _PeakMode                = PeakMode::Classic;
+    _HoldDuration                = .5; // s
+    _FallSpeed               = 20; // dB/s
     _ResetPeaksOnTrackChange = false;
 
     // Radial Bars
@@ -322,6 +338,15 @@ void state_t::Reset() noexcept
     _BitsPerInteger         = 63;
     _OpacityMode            = false;
 
+    // Eye Candy
+    _EffectCategoryId         = EyeCandy::Category::Fields;
+    _EffectId                 = EyeCandy::Effect::Plasma;
+
+    _EffectQuality            = EyeCandy::Quality::Medium;
+    _EffectSpeed              = EyeCandy::Speed::Normal;
+    _EffectBrightness         = EyeCandy::Brightness::Medium;
+    _EffectDensity            = EyeCandy::Density::Medium;
+
     _StyleManager.Reset();
 
     pfc::string Path = core_api::get_profile_path();
@@ -342,25 +367,24 @@ void state_t::Reset() noexcept
 /// </summary>
 state_t & state_t::operator=(const state_t & other) noexcept
 {
-    _Bounds = other._Bounds;
+    _Bounds    = other._Bounds;
     _PageIndex = other._PageIndex;
 
-    _TargetRefreshRate = other._TargetRefreshRate;
-
+    _TargetRefreshRate    = other._TargetRefreshRate;
     _UseHardwareRendering = other._UseHardwareRendering;
-    _UseAntialiasing = other._UseAntialiasing;
+    _UseAntialiasing      = other._UseAntialiasing;
 
 //  _UseZeroTrigger_Deprecated = other._UseZeroTrigger_Deprecated;
     _WindowDuration = other._WindowDuration;
 
     #pragma region Transform
 
-        _TransformMethod = other._TransformMethod;
+        _TransformMethod   = other._TransformMethod;
 
-        _WindowFunction = other._WindowFunction;
-        _WindowParameter = other._WindowParameter;
-        _WindowSkew = other._WindowSkew;
-        _Truncate = other._Truncate;
+        _WindowFunction    = other._WindowFunction;
+        _WindowParameter   = other._WindowParameter;
+        _WindowSkew        = other._WindowSkew;
+        _Truncate          = other._Truncate;
 
         _ReactionAlignment = other._ReactionAlignment;
 
@@ -370,27 +394,41 @@ state_t & state_t::operator=(const state_t & other) noexcept
 
     #pragma region FFT
 
-        _FFTMode = other._FFTMode;
-        _FFTCustom = other._FFTCustom;
-        _FFTDuration = other._FFTDuration;
+        _FFTMode                   = other._FFTMode;
+        _FFTCustom                 = other._FFTCustom;
+        _FFTDuration               = other._FFTDuration;
+        _HopSizeFraction           = other._HopSizeFraction;
 
-        _KernelSize = other._KernelSize;
-        _AggregationMethod = other._AggregationMethod;
-        _SmoothLowerFrequencies = other._SmoothLowerFrequencies;
-        _SmoothGainTransition = other._SmoothGainTransition;
+        _KernelSize                = other._KernelSize;
+        _AggregationMethod         = other._AggregationMethod;
+        _SmoothLowerFrequencies    = other._SmoothLowerFrequencies;
+        _SmoothGainTransition      = other._SmoothGainTransition;
+        _UseReassignmentSharpening = other._UseReassignmentSharpening;
 
-        _MappingMethod = other._MappingMethod;
+        _MappingMethod             = other._MappingMethod;
+
+        #pragma region Peak Detection
+
+        _DetectPeaks               = other._DetectPeaks;
+        _MaxPeakCount              = other._MaxPeakCount;
+        _MinPeakLevel              = other._MinPeakLevel;
+        _MinPeakProminence         = other._MinPeakProminence;
+        _BandSpan                  = other._BandSpan;
+        _MinPeakDistance           = other._MinPeakDistance;
+        _InterpolateFrequency      = other._InterpolateFrequency;
+
+        #pragma endregion
 
         #pragma region Brown-Puckette CQT
 
-            _BandwidthOffset = other._BandwidthOffset;
-            _BandwidthCap = other._BandwidthCap;
-            _BandwidthAmount = other._BandwidthAmount;
+            _BandwidthOffset      = other._BandwidthOffset;
+            _BandwidthCap         = other._BandwidthCap;
+            _BandwidthAmount      = other._BandwidthAmount;
             _UseGranularBandwidth = other._UseGranularBandwidth;
 
-            _KernelShape = other._KernelShape;
+            _KernelShape          = other._KernelShape;
             _KernelShapeParameter = other._KernelShapeParameter;
-            _KernelAsymmetry = other._KernelAsymmetry;
+            _KernelAsymmetry      = other._KernelAsymmetry;
 
         #pragma endregion
 
@@ -399,19 +437,19 @@ state_t & state_t::operator=(const state_t & other) noexcept
     #pragma region CQT
 
         _CQTBandwidthOffset = other._CQTBandwidthOffset;
-        _CQTAlignment = other._CQTAlignment;
-        _CQTDownSample = other._CQTDownSample;
+        _CQTAlignment       = other._CQTAlignment;
+        _CQTDownSample      = other._CQTDownSample;
 
     #pragma endregion
 
     #pragma region IIR
 
-        _FilterBankOrder = other._FilterBankOrder;
-        _TimeResolution = other._TimeResolution;
-        _IIRBandwidth = other._IIRBandwidth;
-        _ConstantQ = other._ConstantQ;
+        _FilterBankOrder     = other._FilterBankOrder;
+        _TimeResolution      = other._TimeResolution;
+        _IIRBandwidth        = other._IIRBandwidth;
+        _ConstantQ           = other._ConstantQ;
         _CompensateBandwidth = other._CompensateBandwidth;
-        _UsePreWarpedQ = other._UsePreWarpedQ;
+        _UsePreWarpedQ       = other._UsePreWarpedQ;
 
     #pragma endregion
 
@@ -419,22 +457,22 @@ state_t & state_t::operator=(const state_t & other) noexcept
 
         _FrequencyDistribution = other._FrequencyDistribution;
 
-        _BandCount = other._BandCount;
-        _MelBandCount = other._MelBandCount;
+        _BandCount             = other._BandCount;
+        _MelBandCount          = other._MelBandCount;
 
-        _LoFrequency = other._LoFrequency;
-        _HiFrequency = other._HiFrequency;
+        _LoFrequency           = other._LoFrequency;
+        _HiFrequency           = other._HiFrequency;
 
         // Note range
-        _LoNote = other._LoNote;
-        _HiNote = other._HiNote;
-        _BandsPerOctave = other._BandsPerOctave;
-        _TuningPitch = other._TuningPitch;
-        _Transpose = other._Transpose;
+        _LoNote                 = other._LoNote;
+        _HiNote                 = other._HiNote;
+        _BandsPerOctave         = other._BandsPerOctave;
+        _TuningPitch            = other._TuningPitch;
+        _Transpose              = other._Transpose;
 
-        _ScalingFunction = other._ScalingFunction;
-        _SkewFactor = other._SkewFactor;
-        _Bandwidth = other._Bandwidth;
+        _ScalingFunction        = other._ScalingFunction;
+        _SkewFactor             = other._SkewFactor;
+        _Bandwidth              = other._Bandwidth;
 
     #pragma endregion
 
@@ -459,57 +497,17 @@ state_t & state_t::operator=(const state_t & other) noexcept
 
     #pragma endregion
 
-    #pragma region Rendering
-
-//      _BackColor_Deprecated = other._BackColor_Deprecated;
-//      _UseCustomBackColor_Deprecated = other._UseCustomBackColor_Deprecated;
-
-        // X axis
-//      _XAxisMode_Deprecated = other._XAxisMode_Deprecated;
-//      _XAxisTop_Deprecated = other._XAxisTop_Deprecated;
-//      _XAxisBottom_Deprecated = other._XAxisBottom_Deprecated;
-
-//      _XTextColor_Deprecated = other._XTextColor_Deprecated;
-//      _UseCustomXTextColor_Deprecated = other._UseCustomXTextColor_Deprecated;
-
-//      _XLineColor_Deprecated = other._XLineColor_Deprecated;
-//      _UseCustomXLineColor_Deprecated = other._UseCustomXLineColor_Deprecated;
-
-        // Y axis
-//      _YAxisMode_Deprecated = other._YAxisMode_Deprecated;
-//      _YAxisLeft_Deprecated = other._YAxisLeft_Deprecated;
-//      _YAxisRight_Deprecated = other._YAxisRight_Deprecated;
-
-//      _YTextColor_Deprecated = other._YTextColor_Deprecated;
-//      _UseCustomYTextColor_Deprecated = other._UseCustomYTextColor_Deprecated;
-
-//      _YLineColor_Deprecated = other._YLineColor_Deprecated;
-//      _UseCustomYLineColor_Deprecated = other._UseCustomYLineColor_Deprecated;
-
-//      _AmplitudeLo_Deprecated = other._AmplitudeLo_Deprecated;
-//      _AmplitudeHi_Deprecated = other._AmplitudeHi_Deprecated;
-//      _AmplitudeStep_Deprecated = other._AmplitudeStep_Deprecated;
-
-//      _UseAbsolute_Deprecated = other._UseAbsolute_Deprecated;
-
-//      _Gamma_Deprecated = other._Gamma_Deprecated;
-
-    #pragma endregion
-
     #pragma region Graph Common
 
         // Common
-//      _ColorScheme_Deprecated = other._ColorScheme_Deprecated;
-
         _SmoothingMethod = other._SmoothingMethod;
         _SmoothingFactor = other._SmoothingFactor;
 
-//      _GradientStops = other._GradientStops;                  // Deprecated
-//      _CustomGradientStops_Deprecated = other._CustomGradientStops_Deprecated;
-
-        _ShowToolTipsAlways = other._ShowToolTipsAlways;
-        _SuppressMirrorImage = other._SuppressMirrorImage;
-        _VisualizeDuringPause = other._VisualizeDuringPause;
+        _ShowToolTipsAlways     = other._ShowToolTipsAlways;
+        _SuppressMirrorImage    = other._SuppressMirrorImage;
+        _VisualizeDuringPause   = other._VisualizeDuringPause;
+        _AltFullscreen          = other._AltFullscreen;
+        _AltFullscreenAnimation = other._AltFullscreenAnimation;
 
         // Artwork
         _NumArtworkColors = other._NumArtworkColors;
@@ -517,8 +515,6 @@ state_t & state_t::operator=(const state_t & other) noexcept
         _TransparencyThreshold = other._TransparencyThreshold;
 
         _ColorOrder = other._ColorOrder;
-
-//      _BackgroundMode_Deprecated = other._BackgroundMode_Deprecated;
 
         _ShowArtworkOnBackground = other._ShowArtworkOnBackground;
         _ArtworkType = other._ArtworkType;
@@ -537,12 +533,12 @@ state_t & state_t::operator=(const state_t & other) noexcept
 
     #pragma region Graphs
 
-    _GraphOptions = other._GraphOptions;
+    _GraphOptions    = other._GraphOptions;
 
-    _GridRowCount = other._GridRowCount;
+    _GridRowCount    = other._GridRowCount;
     _GridColumnCount = other._GridColumnCount;
-    _VerticalLayout = other._VerticalLayout;
-    _OverlapGraphs = other._OverlapGraphs;
+    _VerticalLayout  = other._VerticalLayout;
+    _OverlapGraphs   = other._OverlapGraphs;
 
     _ChannelOrder = other._ChannelOrder;
 
@@ -553,20 +549,14 @@ state_t & state_t::operator=(const state_t & other) noexcept
     _VisualizationType = other._VisualizationType;
 
     // Bars
-//  _DrawBandBackground_Deprecated = other._DrawBandBackground_Deprecated;
-//  _LightBandColor_Deprecated = other._LightBandColor_Deprecated;
-//  _DarkBandColor_Deprecated = other._DarkBandColor_Deprecated;
-
     _LEDMode = other._LEDMode;
     _LEDLight = other._LEDLight;
     _LEDGap = other._LEDGap;
     _LEDIntegralSize = other._LEDIntegralSize;
 
-//  _HorizontalGradient_Deprecated = other._HorizontalGradient_Deprecated;
-
-    _PeakMode = other._PeakMode;
-    _HoldTime = other._HoldTime;
-    _FallRate = other._FallRate;
+    _PeakMode                = other._PeakMode;
+    _HoldDuration                = other._HoldDuration;
+    _FallSpeed               = other._FallSpeed;
     _ResetPeaksOnTrackChange = other._ResetPeaksOnTrackChange;
 
     // Radial Bars
@@ -575,18 +565,12 @@ state_t & state_t::operator=(const state_t & other) noexcept
     _AngularVelocity = other._AngularVelocity;
 
     // Curve
-//  _LineWidth_Deprecated = other._LineWidth_Deprecated;
-//  _LineColor_Deprecated = other._LineColor_Deprecated;
-//  _UseCustomLineColor_Deprecated = other._UseCustomLineColor_Deprecated;
-//  _PeakLineColor_Deprecated = other._PeakLineColor_Deprecated;
-//  _UseCustomPeakLineColor_Deprecated = other._UseCustomPeakLineColor_Deprecated;
-//  _AreaOpacity_Deprecated = other._AreaOpacity_Deprecated;
 
     // Spectrogram
-    _IsScrollingSpectrogram = other._IsScrollingSpectrogram;
+    _IsScrollingSpectrogram  = other._IsScrollingSpectrogram;
     _IsHorizontalSpectrogram = other._IsHorizontalSpectrogram;
-    _UseSpectrumBarMetrics = other._UseSpectrumBarMetrics;
-    _SpectrogramLegend = other._SpectrogramLegend;
+    _UseSpectrumBarMetrics   = other._UseSpectrumBarMetrics;
+    _SpectrogramLegend       = other._SpectrogramLegend;
 
     // Peak Meter
     _IsHorizontalPeakMeter = other._IsHorizontalPeakMeter;
@@ -622,6 +606,15 @@ state_t & state_t::operator=(const state_t & other) noexcept
     _BitsPerInteger       = other._BitsPerInteger;
     _OpacityMode          = other._OpacityMode;
 
+    // Eye Candy
+    _EffectCategoryId       = other._EffectCategoryId;
+    _EffectId               = other._EffectId;
+
+    _EffectQuality          = other._EffectQuality;
+    _EffectSpeed            = other._EffectSpeed;
+    _EffectBrightness       = other._EffectBrightness;
+    _EffectDensity          = other._EffectDensity;
+
     #pragma endregion
 
     // Styles
@@ -633,7 +626,7 @@ state_t & state_t::operator=(const state_t & other) noexcept
     // Not serialized
     _UserInterfaceColors  = other._UserInterfaceColors; // Keep this: It makes sure the render thread has color information at startup.
 
-    _BinCount             = other._BinCount;
+    _FFTSize              = other._FFTSize;
     _ActivePresetName     = other._ActivePresetName;
 
     return *this;
@@ -736,13 +729,13 @@ void state_t::Read(stream_reader * stream, size_t size, abort_callback & abortHa
         stream->read(&_DrawBandBackground_Deprecated, sizeof(_DrawBandBackground_Deprecated), abortHandler);
 
         stream->read(&_PeakMode, sizeof(_PeakMode), abortHandler);
-        stream->read(&_HoldTime, sizeof(_HoldTime), abortHandler);
-        stream->read(&_FallRate, sizeof(_FallRate), abortHandler);
+        stream->read(&_HoldDuration, sizeof(_HoldDuration), abortHandler);
+        stream->read(&_FallSpeed, sizeof(_FallSpeed), abortHandler);
 
         if (Version < 36)
         {
-            _HoldTime = msc::Map(_HoldTime, 0., 120., MinHoldTime, MaxHoldTime);
-            _FallRate = msc::Map(_FallRate, 0.,   2., MinFallRate, MaxFallRate);
+            _HoldDuration = msc::Map(_HoldDuration, 0., 120., MinHoldDuration, MaxHoldDuration);
+            _FallSpeed    = msc::Map(_FallSpeed,    0.,   2., MinFallSpeed,    MaxFallSpeed);
         }
 
     #pragma endregion
@@ -1153,8 +1146,8 @@ void state_t::Write(stream_writer * stream, abort_callback & abortHandler, bool 
         stream->write(&_DrawBandBackground_Deprecated, sizeof(_DrawBandBackground_Deprecated), abortHandler);
 
         stream->write(&_PeakMode, sizeof(_PeakMode), abortHandler);
-        stream->write(&_HoldTime, sizeof(_HoldTime), abortHandler);
-        stream->write(&_FallRate, sizeof(_FallRate), abortHandler);
+        stream->write(&_HoldDuration, sizeof(_HoldDuration), abortHandler);
+        stream->write(&_FallSpeed, sizeof(_FallSpeed), abortHandler);
 
         #pragma endregion
 
@@ -1449,18 +1442,18 @@ void state_t::FromJSON(const char * data, size_t size, bool isPreset)
 
     const auto & PeakIndicators = Object.value("peakIndicators", json::object());
     {
-        _PeakMode = std::clamp(PeakIndicators.value("mode",     _PeakMode), PeakMode::Min, PeakMode::Max);
-        _HoldTime = std::clamp(PeakIndicators.value("holdTime", _HoldTime), MinHoldTime, MaxHoldTime);
+        _PeakMode     = std::clamp(PeakIndicators.value("mode",     _PeakMode), PeakMode::Min, PeakMode::Max);
+        _HoldDuration = std::clamp(PeakIndicators.value("holdTime", _HoldDuration), MinHoldDuration, MaxHoldDuration);
 
         if (SchemaVersion < 2)
         {
-            _FallRate = PeakIndicators.value("acceleration", _FallRate);
+            _FallSpeed = PeakIndicators.value("acceleration", _FallSpeed);
 
-            _HoldTime = msc::Map(_HoldTime, 0., 120., MinHoldTime, MaxHoldTime);
-            _FallRate = msc::Map(_FallRate, 0.,   2., MinFallRate, MaxFallRate);
+            _HoldDuration = msc::Map(_HoldDuration, 0., 120., MinHoldDuration, MaxHoldDuration);
+            _FallSpeed    = msc::Map(_FallSpeed,    0.,   2., MinFallSpeed,    MaxFallSpeed);
         }
         else
-            _FallRate = std::clamp(PeakIndicators.value("fallRate", _FallRate), MinFallRate, MaxFallRate);
+            _FallSpeed = std::clamp(PeakIndicators.value("fallRate", _FallSpeed), MinFallSpeed, MaxFallSpeed);
 
         _ResetPeaksOnTrackChange = PeakIndicators.value("resetOnTrackChange", _ResetPeaksOnTrackChange);
     }
@@ -1499,9 +1492,9 @@ void state_t::FromJSON(const char * data, size_t size, bool isPreset)
         _MaxBarSize            = std::clamp(PeakMeter.value("maxBarSize", _MaxBarSize), MinBarSize, MinBarSize);
     }
 
-    const auto & LevelMeter = Object.value("levelMeter", json::object());
+    const auto & BalanceMeter = Object.value("levelMeter", json::object());
     {
-        _IsHorizontalLevelMeter = LevelMeter.value("horizontally", _IsHorizontalLevelMeter);
+        _IsHorizontalLevelMeter = BalanceMeter.value("horizontally", _IsHorizontalLevelMeter);
     }
 
     const auto & Oscilloscope = Object.value("oscilloscope", json::object());
@@ -1547,27 +1540,51 @@ void state_t::FromJSON(const char * data, size_t size, bool isPreset)
         _OpacityMode    = BitMeter.value("opacityMode", _OpacityMode);
     }
 
+    const auto & EyeCandy = Object.value("eyeCandy", json::object());
+    {
+        _EffectCategoryId = std::clamp(EyeCandy.value("category",   _EffectCategoryId), EyeCandy::Category::Min,   EyeCandy::Category::Max);
+        _EffectId         = std::clamp(EyeCandy.value("effect",     _EffectId),         EyeCandy::Effect::Min,     EyeCandy::Effect::Max);
+
+        _EffectQuality    = std::clamp(EyeCandy.value("quality",    _EffectQuality),    EyeCandy::Quality::Min,    EyeCandy::Quality::Max);
+        _EffectSpeed      = std::clamp(EyeCandy.value("speed",      _EffectSpeed),      EyeCandy::Speed::Min,      EyeCandy::Speed::Max);
+        _EffectBrightness = std::clamp(EyeCandy.value("brightness", _EffectBrightness), EyeCandy::Brightness::Min, EyeCandy::Brightness::Max);
+        _EffectDensity    = std::clamp(EyeCandy.value("density",    _EffectDensity),    EyeCandy::Density::Min,    EyeCandy::Density::Max);
+    }
+
     // Transform
     const auto & Transform = Object.value("transform", json::object());
     {
-        _TransformMethod        = std::clamp(Transform.value("method",            _TransformMethod),        TransformMethod::Min,       TransformMethod::Max);
+        _TransformMethod            = std::clamp(Transform.value("method",            _TransformMethod),        TransformMethod::Min,       TransformMethod::Max);
 
         // FFT
-        _WindowFunction         = std::clamp(Transform.value("windowFunction",    _WindowFunction),         WindowFunction::Min,        WindowFunction::Max);
-        _WindowParameter        = std::clamp(Transform.value("windowParameter",   _WindowParameter),        MinWindowParameter,         MaxWindowParameter);
-        _WindowSkew             = std::clamp(Transform.value("windowSkew",        _WindowSkew),             MinWindowSkew,              MaxWindowSkew);
-        _ReactionAlignment      = std::clamp(Transform.value("reactionAlignment", _ReactionAlignment),      MinReactionAlignment,       MaxReactionAlignment);
+        _WindowFunction             = std::clamp(Transform.value("windowFunction",    _WindowFunction),         WindowFunctionType::Min,    WindowFunctionType::Max);
+        _WindowParameter            = std::clamp(Transform.value("windowParameter",   _WindowParameter),        MinWindowParameter,         MaxWindowParameter);
+        _WindowSkew                 = std::clamp(Transform.value("windowSkew",        _WindowSkew),             MinWindowSkew,              MaxWindowSkew);
+        _ReactionAlignment          = std::clamp(Transform.value("reactionAlignment", _ReactionAlignment),      MinReactionAlignment,       MaxReactionAlignment);
 
-        _FFTMode                = std::clamp(Transform.value("mode",              _FFTMode),                FFTMode::Min,               FFTMode::Max);
-        _FFTCustom              = std::clamp(Transform.value("custom",            _FFTCustom),              (size_t) MinFFTSize,        (size_t) MaxFFTSize);
-        _FFTDuration            = std::clamp(Transform.value("duration",          _FFTDuration),            MinFFTDuration,             MaxFFTDuration);
+        _FFTMode                    = std::clamp(Transform.value("mode",              _FFTMode),                FFTMode::Min,               FFTMode::Max);
+        _FFTCustom                  = std::clamp(Transform.value("custom",            _FFTCustom),              (size_t) MinFFTSize,        (size_t) MaxFFTSize);
+        _FFTDuration                = std::clamp(Transform.value("duration",          _FFTDuration),            MinFFTDuration,             MaxFFTDuration);
+        _HopSizeFraction            = std::clamp(Transform.value("hopSizeFraction",   _HopSizeFraction),        MinHopSizeFraction,         MaxHopSizeFraction);
 
-        _AggregationMethod      = std::clamp(Transform.value("aggregationMethod", _AggregationMethod),      AggregationMethod::Min,     AggregationMethod::Max);
-        _MappingMethod          = std::clamp(Transform.value("mapping",           _MappingMethod),          CoefficientMapping::Min,    CoefficientMapping::Max);
-        _SmoothLowerFrequencies = Transform.value("smoothLowerFrequencies",       _SmoothLowerFrequencies);
-        _SmoothGainTransition   = Transform.value("smoothGainTransition",         _SmoothGainTransition);
+        _AggregationMethod          = std::clamp(Transform.value("aggregationMethod", _AggregationMethod),      AggregationMethod::Min,     AggregationMethod::Max);
+        _MappingMethod              = std::clamp(Transform.value("mapping",           _MappingMethod),          CoefficientMapping::Min,    CoefficientMapping::Max);
+        _SmoothLowerFrequencies     = Transform.value("smoothLowerFrequencies",       _SmoothLowerFrequencies);
+        _SmoothGainTransition       = Transform.value("smoothGainTransition",         _SmoothGainTransition);
+        _UseReassignmentSharpening  = Transform.value("reassignmentSharpening",       _UseReassignmentSharpening);
 
-        _KernelSize             = std::clamp(Transform.value("kernelSize",        _KernelSize),             MinKernelSize,              MaxKernelSize);
+        _KernelSize                 = std::clamp(Transform.value("kernelSize",        _KernelSize),             MinKernelSize,              MaxKernelSize);
+
+        const auto & PeakDetection = Transform.value("peakDetection", json::object());
+        {
+            _DetectPeaks            = PeakDetection.value("enabled", _DetectPeaks);
+            _MaxPeakCount           = std::clamp(PeakDetection.value("maxPeakCount",        _MaxPeakCount),       MinPeakCount,      MaxPeakCount);
+            _MinPeakLevel           = std::clamp(PeakDetection.value("minPeakLevel    ",    _MinPeakLevel),       MinPeakLevel,      MaxPeakLevel);
+            _MinPeakProminence      = std::clamp(PeakDetection.value("minPeakProminence",   _MinPeakProminence),  MinPeakProminence, MaxPeakProminence);
+            _BandSpan               = std::clamp(PeakDetection.value("bandSpan",            _BandSpan),           MinBandSpan,       MaxBandSpan);
+            _MinPeakDistance        = std::clamp(PeakDetection.value("minPeakDistance",     _MinPeakDistance),    MinPeakDistance,   MaxPeakDistance);
+            _InterpolateFrequency   = PeakDetection.value("interpolateFrequency",           _InterpolateFrequency);
+        }
     }
 
     // CQT
@@ -1578,7 +1595,7 @@ void state_t::FromJSON(const char * data, size_t size, bool isPreset)
         _BandwidthAmount        = std::clamp(CQT.value("bandwidthAmount",       _BandwidthAmount),          MinBandwidthAmount,         MaxBandwidthAmount);
         _UseGranularBandwidth   = CQT.value("useGranularBandwidth",             _UseGranularBandwidth);
 
-        _KernelShape            = std::clamp(CQT.value("kernelShape",           _KernelShape),              WindowFunction::Min,        WindowFunction::Max);
+        _KernelShape            = std::clamp(CQT.value("kernelShape",           _KernelShape),              WindowFunctionType::Min,    WindowFunctionType::Max);
         _KernelShapeParameter   = std::clamp(CQT.value("kernelShapeParameter",  _KernelShapeParameter),     MinWindowParameter,         MaxWindowParameter);
         _KernelAsymmetry        = std::clamp(CQT.value("kernelAsymmetry",       _KernelAsymmetry),          MinWindowSkew,              MaxWindowSkew);
     }
@@ -1640,7 +1657,6 @@ void state_t::FromJSON(const char * data, size_t size, bool isPreset)
         _WeightingAmount        = std::clamp(Filters.value("weightingAmount",       _WeightingAmount),          MinWeightingAmount,         MaxWeightingAmount);
     }
 
-
     // Crossover Filters
     const auto & CrossoverFilters = Object.value("crossoverFilters", json::object());
     {
@@ -1658,6 +1674,8 @@ void state_t::FromJSON(const char * data, size_t size, bool isPreset)
     _ShowToolTipsAlways     = Object.value("showToolTipsAlways",                    _ShowToolTipsAlways);
     _SuppressMirrorImage    = Object.value("suppressMirrorImage",                   _SuppressMirrorImage);
     _VisualizeDuringPause   = Object.value("visualizeDuringPause",                  _VisualizeDuringPause);
+    _AltFullscreen          = Object.value("alternateFullscreenMode",               _AltFullscreen);
+    _AltFullscreenAnimation = Object.value("alternateFullscreenModeAnimation",      _AltFullscreenAnimation);
 
     // Artwork
     const auto & Artwork = Object.value("artwork", json::object());
@@ -1758,8 +1776,8 @@ json state_t::ToJSON(bool isPreset) const
             "peakIndicators", json::object
             ({
                 { "mode", _PeakMode },
-                { "holdTime", _HoldTime },
-                { "fallRate", _FallRate },
+                { "holdTime", _HoldDuration },
+                { "fallRate", _FallSpeed },
                 { "resetOnTrackChange", _ResetPeaksOnTrackChange },
             })
         ),
@@ -1863,6 +1881,20 @@ json state_t::ToJSON(bool isPreset) const
             })
         ),
 
+        json::object_t::value_type
+        (
+            "eyeCandy", json::object
+            ({
+                { "category", _EffectCategoryId },
+                { "effect", _EffectId },
+
+                { "quality", _EffectQuality },
+                { "speed", _EffectSpeed },
+                { "brightness", _EffectBrightness },
+                { "density", _EffectDensity },
+            })
+        ),
+
         // FFT
         json::object_t::value_type
         (
@@ -1878,13 +1910,31 @@ json state_t::ToJSON(bool isPreset) const
                 { "mode", _FFTMode },
                 { "custom", _FFTCustom },
                 { "duration", _FFTDuration },
+                { "hopSizeFraction", _HopSizeFraction },
 
                 { "aggregationMethod", _AggregationMethod },
                 { "mapping", _MappingMethod },
                 { "smoothLowerFrequencies", _SmoothLowerFrequencies },
                 { "smoothGainTransition", _SmoothGainTransition },
+                { "reassignmentSharpening", _UseReassignmentSharpening },
 
                 { "kernelSize", _KernelSize },
+
+                json::object_t::value_type
+                (
+                    "peakDetection", json::object
+                    ({
+                        { "enabled", _DetectPeaks },
+
+                        { "maxPeakCount", _MaxPeakCount },
+                        { "minPeakLevel", _MinPeakLevel },
+                        { "minPeakProminence", _MinPeakProminence },
+                        { "bandSpan", _BandSpan },
+
+                        { "minPeakDistance", _MinPeakDistance },
+                        { "interpolateFrequency", _InterpolateFrequency },
+                    })
+                ),
 
                 // CQT
                 json::object_t::value_type
@@ -1899,7 +1949,6 @@ json state_t::ToJSON(bool isPreset) const
                         { "kernelShape", _KernelShape },
                         { "kernelShapeParameter", _KernelShapeParameter },
                         { "kernelAsymmetry", _KernelAsymmetry },
-
                     })
                 ),
 
@@ -1976,12 +2025,14 @@ json state_t::ToJSON(bool isPreset) const
         ), 
 
         // Common
-        { "smoothingMethod",      _SmoothingMethod },
-        { "smoothingFactor",      _SmoothingFactor },
+        { "smoothingMethod",                    _SmoothingMethod },
+        { "smoothingFactor",                    _SmoothingFactor },
 
-        { "showToolTipsAlways",   _ShowToolTipsAlways },
-        { "suppressMirrorImage",  _SuppressMirrorImage },
-        { "visualizeDuringPause", _VisualizeDuringPause },
+        { "showToolTipsAlways",                 _ShowToolTipsAlways },
+        { "suppressMirrorImage",                _SuppressMirrorImage },
+        { "visualizeDuringPause",               _VisualizeDuringPause },
+        { "alternateFullscreenMode",            _AltFullscreen },
+        { "alternateFullscreenModeAnimation",   _AltFullscreenAnimation },
 
         json::object_t::value_type
         (
@@ -2065,20 +2116,20 @@ void state_t::ConvertColorSettings() noexcept
             _BackgroundMode_Deprecated = BackgroundMode::Artwork;
 
             style._ColorSource = ColorSource::DominantColor;
-            style._CurrentColor = _ArtworkDominantColor;
+            style.CurrentColor = _ArtworkDominantColor;
         }
         else
         if (!_UseCustomBackColor_Deprecated)
         {
             style._ColorSource = ColorSource::UserInterface;
-            style._CurrentColor = _UserInterfaceColors[_IsDUI ? 1U : 3U];
+            style.CurrentColor = _UserInterfaceColors[_IsDUI ? 1U : 3U];
         }
         else
         {
             style._CustomColor = _BackColor_Deprecated;
 
             style._ColorSource = ColorSource::Solid;
-            style._CurrentColor = style._CustomColor;
+            style.CurrentColor = style._CustomColor;
         }
 
         if (_HorizontalGradient_Deprecated)
@@ -2096,15 +2147,15 @@ void state_t::ConvertColorSettings() noexcept
             if (!_UseCustomXLineColor_Deprecated)
             {
                 style._ColorSource = ColorSource::UserInterface;
-                style._CurrentColor = _UserInterfaceColors[0];
+                style.CurrentColor = _UserInterfaceColors[0];
             }
             else
             {
                 style._ColorSource = ColorSource::Solid;
-                style._CurrentColor = style._CustomColor;
+                style.CurrentColor = style._CustomColor;
             }
 
-        style._CurrentGradientStops = gradient_t::ConvertFormat(style._CustomGradient);
+        style.CurrentGradientStops = gradient_t::ConvertFormat(style._CustomGradient);
     }
 
     {
@@ -2118,15 +2169,15 @@ void state_t::ConvertColorSettings() noexcept
             if (!_UseCustomXTextColor_Deprecated)
             {
                 style._ColorSource = ColorSource::UserInterface;
-                style._CurrentColor = _UserInterfaceColors[0];
+                style.CurrentColor = _UserInterfaceColors[0];
             }
             else
             {
                 style._ColorSource = ColorSource::Solid;
-                style._CurrentColor = style._CustomColor;
+                style.CurrentColor = style._CustomColor;
             }
 
-        style._CurrentGradientStops = gradient_t::ConvertFormat(style._CustomGradient);
+        style.CurrentGradientStops = gradient_t::ConvertFormat(style._CustomGradient);
     }
 
     {
@@ -2140,15 +2191,15 @@ void state_t::ConvertColorSettings() noexcept
             if (!_UseCustomYLineColor_Deprecated)
             {
                 style._ColorSource = ColorSource::UserInterface;
-                style._CurrentColor = _UserInterfaceColors[0];
+                style.CurrentColor = _UserInterfaceColors[0];
             }
             else
             {
                 style._ColorSource = ColorSource::Solid;
-                style._CurrentColor = style._CustomColor;
+                style.CurrentColor = style._CustomColor;
             }
 
-        style._CurrentGradientStops = gradient_t::ConvertFormat(style._CustomGradient);
+        style.CurrentGradientStops = gradient_t::ConvertFormat(style._CustomGradient);
     }
 
     {
@@ -2162,15 +2213,15 @@ void state_t::ConvertColorSettings() noexcept
             if (!_UseCustomYTextColor_Deprecated)
             {
                 style._ColorSource = ColorSource::UserInterface;
-                style._CurrentColor = _UserInterfaceColors[0];
+                style.CurrentColor = _UserInterfaceColors[0];
             }
             else
             {
                 style._ColorSource = ColorSource::Solid;
-                style._CurrentColor = style._CustomColor;
+                style.CurrentColor = style._CustomColor;
             }
 
-        style._CurrentGradientStops = gradient_t::ConvertFormat(style._CustomGradient);
+        style.CurrentGradientStops = gradient_t::ConvertFormat(style._CustomGradient);
     }
 
     {
@@ -2181,8 +2232,8 @@ void state_t::ConvertColorSettings() noexcept
         style._ColorScheme = _ColorScheme_Deprecated;
 
             style._ColorSource           = ColorSource::Gradient;
-            style._CurrentColor          = D2D1::ColorF(0, 0.f); // Transparent
-            style._CurrentGradientStops = SelectGradientStops_Deprecated(_ColorScheme_Deprecated);
+            style.CurrentColor          = D2D1::ColorF(0, 0.f); // Transparent
+            style.CurrentGradientStops = SelectGradientStops_Deprecated(_ColorScheme_Deprecated);
     }
 
     {
@@ -2192,7 +2243,7 @@ void state_t::ConvertColorSettings() noexcept
         style._CustomGradient = gradient_t::ConvertFormat(_CustomGradientStops_Deprecated);
 
             style._ColorSource = ColorSource::Solid;
-            style._CurrentColor = style._CustomColor;
+            style.CurrentColor = style._CustomColor;
     }
 
     {
@@ -2202,7 +2253,7 @@ void state_t::ConvertColorSettings() noexcept
         style._CustomGradient = gradient_t::ConvertFormat(_CustomGradientStops_Deprecated);
 
             style._ColorSource = ColorSource::Solid;
-            style._CurrentColor = style._CustomColor;
+            style.CurrentColor = style._CustomColor;
     }
 
     {
@@ -2216,13 +2267,13 @@ void state_t::ConvertColorSettings() noexcept
             if (!_UseCustomLineColor_Deprecated)
             {
                 style._ColorSource          = ColorSource::Gradient;
-                style._CurrentColor         = D2D1::ColorF(0, 0.f); // Transparent
-                style._CurrentGradientStops = SelectGradientStops_Deprecated(_ColorScheme_Deprecated);
+                style.CurrentColor         = D2D1::ColorF(0, 0.f); // Transparent
+                style.CurrentGradientStops = SelectGradientStops_Deprecated(_ColorScheme_Deprecated);
             }
             else
             {
                 style._ColorSource = ColorSource::Solid;
-                style._CurrentColor = style._CustomColor;
+                style.CurrentColor = style._CustomColor;
             }
 
         style._Thickness = _LineWidth_Deprecated;
@@ -2236,8 +2287,8 @@ void state_t::ConvertColorSettings() noexcept
         style._ColorScheme = _ColorScheme_Deprecated;
 
             style._ColorSource          = ColorSource::Gradient;
-            style._CurrentColor         = D2D1::ColorF(0, 0.f); // Transparent
-            style._CurrentGradientStops = SelectGradientStops_Deprecated(_ColorScheme_Deprecated);
+            style.CurrentColor         = D2D1::ColorF(0, 0.f); // Transparent
+            style.CurrentGradientStops = SelectGradientStops_Deprecated(_ColorScheme_Deprecated);
             style._Opacity = _AreaOpacity_Deprecated;
     }
 }
@@ -2278,6 +2329,52 @@ const std::vector<D2D1_GRADIENT_STOP> state_t::SelectGradientStops_Deprecated(Co
         return _ArtworkGradientStops;
 
     return gradient_t::GetBuiltIn(colorScheme);
+}
+
+/// <summary>
+/// Returns true if the current visualization is a spectrum analyzer.
+/// </summary>
+bool state_t::IsSpectrumAnalyzer() const noexcept
+{
+    return (_VisualizationType == VisualizationType::Bars) ||
+           (_VisualizationType == VisualizationType::Curve) ||
+           (_VisualizationType == VisualizationType::Spectrogram) ||
+           (_VisualizationType == VisualizationType::RadialBars) ||
+           (_VisualizationType == VisualizationType::RadialCurve);
+}
+
+/// <summary>
+/// Returns true if the transform uses a sliding window.
+/// </summary>
+bool state_t::IsSlidingWindowTransform() const noexcept
+{
+    return (_TransformMethod == TransformMethod::SWIFT || _TransformMethod == TransformMethod::AnalogStyle);
+}
+
+/// <summary>
+/// Returns true if visualization is an oscilloscope.
+/// </summary>
+bool state_t::IsOscilloscope() const noexcept
+{
+    return (_VisualizationType == VisualizationType::Oscilloscope);
+}
+
+/// <summary>
+/// Returns true if overlapping graphs are supported.
+/// </summary>
+bool state_t::SupportsOverlappingGraphs() const noexcept
+{
+    return ((_VisualizationType == VisualizationType::Bars) || (_VisualizationType == VisualizationType::Curve) ||
+            (_VisualizationType == VisualizationType::RadialBars) || (_VisualizationType == VisualizationType::RadialCurve) ||
+            (_VisualizationType == VisualizationType::Oscilloscope) || (_VisualizationType == VisualizationType::Goniometer));
+}
+
+/// <summary>
+/// Returns true if graphs can overlap.
+/// </summary>
+bool state_t::OverlapGraphs() const noexcept
+{
+    return _OverlapGraphs && SupportsOverlappingGraphs();
 }
 
 cfg_int CfgLogLevel({ 0xf06c6211, 0x1617, 0x41ac, { 0xaf, 0xbe, 0x7f, 0xb3, 0xda, 0xef, 0x6, 0x69 } }, DefaultCfgLogLevel);
