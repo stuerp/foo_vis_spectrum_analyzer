@@ -100,13 +100,46 @@ To create the component first build the x86 configuration and next the x64 confi
 
 ## Change Log
 
-v0.14.0.0-alpha6, 2026-11-xx
+v0.14.0.0, 2026-11-13
 
+- New: Composite three-tier FFT
+  - It uses all the settings of the normal FFT but it splits the spectrum into three logarithmic ranges.
+  - The bass tier uses four times the number of bins; the middle tier uses two times the number of bin.
+- New: Decades frequency distribution. It generates frequency bands whose center frequency is a multiple of 10, 100 or 1000 Hz.
+- New: Hop size support for the spectrum analyzers.
+  - The `Hop size fraction` parameter specifies a hop size relative to the FFT size. Smaller hops (larger fraction) produce more frequent analysis updates.
+  - The default value is 0% which results in the old behavior.
 - New: [Reassignment sharpening](https://en.wikipedia.org/wiki/Reassignment_method). [Github Issue 63](https://github.com/stuerp/foo_vis_spectrum_analyzer/issues/63).
   - Produces a sharper spectrum by relocating energy to a bin that represents more accurately the frequency at the cost of extra processing.
   - Works for an FFT and Composite FFT using Standard coefficient mapping.
   - Disabled by default.
+- New: Peak detector. It identifies the strongest local maxima in the current frequency spectrum.
+  - Enable it using the configuration dialog on the Transform page.
+  - Two new styles (Peak Marker and Peak Text) allow you to customize the rendering.
+- New: Alternate full screen mode for DUI. It reuses the current window (and preset) instead of starting a second instance.
+  - Enable it using the configuration dialog on the Common page.
+  - Double click the left mouse button to enter fullscreen mode. Doubleclick again or press Escape to exit.
+  - You can use the Page Up and Page Down key to move the window between monitors.
+- New: Don't render anything to reduce CPU usage when component window is completely covered.
+- New: Balance / Correlation Meter uses the Fall Speed setting instead of a fixed decay speed.
+- New: Eye Candy visualizer with multiple effects in 5 categories.
+- Improved: The alignment of the X-axis frequency labels with the band centers.
+- Improved: Decades frequency setting generates at least the requested number of frequency bands.
+- Improved: The composite three-tier FFT analyzer cross-fades between the tiers using ratios derived from the FFT's bin width instead of fixed ratios.
+- Improved: Goniometer Mono and Triband modes react better to the color changes of the Signal style.
+- Improved: Oscilloscope and Goniometer now supports local styles and Overlap mode.
 - Improved: Streamlined the high-DPI calculations.
+- Changed: Refactored the whole audio processor hierarchy to facilitate maintenance, improve performance and make future expansion easier.
+- Changed: Various little tweaks and corrections to the peak marker animation.
+- Fixed: Styles that use the artwork colors were not correctly initialized at startup. (Regression)
+- Fixed: Peak Meter render bug when multiple graphs are used in the layout. It was caused by unfinished code for this use case.
+- Fixed: Spectrogram showed spectrum residue to the left and top when scrolling in high-DPI scenarios.
+- Fixed: Cosmetic error. The label of the top tick of a Y-axis of the spectrogram was cut off when the tick aligned with the top of the viewport.
+- Fixed: Peak Meter static content did not react to changed color selections.
+- Fixed: Spectrogram showed spectrum residue to the left and top when scrolling in high-DPI scenarios. (Confirmed fix).
+- Fixed: The input ring buffer did not handle non-radix 2 FFT's correctly.
+- Fixed: Static content did not always respond to color changes.
+- Fixed: Oscilloscope and Goniometer did not position themselves correctly in a multiple graph scenario.
 
 You can read the full history [here](docs/History.md).
 

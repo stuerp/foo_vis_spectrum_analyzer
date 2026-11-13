@@ -13,19 +13,24 @@ namespace Waveform
     /// <summary>
     /// 
     /// </summary>
+    std::wstring effect_t::GetStatus() noexcept
+    {
+        return L"Waveform";
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
     void effect_t::Render(ID2D1RenderTarget * renderTarget, double deltaTime, audio_chunk & chunk) noexcept
     {
-        if (chunk.is_empty() || (_Width == 0.f))
-            return;
-
         HRESULT hr = CreateDeviceDependentResources(renderTarget);
 
         if (FAILED(hr))
             return;
 
-        const float _Center = (float) _Height / 2.f;
-
         renderTarget->Clear(D2D1::ColorF(0.035f, 0.045f, 0.06f));
+
+        const float _Center = (float) _Height / 2.f;
 
         // Draw the static content.
         {
@@ -38,6 +43,9 @@ namespace Waveform
                 renderTarget->DrawLine(D2D1::Point2F(x, 0.f), D2D1::Point2F(x, _Height), _GridBrush.Get(), 0.5f);
             }
         }
+
+        if (chunk.is_empty() || (_Width == 0.f))
+            return;
 
         const audio_sample * const Frames = chunk.get_data();
 

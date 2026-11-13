@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.cpp (2026.11.11) P. Stuer - Implements a spectrum analyzer visualization **/
+/** $VER: Spectrum.cpp (2026.11.12) P. Stuer - Implements a spectrum analyzer visualization **/
 
 #include "pch.h"
 
@@ -170,7 +170,7 @@ void spectrum_t::RenderBars(ID2D1DeviceContext * deviceContext) noexcept
 
     for (const auto & fb : _Processor->FrequencyBands)
     {
-        D2D1_RECT_F Rect = { Snap(x1), 0.f, Snap(x2) - Gap, _ClientSize.height};
+        D2D1_RECT_F Rect = { Snap(x1), 0.f, Snap(x2) - Gap, _ClientSize.height };
 
         if (Rect.right - Rect.left < _DIPsPerPixel)
             Rect.right = Rect.left + _DIPsPerPixel;

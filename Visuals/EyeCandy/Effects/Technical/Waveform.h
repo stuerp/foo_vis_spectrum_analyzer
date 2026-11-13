@@ -1,5 +1,5 @@
 
-/** $VER: Waveform.h (2026.10.14) P. Stuer - Implements a waveform visual effect. **/
+/** $VER: Waveform.h (2026.11.12) P. Stuer - Implements a waveform visual effect. **/
 
 #pragma once
 
@@ -19,6 +19,8 @@ namespace Waveform
         effect_t & operator=(effect_t && other) = delete;
 
         void Render(ID2D1RenderTarget * renderTarget, double deltaTime, audio_chunk & chunk) noexcept override final;
+
+        std::wstring GetStatus() noexcept override final;
 
         HRESULT CreateDeviceDependentResources(ComPtr<ID2D1RenderTarget> renderTarget) noexcept;
         void DeleteDeviceDependentResources() noexcept;

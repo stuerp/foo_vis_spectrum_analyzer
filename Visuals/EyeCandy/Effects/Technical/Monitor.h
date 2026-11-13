@@ -1,5 +1,5 @@
 
-/** $VER: Monitor.h (2026.11.09) **/
+/** $VER: Monitor.h (2026.11.12) **/
 
 #pragma once
 
@@ -34,10 +34,11 @@ namespace Monitor
 
         using channel_pair_t = std::array<size_t, 2>;
 
+        void Reset() noexcept override final;
+
         void Render(ID2D1RenderTarget * renderTarget, double deltaTime, audio_chunk & chunk) noexcept override final;
         void Render(ID2D1RenderTarget * renderTarget, double deltaTime, audio_chunk & chunk, const channel_pair_t & selectedChannels) noexcept;
 
-        void Reset() noexcept override final;
         std::wstring GetStatus() noexcept override final;
 
     private:
