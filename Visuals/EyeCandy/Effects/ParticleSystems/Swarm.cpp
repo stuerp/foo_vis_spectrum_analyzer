@@ -105,6 +105,8 @@ namespace Swarm
         if (MaxFrames < 32)
             return;
 
+        const double WindowStep = TwoPi / (double) (MaxFrames - 1);
+
         if (_Samples.size() < MaxFrames)
             _Samples.resize(MaxFrames);
 
@@ -133,7 +135,7 @@ namespace Swarm
 
                 // Apply a Hann window.
                 {
-                    const double Window = 0.5 - (std::cos(TwoPi * (double) i / ((double) MaxFrames - 1.)) * 0.5);
+                    const double Window = 0.5 - (0.5 * std::cos((double) i * WindowStep));
 
                     Samples[i] = Mono * Window;
                 }

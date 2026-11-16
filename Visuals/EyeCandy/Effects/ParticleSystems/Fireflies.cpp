@@ -235,7 +235,7 @@ namespace Fireflies
         double SquaredSum = 0.;
 
         {
-            size_t FrameIndex = 0;
+            size_t i = 0;
 
             const double WindowStep = TwoPi / ((double) MaxFrames - 1.);
 
@@ -259,7 +259,7 @@ namespace Fireflies
 
                 // Apply a Hann window.
                 {
-                    const double Window = 0.5 - (std::cos((double) FrameIndex * WindowStep) * 0.5);
+                    const double Window = 0.5 - (0.5 * std::cos((double) i * WindowStep));
 
                     *Sample++ = Mono * Window;
                 }
@@ -270,7 +270,7 @@ namespace Fireflies
 
                 Frame += ChannelCount;
 
-                ++FrameIndex;
+                ++i;
             }
         }
 

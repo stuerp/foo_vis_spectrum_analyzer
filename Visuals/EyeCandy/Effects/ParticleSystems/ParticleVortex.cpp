@@ -236,6 +236,8 @@ namespace ParticleVortex
 
             double * WindowedSample = WindowedSamples.data();
 
+            const double WindowStep = TwoPi / (double) (MaxFrames - 1);
+
             size_t FrameIndex = 0;
 
             while (Frame < FrameEnd)
@@ -258,7 +260,7 @@ namespace ParticleVortex
 
                 // Apply a Hann window.
                 {
-                    const double Window = 0.5 - (std::cos(TwoPi * (double) FrameIndex / (double) (MaxFrames - 1)) * 0.5);
+                    const double Window = 0.5 - (0.5 * std::cos((double) FrameIndex * WindowStep));
 
                     *WindowedSample++ = (audio_sample) ((double) Sample * Window);
                 }

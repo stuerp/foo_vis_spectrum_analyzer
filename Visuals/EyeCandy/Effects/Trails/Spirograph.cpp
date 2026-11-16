@@ -99,7 +99,7 @@ namespace Spirograph
 
         // Process all frames.
         {
-            const double WindowScale = TwoPi / (double) (MaxFrames - 1);
+            const double WindowStep = TwoPi / (double) (MaxFrames - 1);
 
             double MeanSquare = 0.;
             double Difference = 0.;
@@ -114,7 +114,7 @@ namespace Spirograph
                 const double Mono = 0.5 * (ClampAudio(Frames[FrameIndex + channels[0]]) + ClampAudio(Frames[FrameIndex + channels[1]]));
 
                 // Apply a Hann Window.
-                const double Window = 0.5 - (std::cos((double) i * WindowScale) * 0.5);
+                const double Window = 0.5 - (0.5 * std::cos((double) i * WindowStep));
 
                 Samples[i] = Mono * Window;
 

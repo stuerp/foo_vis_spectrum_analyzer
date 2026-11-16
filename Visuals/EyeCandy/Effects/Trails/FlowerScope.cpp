@@ -165,20 +165,20 @@ namespace FlowerScope
             const double CenterFrequency = LoFrequency * std::pow(MaxFrequency / LoFrequency, Amount);
             const double AngularStep = TwoPi * CenterFrequency / _SampleRate;
 
-            double Real      = 0.;
-            double Imaginary = 0.;
+            double re = 0.;
+            double im = 0.;
 
             for (size_t j = 0; j < MaxFrames; ++j)
             {
                 const double Mono = (_LeftSamples[j] + _RightSamples[j]) * .5;
-                const double Angle = AngularStep * (double)j;
+                const double Angle = AngularStep * (double) j;
 
-                Real      += Mono * std::cos(Angle);
-                Imaginary -= Mono * std::sin(Angle);
+                re += Mono * std::cos(Angle);
+                im -= Mono * std::sin(Angle);
             }
 
-            const double Magnitude = 2. * std::sqrt(Real * Real + Imaginary * Imaginary) / (double)MaxFrames;
-            const double FrequencyGain = 1.65 + 4.1 * std::pow(Amount, 1.18);
+            const double Magnitude = 2. * std::sqrt((re * re) + (im * im)) / (double) MaxFrames;
+            const double FrequencyGain = 1.65 + (4.1 * std::pow(Amount, 1.18));
 
             RawEnergies[i] = Clamp(std::pow(Magnitude * FrequencyGain * 7., .74));
 
@@ -188,10 +188,10 @@ namespace FlowerScope
 
         for (size_t i = 0; i < BandCount; ++i)
         {
-            const size_t PreviousBand = i > 0 ? i - 1 : i;
-            const size_t NextBand = i + 1 < BandCount ? i + 1 : i;
+            const size_t PreviousBand = (i > 0)             ? i - 1 : i;
+            const size_t NextBand     = (i + 1 < BandCount) ? i + 1 : i;
 
-            _Bands[i].Energy = RawEnergies[PreviousBand] * .2 + RawEnergies[i] * .6 + RawEnergies[NextBand] * .2;
+            _Bands[i].Energy = (RawEnergies[PreviousBand] * .2) + (RawEnergies[i] * .6) + (RawEnergies[NextBand] * .2);
         }
 
         _HarmonicCenter = (EnergySum > 1.e-9) ? WeightedBand / EnergySum * InverseBandCount : 0.;

@@ -168,6 +168,8 @@ namespace VectorGrid
         double Sum  = 0.;
         double Peak = 0.;
 
+        const double WindowStep = TwoPi / (double) (MaxFrames - 1);
+
         for (size_t i = 0; i < MaxFrames; ++i)
         {
             const audio_sample * Frame = Frames + (FirstFrame + i) * ChannelCount;
@@ -177,11 +179,11 @@ namespace VectorGrid
             for (size_t Channel = 0; Channel < ChannelCount; ++Channel)
                 Mono += (double) Frame[Channel];
 
-            Mono = ClampAudio(Mono / (double)ChannelCount);
+            Mono = ClampAudio(Mono / (double) ChannelCount);
 
             // Apply a Hann window.
             {
-                const double Window = 0.5 - (std::cos(TwoPi * (double) i / (double) (MaxFrames - 1)) * 0.5);
+                const double Window = 0.5 - (0.5 * std::cos((double) i * WindowStep));
 
                 Samples[i] = Mono * Window;
             }

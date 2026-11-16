@@ -118,6 +118,8 @@ namespace DitherField
         if (MaxFrames < 32)
             return;
 
+        const double WindowStep = TwoPi / (double) (MaxFrames - 1);
+
         if (_Samples.size() < MaxFrames)
             _Samples.resize(MaxFrames);
 
@@ -135,12 +137,14 @@ namespace DitherField
                 for (size_t c = 0; c < ChannelCount; ++c)
                     Mono += Frames[i * ChannelCount + c];
 
-                Mono = ClampAudio(Mono / (double)ChannelCount);
+                Mono = ClampAudio(Mono / (double) ChannelCount);
 
                 // Apply a Hann window.
-                const double Window = .5 - .5 * std::cos(TwoPi * (double) i / ((double) MaxFrames - 1.));
+                {
+                    const double Window = 0.5 - (0.5 * std::cos((double) i * WindowStep));
 
-                Samples[i] = Mono * Window;
+                    Samples[i] = Mono * Window;
+                }
 
                 _Peak = std::max(_Peak, std::abs(Mono));
 

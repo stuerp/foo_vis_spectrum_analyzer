@@ -408,9 +408,12 @@ namespace Monitor
 
             double WindowSum = 0.;
 
+            // Apply a Hann window.
+            const double WindowStep = TwoPi / (double) (SampleCount - 1);
+
             for (size_t i = 0; i < SampleCount; ++i)
             {
-                _Window[i] = 0.5 - 0.5 * std::cos(TwoPi * (double) i / (double) (SampleCount - 1));
+                _Window[i] = 0.5 - (0.5 * std::cos((double) i * WindowStep));
 
                 WindowSum += _Window[i];
             }

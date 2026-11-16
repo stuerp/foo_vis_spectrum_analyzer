@@ -1,5 +1,5 @@
 
-/** $VER: Effect.h (2026.11.06) P. Stuer - Base class for the Eye Candy effects. **/
+/** $VER: Effect.h (2026.11.13) P. Stuer - Base class for the Eye Candy effects. **/
 
 #include <pch.h>
 
@@ -9,6 +9,7 @@
 #include "Effects/DynamicSystems/ChuaCircuit.h"
 #include "Effects/DynamicSystems/DuffingOscillator.h"
 #include "Effects/DynamicSystems/HalvorsenAttractor.h"
+#include "Effects/DynamicSystems/Julia.h"
 #include "Effects/DynamicSystems/LorenzAttractor.h"
 #include "Effects/DynamicSystems/RosslerAttractor.h"
 #include "Effects/DynamicSystems/ThomasAttractor.h"
@@ -116,6 +117,9 @@ std::unique_ptr<effect_t> effect_t::Create(Effect effect) noexcept
 
         case Effect::RotatingTunnel:
             return std::make_unique<RotatingTunnel::effect_t>();
+
+        case Effect::Julia:
+            return std::make_unique<Julia::effect_t>();
 
         // Trails
         case Effect::LissajousTrails:

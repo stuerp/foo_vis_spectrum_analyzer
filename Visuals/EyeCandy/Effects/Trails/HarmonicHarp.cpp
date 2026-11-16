@@ -181,6 +181,8 @@ namespace HarmonicHarp
 
         double Sum = 0.;
 
+        const double WindowStep = TwoPi / (double) (MaxFrames - 1);
+
         for (size_t i = 0; i < MaxFrames; ++i)
         {
             double Mono = 0.;
@@ -190,9 +192,12 @@ namespace HarmonicHarp
 
             Mono = ClampAudio(Mono / (double)ChannelCount);
 
-            const double Window = 0.5 - 0.5 * std::cos(TwoPi * (double) i / ((double) MaxFrames - 1.));
+            // Apply a Hann window.
+            {
+                const double Window = 0.5 - (0.5 * std::cos((double) i * WindowStep));
 
-            Samples[i] = Mono * Window;
+                Samples[i] = Mono * Window;
+            }
 
             _Peak = std::max(_Peak, std::abs(Mono));
 

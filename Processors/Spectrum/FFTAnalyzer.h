@@ -64,7 +64,6 @@ private:
     void MapCoefficientsUsingGaussianFilter(frequency_bands_t & freqBands) const noexcept;
 
     double Interpolate(const std::vector<std::complex<double>> & fftCoeffs, double value, int kernelSize) const noexcept;
-    void Reassign() noexcept;
 
     /// <summary>
     /// Gets the band index of the specified frequency.

@@ -170,7 +170,7 @@ namespace NeonTunnel
 
         const audio_sample * Frame = Frames + (FrameIndex * ChannelCount);
 
-        const double WindowScale = TwoPi / (double) (MaxFrames - 1);
+        const double WindowStep = TwoPi / (double) (MaxFrames - 1);
 
         double Sum  = 0.;
         double Peak = 0.;
@@ -180,7 +180,7 @@ namespace NeonTunnel
             const double Sample = ClampAudio((double) Frame[0]);
 
             // Apply a Hann window.
-            Samples[i] = Sample * (0.5 - (std::cos((double) i * WindowScale) * 0.5));
+            Samples[i] = Sample * (0.5 - (0.5 * std::cos((double) i * WindowStep)));
 
             Sum += Sample * Sample;
 

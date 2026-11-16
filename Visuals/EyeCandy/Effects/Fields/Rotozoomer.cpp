@@ -115,7 +115,8 @@ namespace Rotozoomer
 
         const auto FrameCount   = chunk.get_sample_count();
         const auto ChannelCount = chunk.get_channel_count();
-        const auto SampleRate   = (double) chunk.get_sample_rate();
+
+        _SampleRate = (double) chunk.get_sample_rate();
 
         // Analyze only the most recent frames of the chunk.
         const size_t MaxFrames = std::min<size_t>(FrameCount, 1536);
@@ -147,9 +148,11 @@ namespace Rotozoomer
                 Mono = ClampAudio(Mono * InverseChannelCount);
 
                 // Apply a Hann window.
-                const double Window = .5 - std::cos((double) i * WindowStep) * .5;
+                {
+                    const double Window = 0.5 - (0.5 * std::cos((double) i * WindowStep));
 
-                Samples[i] = Mono * Window;
+                    Samples[i] = Mono * Window;
+                }
 
                 _Peak = std::max(_Peak, std::abs(Mono));
 
@@ -166,7 +169,7 @@ namespace Rotozoomer
 
         // Perform a spectrum analysis of logarithmically spaced frequency bands.
         {
-            const double NyquistFrequency = SampleRate * 0.5;
+            const double NyquistFrequency = _SampleRate * 0.5;
             const double MaximumFrequency = std::min(HiFrequency, NyquistFrequency);
 
             constexpr double TuningConstant = 90.;
@@ -184,7 +187,7 @@ namespace Rotozoomer
                     const double Frequency = LoFrequency * std::pow(MaximumFrequency / LoFrequency, BandAmount);
 
                     // Configure the Goertzel detector.
-                    const double Omega       = TwoPi * Frequency / SampleRate;
+                    const double Omega       = TwoPi * Frequency / _SampleRate;
                     const double Coefficient = 2. * std::cos(Omega);
 
                     double q1 = 0., q2 = 0.;

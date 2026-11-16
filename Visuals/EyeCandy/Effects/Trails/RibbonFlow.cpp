@@ -94,7 +94,7 @@ namespace RibbonFlow
 
         // Process all frames.
         {
-            const double WindowScale = TwoPi / (double) (MaxFrames - 1);
+            const double WindowStep = TwoPi / (double) (MaxFrames - 1);
 
             for (size_t i = 0; i < MaxFrames; ++i)
             {
@@ -104,7 +104,7 @@ namespace RibbonFlow
                 const double Mono = 0.5 * (ClampAudio(Frames[FrameIndex + channels[0]]) + ClampAudio(Frames[FrameIndex + channels[1]]));
 
                 // Apply a Hann window.
-                const double Window = 0.5 - (std::cos((double) i * WindowScale) * 0.5);
+                const double Window = 0.5 - (0.5 * std::cos((double) i * WindowStep));
 
                 Samples[i] = Mono * Window;
             }

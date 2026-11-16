@@ -1,5 +1,5 @@
 
-/** $VER: Constants.h (2026.11.11) P. Stuer **/
+/** $VER: Constants.h (2026.11.13) P. Stuer **/
 
 #pragma once
 
@@ -817,6 +817,7 @@ const std::vector<effect_category_t> EffectCategories
             { EyeCandy::Effect::ChuaCircuit,                L"Chua Circuit" },
             { EyeCandy::Effect::DuffingOscillator,          L"Duffing Oscillator" },
             { EyeCandy::Effect::VanDerPolOscillator,        L"Van der Pol Oscillator" },
+            { EyeCandy::Effect::Julia,                      L"Julia Set" },
         }
     },
     {

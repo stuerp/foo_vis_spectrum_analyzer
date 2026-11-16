@@ -71,8 +71,10 @@ namespace EyeCandy
         GrayScottReactionDiffusion,
         RotatingTunnel,
 
+        Julia,
+
         Min = Waveform,
-        Max = RotatingTunnel,
+        Max = Julia,
     };
 
     constexpr double Pi    = std::numbers::pi_v<double>;
@@ -379,7 +381,6 @@ namespace EyeCandy
             default: { r = v; g = p; b = q; break; } // 5
         }
     }
-
 
     /// <summary>
     /// Converts value into a smoothly interpolated value between 0 and 1. Unlike a linear interpolation, it starts and ends gradually, avoiding sharp transitions.
