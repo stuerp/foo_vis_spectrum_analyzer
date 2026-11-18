@@ -153,13 +153,7 @@ namespace Monitor
     void effect_t::AnalyzeAudio(const audio_chunk & chunk, const channel_pair_t & channels) noexcept
     {
         if (chunk.is_empty())
-        {
-            effect_processor_t::Reset();
-
-            Reset();
-
             return;
-        }
 
         const audio_sample * const Frames = chunk.get_data();
 
@@ -207,10 +201,12 @@ namespace Monitor
 
         size_t ClippedFrameCount  = 0;
 
+        const double BassCoefficient = 1. - std::exp(-TwoPi * BassCutoff / std::max(1., _SampleRate));
+
         // Analyze only the most recent frames of the chunk.
         const auto MaxFrames = FrameCount;
 
-        const double BassCoefficient = 1. - std::exp(-TwoPi * BassCutoff / std::max(1., _SampleRate));
+        const double InvMaxFrames = 1. / (double) MaxFrames;
 
         {
             if (_Samples.size() < MaxFrames)
@@ -275,11 +271,11 @@ namespace Monitor
             AnalyzeSpectrum(Samples);
         }
 
-        const double LeftRMS  = std::sqrt(SumLeftSquares  / (double) MaxFrames);
-        const double RightRMS = std::sqrt(SumRightSquares / (double) MaxFrames);
+        const double LeftRMS  = std::sqrt(SumLeftSquares  * InvMaxFrames);
+        const double RightRMS = std::sqrt(SumRightSquares * InvMaxFrames);
 
-        const double MidRMS   = std::sqrt(SumMidSquares   / (double) MaxFrames);
-        const double SideRMS  = std::sqrt(SumSideSquares  / (double) MaxFrames);
+        const double MidRMS   = std::sqrt(SumMidSquares   * InvMaxFrames);
+        const double SideRMS  = std::sqrt(SumSideSquares  * InvMaxFrames);
 
         {
             // Peak indicates how close the signal gets to full scale. It is useful for:
@@ -294,7 +290,7 @@ namespace Monitor
             // - A body or fill level that moves less erratically than peak;
             // - A useful baseline for onset and transient detection;
             // - Context for whether a large peak is isolated or part of consistently loud material.
-            _RMS  = std::clamp(std::sqrt(SumSquares / (double) MaxFrames), 0., 1.);
+            _RMS  = std::clamp(std::sqrt(SumSquares * InvMaxFrames), 0., 1.);
         }
 
         // Calulate the crest factor. It describes the difference between instantaneous peaks and average energy.
@@ -374,7 +370,7 @@ namespace Monitor
 
         // Calculate the ratio of clipped frames (Non-standard indicator).
         {
-            _ClippedFramesRatio = std::clamp((double) ClippedFrameCount  / (double) MaxFrames, 0., 1.);
+            _ClippedFramesRatio = std::clamp((double) ClippedFrameCount * InvMaxFrames, 0., 1.);
         }
 
         // Calculate the DC offset.
@@ -385,7 +381,7 @@ namespace Monitor
         // - Problematic synthesized signals.
         // DC itself is not musically interesting, but it is a useful health indicator. The code flags absolute values above 1 mFS with a caution color.
         {
-            _DCOffset = std::clamp(500. * ((SumLeft + SumRight) / (double) MaxFrames), -10., 10.);
+            _DCOffset = std::clamp(500. * ((SumLeft + SumRight) * InvMaxFrames), -10., 10.);
         }
 
         _HasAudio = (_Peak > SignalThreshold) || (_RMS > SignalThreshold);

@@ -34,9 +34,12 @@ namespace VanDerPolOscillator
 
     private:
         void Reset() noexcept override final;
-        void Update(double deltaTime);
+
+        void Update(double deltaTime) noexcept;
+
         void UpdateAttractor() noexcept;
         void UpdateScene(double deltaTime) noexcept;
+
         void RenderCurve(ID2D1RenderTarget * renderTarget) noexcept;
 
         point3d_t Integrate(point3d_t point, double step, double a, double b, double c) noexcept;

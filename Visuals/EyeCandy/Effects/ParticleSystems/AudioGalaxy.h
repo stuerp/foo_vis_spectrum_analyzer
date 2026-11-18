@@ -116,5 +116,10 @@ namespace AudioGalaxy
         double _TransientPulse       = 0.;
         double _TransientCooldown    = 0.;
         size_t _TransientStarIndex   = 0;
+
+    private:
+        // FIXME: Use _BassState and _MidState from processor_t.
+        double _BassState = 0.;
+        double _MidState  = 0.;
     };
 }

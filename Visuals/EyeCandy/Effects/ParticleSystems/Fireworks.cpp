@@ -104,12 +104,13 @@ namespace Fireworks
     {
         _HasAudio = false;
 
-        _Peak         = 0.;
-        _RMS          = 0.;
-        _SpectralFlux = 0.;
-
         if (chunk.is_empty())
         {
+            _Peak         = 0.;
+            _RMS          = 0.;
+
+            _SpectralFlux = 0.;
+
             for (auto & Band : _Bands)
                 Band.Energy = 0.;
 
@@ -122,7 +123,8 @@ namespace Fireworks
 
         const auto FrameCount   = chunk.get_sample_count();
         const auto ChannelCount = chunk.get_channel_count();
-        const auto SampleRate   = (double) chunk.get_sample_rate();
+
+        _SampleRate = (double) chunk.get_sample_rate();
 
         // Analyze only the most recent frames of the chunk.
         const auto MaxFrames = std::min<size_t>(FrameCount, MaximumFrameCount);
@@ -130,14 +132,13 @@ namespace Fireworks
         if (MaxFrames < 32)
             return;
 
+        const double InvMaxFrames = 1. / (double) MaxFrames;
+
         std::array<double, MaximumFrameCount> Samples;
 
-        double SquaredSum = 0.;
-
         const size_t FirstFrame = FrameCount - MaxFrames;
-        const audio_sample * Frame = Frames + (FirstFrame * ChannelCount);
 
-        const double InverseChannelCount = 1.0 / (double) ChannelCount;
+        const double InvChannelCount = 1.0 / (double) ChannelCount;
 
         // Prepares an efficient Hann-window generator.
         const double WindowStep = TwoPi / (double) (MaxFrames - 1);
@@ -147,43 +148,58 @@ namespace Fireworks
         double CurrentCos = 1.;
         double CurrentSin = 0.;
 
-        for (size_t FrameIndex = 0; FrameIndex < MaxFrames; ++FrameIndex)
+        // Initialize the energy accumulators.
+        double Peak = 0.;
+        double Sum = 0.;
+
+        // Process all frames.
         {
-            double Mono = 0.0;
+            const audio_sample * Frame = Frames + (FirstFrame * ChannelCount);
 
-            // Downmix the frame to mono.
+            for (size_t i = 0; i < MaxFrames; ++i, Frame += ChannelCount)
             {
-                const audio_sample * Channel    = Frame;
-                const audio_sample * ChannelEnd = Channel + ChannelCount;
+                double Mono = 0.;
 
-                while (Channel != ChannelEnd)
-                    Mono += (double) *Channel++;
+                // Convert the frame to mono.
+                {
+                    const audio_sample * Channel    = Frame;
+                    const audio_sample * ChannelEnd = Channel + ChannelCount;
 
-                Mono *= InverseChannelCount;
+                    while (Channel != ChannelEnd)
+                        Mono += (double) *Channel++;
+
+                    Mono = ClampAudio(Mono * InvChannelCount);
+                }
+
+                {
+                    // Apply a Hann window.
+                    {
+                        const double Window = 0.5 - (0.5 * CurrentCos);
+
+                        Samples[i] = Mono * Window;
+                    }
+
+                    // Calculate peak level.
+                    Peak = std::max(Peak, std::abs(Mono));
+
+                    // Accumulate the full-band RMS energy.
+                    Sum += Mono * Mono;
+                }
+
+                // Advance the Hann oscillator.
+                {
+                    const double NextCosine = (CurrentCos * WindowCos) - (CurrentSin * WindowSin);
+
+                    CurrentSin = (CurrentSin * WindowCos) + (CurrentCos * WindowSin);
+                    CurrentCos = NextCosine;
+                }
             }
-
-            const double Sample = ClampAudio(Mono);
-            const double Window = 0.5 - (0.5 * CurrentCos);
-
-            Samples[FrameIndex] = Sample * Window;
-
-            SquaredSum += Sample * Sample;
-
-            _Peak = std::max(_Peak, std::abs(Sample));
-
-            // Advance the Hann oscillator.
-            {
-                const double NextCosine = (CurrentCos * WindowCos) - (CurrentSin * WindowSin);
-
-                CurrentSin = (CurrentSin * WindowCos) + (CurrentCos * WindowSin);
-                CurrentCos = NextCosine;
-            }
-
-            Frame += ChannelCount;
         }
 
-        _RMS = std::sqrt(SquaredSum / (double) MaxFrames);
+        _Peak = Peak;
+        _RMS = std::sqrt(Sum * InvMaxFrames);
 
+        // Detect silence.
         _HasAudio = (_Peak > 1.0e-5) || (_RMS > 1.0e-6);
 
         if (!_HasAudio)
@@ -191,7 +207,7 @@ namespace Fireworks
 
         // Perform a spectrum analysis of logarithmically spaced frequency bands.
         {
-            const double NyquistFrequency = SampleRate * 0.5;
+            const double NyquistFrequency  = _SampleRate * 0.5;
 
             // Allocate the filter state.
             std::array<double, BandCount> Coefficients;        // Goertzel-style resonators
@@ -206,13 +222,13 @@ namespace Fireworks
                 const double CenterFrequency = LoFrequency * std::pow(FrequencyRatio, BandAmount);
                 const double Frequency       = std::clamp(CenterFrequency, LoFrequency, NyquistFrequency);
 
-                Coefficients[i] = 2. * std::cos(TwoPi * Frequency / SampleRate);
+                Coefficients[i] = 2. * std::cos(TwoPi * Frequency / _SampleRate);
             }
 
             // Run all frequency filters (bank of second-order Goertzel-style filters)
-            for (size_t FrameIndex = 0; FrameIndex < MaxFrames; ++FrameIndex)
+            for (size_t i = 0; i < MaxFrames; ++i)
             {
-                const double Sample = Samples[FrameIndex];
+                const double Sample = Samples[i];
 
                 for (size_t Band = 0; Band < BandCount; ++Band)
                 {
@@ -224,12 +240,10 @@ namespace Fireworks
             }
 
             // Convert the filter states into magnitudes.
-            const double InverseFrameCount = 1. / (double) MaxFrames;
-
             constexpr double TuningConstant = 100.;
             const double LogarithmicScale  = 1. / std::log1p(TuningConstant);
 
-            double MaximumEnergy = 0.;
+            double MaxEnergy = 0.;
 
             for (size_t i = 0; i < BandCount; ++i)
             {
@@ -237,20 +251,19 @@ namespace Fireworks
                 const double Coefficient = Coefficients[i];
 
                 const double BandPower = std::max(0.0, (Previous2[i] * Previous2[i]) + (Previous1[i] * Previous1[i]) - (Coefficient * Previous1[i] * Previous2[i]));
-
-                const double Magnitude = std::sqrt(BandPower) * InverseFrameCount;
+                const double Magnitude = std::sqrt(BandPower) * InvMaxFrames;
 
                 // Compress (logarithmic) and shape the band energy. Perform high-frequency weighting: 0.90 for the lowest band, 1.50 for the highest band.
                 _Bands[i].Energy = Clamp(std::log1p(Magnitude * TuningConstant) * LogarithmicScale * Lerp(0.90, 1.50, BandAmount));
 
                 // Track the highest frequency band energy.
-                MaximumEnergy = std::max(MaximumEnergy, _Bands[i].Energy);
+                MaxEnergy = std::max(MaxEnergy, _Bands[i].Energy);
             }
 
             // Normalize the spectrum.
-            if (MaximumEnergy > 1.0e-5)
+            if (MaxEnergy > 1.0e-5)
             {
-                const auto Normalization = 1. / std::max(0.30, MaximumEnergy);
+                const auto Normalization = 1. / std::max(0.30, MaxEnergy);
 
                 for (auto & Band : _Bands)
                     Band.Energy = Clamp(Band.Energy * Normalization);

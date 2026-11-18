@@ -92,6 +92,8 @@ namespace Spirograph
         const auto MaxFrames = std::min<size_t>(FrameCount, (_Quality == Quality::High) ? 1024 : 512);
         const auto FrameStep = std::max<size_t>(1, FrameCount / MaxFrames);
 
+        const double InvMaxFrames = 1. / (double) MaxFrames;
+
         if (_Samples.size() < MaxFrames)
             _Samples.resize(MaxFrames);
 
@@ -124,7 +126,7 @@ namespace Spirograph
                 Previous = Mono;
             }
 
-            _Rhythm = Clamp((std::sqrt(MeanSquare / (double) MaxFrames) * 4.8) + (Difference / (double) MaxFrames * 2.2));
+            _Rhythm = Clamp((std::sqrt(MeanSquare * InvMaxFrames) * 4.8) + (Difference * InvMaxFrames * 2.2));
         }
 
         {
@@ -141,25 +143,25 @@ namespace Spirograph
                 const double AngularStep     = TwoPi * CenterFrequency / _SampleRate;
 
                 // Evaluate one point of the discrete Fourier transform.
-                double Real      = 0.;
-                double Imaginary = 0.;
+                double re = 0.;
+                double im = 0.;
 
                 {
                     for (size_t j = 0; j < MaxFrames; ++j)
                     {
                         const double Angle = AngularStep * (double) j;
 
-                        Real      += _Samples[j] * std::cos(Angle);
-                        Imaginary -= _Samples[j] * std::sin(Angle);
+                        re += _Samples[j] * std::cos(Angle);
+                        im -= _Samples[j] * std::sin(Angle);
                     }
                 }
 
-                const double Magnitude = 2. * std::sqrt((Real * Real) + (Imaginary * Imaginary)) / (double) MaxFrames;
+                const double Magnitude = 2. * std::sqrt((re * re) + (im * im)) * InvMaxFrames;
 
-                // Apply perceptual frequency compensation.
-                const double FrequencyGain = 1.65 + (4.10 * std::pow(Amount, 1.18));
+                // Broad visual gain and mild compression make every frequency region react strongly while retaining useful dynamic range.
+                const double FrequencyGain = 1.75 + (4.25 * std::pow(Amount, 1.20));
 
-                RawEnergies[i] = Clamp(std::pow(Magnitude * FrequencyGain * 7., 0.74)); // Boost quiet spectral components to give them more visual presence
+                RawEnergies[i] = Clamp(std::pow(Magnitude * FrequencyGain * 7.0, 0.75)); // Boost quiet spectral components to give them more visual presence
 
                 const double MIDINote = 69. + (12. * std::log2(std::max(CenterFrequency, 1.) / 440.));
 

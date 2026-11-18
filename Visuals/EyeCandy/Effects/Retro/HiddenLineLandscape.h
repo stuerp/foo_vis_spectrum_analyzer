@@ -101,6 +101,11 @@ namespace HiddenLineLandscape
         uint32_t _RandomState = 0x1D872B41u;
 
     private:
+        // FIXME: Use _BassState and _MidState from processor_t.
+        double _BassState = 0.;
+        double _MidState  = 0.;
+
+    private:
         ComPtr<ID2D1SolidColorBrush> _LandscapeBrush;
         ComPtr<ID2D1SolidColorBrush> _GlowBrush;
         ComPtr<ID2D1StrokeStyle> _RoundStrokeStyle;

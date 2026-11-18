@@ -1,5 +1,5 @@
 
-/** $VER: CliffordAttractor.cpp (2026.10.17) https://paulbourke.net/fractals/clifford/ */
+/** $VER: CliffordAttractor.cpp (2026.11.15) https://paulbourke.net/fractals/clifford/ */
 
 #include <pch.h>
 
@@ -7,8 +7,8 @@
 
 #include <algorithm>
 #include <cmath>
+#include <execution>
 #include <format>
-#include <limits>
 
 namespace CliffordAttractor
 {
@@ -27,6 +27,7 @@ namespace CliffordAttractor
     void effect_t::Reset() noexcept
     {
         DeleteDeviceDependentResources();
+
         ClearDensity();
 
         _Point = { 0.1, 0.1 };
@@ -48,11 +49,8 @@ namespace CliffordAttractor
 
         deltaTime = Clamp(deltaTime);
 
-        AnalyzeAudio(chunk);
+        Process(chunk, deltaTime);
         Update(deltaTime);
-
-        UpdateAttractor(deltaTime);
-        UpdateRaster();
 
         {
             RenderBackground(renderTarget);
@@ -69,6 +67,7 @@ namespace CliffordAttractor
     void effect_t::ClearDensity() noexcept
     {
         std::fill(_Densities.begin(), _Densities.end(), 0.f);
+
         std::fill(_Pixels.begin(), _Pixels.end(), 0u);
     }
 
@@ -96,26 +95,17 @@ namespace CliffordAttractor
         _AnimationTime += deltaTime * SpeedFactor;
 
         {
-            _SmoothedPeak        = ExponentialSmoothing(_SmoothedPeak,        _Peak,        deltaTime, (_Peak > _SmoothedPeak) ? 22. : 5.);
-            _SmoothedRMS         = ExponentialSmoothing(_SmoothedRMS,         _RMS,         deltaTime, (_RMS  > _SmoothedRMS)  ? 16. : 4.);
+            _SmoothedPeak        = ExponentialSmoothing(_SmoothedPeak,        _Peak,        deltaTime, (_Peak > _SmoothedPeak) ? 22. : 5.0);
+            _SmoothedRMS         = ExponentialSmoothing(_SmoothedRMS,         _RMS,         deltaTime, (_RMS  > _SmoothedRMS)  ? 16. : 4.0);
 
             _SmoothedStereoWidth = ExponentialSmoothing(_SmoothedStereoWidth, _StereoWidth, deltaTime, 5.5);
             _SmoothedCorrelation = ExponentialSmoothing(_SmoothedCorrelation, _Correlation, deltaTime, 4.0);
         }
 
         UpdateCurveTheme(deltaTime);
-    }
 
-    /// <summary>
-    /// 
-    /// </summary>
-    effect_t::point_t effect_t::Iterate(point_t point, const parameters_t & parameters) noexcept
-    {
-        return
-        {
-            std::sin(parameters.A * point.Y) + parameters.C * std::cos(parameters.A * point.X),
-            std::sin(parameters.B * point.X) + parameters.D * std::cos(parameters.B * point.Y)
-        };
+        UpdateAttractor(deltaTime);
+        UpdateRaster();
     }
 
     /// <summary>
@@ -178,7 +168,18 @@ namespace CliffordAttractor
             else
                 _Point = { 0.1, 0.1 };
         }
+    }
 
+    /// <summary>
+    /// 
+    /// </summary>
+    effect_t::point_t effect_t::Iterate(point_t point, const parameters_t & parameters) noexcept
+    {
+        return
+        {
+            std::sin(parameters.A * point.Y) + parameters.C * std::cos(parameters.A * point.X),
+            std::sin(parameters.B * point.X) + parameters.D * std::cos(parameters.B * point.Y)
+        };
     }
 
     /// <summary>
@@ -187,7 +188,7 @@ namespace CliffordAttractor
     void effect_t::AccumulatePoint(point_t point, double amount) noexcept
     {
         // Clifford coordinates are bounded by the sums of the sine/cosine coefficients.
-        // A fixed symmetric view avoids camera drift and preserves the genuine 2D attractor.
+        // A fixed symmetric viewdrift and preserves the genuine 2D attractor.
         constexpr double Minimum = -2.25;
         constexpr double Maximum =  2.25;
         constexpr double Scale = 1. / (Maximum - Minimum);
@@ -203,6 +204,7 @@ namespace CliffordAttractor
 
         const UINT32 X0 = (UINT32) PixelX;
         const UINT32 Y0 = (UINT32) PixelY;
+
         const UINT32 X1 = std::min(X0 + 1, _RasterWidth  - 1);
         const UINT32 Y1 = std::min(Y0 + 1, _RasterHeight - 1);
 
@@ -212,10 +214,10 @@ namespace CliffordAttractor
         const double InverseX = 1. - FractionX;
         const double InverseY = 1. - FractionY;
 
-        _Densities[(size_t) Y0 * _RasterWidth + X0] += amount * InverseX  * InverseY;
-        _Densities[(size_t) Y0 * _RasterWidth + X1] += amount * FractionX * InverseY;
-        _Densities[(size_t) Y1 * _RasterWidth + X0] += amount * InverseX  * FractionY;
-        _Densities[(size_t) Y1 * _RasterWidth + X1] += amount * FractionX * FractionY;
+        _Densities[(size_t) Y0 * _RasterWidth + X0] += (float) (amount * InverseX  * InverseY);
+        _Densities[(size_t) Y0 * _RasterWidth + X1] += (float) (amount * FractionX * InverseY);
+        _Densities[(size_t) Y1 * _RasterWidth + X0] += (float) (amount * InverseX  * FractionY);
+        _Densities[(size_t) Y1 * _RasterWidth + X1] += (float) (amount * FractionX * FractionY);
     }
 
     /// <summary>
@@ -223,42 +225,56 @@ namespace CliffordAttractor
     /// </summary>
     void effect_t::UpdateRaster() noexcept
     {
-        if (!_BackBuffer || _Densities.empty() || (_Pixels.size() != _Densities.size()))
-            return;
-
+        // The maximum-density reduction is intentionally kept sequential. It performs very little work per element and is normally limited by memory bandwidth, so dispatching another parallel pass can cost more than it saves.
         double MaximumDensity = 0.;
 
         for (const double Value : _Densities)
-            MaximumDensity = std::max(MaximumDensity, Value);
+            MaximumDensity = std::max(MaximumDensity, (double) Value);
 
-        const double TargetExposure = (MaximumDensity > 0.) ? 1. / std::log1p((double) MaximumDensity) : 1.;
+        const double TargetExposure = (MaximumDensity > 0.) ? 1. / std::log1p(MaximumDensity) : 1.;
 
         _Exposure = ExponentialSmoothing(_Exposure, TargetExposure, 1. / 60., 3.0);
 
+        // Snapshot all frame-wide values before entering the parallel section. Each worker only reads these values and writes its own output pixel.
+        const double Exposure         = _Exposure;
+        const double AnimationTime    = _AnimationTime;
         const double BrightnessFactor = ((size_t) _Brightness == 0) ? 0.72 : ((size_t) _Brightness >= 2) ? 1.32 : 1.0;
+        const double AudioBrightness  = 0.88 + (Clamp(_SmoothedRMS) * 0.35) + (Clamp(_SmoothedPeak) * 0.12);
 
-        const double AudioBrightness = 0.88 + (Clamp(_SmoothedRMS) * 0.35) + (Clamp(_SmoothedPeak) * 0.12);
-
-        for (size_t i = 0; i < _Densities.size(); ++i)
+        const auto ToByte = [](double Value) noexcept -> uint32_t
         {
-            const double Normalized = Clamp(std::log1p((double) _Densities[i]) * _Exposure);
+            return (uint32_t) std::lround(Clamp(Value) * 255.);
+        };
+
+        const auto Rasterize = [&](double density) noexcept -> uint32_t
+        {
+            const double Normalized = Clamp(std::log1p(density) * Exposure);
             const double Shaped     = std::pow(Normalized, 0.62);
 
-            const D2D1_COLOR_F Color = GetCurveColor((Shaped * 0.82) + (_AnimationTime * 0.025));
+            const D2D1_COLOR_F Color = GetCurveColor((Shaped * 0.82) + (AnimationTime * 0.025));
 
-            const float Opacity = (float) Clamp(Shaped * BrightnessFactor * AudioBrightness);
+            const double Opacity = Clamp(Shaped * BrightnessFactor * AudioBrightness);
 
-            const auto ToByte = [](float Value) noexcept -> uint32_t
-            {
-                return (uint32_t) std::lround(Clamp((double) Value) * 255.);
-            };
+            const double A = (double) Color.a * Opacity;
 
-            const uint32_t Alpha = ToByte(Color.a * Opacity);
-            const uint32_t Red   = ToByte(Color.r * Color.a * Opacity);
-            const uint32_t Green = ToByte(Color.g * Color.a * Opacity);
-            const uint32_t Blue  = ToByte(Color.b * Color.a * Opacity);
+            const uint32_t Alpha = ToByte(A);
+            const uint32_t Red   = ToByte((double) Color.r * A);
+            const uint32_t Green = ToByte((double) Color.g * A);
+            const uint32_t Blue  = ToByte((double) Color.b * A);
 
-            _Pixels[i] = (Alpha << 24) | (Red << 16) | (Green << 8) | Blue;
+            return (Alpha << 24) | (Red << 16) | (Green << 8) | Blue;
+        };
+
+        // Parallel algorithm dispatch has measurable overhead for small rasters. Use the sequential path until there is enough work to amortize it.
+        constexpr size_t ParallelThreshold = 128u * 1024u;
+
+        if (_Densities.size() >= ParallelThreshold)
+        {
+            std::transform(std::execution::par, _Densities.cbegin(), _Densities.cend(), _Pixels.begin(), Rasterize);
+        }
+        else
+        {
+            std::transform(_Densities.cbegin(), _Densities.cend(), _Pixels.begin(), Rasterize);
         }
     }
 
@@ -293,10 +309,10 @@ namespace CliffordAttractor
         _Stride = _RasterWidth * BytesPerPixel;
 
         _Pixels.assign((size_t) RequiredWidth * RequiredHeight, 0u);
-
         _Densities.assign((size_t) RequiredWidth * RequiredHeight, 0.f);
 
         _Point = { 0.1, 0.1 };
+
         _Exposure              = 1.;
         _AccumulationRemainder = 0.;
 
@@ -305,11 +321,14 @@ namespace CliffordAttractor
         return S_OK;
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
     void effect_t::DeleteDeviceDependentResources() noexcept
     {
         _BackBuffer.Reset();
 
-        _RasterWidth = 0;
+        _RasterWidth  = 0;
         _RasterHeight = 0;
 
         _RenderTarget = nullptr;

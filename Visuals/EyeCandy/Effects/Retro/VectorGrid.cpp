@@ -132,15 +132,15 @@ namespace VectorGrid
     {
         _HasAudio = false;
 
-        _Peak         = 0.;
-        _RMS          = 0.;
-
-        _BassLevel   = 0.;
-        _MidLevel    = 0.;
-        _TrebleLevel = 0.;
-
         if (chunk.is_empty())
         {
+            _Peak        = 0.;
+            _RMS         = 0.;
+
+            _BassLevel   = 0.;
+            _MidLevel    = 0.;
+            _TrebleLevel = 0.;
+
             for (auto & Band : _Bands)
                 Band.Energy = 0.;
 
@@ -153,7 +153,8 @@ namespace VectorGrid
 
         const auto FrameCount   = chunk.get_sample_count();
         const auto ChannelCount = chunk.get_channel_count();
-        const auto SampleRate   = (double) chunk.get_sample_rate();
+
+        _SampleRate = (double) chunk.get_sample_rate();
 
         // Analyze only the most recent frames of the chunk.
         const auto MaxFrames = std::min(FrameCount, MaximumFrameCount);
@@ -161,80 +162,96 @@ namespace VectorGrid
         if (MaxFrames < 32)
             return;
 
+        const double InvMaxFrames = 1. / (double) MaxFrames;
+        const double WindowStep = TwoPi / (double) (MaxFrames - 1);
+
         const size_t FirstFrame = FrameCount - MaxFrames;
 
         std::array<double, MaximumFrameCount> Samples;
 
-        double Sum  = 0.;
+        // Initialize the energy accumulators.
         double Peak = 0.;
+        double Sum  = 0.;
 
-        const double WindowStep = TwoPi / (double) (MaxFrames - 1);
-
-        for (size_t i = 0; i < MaxFrames; ++i)
+        // Process all frames.
         {
-            const audio_sample * Frame = Frames + (FirstFrame + i) * ChannelCount;
+            const double InvChannelCount = 1. / (double) ChannelCount;
 
-            double Mono = 0.;
+            const audio_sample * Frame = Frames + (FirstFrame * ChannelCount);
 
-            for (size_t Channel = 0; Channel < ChannelCount; ++Channel)
-                Mono += (double) Frame[Channel];
-
-            Mono = ClampAudio(Mono / (double) ChannelCount);
-
-            // Apply a Hann window.
+            for (size_t i = 0; i < MaxFrames; ++i, ++Frame)
             {
-                const double Window = 0.5 - (0.5 * std::cos((double) i * WindowStep));
+                double Mono = 0.;
 
-                Samples[i] = Mono * Window;
+                // Convert the frame to mono.
+                {
+                    for (size_t j = 0; j < ChannelCount; ++j)
+                        Mono += (double) Frame[j];
+
+                    Mono = ClampAudio(Mono * InvChannelCount);
+                }
+
+                // Apply a Hann window.
+                {
+                    const double Window = 0.5 - (0.5 * std::cos((double) i * WindowStep));
+
+                    Samples[i] = Mono * Window;
+                }
+
+                // Calculate peak level.
+                Peak = std::max(Peak, std::abs(Mono));
+
+                // Accumulate the full-band RMS energy.
+                Sum += Mono * Mono;
             }
-
-            Sum += Mono * Mono;
-            Peak = std::max(Peak, std::abs(Mono));
         }
 
         _Peak = Peak;
-        _RMS  = std::sqrt(Sum / (double) MaxFrames);
+        _RMS  = std::sqrt(Sum * InvMaxFrames);
 
+        // Detect silence.
         _HasAudio = (_Peak > 1e-5) || (_RMS > 1e-6);
 
         if (!_HasAudio)
             return;
 
-        const double NyquistFrequency = SampleRate * 0.5;
-        const double CenterStep       = std::pow(FrequencyRatio, InverseBandCount);
-
-        double Center = LoFrequency; // Hz
-
-        for (size_t i = 0; i < BandCount; ++i)
         {
-            const double Frequency = std::clamp(Center, LoFrequency, NyquistFrequency);
+            const double NyquistFrequency = _SampleRate * 0.5;
+            const double CenterStep       = std::pow(FrequencyRatio, InverseBandCount);
 
-            double Power = 0.;
+            double Center = LoFrequency; // Hz
 
+            for (size_t i = 0; i < BandCount; ++i)
             {
-                // Configure the Goertzel detector.
-                const double Omega       = TwoPi * Frequency / SampleRate;
-                const double Coefficient = 2. * std::cos(Omega);
+                const double Frequency = std::clamp(Center, LoFrequency, NyquistFrequency);
 
-                double q1 = 0., q2 = 0.;
+                double Power = 0.;
 
-                for (size_t j = 0; j < MaxFrames; ++j)
                 {
-                    const double q0 = Samples[j] + Coefficient * q1 - q2;
+                    // Configure the Goertzel detector.
+                    const double Omega       = TwoPi * Frequency / _SampleRate;
+                    const double Coefficient = 2. * std::cos(Omega);
 
-                    q2 = q1;
-                    q1 = q0;
+                    double q1 = 0., q2 = 0.;
+
+                    for (size_t j = 0; j < MaxFrames; ++j)
+                    {
+                        const double q0 = Samples[j] + Coefficient * q1 - q2;
+
+                        q2 = q1;
+                        q1 = q0;
+                    }
+
+                    // Convert the detector state to power.
+                    Power = std::max(0., q1 * q1 + q2 * q2 - Coefficient * q1 * q2);
                 }
 
-                // Convert the detector state to power.
-                Power = std::max(0., q1 * q1 + q2 * q2 - Coefficient * q1 * q2);
+                const double Magnitude = std::sqrt(Power) * InverseBandCount;
+
+                _Bands[i].Energy = Clamp(std::log1p(Magnitude * 110.) / std::log1p(110.));
+
+                Center *= CenterStep;
             }
-
-            const double Magnitude = std::sqrt(Power) / (double) MaxFrames;
-
-            _Bands[i].Energy = Clamp(std::log1p(Magnitude * 110.) / std::log1p(110.));
-
-            Center *= CenterStep;
         }
 
         const std::array<double, 12> Weights =

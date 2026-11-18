@@ -198,12 +198,13 @@ namespace Fireflies
     {
         _HasAudio = false;
 
-        _Peak         = 0.;
-        _RMS          = 0.;
-        _SpectralFlux = 0.;
-
         if (chunk.is_empty())
         {
+            _Peak         = 0.;
+            _RMS          = 0.;
+
+            _SpectralFlux = 0.;
+
             for (auto & Band : _Bands)
                 Band.Energy = 0.;
 
@@ -214,13 +215,17 @@ namespace Fireflies
 
         const auto FrameCount   = chunk.get_sample_count();
         const auto ChannelCount = chunk.get_channel_count();
-        const auto SampleRate   = (double) chunk.get_sample_rate();
+
+        _SampleRate = (double) chunk.get_sample_rate();
 
         // Analyze only the most recent frames of the chunk.
         const auto MaxFrames = std::min<size_t>(FrameCount, 2048);
 
         if (MaxFrames < 32)
             return;
+
+        const double InvMaxFrames = 1. / (double) MaxFrames;
+        const double WindowStep = TwoPi / (double) (MaxFrames - 1);
 
         const size_t FirstFrame = FrameCount - MaxFrames;
 
@@ -229,22 +234,25 @@ namespace Fireflies
 
         auto Samples = std::span<double>(_Samples.data(), MaxFrames);
 
-        const audio_sample *       Frame    = Frames + FirstFrame * (size_t) ChannelCount;
-        const audio_sample * const FrameEnd = Frame + MaxFrames * (size_t) ChannelCount;
-
-        double SquaredSum = 0.;
+        // Initialize the energy accumulators.
+        double Peak = 0.;
+        double Sum = 0.;
 
         {
             size_t i = 0;
 
-            const double WindowStep = TwoPi / ((double) MaxFrames - 1.);
-
             double * Sample = Samples.data();
+
+            const double InvChannelCount = 1. / (double) ChannelCount;
+
+            const audio_sample *       Frame    = Frames + (FirstFrame * ChannelCount);
+            const audio_sample * const FrameEnd = Frame  + (MaxFrames  * ChannelCount);
 
             while (Frame < FrameEnd)
             {
                 double Mono = 0.;
 
+                // Convert the frame to mono.
                 {
                     const audio_sample * Source = Frame;
                     const audio_sample * const SourceEnd = Source + ChannelCount;
@@ -252,10 +260,8 @@ namespace Fireflies
                     while (Source < SourceEnd)
                         Mono += (double) *Source++;
 
-                    Mono /= (double) ChannelCount;
+                    Mono = ClampAudio(Mono * InvChannelCount);
                 }
-
-                Mono = ClampAudio(Mono);
 
                 // Apply a Hann window.
                 {
@@ -264,18 +270,21 @@ namespace Fireflies
                     *Sample++ = Mono * Window;
                 }
 
-                SquaredSum += Mono * Mono;
+                // Calculate peak level.
+                Peak = std::max(Peak, std::abs(Mono));
 
-                _Peak = std::max(_Peak, std::abs(Mono));
+                // Accumulate the full-band RMS energy.
+                Sum += Mono * Mono;
 
                 Frame += ChannelCount;
-
                 ++i;
             }
         }
 
-        _RMS = std::sqrt(SquaredSum / (double) MaxFrames);
+        _Peak = Peak;
+        _RMS = std::sqrt(Sum * InvMaxFrames);
 
+        // Detect silence.
         _HasAudio = (_Peak > 1.0e-5) || (_RMS > 1.0e-6);
 
         if (!_HasAudio)
@@ -283,12 +292,12 @@ namespace Fireflies
 
         // Perform a spectrum analysis of logarithmically spaced frequency bands.
         {
-            const double NyquistFrequency = SampleRate * 0.5;
+            const double NyquistFrequency  = _SampleRate * 0.5;
 
             constexpr double TuningConstant = 80.;
             const double LogarithmicScale  = 1. / std::log1p(TuningConstant);
 
-            double MaximumEnergy = 0.;
+            double MaxEnergy = 0.;
 
             for (size_t i = 0; i < BandCount; ++i)
             {
@@ -304,46 +313,48 @@ namespace Fireflies
 
                 double BandPower = 0.;
 
-                const double * Frequency = Frequencies;
-                const double * const FrequencyEnd = Frequency + std::size(Frequencies);
-
-                while (Frequency < FrequencyEnd)
                 {
-                    const double ClampedFrequency = std::clamp(*Frequency++, LoFrequency, NyquistFrequency);
+                    const double * Frequency = Frequencies;
+                    const double * const FrequencyEnd = Frequency + std::size(Frequencies);
 
-                    // Configure the Goertzel detector.
-                    const double Omega       = TwoPi * ClampedFrequency / SampleRate;
-                    const double Coefficient = 2. * std::cos(Omega);
-
-                    double q1 = 0., q2 = 0.;
-
-                    const double *       Sample    = _Samples.data();
-                    const double * const SampleEnd = Sample + MaxFrames;
-
-                    while (Sample < SampleEnd)
+                    while (Frequency < FrequencyEnd)
                     {
-                        const double q0 = (double) *Sample++ + Coefficient * q1 - q2;
+                        const double ClampedFrequency = std::clamp(*Frequency++, LoFrequency, NyquistFrequency);
 
-                        q2 = q1;
-                        q1 = q0;
+                        // Configure the Goertzel detector.
+                        const double Omega       = TwoPi * ClampedFrequency / _SampleRate;
+                        const double Coefficient = 2. * std::cos(Omega);
+
+                        double q1 = 0., q2 = 0.;
+
+                        const double *       Sample    = _Samples.data();
+                        const double * const SampleEnd = Sample + MaxFrames;
+
+                        while (Sample < SampleEnd)
+                        {
+                            const double q0 = (double) *Sample++ + Coefficient * q1 - q2;
+
+                            q2 = q1;
+                            q1 = q0;
+                        }
+
+                        BandPower += std::max(0., q2 * q2 + q1 * q1 - Coefficient * q1 * q2);
                     }
-
-                    BandPower += std::max(0., q2 * q2 + q1 * q1 - Coefficient * q1 * q2);
                 }
 
-                const double Magnitude = std::sqrt(BandPower / (double) _countof(Frequencies)) / (double) MaxFrames;
+                const double Magnitude = std::sqrt(BandPower / (double) _countof(Frequencies)) * InvMaxFrames;
 
                 // Compress (logarithmic) and shape the band energy. Perform high-frequency weighting: 0.90 for the lowest band, 1.50 for the highest band.
                 _Bands[i].Energy = Clamp(std::log1p(Magnitude * TuningConstant) * LogarithmicScale * Lerp(0.90, 1.50, BandAmount));
 
                 // Track the highest frequency band energy.
-                MaximumEnergy = std::max(MaximumEnergy, _Bands[i].Energy);
+                MaxEnergy = std::max(MaxEnergy, _Bands[i].Energy);
             }
 
             // Normalize the spectrum.
-            if (MaximumEnergy > 1.0e-5)
+            if (MaxEnergy > 1.0e-5)
             {
-                const auto Normalization = 1. / std::max(0.30, MaximumEnergy);
+                const auto Normalization = 1. / std::max(0.30, MaxEnergy);
 
                 for (auto & Band : _Bands)
                     Band.Energy = Clamp(Band.Energy * Normalization);

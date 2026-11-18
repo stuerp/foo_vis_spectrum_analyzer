@@ -46,11 +46,8 @@ namespace DoublePendulum
 
         deltaTime = Clamp(deltaTime);
 
-        AnalyzeAudio(chunk);
+        Process(chunk, deltaTime);
         Update(deltaTime);
-
-        UpdateScene(deltaTime);
-        UpdatePendulum();
 
         {
             _BackBufferRenderTarget->BeginDraw();
@@ -60,6 +57,7 @@ namespace DoublePendulum
             Fade(RenderTarget, deltaTime);
 
             RenderCurve(RenderTarget);
+
             RenderPendulum(RenderTarget);
 
             hr = _BackBufferRenderTarget->EndDraw();
@@ -103,14 +101,17 @@ namespace DoublePendulum
         _AnimationTime += deltaTime * SpeedFactor;
 
         {
-            _SmoothedPeak        = ExponentialSmoothing(_SmoothedPeak,        _Peak,        deltaTime, (_Peak > _SmoothedPeak) ? 22. : 5.);
-            _SmoothedRMS         = ExponentialSmoothing(_SmoothedRMS,         _RMS,         deltaTime, (_RMS  > _SmoothedRMS)  ? 16. : 4.);
+            _SmoothedPeak        = ExponentialSmoothing(_SmoothedPeak,        _Peak,        deltaTime, (_Peak > _SmoothedPeak) ? 22. : 5.0);
+            _SmoothedRMS         = ExponentialSmoothing(_SmoothedRMS,         _RMS,         deltaTime, (_RMS  > _SmoothedRMS)  ? 16. : 4.0);
 
             _SmoothedStereoWidth = ExponentialSmoothing(_SmoothedStereoWidth, _StereoWidth, deltaTime, 5.5);
             _SmoothedCorrelation = ExponentialSmoothing(_SmoothedCorrelation, _Correlation, deltaTime, 4.0);
         }
 
         UpdateCurveTheme(deltaTime);
+
+        UpdateScene(deltaTime);
+        UpdatePendulum();
     }
 
     /// <summary>

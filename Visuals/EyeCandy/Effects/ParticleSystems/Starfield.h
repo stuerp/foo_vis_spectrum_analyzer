@@ -94,6 +94,11 @@ namespace Starfield
         double _MidDirectionCooldown = 0.;
 
     private:
+        // FIXME: Use _BassState and _MidState from processor_t.
+        double _BassState = 0.;
+        double _MidState  = 0.;
+
+    private:
         ComPtr<ID2D1Factory> _D2DFactory;
 
         ComPtr<ID2D1SolidColorBrush> _StarBrush;

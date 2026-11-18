@@ -10,10 +10,6 @@
 #include <format>
 #include <thread>
 
-// https://github.com/rastshawn/julia-visualizer
-// https://github.com/rastshawn/julia
-// https://github.com/Spudd86/julia-vis
-
 namespace Julia
 {
     effect_t::effect_t()
@@ -111,34 +107,45 @@ namespace Julia
             return;
         }
 
+        const audio_sample * const Frames = chunk.get_data();
+
         const auto FrameCount   = chunk.get_sample_count();
         const auto ChannelCount = chunk.get_channel_count();
 
-        _SampleRate   = (double) chunk.get_sample_rate();
+        _SampleRate = (double) chunk.get_sample_rate();
 
         const size_t MaxFrames = std::min((size_t) 1024, FrameCount);
-        const audio_sample * const Frames = chunk.get_data() + ((FrameCount - MaxFrames) * ChannelCount);
+        const size_t FirstFrame = FrameCount - MaxFrames;
 
+        const double InvMaxFrames = 1. / (double) MaxFrames;
         const double WindowStep = TwoPi / (double) (MaxFrames - 1);
 
+        // Initialize the energy accumulators.
         double Sum = 0.;
 
         {
-            for (size_t i = 0; i < MaxFrames; ++i)
+            const audio_sample * Frame = Frames + (FirstFrame * ChannelCount);
+
+            for (size_t i = 0; i < MaxFrames; ++i, Frame += ChannelCount)
             {
                 double Mono = 0.;
 
-                for (size_t Channel = 0; Channel < ChannelCount; ++Channel)
-                    Mono += (double) Frames[i * ChannelCount + Channel];
+                // Convert the frame to mono.
+                {
+                    for (size_t j = 0; j < ChannelCount; ++j)
+                        Mono += (double) Frame[j];
 
-                Mono /= (double) ChannelCount;
+                    Mono /= (double) ChannelCount;
+                }
 
+                // Accumulate the full-band RMS energy.
                 Sum += Mono * Mono;
             }
         }
 
-        double RMS = std::sqrt(Sum / (double) MaxFrames);
+        double RMS = std::sqrt(Sum * InvMaxFrames);
 
+        // Initialize the energy accumulators.
         double Bass   = 0.;
         double Mid    = 0.;
         double Treble = 0.;
@@ -153,14 +160,19 @@ namespace Julia
                 double re = 0.;
                 double im = 0.;
 
-                for (size_t i = 0; i < MaxFrames; ++i)
+                const audio_sample * Frame = Frames + (FirstFrame * ChannelCount);
+
+                for (size_t i = 0; i < MaxFrames; ++i, Frame += ChannelCount)
                 {
                     double Mono = 0.;
 
-                    for (size_t Channel = 0; Channel < ChannelCount; ++Channel)
-                        Mono += (double) Frames[i * ChannelCount + Channel];
+                    // Convert the frame to mono.
+                    {
+                        for (size_t j = 0; j < ChannelCount; ++j)
+                            Mono += (double) Frame[j];
 
-                    Mono /= (double) ChannelCount;
+                        Mono /= (double) ChannelCount;
+                    }
 
                     // Apply a Hann window.
                     const double Window = 0.5 - (0.5 * std::cos((double) i * WindowStep));
@@ -172,7 +184,7 @@ namespace Julia
 
                 const double BandPower = (re * re) + (im * im);
 
-                Energy[Band] = std::sqrt(BandPower) / (double) MaxFrames;
+                Energy[Band] = std::sqrt(BandPower) * InvMaxFrames;
             }
 
             RMS    = std::sqrt(std::clamp(RMS * 3., 0., 1.));
@@ -350,35 +362,35 @@ namespace Julia
         const double Cos = std::cos(_Rotation);
         const double Sin = std::sin(_Rotation);
 
-        const double InverseZoom   = 1. / _Zoom;
-        const double InverseHeight = 1. / (double) _RasterHeight;
+        const double InvZoom   = 1. / _Zoom;
+        const double InvHeight = 1. / (double) _RasterHeight;
 
-        const double ny = ((double) y * InverseHeight - .5) * 3.2 * InverseZoom;
+        const double ny = ((double) y * InvHeight - .5) * 3.2 * InvZoom;
 
         const double nyCos = ny * Cos;
         const double nySin = ny * Sin;
 
         const int MaximumIterations = 100 + (int) (_BassLevel * 100.);
-        const double InverseMaximumIterations = 1. / (double) MaximumIterations;
+        const double InvMaximumIterations = 1. / (double) MaximumIterations;
 
-        const double AspectRatio = (double) _RasterWidth * InverseHeight;
-        const double Width = 3.2 * AspectRatio * InverseZoom;
+        const double AspectRatio = (double) _RasterWidth * InvHeight;
+        const double Width = 3.2 * AspectRatio * InvZoom;
 
-        const double nxIncrement = Width / (double) _RasterWidth;
-        const double zrIncrement = nxIncrement * Cos;
-        const double ziIncrement = nxIncrement * Sin;
+        const double nxStep = Width / (double) _RasterWidth;
+        const double zrStep = nxStep * Cos;
+        const double ziStep = nxStep * Sin;
 
         const double nx = Width * -.5;
 
-        double InitialReal      = (nx * Cos) - nySin;
-        double InitialImaginary = (nx * Sin) + nyCos;
+        double re = (nx * Cos) - nySin;
+        double im = (nx * Sin) + nyCos;
 
         size_t Row = y * (size_t) _RasterWidth;
 
         for (UINT32 x = 0; x < _RasterWidth; ++x, ++Row)
         {
-            double zr = InitialReal;
-            double zi = InitialImaginary;
+            double zr = re;
+            double zi = im;
 
             double zrSquared = zr * zr;
             double ziSquared = zi * zi;
@@ -407,10 +419,10 @@ namespace Julia
             if (Iteration < MaximumIterations)
                 SmoothIteration += 1. - std::log2(std::log2(std::sqrt(MagnitudeSquared)));
 
-            _Pixels[Row] = Colorize(SmoothIteration * InverseMaximumIterations, Iteration < MaximumIterations);
+            _Pixels[Row] = Colorize(SmoothIteration * InvMaximumIterations, Iteration < MaximumIterations);
 
-            InitialReal      += zrIncrement;
-            InitialImaginary += ziIncrement;
+            re += zrStep;
+            im += ziStep;
         }
     }
 
@@ -419,7 +431,6 @@ namespace Julia
     /// </summary>
     UINT32 effect_t::Colorize(double amount, bool escaped) const noexcept
     {
-        const size_t Palette      = (size_t) _PaletteOffset % 8;
         const double PalettePhase = _PaletteOffset - std::floor(_PaletteOffset);
 
         const double Ridge        = 0.5 + (0.5 * std::cos(amount * TwoPi * 6.0));

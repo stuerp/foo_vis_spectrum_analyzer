@@ -135,15 +135,15 @@ namespace NeonTunnel
     {
         _HasAudio = false;
 
-        _Peak         = 0.;
-        _RMS          = 0.;
-
-        _BassLevel   = 0.;
-        _MidLevel    = 0.;
-        _TrebleLevel = 0.;
-
         if (chunk.is_empty())
         {
+            _Peak        = 0.;
+            _RMS         = 0.;
+
+            _BassLevel   = 0.;
+            _MidLevel    = 0.;
+            _TrebleLevel = 0.;
+
             for (auto & Band : _Bands)
                 Band.Energy = 0.;
 
@@ -156,7 +156,8 @@ namespace NeonTunnel
 
         const auto FrameCount   = chunk.get_sample_count();
         const auto ChannelCount = chunk.get_channel_count();
-        const auto SampleRate   = (double) chunk.get_sample_rate();
+
+        _SampleRate = (double) chunk.get_sample_rate();
 
         // Analyze only the most recent frames of the chunk.
         const auto MaxFrames = std::min(FrameCount, MaximumFrameCount);
@@ -164,32 +165,42 @@ namespace NeonTunnel
         if (MaxFrames < 32)
             return;
 
-        const size_t FrameIndex = FrameCount - MaxFrames;
+        const double InvMaxFrames = 1. / (double) MaxFrames;
+        const double WindowStep = TwoPi / (double) (MaxFrames - 1);
+
+        const size_t FirstFrame = FrameCount - MaxFrames;
 
         std::array<double, MaximumFrameCount> Samples;
 
-        const audio_sample * Frame = Frames + (FrameIndex * ChannelCount);
-
-        const double WindowStep = TwoPi / (double) (MaxFrames - 1);
-
-        double Sum  = 0.;
+        // Initialize the energy accumulators.
         double Peak = 0.;
+        double Sum  = 0.;
 
-        for (size_t i = 0; i < MaxFrames; ++i, ++Frame)
+        // Process all frames.
         {
-            const double Sample = ClampAudio((double) Frame[0]);
+            const audio_sample * Frame = Frames + (FirstFrame * ChannelCount);
 
-            // Apply a Hann window.
-            Samples[i] = Sample * (0.5 - (0.5 * std::cos((double) i * WindowStep)));
+            for (size_t i = 0; i < MaxFrames; ++i, ++Frame)
+            {
+                const double Sample = ClampAudio((double) Frame[0]);
 
-            Sum += Sample * Sample;
+                // Apply a Hann window.
+                {
+                    Samples[i] = Sample * (0.5 - (0.5 * std::cos((double) i * WindowStep)));
+                }
 
-            Peak = std::max(Peak, std::abs(Sample));
+                // Calculate peak level.
+                Peak = std::max(Peak, std::abs(Sample));
+
+                // Accumulate the full-band RMS energy.
+                Sum += Sample * Sample;
+            }
         }
 
         _Peak = Peak;
-        _RMS  = std::sqrt(Sum / (double) MaxFrames);
+        _RMS  = std::sqrt(Sum * InvMaxFrames);
 
+        // Detect silence.
         _HasAudio = (_Peak > 1e-5) || (_RMS > 1e-6);
 
         if (!_HasAudio)
@@ -197,10 +208,9 @@ namespace NeonTunnel
 
         // Perform the frequency analysis using a Goertzel-style frequency detector at selected frequencies.
         {
-            const double NyquistFrequency   = SampleRate * 0.5;
+            const double NyquistFrequency   = _SampleRate * 0.5;
             const double MaximumCenter      = NyquistFrequency;
             const double MaximumProbe       = NyquistFrequency;
-            const double InverseFrameCount  = 1. / (double) MaxFrames;
             const double MagnitudeScale     = 1. / std::log1p(90.0);
 
             constexpr double ProbeOffset        = 1.122462048;
@@ -233,7 +243,7 @@ namespace NeonTunnel
 
                     {
                         // Configure the Goertzel detector.
-                        const double Omega       = TwoPi * Frequency / SampleRate;
+                        const double Omega       = TwoPi * Frequency / _SampleRate;
                         const double Coefficient = 2. * std::cos(Omega);
 
                         double q1 = 0., q2 = 0.;
@@ -256,7 +266,7 @@ namespace NeonTunnel
                 }
 
                 // Calculate the band magnitude.
-                const double Magnitude = std::sqrt(Power / (double) _countof(Probes)) * InverseFrameCount;
+                const double Magnitude = std::sqrt(Power / (double) _countof(Probes)) * InvMaxFrames;
 
                 // Compress (logarithmic) and shape the band energy. Perform high-frequency weighting: 0.90 for the lowest band, 1.50 for the highest band.
                 _Bands[i].Energy = Clamp(std::log1p(Magnitude * 90.) * MagnitudeScale * Lerp(0.90, 1.50, BandAmount));

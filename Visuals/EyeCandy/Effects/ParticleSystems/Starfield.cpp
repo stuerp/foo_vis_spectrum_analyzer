@@ -166,18 +166,23 @@ namespace Starfield
     {
         _HasAudio = false;
 
-        _Peak       = 0.;
-        _RMS        = 0.;
-
-        _BassLevel = 0.;
-        _MidLevel  = 0.;
-
         if (chunk.is_empty())
+        {
+            _Peak      = 0.;
+            _RMS       = 0.;
+
+            _BassLevel = 0.;
+            _MidLevel  = 0.;
+
             return;
+        }
+
+        const audio_sample * const Frames = chunk.get_data();
 
         const auto FrameCount   = chunk.get_sample_count();
         const auto ChannelCount = chunk.get_channel_count();
-        const auto SampleRate   = chunk.get_sample_rate();
+
+        _SampleRate = (double) chunk.get_sample_rate();
 
         // Analyze only the most recent frames of the chunk.
         const auto MaxFrames = std::min<size_t>(FrameCount, 4096);
@@ -185,13 +190,16 @@ namespace Starfield
         if (MaxFrames < 8)
             return;
 
-        const auto FrameIndex = FrameCount - MaxFrames;
+        const double InvMaxFrames = 1. / (double) MaxFrames;
 
-        const audio_sample * Frame = chunk.get_data() + (FrameIndex * ChannelCount);
+        const auto FirstFrame = FrameCount - MaxFrames;
+
+        const audio_sample * Frame = Frames + (FirstFrame * ChannelCount);
         const audio_sample * const EndFrame = Frame + (MaxFrames * ChannelCount);
 
         // Initialize the energy accumulators.
-        double Sum     = 0.; // Full-audio band
+        double Peak = 0.;
+        double Sum = 0.;
 
         double SumBass = 0.; // Bass
         double SumMid  = 0.; // Mid
@@ -199,33 +207,33 @@ namespace Starfield
         // Two cascaded one-pole filters create a lightweight low-frequency detector. The first follows content below approximately 180 Hz.
         // Subtracting the slower 35 Hz follower rejects DC and subsonic content.
         {
+            const double InvChannelCount = 1. / (double) ChannelCount;
+
             // Configure the coefficients. Generic formula: coefficient = e^(-2π × cutoff / sample rate).
             // A coefficient close to 1 means that the filter changes slowly and remembers more of its previous state.
             // _BassState and _SubBassState track the configured frequencies.
-            const double SubBassCoefficient = std::exp(-TwoPi * SubBassCutoff / (double) SampleRate);
-            const double BassCoefficient    = std::exp(-TwoPi * BassCutoff    / (double) SampleRate);
-            const double MidCoefficient     = std::exp(-TwoPi * MidCutoff     / (double) SampleRate);
-
-            const double ChannelScale = 1. / (double) ChannelCount;
+            const double SubBassCoefficient = std::exp(-TwoPi * SubBassCutoff / _SampleRate);
+            const double BassCoefficient    = std::exp(-TwoPi * BassCutoff    / _SampleRate);
+            const double MidCoefficient     = std::exp(-TwoPi * MidCutoff     / _SampleRate);
 
             // Process all frames in the chunk.
             while (Frame < EndFrame)
             {
                 double Mono = 0.;
 
-                // Process all samples in the frame.
+                // Convert the frame to mono.
                 {
                     const audio_sample * Channel = Frame;
                     const audio_sample * const ChannelEnd = Frame + ChannelCount;
 
                     while (Channel < ChannelEnd)
                         Mono += *Channel++;
+
+                    Mono = ClampAudio(Mono * InvChannelCount);
                 }
 
-                Mono = ClampAudio(Mono * ChannelScale);
-
                 // Calculate peak level.
-                _Peak = std::max(_Peak, std::abs(Mono));
+                Peak = std::max(Peak, std::abs(Mono));
 
                 // Accumulate the full-band RMS energy.
                 Sum += Mono * Mono;
@@ -248,11 +256,11 @@ namespace Starfield
             }
         }
 
-        const double FramesScale = 1. / (double) MaxFrames;
+        _Peak      = Peak;
+        _RMS       = std::sqrt(Sum     * InvMaxFrames);
 
-        _RMS        = std::sqrt(Sum     * FramesScale);
-        _BassLevel = std::sqrt(SumBass * FramesScale);
-        _MidLevel  = std::sqrt(SumMid  * FramesScale);
+        _BassLevel = std::sqrt(SumBass * InvMaxFrames);
+        _MidLevel  = std::sqrt(SumMid  * InvMaxFrames);
 
         // Compress the bass and mid energy nonlinear into ranges useful for visualization.
         _BassLevel = Clamp(std::log1p(_BassLevel * 36.) / std::log1p(36.)); // Gain 36

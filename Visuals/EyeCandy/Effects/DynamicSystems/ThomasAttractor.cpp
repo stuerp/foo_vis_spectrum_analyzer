@@ -42,11 +42,8 @@ namespace ThomasAttractor
 
         deltaTime = Clamp(deltaTime);
 
-        AnalyzeAudio(chunk);
+        Process(chunk, deltaTime);
         Update(deltaTime);
-
-        UpdateScene(deltaTime);
-        UpdateAttractor();
 
         {
             _BackBufferRenderTarget->BeginDraw();
@@ -106,6 +103,9 @@ namespace ThomasAttractor
         }
 
         UpdateCurveTheme(deltaTime);
+
+        UpdateScene(deltaTime);
+        UpdateAttractor();
     }
 
     /// <summary>

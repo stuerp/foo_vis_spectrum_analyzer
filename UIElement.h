@@ -312,7 +312,7 @@ private:
 
     double _DisplayRefreshRate = 0.;
 
-#ifdef _DEBUG
+#if defined(_DEBUG)
     static constexpr int64_t RefreshRates[] = { 1, 5, 20, 30, 60, 100, 200 };
 #else
     static constexpr int64_t RefreshRates[] = { 20, 30, 60, 100, 200 };
@@ -343,7 +343,9 @@ private:
 
     ComPtr<ID2D1Bitmap1> _BackBuffer;
 
-#ifdef _DEBUG
+#if defined(_DEBUG)
+    ComPtr<ID3D11Debug> _D3DDebug;
+
     ComPtr<ID2D1SolidColorBrush> _DebugBrush;
 #endif
 

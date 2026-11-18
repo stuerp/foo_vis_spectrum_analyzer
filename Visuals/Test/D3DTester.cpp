@@ -104,9 +104,10 @@ HRESULT d3d_tester_t::CreatePipeline() noexcept
             return hr;
     }
 
+    ComPtr<ID3DBlob> PixelShaderByteCode;
+
     // Create the pixel shader.
     {
-        ComPtr<ID3DBlob> PixelShaderByteCode;
         ComPtr<ID3DBlob> ErrorMessages;
 
         HRESULT hr = Direct3D::CompileShader(ShaderSource, "D3DTester", "PSMain", "ps_4_0_level_9_1", PixelShaderByteCode.GetAddressOf(), ErrorMessages.GetAddressOf());
@@ -126,6 +127,7 @@ HRESULT d3d_tester_t::CreatePipeline() noexcept
 
     // Create the input layout.
     {
+        // Input layout (matches vertex structure and shader)
         const D3D11_INPUT_ELEMENT_DESC ied[] =
         {
             { "POSITION", 0, DXGI_FORMAT_R32G32_FLOAT,       0, 0,                 D3D11_INPUT_PER_VERTEX_DATA, 0 },

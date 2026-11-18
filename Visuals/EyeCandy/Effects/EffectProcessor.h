@@ -1,5 +1,5 @@
 
-/** $VER: EffectProcessor.h (2026.11.09) - Audio processor for Eye Candy effects **/
+/** $VER: EffectProcessor.h (2026.11.15) - Audio processor for Eye Candy effects **/
 
 #pragma once
 
@@ -21,7 +21,7 @@ namespace EyeCandy
         bool _HasAudio = false;
 
         std::vector<double> _Samples;
-        double _SampleRate = 44100.;
+        double _SampleRate = 0.;
 
         double _Peak                    = 0.; // [ 0, 1], Overall peak level. The loudest individual mono sample in a chunk. It indicates how close the signal gets to full scale.
         double _RMS                     = 0.; // [ 0, 1], Full-band mono RMS loudness.
@@ -34,7 +34,7 @@ namespace EyeCandy
         double _ChannelBalance          = 0.; // in dB
 
         double _SpectralFlux            = 0.; // [ 0, 1], How much the frequency spectrum increased since the previous call. Responds when spectral energy increases such as during drum hits, note attacks, sudden treble bursts and new musical events.
-        double _SpectralCentroid        = 0.;
+        double _SpectralCentroid        = 0.; // [ 0, 1], A measure of perceptual brightness
         double _SpectralFlatness        = 0.;
 
         double _Loudness                = 0.; // [ 0, 1], Perceived full-band loudness derived from RMS energy and scaled for visual sensitivity. Can be use to control the response to perceived volume.
@@ -47,6 +47,8 @@ namespace EyeCandy
         double _StereoBalance           = 0.; // [-1, 1], Left-to-right energy balance: -1.0: fully left / 0.0: centered or equal energy / +1.0: fully right.
 
     protected:
+        std::vector<double> _ChannelPower {};
+
         // One-pole low-pass filter state
         double _BassFilterLeft          = 0.; // Left bass filter state
         double _BassFilterRight         = 0.; // Right bass filter state
@@ -119,8 +121,41 @@ namespace EyeCandy
     protected:
         // First-order low-pass filter states.
         double _SubBassState            = 0.;
-        double _BassState               = 0.;
-        double _MidState                = 0.;
+        std::vector<double> _BassState {};
+        std::vector<double> _MidState {};
         bool _IsFilterPrimed = false;
+
+    private:
+        void DetermineChannelMasks(uint32_t channelConfig, uint32_t channelCount)
+        {
+            constexpr unsigned LeftChannelConfig  = audio_chunk::channel_front_left | audio_chunk::channel_back_left | audio_chunk::channel_front_center_left | audio_chunk::channel_side_left | audio_chunk::channel_top_front_left | audio_chunk::channel_top_back_left;
+            constexpr unsigned RightChannelConfig = audio_chunk::channel_front_right | audio_chunk::channel_back_right | audio_chunk::channel_front_center_right | audio_chunk::channel_side_right | audio_chunk::channel_top_front_right | audio_chunk::channel_top_back_right;
+
+            _LeftChannelMask = 0;
+            _RightChannelMask = 0;
+
+            for (size_t i = 0; i < channelCount; ++i)
+            {
+                const unsigned ChannelFlag = audio_chunk::g_extract_channel_flag(channelConfig, (unsigned) i);
+
+                const size_t ChannelBit = (size_t) 1 << i;
+
+                if ((ChannelFlag & LeftChannelConfig) != 0)
+                {
+                    _LeftChannelMask |= ChannelBit;
+                }
+                else
+                if ((ChannelFlag & RightChannelConfig) != 0)
+                {
+                    _RightChannelMask |= ChannelBit;
+                }
+            }
+        }
+
+        unsigned _ChannelConfig = 0;
+        unsigned _ChannelCount  = 0;
+
+        size_t _LeftChannelMask  = 0;
+        size_t _RightChannelMask = 0;
     };
 }

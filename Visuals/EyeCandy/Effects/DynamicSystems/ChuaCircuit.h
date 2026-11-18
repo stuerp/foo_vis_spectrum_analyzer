@@ -55,7 +55,7 @@ namespace ChuaCircuit
 
         void Reset() noexcept override final;
 
-        void Update(double deltaTime);
+        void Update(double deltaTime) noexcept;
 
         void UpdateAttractor() noexcept;
         void UpdateScene(double deltaTime) noexcept;

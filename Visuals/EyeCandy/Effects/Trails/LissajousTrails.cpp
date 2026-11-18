@@ -90,15 +90,17 @@ namespace LissajousTrails
     {
         _Samples.clear();
 
-        _Peak        = 0.;
-        _RMS         = 0.;
-
-        _StereoWidth = 0.;
-        _Correlation = 1.;
-        _PhaseEnergy = 0.;
-
         if (chunk.is_empty())
+        {
+            _Peak        = 0.;
+            _RMS         = 0.;
+
+            _StereoWidth = 0.;
+            _Correlation = 1.;
+            _PhaseEnergy = 0.;
+
             return;
+        }
 
         const audio_sample * const Frames = chunk.get_data();
 
@@ -147,7 +149,7 @@ namespace LissajousTrails
 
         size_t FrameRemainder = 0;
 
-        for (size_t OutputIndex = 0; OutputIndex < MaxFrames; ++OutputIndex)
+        for (size_t i = 0; i < MaxFrames; ++i)
         {
             size_t FramesInSample = FramesPerSample;
 
@@ -159,12 +161,12 @@ namespace LissajousTrails
                 ++FramesInSample;
             }
 
-            const audio_sample * End = Frame + FramesInSample * ChannelCount;
+            const audio_sample * const EndFrame = Frame + (FramesInSample * ChannelCount);
 
             double LeftAccumulator  = 0.;
             double RightAccumulator = 0.;
 
-            for (; Frame < End; Frame += ChannelCount)
+            for (; Frame < EndFrame; Frame += ChannelCount)
             {
                 const double Left  = ClampAudio(Frame[LeftChannel]);
                 const double Right = ClampAudio(Frame[RightChannel]);
@@ -204,8 +206,8 @@ namespace LissajousTrails
 
         _RMS = std::sqrt(0.5 * TotalPower * Normalization);
 
-        const double MidSquared  = 0.25 * (TotalPower + 2. * CrossProduct);
-        const double SideSquared = 0.25 * (TotalPower - 2. * CrossProduct);
+        const double MidSquared  = 0.25 * (TotalPower + (2. * CrossProduct));
+        const double SideSquared = 0.25 * (TotalPower - (2. * CrossProduct));
 
         // Calculate the stereo width: Side-to-mid ratio: 0.0: identical channels, fully mono; around 1.0: side energy equals mid energy;  above 1.0: more side energy than mid energy; 2.0: maximum displayed width after clamping.
         {
@@ -214,7 +216,7 @@ namespace LissajousTrails
                 _StereoWidth = std::sqrt(std::max(0., SideSquared) / MidSquared);
             else
                 // Perfectly anti-phase audio has no mid energy, so treat it as maximum display width instead of dividing by zero.
-                _StereoWidth = SideSquared > Epsilon ? 2. : 0.;
+                _StereoWidth = (SideSquared > Epsilon) ? 2. : 0.;
 
             _StereoWidth = std::clamp(_StereoWidth, 0., 2.);
         }

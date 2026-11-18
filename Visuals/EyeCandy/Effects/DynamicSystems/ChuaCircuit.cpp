@@ -57,11 +57,8 @@ namespace ChuaCircuit
 
         deltaTime = Clamp(deltaTime);
 
-        AnalyzeAudio(chunk);
-
+        Process(chunk, deltaTime);
         Update(deltaTime);
-        UpdateScene(deltaTime);
-        UpdateAttractor();
 
         {
             _BackBufferRenderTarget->BeginDraw();
@@ -85,14 +82,14 @@ namespace ChuaCircuit
         {
             renderTarget->DrawBitmap(_BackBuffer.Get(), _ViewPort);
 
-            RenderAxes(renderTarget, 5.);
+            RenderAxes(renderTarget, 5.0);
         }
     }
 
     /// <summary>
     /// 
     /// </summary>
-    void effect_t::Update(double deltaTime)
+    void effect_t::Update(double deltaTime) noexcept
     {
         const double SpeedFactor = [&]() noexcept
         {
@@ -121,6 +118,9 @@ namespace ChuaCircuit
         }
 
         UpdateCurveTheme(deltaTime);
+
+        UpdateScene(deltaTime);
+        UpdateAttractor();
     }
 
     /// <summary>

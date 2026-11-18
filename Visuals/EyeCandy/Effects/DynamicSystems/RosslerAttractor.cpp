@@ -54,11 +54,8 @@ namespace RosslerAttractor
 
         deltaTime = Clamp(deltaTime);
 
-        AnalyzeAudio(chunk);
+        Process(chunk, deltaTime);
         Update(deltaTime);
-
-        UpdateScene(deltaTime);
-        UpdateAttractor();
 
         {
             _BackBufferRenderTarget->BeginDraw();
@@ -89,7 +86,7 @@ namespace RosslerAttractor
     /// <summary>
     /// 
     /// </summary>
-    void effect_t::Update(double deltaTime)
+    void effect_t::Update(double deltaTime) noexcept
     {
         const double SpeedFactor = [&]() noexcept
         {
@@ -118,6 +115,9 @@ namespace RosslerAttractor
         }
 
         UpdateCurveTheme(deltaTime);
+
+        UpdateScene(deltaTime);
+        UpdateAttractor();
     }
 
     /// <summary>

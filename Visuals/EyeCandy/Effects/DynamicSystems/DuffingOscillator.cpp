@@ -54,11 +54,8 @@ namespace DuffingOscillator
 
         deltaTime = Clamp(deltaTime);
 
-        AnalyzeAudio(chunk);
+        Process(chunk, deltaTime);
         Update(deltaTime);
-
-        UpdateScene(deltaTime);
-        UpdateAttractor();
 
         {
             _BackBufferRenderTarget->BeginDraw();
@@ -81,13 +78,13 @@ namespace DuffingOscillator
 
         renderTarget->DrawBitmap(_BackBuffer.Get(), _ViewPort);
 
-        RenderAxes(renderTarget, 5.);
+        RenderAxes(renderTarget, 5.0);
     }
 
     /// <summary>
     /// 
     /// </summary>
-    void effect_t::Update(double deltaTime)
+    void effect_t::Update(double deltaTime) noexcept
     {
         const double SpeedFactor = [&]() noexcept
         {
@@ -108,14 +105,17 @@ namespace DuffingOscillator
         _AnimationTime += deltaTime * SpeedFactor;
 
         {
-            _SmoothedPeak        = ExponentialSmoothing(_SmoothedPeak,        _Peak,        deltaTime, (_Peak > _SmoothedPeak) ? 22. : 5.);
-            _SmoothedRMS         = ExponentialSmoothing(_SmoothedRMS,         _RMS,         deltaTime, (_RMS  > _SmoothedRMS)  ? 16. : 4.);
+            _SmoothedPeak        = ExponentialSmoothing(_SmoothedPeak,        _Peak,        deltaTime, (_Peak > _SmoothedPeak) ? 22. : 5.0);
+            _SmoothedRMS         = ExponentialSmoothing(_SmoothedRMS,         _RMS,         deltaTime, (_RMS  > _SmoothedRMS)  ? 16. : 4.0);
 
             _SmoothedStereoWidth = ExponentialSmoothing(_SmoothedStereoWidth, _StereoWidth, deltaTime, 5.5);
             _SmoothedCorrelation = ExponentialSmoothing(_SmoothedCorrelation, _Correlation, deltaTime, 4.0);
         }
 
         UpdateCurveTheme(deltaTime);
+
+        UpdateScene(deltaTime);
+        UpdateAttractor();
     }
 
     /// <summary>

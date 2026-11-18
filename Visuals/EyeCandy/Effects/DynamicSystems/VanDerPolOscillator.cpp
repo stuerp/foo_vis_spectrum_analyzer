@@ -44,12 +44,8 @@ namespace VanDerPolOscillator
 
         deltaTime = Clamp(deltaTime);
 
-        AnalyzeAudio(chunk);
-
+        Process(chunk, deltaTime);
         Update(deltaTime);
-        UpdateScene(deltaTime);
-
-        UpdateAttractor();
 
         {
             _BackBufferRenderTarget->BeginDraw();
@@ -57,6 +53,7 @@ namespace VanDerPolOscillator
             ID2D1RenderTarget * RenderTarget = _BackBufferRenderTarget.Get();
 
             Fade(RenderTarget, deltaTime);
+
             RenderCurve(RenderTarget);
 
             hr = _BackBufferRenderTarget->EndDraw();
@@ -72,14 +69,14 @@ namespace VanDerPolOscillator
         {
             renderTarget->DrawBitmap(_BackBuffer.Get(), _ViewPort);
 
-            RenderAxes(renderTarget, 5.);
+            RenderAxes(renderTarget, 5.0);
         }
     }
 
     /// <summary>
     /// 
     /// </summary>
-    void effect_t::Update(double deltaTime)
+    void effect_t::Update(double deltaTime) noexcept
     {
         const double SpeedFactor = [&]() noexcept
         {
@@ -108,6 +105,9 @@ namespace VanDerPolOscillator
         }
 
         UpdateCurveTheme(deltaTime);
+
+        UpdateScene(deltaTime);
+        UpdateAttractor();
     }
 
     /// <summary>

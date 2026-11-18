@@ -94,12 +94,13 @@ namespace DitherField
     {
         _HasAudio = false;
 
-        _Peak         = 0.;
-        _RMS          = 0.;
-        _SpectralFlux = 0.;
-
         if (chunk.is_empty())
         {
+            _Peak         = 0.;
+            _RMS          = 0.;
+
+            _SpectralFlux = 0.;
+
             for (auto & Band : _Bands)
                 Band.Energy = 0.;
 
@@ -110,7 +111,8 @@ namespace DitherField
 
         const auto FrameCount   = chunk.get_sample_count();
         const auto ChannelCount = chunk.get_channel_count();
-        const auto SampleRate   = (double) chunk.get_sample_rate();
+
+        _SampleRate = (double) chunk.get_sample_rate();
 
         // Analyze only the most recent frames of the chunk.
         const auto MaxFrames = std::min<size_t>(FrameCount, 1536);
@@ -118,6 +120,7 @@ namespace DitherField
         if (MaxFrames < 32)
             return;
 
+        const double InvMaxFrames = 1. / (double) MaxFrames;
         const double WindowStep = TwoPi / (double) (MaxFrames - 1);
 
         if (_Samples.size() < MaxFrames)
@@ -126,18 +129,26 @@ namespace DitherField
         auto Samples = std::span<double>(_Samples.data(), MaxFrames);
 
         // Initialize the energy accumulators.
-        double Sum  = 0.;           // Full-audio band
+        double Peak = 0.;
+        double Sum = 0.;
 
         // Process all frames.
         {
-            for (size_t i = 0; i < MaxFrames; ++i)
+            const double InvChannelCount = 1. / (double) ChannelCount;
+
+            const audio_sample * Frame = Frames;
+
+            for (size_t i = 0; i < MaxFrames; ++i, Frame += ChannelCount)
             {
                 double Mono = 0.;
 
-                for (size_t c = 0; c < ChannelCount; ++c)
-                    Mono += Frames[i * ChannelCount + c];
+                // Convert the frame to mono.
+                {
+                    for (size_t j = 0; j < ChannelCount; ++j)
+                        Mono += Frame[j];
 
-                Mono = ClampAudio(Mono / (double) ChannelCount);
+                    Mono = ClampAudio(Mono * InvChannelCount);
+                }
 
                 // Apply a Hann window.
                 {
@@ -146,14 +157,18 @@ namespace DitherField
                     Samples[i] = Mono * Window;
                 }
 
-                _Peak = std::max(_Peak, std::abs(Mono));
+                // Calculate peak level.
+                Peak = std::max(Peak, std::abs(Mono));
 
+                // Accumulate the full-band RMS energy.
                 Sum += Mono * Mono;
             }
         }
 
-        _RMS = std::sqrt(Sum / (double) MaxFrames);
+        _Peak = Peak;
+        _RMS = std::sqrt(Sum * InvMaxFrames);
 
+        // Detect silence.
         _HasAudio = (_Peak > 1.e-5) || (_RMS > 1.e-6);
 
         if (!_HasAudio)
@@ -161,13 +176,13 @@ namespace DitherField
 
         // Perform a spectrum analysis of logarithmically spaced frequency bands.
         {
-            const double NyquistFrequency = SampleRate * 0.5;
-            const double MaximumFrequency = std::min(HiFrequency, NyquistFrequency);
+            const double NyquistFrequency = _SampleRate * 0.5;
+            const double MaxFrequency     = std::min(HiFrequency, NyquistFrequency);
 
             constexpr double TuningConstant = 90.;
-            const double LogarithmicScale  = 1. / std::log1p(TuningConstant);
+            const double LogarithmicScale   = 1. / std::log1p(TuningConstant);
 
-            double MaximumEnergy = 0.;
+            double MaxEnergy = 0.;
 
             for (size_t i = 0; i < BandCount; ++i)
             {
@@ -176,10 +191,10 @@ namespace DitherField
                 double Power = 0.;
 
                 {
-                    const double Frequency = LoFrequency * std::pow(MaximumFrequency / LoFrequency, BandAmount);
+                    const double Frequency = LoFrequency * std::pow(MaxFrequency / LoFrequency, BandAmount);
 
                     // Configure the Goertzel detector.
-                    const double Omega       = TwoPi * Frequency / SampleRate;
+                    const double Omega       = TwoPi * Frequency / _SampleRate;
                     const double Coefficient = 2. * std::cos(Omega);
 
                     double q1 = 0., q2 = 0.;
@@ -196,19 +211,19 @@ namespace DitherField
                     Power = std::max(0., q2 * q2 + q1 * q1 - Coefficient * q1 * q2);
                 }
 
-                const double Magnitude = std::sqrt(Power) / (double) MaxFrames;
+                const double Magnitude = std::sqrt(Power) * InvMaxFrames;
 
                 // Compress (logarithmic) and shape the band energy.
                 _Bands[i].Energy = Clamp(std::log1p(Magnitude * TuningConstant) * LogarithmicScale);
 
                 // Track the highest frequency band energy.
-                MaximumEnergy = std::max(MaximumEnergy, _Bands[i].Energy);
+                MaxEnergy = std::max(MaxEnergy, _Bands[i].Energy);
             }
 
             // Normalize the spectrum.
-            if (MaximumEnergy > 1.0e-5)
+            if (MaxEnergy > 1.0e-5)
             {
-                const auto Normalization = 1. / std::max(0.30, MaximumEnergy);
+                const auto Normalization = 1. / std::max(0.30, MaxEnergy);
 
                 for (auto & Band : _Bands)
                     Band.Energy = Clamp(Band.Energy * Normalization);

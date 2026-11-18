@@ -116,12 +116,13 @@ namespace ParticleVortex
     {
         _HasAudio = false;
 
-        _Peak         = 0.;
-        _RMS          = 0.;
-        _SpectralFlux = 0.;
-
         if (chunk.is_empty())
         {
+            _Peak         = 0.;
+            _RMS          = 0.;
+
+            _SpectralFlux = 0.;
+
             for (auto & Band : _Bands)
                 Band.Energy = 0.;
 
@@ -133,13 +134,16 @@ namespace ParticleVortex
         const auto FrameCount    = chunk.get_sample_count();
         const auto ChannelCount  = chunk.get_channel_count();
         const auto ChannelConfig = chunk.get_channel_config();
-        const auto SampleRate    = (double) chunk.get_sample_rate();
+
+        _SampleRate = (double) chunk.get_sample_rate();
 
         // Analyze only the last frames of the chunk.
         const auto MaxFrames = std::min<size_t>(FrameCount, 2048);
 
         if (MaxFrames < 32)
             return;
+
+        const double InvMaxFrames = 1. / (double) MaxFrames;
 
         std::vector<double> WindowedSamples(MaxFrames, 0.);
 
@@ -224,8 +228,11 @@ namespace ParticleVortex
             }
         }
 
-        double SquaredSum = 0.;
+        // Initialize the energy accumulators.
+        double Peak = 0.;
+        double Sum = 0.;
 
+        // Process all frames.
         {
             const double InverseChannelWeight = 1. / TotalChannelWeight;
 
@@ -238,7 +245,7 @@ namespace ParticleVortex
 
             const double WindowStep = TwoPi / (double) (MaxFrames - 1);
 
-            size_t FrameIndex = 0;
+            size_t i = 0;
 
             while (Frame < FrameEnd)
             {
@@ -246,6 +253,7 @@ namespace ParticleVortex
 
                 double Mono = 0.;
 
+                // Convert the frame to mono.
                 {
                     const audio_sample * Source = Frame;
                     const audio_sample * const SourceEnd = Source + ChannelCount;
@@ -253,29 +261,30 @@ namespace ParticleVortex
                     while (Source < SourceEnd)
                         Mono += (double) *Source++ * *Weight++;
 
-                    Mono *= InverseChannelWeight;
+                    Mono = ClampAudio(Mono * InverseChannelWeight);
                 }
-
-                const double Sample = ClampAudio(Mono);
 
                 // Apply a Hann window.
                 {
-                    const double Window = 0.5 - (0.5 * std::cos((double) FrameIndex * WindowStep));
+                    const double Window = 0.5 - (0.5 * std::cos((double) i * WindowStep));
 
-                    *WindowedSample++ = (audio_sample) ((double) Sample * Window);
+                    *WindowedSample++ = (audio_sample) (Mono * Window);
                 }
 
-                SquaredSum += Sample * Sample;
+                // Calculate peak level.
+                Peak = std::max(Peak, std::abs(Mono));
 
-                _Peak = std::max(_Peak, std::abs(Sample));
+                // Accumulate the full-band RMS energy.
+                Sum += Mono * Mono;
 
+                // Move to the next frame.
                 Frame += ChannelCount;
-
-                ++FrameIndex;
+                ++i;
             }
         }
 
-        _RMS = std::sqrt(SquaredSum / (double) MaxFrames);
+        _Peak = Peak;
+        _RMS  = std::sqrt(Sum * InvMaxFrames);
 
         _HasAudio = (_Peak > 1.0e-5) || (_RMS > 1.0e-6);
 
@@ -287,12 +296,12 @@ namespace ParticleVortex
             constexpr double ProbeOffset        = 1.122462048;
             constexpr double InverseProbeOffset = 1. / ProbeOffset;
 
-            const double NyquistFrequency = SampleRate * 0.5;
+            const double NyquistFrequency  = _SampleRate * 0.5;
 
             constexpr double TuningConstant = 80.;
-            const double LogarithmicScale  = 1. / std::log1p(TuningConstant);
+            const double LogarithmicScale = 1. / std::log1p(TuningConstant);
 
-            double MaximumEnergy = 0.;
+            double MaxEnergy = 0.;
 
             for (size_t i = 0; i < BandCount; ++i)
             {
@@ -316,7 +325,7 @@ namespace ParticleVortex
 
                     {
                         // Configure the Goertzel detector.
-                        const double Omega       = TwoPi * Frequency / SampleRate;
+                        const double Omega       = TwoPi * Frequency / _SampleRate;
                         const double Coefficient = 2. * std::cos(Omega);
 
                         double q1 = 0., q2 = 0.;
@@ -339,19 +348,19 @@ namespace ParticleVortex
                 }
 
                 // Calculate the band magnitude.
-                const double Magnitude = std::sqrt(Power / (double) _countof(Probes)) / (double) MaxFrames;
+                const double Magnitude = std::sqrt(Power / (double) _countof(Probes)) * InvMaxFrames;
 
                 // Compress (logarithmic) and shape the band energy. Perform high-frequency weighting: 0.90 for the lowest band, 1.50 for the highest band.
                 _Bands[i].Energy = Clamp(std::log1p(Magnitude * TuningConstant) * LogarithmicScale * Lerp(0.90, 1.50, BandAmount));
 
                 // Track the highest frequency band energy.
-                MaximumEnergy = std::max(MaximumEnergy, _Bands[i].Energy);
+                MaxEnergy = std::max(MaxEnergy, _Bands[i].Energy);
             }
 
             // Normalize the spectrum.
-            if (MaximumEnergy > 1.0e-5)
+            if (MaxEnergy > 1.0e-5)
             {
-                const auto Normalization = 1. / std::max(0.30, MaximumEnergy);
+                const auto Normalization = 1. / std::max(0.30, MaxEnergy);
 
                 for (auto & Band : _Bands)
                     Band.Energy = Clamp(Band.Energy * Normalization);

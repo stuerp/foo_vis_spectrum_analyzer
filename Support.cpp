@@ -73,7 +73,11 @@ HRESULT GetDPI(HWND hWnd, UINT & dpi) noexcept
     {
         ComPtr<ID2D1Factory2> D2DFactory;
 
-        D2D1_FACTORY_OPTIONS const Options = { D2D1_DEBUG_LEVEL_NONE };
+        D2D1_FACTORY_OPTIONS Options {};
+
+    #ifdef _DEBUG
+        Options.debugLevel = D2D1_DEBUG_LEVEL_INFORMATION;
+    #endif
 
         HRESULT hr = ::D2D1CreateFactory(D2D1_FACTORY_TYPE_MULTI_THREADED, Options, D2DFactory.GetAddressOf());
 

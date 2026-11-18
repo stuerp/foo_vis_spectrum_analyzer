@@ -51,11 +51,8 @@ namespace LorenzAttractor
 
         deltaTime = Clamp(deltaTime);
 
-        AnalyzeAudio(chunk);
+        Process(chunk, deltaTime);
         Update(deltaTime);
-
-        UpdateScene(deltaTime);
-        UpdateAttractor();
 
         {
             _BackBufferRenderTarget->BeginDraw();
@@ -86,7 +83,7 @@ namespace LorenzAttractor
     /// <summary>
     /// 
     /// </summary>
-    void effect_t::Update(double deltaTime)
+    void effect_t::Update(double deltaTime) noexcept
     {
         const double SpeedFactor = [&]() noexcept
         {
@@ -115,6 +112,9 @@ namespace LorenzAttractor
         }
 
         UpdateCurveTheme(deltaTime);
+
+        UpdateScene(deltaTime);
+        UpdateAttractor();
     }
 
     /// <summary>
@@ -139,9 +139,9 @@ namespace LorenzAttractor
         Object.Position = { 0., -2.0 + _AudioLift, 0. };
         Object.Rotation =
         {
-            0.42 +                       std::sin(Time * 0.19) * 0.08 + (Phase * 0.10),
-            Time * (0.10 + RMS * 0.07) + std::sin(Time * 0.13) * 0.16,
-                                         std::sin(Time * 0.23) * (0.05 + Width * 0.15)
+            0.42 +                         std::sin(Time * 0.19) * 0.08 + (Phase * 0.10),
+            Time * (0.10 + (RMS * 0.07)) + std::sin(Time * 0.13) * 0.16,
+                                           std::sin(Time * 0.23) * (0.05 + (Width * 0.15))
         };
         Object.Scale = { _AudioScale, _AudioScale, _AudioScale };
 
@@ -151,7 +151,7 @@ namespace LorenzAttractor
         Camera.Position =
         {
                    std::sin(Orbit) * Radius,
-            4.0 + (std::sin(Time * 0.11) * 3.0) + (_AudioLift * 0.35),
+            4.0 + (std::sin(Time * 0.10) * 3.0) + (_AudioLift * 0.35),
                   -std::cos(Orbit) * Radius
         };
         Camera.Target = { Object.Position.X, Object.Position.Y + 2., 24. };

@@ -103,6 +103,8 @@ namespace FlowerScope
         const auto MaxFrames = std::min<size_t>(FrameCount, (_Quality == Quality::High) ? 1024 : 512);
         const auto FrameStep = std::max<size_t>(1, FrameCount / MaxFrames);
 
+        const double InvMaxFrames = 1. / (double) MaxFrames;
+
         _LeftSamples .resize(MaxFrames);
         _RightSamples.resize(MaxFrames);
 
@@ -145,7 +147,7 @@ namespace FlowerScope
             }
         }
 
-        _Rhythm = Clamp(std::sqrt(MeanSquare / (double)MaxFrames) * 4.8 + Difference / (double)MaxFrames * 2.2);
+        _Rhythm = Clamp((std::sqrt(MeanSquare * InvMaxFrames) * 4.8) + ((Difference * InvMaxFrames) * 2.2));
 
         const double StereoMagnitude = std::sqrt(LeftSquare * RightSquare);
 
@@ -177,21 +179,26 @@ namespace FlowerScope
                 im -= Mono * std::sin(Angle);
             }
 
-            const double Magnitude = 2. * std::sqrt((re * re) + (im * im)) / (double) MaxFrames;
-            const double FrequencyGain = 1.65 + (4.1 * std::pow(Amount, 1.18));
+            const double BandPower = (re * re) + (im * im);
 
-            RawEnergies[i] = Clamp(std::pow(Magnitude * FrequencyGain * 7., .74));
+            const double Magnitude = 2. * std::sqrt(BandPower) * InvMaxFrames;
+
+            // Broad visual gain and mild compression make every frequency region react strongly while retaining useful dynamic range.
+            const double FrequencyGain = 1.75 + (4.25 * std::pow(Amount, 1.20));
+
+            RawEnergies[i] = Clamp(std::pow(Magnitude * FrequencyGain * 7.0, 0.75));
 
             WeightedBand += RawEnergies[i] * (double) i;
             EnergySum    += RawEnergies[i];
         }
 
+        // Apply a three-point smoothing filter to the neighboring bands.
         for (size_t i = 0; i < BandCount; ++i)
         {
             const size_t PreviousBand = (i > 0)             ? i - 1 : i;
             const size_t NextBand     = (i + 1 < BandCount) ? i + 1 : i;
 
-            _Bands[i].Energy = (RawEnergies[PreviousBand] * .2) + (RawEnergies[i] * .6) + (RawEnergies[NextBand] * .2);
+            _Bands[i].Energy = (RawEnergies[PreviousBand] * 0.20) + (RawEnergies[i] * 0.60) + (RawEnergies[NextBand] * 0.20);
         }
 
         _HarmonicCenter = (EnergySum > 1.e-9) ? WeightedBand / EnergySum * InverseBandCount : 0.;

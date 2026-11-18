@@ -84,13 +84,19 @@ namespace RibbonFlow
         if ((FrameCount < 16) || (channels[0] >= ChannelCount) || (channels[1] >= ChannelCount))
             return;
 
+        _SampleRate = (double) chunk.get_sample_rate();
+
         const auto MaxFrames = std::min<size_t>(FrameCount, (_Quality == Quality::High) ? 1024 : 512);
         const auto FrameStep = std::max<size_t>(1, FrameCount / MaxFrames);
+
+        const double InvMaxFrames = 1. / (double) MaxFrames;
 
         if (_Samples.size() < MaxFrames)
             _Samples.resize(MaxFrames);
 
         auto Samples = std::span<double>(_Samples.data(), MaxFrames);
+
+        const double AnalysisSampleRate = _SampleRate / (double) FrameStep;
 
         // Process all frames.
         {
@@ -113,7 +119,7 @@ namespace RibbonFlow
         std::array<double, BandCount> RawEnergies { };
 
         {
-            const double MaxFrequency = std::min(HiFrequency, _SampleRate * 0.5);
+            const double MaxFrequency = std::min(HiFrequency, AnalysisSampleRate * 0.5);
 
             for (size_t i = 0; i < BandCount; ++i)
             {
@@ -121,33 +127,35 @@ namespace RibbonFlow
                 const double CenterFrequency = LoFrequency * std::pow(MaxFrequency / LoFrequency, Amount);
                 const double AngularStep     = TwoPi * CenterFrequency / _SampleRate;
 
-                double Real      = 0.;
-                double Imaginary = 0.;
+                double re = 0.;
+                double im = 0.;
 
                 for (size_t j = 0; j < MaxFrames; ++j)
                 {
                     const double Angle = AngularStep * (double) j;
 
-                    Real      += Samples[j] * std::cos(Angle);
-                    Imaginary -= Samples[j] * std::sin(Angle);
+                    re += Samples[j] * std::cos(Angle);
+                    im -= Samples[j] * std::sin(Angle);
                 }
 
-                const double Magnitude = 2. * std::sqrt((Real * Real) + (Imaginary * Imaginary)) / (double) MaxFrames;
+                const double BandPower = (re * re) + (im * im);
+
+                const double Magnitude = 2. * std::sqrt(BandPower) * InvMaxFrames;
 
                 // Broad visual gain and mild compression make every frequency region react strongly while retaining useful dynamic range.
                 const double FrequencyGain = 1.75 + (4.25 * std::pow(Amount, 1.20));
 
-                RawEnergies[i] = Clamp(std::pow(Magnitude * FrequencyGain * 7.4, 0.72));
+                RawEnergies[i] = Clamp(std::pow(Magnitude * FrequencyGain * 7.0, 0.75));
             }
         }
 
-        // Blend adjacent logarithmic bands to suppress isolated spikes and produce a more cohesive layered flow.
+        // Apply a three-point smoothing filter to the neighboring bands.
         for (size_t i = 0; i < BandCount; ++i)
         {
-            const size_t Previous = i     > 0         ? i - 1 : i;
-            const size_t Next     = i + 1 < BandCount ? i + 1 : i;
+            const size_t PreviousBand = (i > 0)             ? i - 1 : i;
+            const size_t NextBand     = (i + 1 < BandCount) ? i + 1 : i;
 
-            _Bands[i].Energy = (RawEnergies[Previous] * 0.22) + (RawEnergies[i] * 0.56) + (RawEnergies[Next] * 0.22);
+            _Bands[i].Energy = (RawEnergies[PreviousBand] * 0.20) + (RawEnergies[i] * 0.60) + (RawEnergies[NextBand] * 0.20);
         }
     }
 

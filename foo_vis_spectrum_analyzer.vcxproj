@@ -237,6 +237,7 @@
     <ClInclude Include="Configuration\CommonPageLayout.h" />
     <ClInclude Include="Visuals\EyeCandy\Effects\DynamicSystems\ChuaCircuit.h" />
     <ClInclude Include="Visuals\EyeCandy\Effects\DynamicSystems\DuffingOscillator.h" />
+    <ClInclude Include="Visuals\EyeCandy\Effects\DynamicSystems\Julia.h" />
     <ClInclude Include="Visuals\EyeCandy\Effects\DynamicSystems\VanDerPolOscillator.h" />
     <ClInclude Include="Visuals\EyeCandy\Effects\EffectProcessor.h" />
     <ClInclude Include="Visuals\EyeCandy\Effects\Fields\GrayScottReactionDiffusion.h" />
@@ -414,6 +415,7 @@
     <ClCompile Include="UIElementToolTips.cpp" />
     <ClCompile Include="Visuals\EyeCandy\Effects\DynamicSystems\ChuaCircuit.cpp" />
     <ClCompile Include="Visuals\EyeCandy\Effects\DynamicSystems\DuffingOscillator.cpp" />
+    <ClCompile Include="Visuals\EyeCandy\Effects\DynamicSystems\Julia.cpp" />
     <ClCompile Include="Visuals\EyeCandy\Effects\DynamicSystems\VanDerPolOscillator.cpp" />
     <ClCompile Include="Visuals\EyeCandy\Effects\EffectProcessor.cpp" />
     <ClCompile Include="Visuals\EyeCandy\Effects\DynamicSystems\AizawaAttractor.cpp" />

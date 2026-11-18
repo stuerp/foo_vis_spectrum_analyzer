@@ -150,16 +150,18 @@ namespace HarmonicHarp
     {
         _HasAudio = false;
 
-        _Peak = 0.;
-        _RMS  = 0.;
-
         if (chunk.is_empty())
         {
+            _Peak = 0.;
+            _RMS  = 0.;
+
             for (auto & String : _Strings)
                 String.Energy = 0.;
 
             return;
         }
+
+        const audio_sample * const Frames = chunk.get_data();
 
         const auto FrameCount   = chunk.get_sample_count();
         const auto ChannelCount = chunk.get_channel_count();
@@ -172,98 +174,120 @@ namespace HarmonicHarp
         if (MaxFrames < 32)
             return;
 
+        const double InvMaxFrames = 1. / (double) MaxFrames;
+
+        const size_t FirstFrame = FrameCount - MaxFrames;
+
         if (_Samples.size() < MaxFrames)
             _Samples.resize(MaxFrames);
 
         auto Samples = std::span<double>(_Samples.data(), MaxFrames);
 
-        const audio_sample * const Frames = chunk.get_data() + ((FrameCount - MaxFrames) * ChannelCount);
-
-        double Sum = 0.;
-
-        const double WindowStep = TwoPi / (double) (MaxFrames - 1);
-
-        for (size_t i = 0; i < MaxFrames; ++i)
         {
-            double Mono = 0.;
+            // Initialize the energy accumulators.
+            double Peak = 0.;
+            double Sum  = 0.;
 
-            for (size_t c = 0; c < ChannelCount; ++c)
-                Mono += Frames[i * ChannelCount + c];
+            const double WindowStep = TwoPi / (double) (MaxFrames - 1);
 
-            Mono = ClampAudio(Mono / (double)ChannelCount);
-
-            // Apply a Hann window.
+            // Process all frames
             {
-                const double Window = 0.5 - (0.5 * std::cos((double) i * WindowStep));
+                const double InvChannelCount = 1. / (double) ChannelCount;
 
-                Samples[i] = Mono * Window;
+                const audio_sample * Frame = Frames + (FirstFrame * ChannelCount);
+
+                for (size_t i = 0; i < MaxFrames; ++i, Frame += ChannelCount)
+                {
+                    double Mono = 0.;
+
+                    // Convert the frame to mono.
+                    {
+                        for (size_t j = 0; j < ChannelCount; ++j)
+                            Mono += (double) Frame[j];
+
+                        Mono = ClampAudio(Mono * InvChannelCount);
+                    }
+
+                    // Apply a Hann window.
+                    {
+                        const double Window = 0.5 - (0.5 * std::cos((double) i * WindowStep));
+
+                        Samples[i] = Mono * Window;
+                    }
+
+                    // Calculate peak level.
+                    Peak = std::max(Peak, std::abs(Mono));
+
+                    // Accumulate the full-band RMS energy.
+                    Sum += Mono * Mono;
+                }
             }
 
-            _Peak = std::max(_Peak, std::abs(Mono));
-
-            Sum += Mono * Mono;
+            _Peak = Peak;
+            _RMS  = std::sqrt(Sum * InvMaxFrames);
         }
 
-        _RMS = std::sqrt(Sum / (double) MaxFrames);
-
+        // Detect silence.
         _HasAudio = (_Peak > 1.e-5) || (_RMS > 1.e-6);
 
-        const double NyquistFrequency = _SampleRate * 0.5;
-
-        double Maximum = 1.e-9;
-
-        for (size_t i = 0; i < StringCount; ++i)
         {
-            auto & String = _Strings[i];
+            const double NyquistFrequency = _SampleRate * 0.5;
 
-            const double LowerFrequency = (i     == 0)           ? LoFrequency : std::sqrt(_Strings[i - 1].Frequency * String.Frequency);
-            const double UpperFrequency = (i + 1 == StringCount) ? HiFrequency : std::sqrt(_Strings[i + 1].Frequency * String.Frequency);
+            double Maximum = 1.e-9;
 
-            double WeightedMagnitude = 0.;
-            double WeightSum = 0.;
-
-            for (size_t Probe = 0; Probe < 7; ++Probe)
+            for (size_t i = 0; i < StringCount; ++i)
             {
-                const double ProbeAmount    = (double) Probe / 6.;
-                const double ProbeFrequency = LowerFrequency * std::pow(UpperFrequency / LowerFrequency, ProbeAmount);
+                auto & String = _Strings[i];
 
-                const double Frequency      = std::clamp(ProbeFrequency, LoFrequency, NyquistFrequency);
+                const double LowerFrequency = (i     == 0)           ? LoFrequency : std::sqrt(_Strings[i - 1].Frequency * String.Frequency);
+                const double UpperFrequency = (i + 1 == StringCount) ? HiFrequency : std::sqrt(_Strings[i + 1].Frequency * String.Frequency);
 
-                // Configure the Goertzel detector.
-                const double Omega       = TwoPi * Frequency / _SampleRate;
-                const double Coefficient = 2. * std::cos(Omega);
+                double WeightedMagnitude = 0.;
+                double WeightSum = 0.;
 
-                double q1 = 0., q2 = 0.;
-
-                for (double Sample : Samples)
+                for (size_t Probe = 0; Probe < 7; ++Probe)
                 {
-                    const double q0 = Sample + Coefficient * q1 - q2;
+                    const double ProbeAmount    = (double) Probe / 6.;
+                    const double ProbeFrequency = LowerFrequency * std::pow(UpperFrequency / LowerFrequency, ProbeAmount);
 
-                    q2 = q1;
-                    q1 = q0;
+                    const double Frequency      = std::clamp(ProbeFrequency, LoFrequency, NyquistFrequency);
+
+                    // Configure the Goertzel detector.
+                    const double Omega       = TwoPi * Frequency / _SampleRate;
+                    const double Coefficient = 2. * std::cos(Omega);
+
+                    double q1 = 0., q2 = 0.;
+
+                    for (double Sample : Samples)
+                    {
+                        const double q0 = Sample + Coefficient * q1 - q2;
+
+                        q2 = q1;
+                        q1 = q0;
+                    }
+
+                    // Convert the detector state to power.
+                    const double Power  = std::max(0., q1 * q1 + q2 * q2 - Coefficient * q1 * q2);
+                    const double Weight = 1. - std::abs(ProbeAmount * 2. - 1.) * .45;
+
+                    WeightedMagnitude += std::sqrt(Power) * Weight;
+                    WeightSum         += Weight;
                 }
 
-                // Convert the detector state to power.
-                const double Power  = std::max(0., q1 * q1 + q2 * q2 - Coefficient * q1 * q2);
-                const double Weight = 1. - std::abs(ProbeAmount * 2. - 1.) * .45;
+                const double Amount                    = (double) i / (double) (StringCount - 1); // [0, 1]
+                const double HighFrequencyCompensation = 1. + std::pow(Amount, 1.35) * 2.15;
+                const double Magnitude                 = WeightedMagnitude / std::max(WeightSum, 1.e-9) * InvMaxFrames;
 
-                WeightedMagnitude += std::sqrt(Power) * Weight;
-                WeightSum         += Weight;
+                String.Energy = Clamp(std::log1p(Magnitude * 105. * HighFrequencyCompensation) / std::log1p(105.));
+
+                Maximum = std::max(Maximum, String.Energy);
             }
 
-            const double Amount                    = (double) i / (double) (StringCount - 1); // [0, 1]
-            const double HighFrequencyCompensation = 1. + std::pow(Amount, 1.35) * 2.15;
-            const double Magnitude                 = WeightedMagnitude / std::max(WeightSum, 1.e-9) / (double) MaxFrames;
-
-            String.Energy = Clamp(std::log1p(Magnitude * 105. * HighFrequencyCompensation) / std::log1p(105.));
-
-            Maximum = std::max(Maximum, String.Energy);
-        }
-
-        if (Maximum > .06)
-        {
-            for (auto & String : _Strings)
-                String.Energy = Clamp(String.Energy / std::max(.28, Maximum));
+            if (Maximum > .06)
+            {
+                for (auto & String : _Strings)
+                    String.Energy = Clamp(String.Energy / std::max(.28, Maximum));
+            }
         }
     }
 

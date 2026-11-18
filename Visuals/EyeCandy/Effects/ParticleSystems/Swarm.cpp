@@ -80,13 +80,14 @@ namespace Swarm
     {
         _HasAudio = false;
 
-        _Peak          = 0.;
-        _RMS           = 0.;
-        _SpectralFlux  = 0.;
-        _StereoBalance = 0.;
-
         if (chunk.is_empty())
         {
+            _Peak          = 0.;
+            _RMS           = 0.;
+
+            _SpectralFlux  = 0.;
+            _StereoBalance = 0.;
+
             for (auto & Band : _Bands)
                 Band.Energy = 0.;
 
@@ -97,7 +98,8 @@ namespace Swarm
 
         const auto FrameCount   = chunk.get_sample_count();
         const auto ChannelCount = chunk.get_channel_count();
-        const auto SampleRate   = (double) chunk.get_sample_rate();
+
+        _SampleRate = (double) chunk.get_sample_rate();
 
         // Analyze only the most recent frames of the chunk.
         const auto MaxFrames = std::min<size_t>(FrameCount, 2048); // 2048 frames @ 44100 Hz ~ 46 ms
@@ -105,6 +107,7 @@ namespace Swarm
         if (MaxFrames < 32)
             return;
 
+        const double InvMaxFrames = 1. / (double) MaxFrames;
         const double WindowStep = TwoPi / (double) (MaxFrames - 1);
 
         if (_Samples.size() < MaxFrames)
@@ -113,24 +116,28 @@ namespace Swarm
         auto Samples = std::span<double>(_Samples.data(), MaxFrames);
 
         // Initialize the energy accumulators.
-        double Sum  = 0.;           // Full-audio band
+        double Peak = 0.;
+        double Sum = 0.;
 
         double LeftPower  = 0.;
         double RightPower = 0.;
 
         // Process all frames.
         {
-            for (size_t i = 0; i < MaxFrames; ++i)
+            const double InvChannelCount = 1. / (double) ChannelCount;
+
+            const audio_sample * Frame = Frames;
+
+            for (size_t i = 0; i < MaxFrames; ++i, Frame += ChannelCount)
             {
-                const audio_sample * Frame = Frames + (i * ChannelCount);
+                double Mono = 0.;
 
                 // Convert the frame to mono.
-                double Mono = 0.;
                 {
-                    for (unsigned c = 0; c < ChannelCount; ++c)
-                        Mono += Frame[c];
+                    for (size_t j = 0; j < ChannelCount; ++j)
+                        Mono += Frame[j];
 
-                    Mono = ClampAudio(Mono / (double) ChannelCount);
+                    Mono = ClampAudio(Mono * InvChannelCount);
                 }
 
                 // Apply a Hann window.
@@ -141,7 +148,7 @@ namespace Swarm
                 }
 
                 // Calculate peak level.
-                _Peak = std::max(_Peak, std::abs(Mono));
+                Peak = std::max(Peak, std::abs(Mono));
 
                 // Accumulate the full-band RMS energy.
                 Sum += Mono * Mono;
@@ -155,7 +162,8 @@ namespace Swarm
             }
         }
 
-        _RMS = std::sqrt(Sum / (double) MaxFrames);
+        _Peak = Peak;
+        _RMS = std::sqrt(Sum * InvMaxFrames);
 
         // Detect silence.
         _HasAudio = (_Peak > 1.e-5) || (_RMS > 1.e-6);
@@ -172,30 +180,32 @@ namespace Swarm
 
         // Perform a spectrum analysis of logarithmically spaced frequency bands.
         {
-            const double NyquistFrequency = SampleRate * 0.5;
-            const double MaximumFrequency = std::min(HiFrequency, NyquistFrequency);
+            const double NyquistFrequency = _SampleRate * 0.5;
+            const double MaxFrequency     = std::min(HiFrequency, NyquistFrequency);
 
             constexpr double TuningConstant = 80.;
-            const double LogarithmicScale  = 1. / std::log1p(TuningConstant);
+            const double LogarithmicScale   = 1. / std::log1p(TuningConstant);
 
-            double MaximumEnergy = 0.;
+            double MaxEnergy = 0.;
 
             for (size_t i = 0; i < BandCount; ++i)
             {
                 const double BandAmount = (double) i * InverseBandCount; // [0, 1]
 
-                const double CenterFrequency = LoFrequency * std::pow(MaximumFrequency / LoFrequency, BandAmount);
+                const double CenterFrequency = LoFrequency * std::pow(MaxFrequency / LoFrequency, BandAmount);
 
                 double Power = 0.;
 
                 // Sample three frequencies per band: roughly one whole tone below the center, the center frequency and one whole tone above the center (std::pow(2, -1/6), 1, std::pow(2, +1/6))
-                for (double Ratio : { .890898718, 1., 1.122462048 })
+                const double Ratios[] = { .890898718, 1., 1.122462048 };
+
+                for (double Ratio : Ratios)
                 {
                     const double Frequency = std::clamp(CenterFrequency * Ratio, LoFrequency, NyquistFrequency);
 
                     {
                         // Configure the Goertzel detector.
-                        const double Omega       = TwoPi * Frequency / SampleRate;
+                        const double Omega       = TwoPi * Frequency / _SampleRate;
                         const double Coefficient = 2. * std::cos(Omega);
 
                         double q1 = 0., q2 = 0.;
@@ -214,19 +224,19 @@ namespace Swarm
                     }
                 }
 
-                const double Magnitude = std::sqrt(Power / 3.) / (double) MaxFrames;
+                const double Magnitude = std::sqrt(Power / _countof(Ratios)) * InvMaxFrames;
 
                 // Compress (logarithmic) and shape the band energy. Perform high-frequency weighting: 0.90 for the lowest band, 1.50 for the highest band.
                 _Bands[i].Energy = Clamp(std::log1p(Magnitude * TuningConstant) * LogarithmicScale * Lerp(0.90, 1.50, BandAmount));
 
                 // Track the highest frequency band energy.
-                MaximumEnergy = std::max(MaximumEnergy, _Bands[i].Energy);
+                MaxEnergy = std::max(MaxEnergy, _Bands[i].Energy);
             }
 
             // Normalize the spectrum.
-            if (MaximumEnergy > 1.0e-5)
+            if (MaxEnergy > 1.0e-5)
             {
-                const auto Normalization = 1. / std::max(0.30, MaximumEnergy);
+                const auto Normalization = 1. / std::max(0.30, MaxEnergy);
 
                 for (auto & Band : _Bands)
                     Band.Energy = Clamp(Band.Energy * Normalization);

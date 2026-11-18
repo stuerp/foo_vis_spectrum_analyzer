@@ -629,9 +629,9 @@ HRESULT uielement_t::CreateDeviceIndependentResources() noexcept
     {
         UINT Flags = D3D11_CREATE_DEVICE_BGRA_SUPPORT; // Required for Direct3D and Direct2D interoperation
 
-        #ifdef _DEBUG
-            Flags |= D3D11_CREATE_DEVICE_DEBUG;
-        #endif
+    #if defined(_DEBUG)
+        Flags |= D3D11_CREATE_DEVICE_DEBUG;
+    #endif
 
         hr = ::D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, Flags, nullptr, 0, D3D11_SDK_VERSION, _D3DDevice.GetAddressOf(), nullptr, _D3DDeviceContext.GetAddressOf());
 
@@ -644,6 +644,24 @@ HRESULT uielement_t::CreateDeviceIndependentResources() noexcept
             return hr;
         }
 
+    #if defined(_DEBUG)
+        hr = _D3DDevice->QueryInterface<ID3D11Debug>(&_D3DDebug);
+
+        // Enable debug break for Direct3D.
+        if (SUCCEEDED(hr))
+        {
+            ComPtr<ID3D11InfoQueue> InfoQueue;
+
+            hr = _D3DDevice->QueryInterface<ID3D11InfoQueue>(&InfoQueue);
+
+            if (SUCCEEDED(hr))
+            {
+                InfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_CORRUPTION, TRUE);
+                InfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_ERROR, TRUE);
+            }
+        }
+    #endif
+
         // Create the DirectComposition device and associate it with the Direct3D device. It assures that the device's surface factory is associated with a DXGI device.
         {
             ComPtr<IDXGIDevice> DXGIDevice;
@@ -654,7 +672,6 @@ HRESULT uielement_t::CreateDeviceIndependentResources() noexcept
                 return hr;
 
             hr = ::DCompositionCreateDevice(DXGIDevice.Get(), IID_PPV_ARGS(&_CompositionDevice));
-        //  hr = ::DCompositionCreateDevice(nullptr, IID_PPV_ARGS(_CompositionDevice.GetAddressOf()));
         }
 
         if (FAILED(hr))
@@ -665,6 +682,22 @@ HRESULT uielement_t::CreateDeviceIndependentResources() noexcept
 
             return hr;
         }
+
+    #if defined(_DEBUG)
+        // Enable debug break for DXGI.
+        if (SUCCEEDED(hr))
+        {
+            ComPtr<IDXGIInfoQueue> InfoQueue;
+
+            hr = ::DXGIGetDebugInterface1(0, IID_PPV_ARGS(&InfoQueue));
+
+            if (SUCCEEDED(hr))
+            {
+                InfoQueue->SetBreakOnSeverity(DXGI_DEBUG_ALL, DXGI_INFO_QUEUE_MESSAGE_SEVERITY_CORRUPTION, TRUE);
+                InfoQueue->SetBreakOnSeverity(DXGI_DEBUG_ALL, DXGI_INFO_QUEUE_MESSAGE_SEVERITY_ERROR, TRUE);
+            }
+        }
+    #endif
     }
 
     // Store the Direct3D device and device context in the render context.
@@ -737,6 +770,25 @@ HRESULT uielement_t::CreateDeviceSpecificResources() noexcept
                 return hr;
 
             (void) DXGI::GetRefreshRate(DXGIDevice.Get(), _DisplayRefreshRate); // Currently not used yet.
+
+            {
+                ComPtr<IDXGIAdapter4> DXGIAdapter;
+
+                hr = DXGIDevice->GetParent(IID_PPV_ARGS(&DXGIAdapter));
+
+                if (SUCCEEDED(hr))
+                {
+                    DXGI_ADAPTER_DESC ad = { };
+
+                    hr = DXGIAdapter->GetDesc(&ad);
+
+                    if (SUCCEEDED(hr))
+                    {
+                        Log.AtDebug().Write(STR_COMPONENT_BASENAME " is using %s, Video: %lld MB, System: %lld MB, Shared: %lld MB",
+                            msc::WideToUTF8(ad.Description).c_str(), ad.DedicatedVideoMemory >> 20, ad.DedicatedSystemMemory >> 20, ad.SharedSystemMemory >> 20);
+                    }
+                }
+            }
 
             // Create a D2D device from the DXGI device.
             hr = Direct2DFactory::Get()->CreateDevice(DXGIDevice.Get(), _D2DDevice.GetAddressOf());

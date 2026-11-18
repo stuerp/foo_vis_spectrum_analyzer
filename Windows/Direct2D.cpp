@@ -26,7 +26,7 @@ HRESULT Direct2DFactory::Initialize() noexcept
         return S_OK;
 
     {
-        D2D1_FACTORY_OPTIONS Options{};
+        D2D1_FACTORY_OPTIONS Options {};
 
     #ifdef _DEBUG
         Options.debugLevel = D2D1_DEBUG_LEVEL_INFORMATION;

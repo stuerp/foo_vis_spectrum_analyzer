@@ -100,20 +100,23 @@ namespace HiddenLineLandscape
     {
         _HasAudio = false;
 
-        _Peak = 0.;
-        _RMS  = 0.;
-
-        _BassLevel = 0.;
-        _MidLevel  = 0.;
-
         if (chunk.is_empty())
+        {
+            _Peak = 0.;
+            _RMS  = 0.;
+
+            _BassLevel = 0.;
+            _MidLevel  = 0.;
+
             return;
+        }
 
         const audio_sample * const Frames = chunk.get_data();
 
         const auto FrameCount   = chunk.get_sample_count();
         const auto ChannelCount = chunk.get_channel_count();
-        const auto SampleRate   = (double) chunk.get_sample_rate();
+
+        _SampleRate = (double) chunk.get_sample_rate();
 
         // Analyze only the most recent frames of the chunk.
         const auto MaxFrames = std::min<size_t>(FrameCount, 4096);
@@ -121,56 +124,67 @@ namespace HiddenLineLandscape
         if (MaxFrames < 8)
             return;
 
+        const double InvMaxFrames = 1. / (double) MaxFrames;
+
+        // Initialize the energy accumulators.
+        double Peak    = 0.;
         double Sum     = 0.;
         double SumBass = 0.;
         double SumMid  = 0.;
 
-        const double SubBassCoefficient = std::exp(-TwoPi * SubBassCutoff / SampleRate);
-        const double BassCoefficient    = std::exp(-TwoPi * BassCutoff    / SampleRate);
-        const double MidCoefficient     = std::exp(-TwoPi * MidCutoff     / SampleRate);
+        const double SubBassCoefficient = std::exp(-TwoPi * SubBassCutoff / _SampleRate);
+        const double BassCoefficient    = std::exp(-TwoPi * BassCutoff    / _SampleRate);
+        const double MidCoefficient     = std::exp(-TwoPi * MidCutoff     / _SampleRate);
 
-        const double ChannelScale = 1. / (double) ChannelCount;
-
-        const size_t FrameIndex = FrameCount - MaxFrames;
-
-        const audio_sample * Frame = Frames + (FrameIndex * ChannelCount);
-        const audio_sample * const EndFrame = Frame + (MaxFrames * ChannelCount);
-
-        while (Frame < EndFrame)
+        // Process all frames.
         {
-            double Mono = 0.;
+            const double InvChannelCount = 1. / (double) ChannelCount;
 
-            const audio_sample * Channel = Frame;
-            const audio_sample * const ChannelEnd = Frame + ChannelCount;
+            const size_t FirstFrame = FrameCount - MaxFrames;
 
-            while (Channel < ChannelEnd)
-                Mono += *Channel++;
+            const audio_sample * Frame = Frames + (FirstFrame * ChannelCount);
+            const audio_sample * const EndFrame = Frame + (MaxFrames * ChannelCount);
 
-            Mono = ClampAudio(Mono * ChannelScale);
+            while (Frame < EndFrame)
+            {
+                double Mono = 0.;
 
-            _Peak = std::max(_Peak, std::abs(Mono));
+                // Convert the frame to mono.
+                {
+                    const audio_sample * Channel = Frame;
+                    const audio_sample * const ChannelEnd = Frame + ChannelCount;
 
-            Sum += Mono * Mono;
+                    while (Channel < ChannelEnd)
+                        Mono += *Channel++;
 
-            _BassState    = (1. - BassCoefficient)    * Mono       + (BassCoefficient    * _BassState);
-            _SubBassState = (1. - SubBassCoefficient) * _BassState + (SubBassCoefficient * _SubBassState);
-            _MidState     = (1. - MidCoefficient)     * Mono       + (MidCoefficient     * _MidState);
+                    Mono = ClampAudio(Mono * InvChannelCount);
+                }
 
-            const double Bass = _BassState - _SubBassState;
-            const double Mid  = _MidState  - _BassState;
+                // Calculate peak level.
+                Peak = std::max(Peak, std::abs(Mono));
 
-            SumBass += Bass * Bass;
-            SumMid  += Mid * Mid;
+                // Accumulate the full-band RMS energy.
+                Sum += Mono * Mono;
 
-            Frame += ChannelCount;
+                _BassState    = (1. - BassCoefficient)    * Mono       + (BassCoefficient    * _BassState);
+                _SubBassState = (1. - SubBassCoefficient) * _BassState + (SubBassCoefficient * _SubBassState);
+                _MidState     = (1. - MidCoefficient)     * Mono       + (MidCoefficient     * _MidState);
+
+                const double Bass = _BassState - _SubBassState;
+                const double Mid  = _MidState  - _BassState;
+
+                SumBass += Bass * Bass;
+                SumMid  += Mid * Mid;
+
+                Frame += ChannelCount;
+            }
         }
 
-        const double FramesScale = 1. / (double)MaxFrames;
+        _Peak = Peak;
+        _RMS = std::sqrt(Sum * InvMaxFrames);
 
-        _RMS = std::sqrt(Sum * FramesScale);
-
-        _BassLevel = std::sqrt(SumBass * FramesScale);
-        _MidLevel  = std::sqrt(SumMid  * FramesScale);
+        _BassLevel = std::sqrt(SumBass * InvMaxFrames);
+        _MidLevel  = std::sqrt(SumMid  * InvMaxFrames);
 
         _BassLevel = Clamp(std::log1p(_BassLevel * 36.) / std::log1p(36.));
         _MidLevel  = Clamp(std::log1p(_MidLevel  * 18.) / std::log1p(18.));

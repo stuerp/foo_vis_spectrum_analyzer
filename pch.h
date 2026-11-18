@@ -1,5 +1,5 @@
 
-/** $VER: pch.h (2026.10.24) P. Stuer **/
+/** $VER: pch.h (2026.11.16) P. Stuer **/
 
 #pragma once
 
@@ -15,10 +15,11 @@
 #include <helpers/helpers.h>
 
 #include <dxgi1_3.h>
+#include <dxgidebug.h>
 #include <d3d11_2.h>
+#include <d3dcompiler.h>
 #include <d2d1_3.h>
 #include <d2d1helper.h>
-#include <d3dcompiler.h>
 #include <dcomp.h>
 #include <dwrite.h>
 

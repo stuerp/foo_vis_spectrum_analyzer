@@ -52,12 +52,10 @@ namespace HalvorsenAttractor
     private:
         void Reset() noexcept override final;
 
-        void Update(double deltaTime);
+        void Update(double deltaTime) noexcept;
 
         void UpdateAttractor() noexcept;
         void UpdateScene(double deltaTime) noexcept;
-
-//        void GenerateSpline() noexcept;
 
         void StartWorkers();
         void StopWorkers() noexcept;
@@ -68,7 +66,6 @@ namespace HalvorsenAttractor
 
         static point3d_t Derive(point3d_t point, double a) noexcept;
         static point3d_t Integrate(point3d_t point, double step, double a) noexcept;
-//      static point3d_t EvaluateSpline(point3d_t p0, point3d_t p1, point3d_t p2, point3d_t p3, double amount) noexcept;
 
     private:
         field_t _Field {};
