@@ -1,5 +1,5 @@
 
-/** $VER: Spectrum.cpp (2026.11.12) P. Stuer - Implements a spectrum analyzer visualization **/
+/** $VER: Spectrum.cpp (2026.11.23) P. Stuer - Implements a spectrum analyzer visualization **/
 
 #include "pch.h"
 
@@ -51,6 +51,14 @@ void spectrum_t::Move(const D2D1_RECT_F & rect) noexcept
 
     _XAxis.Move(rect);
     _YAxis.Move(rect);
+}
+
+/// <summary>
+/// Resets this instance.
+/// </summary>
+void spectrum_t::Reset() noexcept
+{
+    DeleteDeviceSpecificResources();
 }
 
 /// <summary>
@@ -275,296 +283,6 @@ void spectrum_t::RenderBarSegment(ID2D1DeviceContext * deviceContext, D2D1_RECT_
 }
 
 /// <summary>
-/// Renders the spectrum analysis as a curve.
-/// Note: Created in a top-left (0,0) coordinate system and later translated and flipped as necessary.
-/// </summary>
-void spectrum_t::RenderCurve(ID2D1DeviceContext * deviceContext) noexcept
-{
-    if (_State._IsPaused && !_State._VisualizeDuringPause)
-        return;
-
-    HRESULT hr = S_OK;
-
-    deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
-
-    geometry_points_t Points;
-
-    ComPtr<ID2D1PathGeometry> Curve;
-
-    if ((_State._PeakMode != PeakMode::None) && (_CurvePeakAreaStyle.IsEnabled() || _CurvePeakLineStyle.IsEnabled()))
-    {
-        Points.Clear();
-
-        hr = CreateGeometryPointsFromAmplitude(Points, true);
-
-        // Draw the area with the peak values.
-        if (SUCCEEDED(hr) && _CurvePeakAreaStyle.IsEnabled())
-        {
-            hr = CreateCurve(Points, true, Curve.GetAddressOf());
-
-            if (SUCCEEDED(hr))
-                deviceContext->FillGeometry(Curve.Get(), _CurvePeakAreaStyle.Brush.Get());
-
-            Curve.Reset();
-        }
-
-        // Draw the line with the peak values.
-        if (SUCCEEDED(hr) && _CurvePeakLineStyle.IsEnabled())
-        {
-            hr = CreateCurve(Points, false, Curve.GetAddressOf());
-
-            if (SUCCEEDED(hr))
-                deviceContext->DrawGeometry(Curve.Get(), _CurvePeakLineStyle.Brush.Get(), _CurvePeakLineStyle._Thickness);
-
-            Curve.Reset();
-        }
-    }
-
-    if (_CurveAreaStyle.IsEnabled() || _CurveLineStyle.IsEnabled())
-    {
-        Points.Clear();
-
-        hr = CreateGeometryPointsFromAmplitude(Points, false);
-
-        // Draw the area with the current values.
-        if (SUCCEEDED(hr) && _CurveAreaStyle.IsEnabled())
-        {
-            hr = CreateCurve(Points, true, Curve.GetAddressOf());
-
-            if (SUCCEEDED(hr))
-                deviceContext->FillGeometry(Curve.Get(), _CurveAreaStyle.Brush.Get());
-
-            Curve.Reset();
-        }
-
-        // Draw the line with the current values.
-        if (SUCCEEDED(hr) && _CurveLineStyle.IsEnabled())
-        {
-            hr = CreateCurve(Points, false, Curve.GetAddressOf());
-
-            if (SUCCEEDED(hr))
-                deviceContext->DrawGeometry(Curve.Get(), _CurveLineStyle.Brush.Get(), _CurveLineStyle._Thickness);
-
-            Curve.Reset();
-        }
-    }
-}
-
-/// <summary>
-/// Renders the spectrum analysis as radial bars.
-/// Note: Created in a top-left (0,0) coordinate system and later translated and flipped as necessary.
-/// </summary>
-void spectrum_t::RenderRadialBars(ID2D1DeviceContext * deviceContext) noexcept
-{
-    if (_State._IsPaused && !_State._VisualizeDuringPause)
-        return;
-
-    if (_Processor->FrequencyBands.empty())
-        return;
-
-    const FLOAT Side = std::min(_ClientSize.width / 2.f, _ClientSize.height / 2.f);
-    const FLOAT InnerRadius =  Side * _State._InnerRadius;
-    const FLOAT OuterRadius = (Side * _State._OuterRadius);// - InnerRadius;
-
-    const FLOAT MaxSegmentHeight = OuterRadius - InnerRadius;
-
-    FLOAT a = (FLOAT) ::fmod(Pi2 + (_AnimationTimer.Elapsed() * -DegreesToRadians(_State._AngularVelocity)), TwoPi);
-//  FLOAT a = (FLOAT) ::fmod(Pi2 + ::cos(_Chrono.Elapsed() * -_State._AngularVelocity), TwoPi);
-
-    const FLOAT da = (FLOAT) TwoPi / (FLOAT) _Processor->FrequencyBands.size();
-
-    deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
-
-    size_t i = 0;
-    double n = (double) _Processor->FrequencyBands.size();
-
-    ComPtr<ID2D1PathGeometry> Path;
-
-    ID2D1Brush * BarPeakAreaBrush = _BarPeakAreaStyle.Brush.Get();
-    ID2D1Brush * BarPeakTopBrush  = _BarPeakTopStyle.Brush.Get();
-    ID2D1Brush * BarAreaBrush     = _BarAreaStyle.Brush.Get();
-    ID2D1Brush * BarTopBrush      = _BarTopStyle.Brush.Get();
-
-    for (const auto & fb : _Processor->FrequencyBands)
-    {
-        const bool GreaterThanNyquist = fb.Low >= _Processor->NyquistFrequency; // 24/09/25: Use the lower frequency of a band instead of the center frequency.
-
-        if (!GreaterThanNyquist || (GreaterThanNyquist && !_State._SuppressMirrorImage))
-        {
-            // Draw the peak indicator area.
-            if (_BarPeakAreaStyle.IsEnabled())
-            {
-                const FLOAT r1 = InnerRadius;
-                const FLOAT r2 = InnerRadius + (MaxSegmentHeight * (FLOAT) fb.PeakValue);
-
-                if (SUCCEEDED(CreateSegment(a, a - da, r1, r2, Path.GetAddressOf())))
-                {
-                    if (_BarPeakAreaStyle.Has(style_t::Features::HorizontalGradient))
-                    {
-                        const double Value = _BarPeakAreaStyle.Has(style_t::Features::AmplitudeBasedColor) ? fb.Value : ((double) i / n);
-
-                        _BarPeakAreaStyle.SetBrushColor(Value);
-                    }
-
-                    deviceContext->FillGeometry(Path.Get(), BarPeakAreaBrush);
-
-                    Path.Reset();
-                }
-            }
-
-            // Draw the peak indicator top.
-            if (_BarPeakTopStyle.IsEnabled() &&(_State._PeakMode != PeakMode::None))// && (fb.MaxValue > 0.)) // Always draw the peak top indicator
-            {
-                const FLOAT r1 = InnerRadius + (MaxSegmentHeight * (FLOAT) fb.PeakValue) - _BarPeakTopStyle._Thickness / 2.f;
-                const FLOAT r2 = InnerRadius + (MaxSegmentHeight * (FLOAT) fb.PeakValue) + _BarPeakTopStyle._Thickness;
-
-                if (SUCCEEDED(CreateSegment(a, a - da, r1, r2, Path.GetAddressOf())))
-                {
-                    if (_BarPeakTopStyle.Has(style_t::Features::HorizontalGradient))
-                    {
-                        const double Value = _BarPeakTopStyle.Has(style_t::Features::AmplitudeBasedColor) ? fb.PeakValue : ((double) i / n);
-
-                        _BarPeakTopStyle.SetBrushColor(Value);
-                    }
-
-                    const FLOAT Opacity = ((_State._PeakMode == PeakMode::FadeOut) || (_State._PeakMode == PeakMode::FadingAIMP)) ? (FLOAT) fb.Opacity : _BarPeakTopStyle._Opacity;
-
-                    _BarPeakTopStyle.Brush->SetOpacity(Opacity);
-
-                    deviceContext->FillGeometry(Path.Get(), BarPeakTopBrush);
-
-                    Path.Reset();
-                }
-            }
-
-            // Draw the area of the bar.
-            if (_BarAreaStyle.IsEnabled())
-            {
-                const FLOAT r1 = InnerRadius;
-                const FLOAT r2 = InnerRadius + (MaxSegmentHeight * (FLOAT) fb.Value);
-
-                if (SUCCEEDED(CreateSegment(a, a - da, r1, r2, Path.GetAddressOf())))
-                {
-                    if (_BarAreaStyle.Has(style_t::Features::HorizontalGradient))
-                    {
-                        const double Value = _BarAreaStyle.Has(style_t::Features::AmplitudeBasedColor) ? fb.Value : ((double) i / n);
-
-                        _BarAreaStyle.SetBrushColor(Value);
-                    }
-
-                    deviceContext->FillGeometry(Path.Get(), BarAreaBrush);
-
-                    Path.Reset();
-                }
-            }
-
-            // Draw the peak indicator top.
-            if (_BarTopStyle.IsEnabled())
-            {
-                const FLOAT r1 = InnerRadius + (MaxSegmentHeight * (FLOAT) fb.Value) - _BarTopStyle._Thickness / 2.f;
-                const FLOAT r2 = InnerRadius + (MaxSegmentHeight * (FLOAT) fb.Value) + _BarTopStyle._Thickness;
-
-                if (SUCCEEDED(CreateSegment(a, a - da, r1, r2, Path.GetAddressOf())))
-                {
-                    if (_BarTopStyle.Has(style_t::Features::HorizontalGradient))
-                    {
-                        const double Value = _BarTopStyle.Has(style_t::Features::AmplitudeBasedColor) ? fb.PeakValue : ((double) i / n);
-
-                        _BarTopStyle.SetBrushColor(Value);
-                    }
-
-                    deviceContext->FillGeometry(Path.Get(), BarTopBrush);
-
-                    Path.Reset();
-                }
-            }
-        }
-
-        a -=da;
-        ++i;
-    }
-}
-
-/// <summary>
-/// Renders the spectrum analysis as a radial curve.
-/// Note: Created in a top-left (0,0) coordinate system and later translated and flipped as necessary.
-/// </summary>
-void spectrum_t::RenderRadialCurve(ID2D1DeviceContext * deviceContext) noexcept
-{
-    if (_State._IsPaused && !_State._VisualizeDuringPause)
-        return;
-
-    HRESULT hr = S_OK;
-
-    deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
-
-    geometry_points_t Points;
-
-    ComPtr<ID2D1PathGeometry> Curve;
-
-    const FLOAT Side = std::min(_ClientSize.width / 2.f, _ClientSize.height / 2.f);
-    const FLOAT InnerRadius = Side * _State._InnerRadius;
-
-    if ((_State._PeakMode != PeakMode::None) && (_CurvePeakAreaStyle.IsEnabled() || _CurvePeakLineStyle.IsEnabled()))
-    {
-        Points.Clear();
-
-        hr = CreateRadialGeometryPointsFromAmplitude(Points, true);
-
-        // Draw the area with the peak values.
-        if (SUCCEEDED(hr) && _CurvePeakAreaStyle.IsEnabled())
-        {
-            hr = CreateRadialCurve(Points, InnerRadius, true, Curve.GetAddressOf());
-
-            if (SUCCEEDED(hr))
-                deviceContext->FillGeometry(Curve.Get(), _CurvePeakAreaStyle.Brush.Get());
-
-            Curve.Reset();
-        }
-
-        // Draw the line with the peak values.
-        if (SUCCEEDED(hr) && _CurvePeakLineStyle.IsEnabled())
-        {
-            hr = CreateRadialCurve(Points, InnerRadius, false, Curve.GetAddressOf());
-
-            if (SUCCEEDED(hr))
-                deviceContext->DrawGeometry(Curve.Get(), _CurvePeakLineStyle.Brush.Get(), _CurvePeakLineStyle._Thickness);
-
-            Curve.Reset();
-        }
-    }
-
-    if (_CurveAreaStyle.IsEnabled() || _CurveLineStyle.IsEnabled())
-    {
-        Points.Clear();
-
-        hr = CreateRadialGeometryPointsFromAmplitude(Points, false);
-
-        // Draw the area with the current values.
-        if (SUCCEEDED(hr) && _CurveAreaStyle.IsEnabled())
-        {
-            hr = CreateRadialCurve(Points, InnerRadius, true, Curve.GetAddressOf());
-
-            if (SUCCEEDED(hr))
-                deviceContext->FillGeometry(Curve.Get(), _CurveAreaStyle.Brush.Get());
-
-            Curve.Reset();
-        }
-
-        // Draw the line with the current values.
-        if (SUCCEEDED(hr) && _CurveLineStyle.IsEnabled())
-        {
-            hr = CreateRadialCurve(Points, InnerRadius, false, Curve.GetAddressOf());
-
-            if (SUCCEEDED(hr))
-                deviceContext->DrawGeometry(Curve.Get(), _CurveLineStyle.Brush.Get(), _CurveLineStyle._Thickness);
-
-            Curve.Reset();
-        }
-    }
-}
-
-/// <summary>
 /// Renders a marker for the Nyquist frequency.
 /// Note: Created in a top-left (0,0) coordinate system and later translated and flipped as necessary.
 /// </summary>
@@ -699,6 +417,196 @@ void spectrum_t::RenderPeaks(ID2D1DeviceContext* deviceContext) noexcept
 }
 
 /// <summary>
+/// Renders the spectrum analysis as a curve.
+/// Note: Created in a top-left (0,0) coordinate system and later translated and flipped as necessary.
+/// </summary>
+void spectrum_t::RenderCurve(ID2D1DeviceContext * deviceContext) noexcept
+{
+    if (_State._IsPaused && !_State._VisualizeDuringPause)
+        return;
+
+    HRESULT hr = S_OK;
+
+    deviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+
+    geometry_points_t Points;
+
+    ComPtr<ID2D1PathGeometry> Curve;
+
+    if ((_State._PeakMode != PeakMode::None) && (_CurvePeakAreaStyle.IsEnabled() || _CurvePeakLineStyle.IsEnabled()))
+    {
+        Points.Clear();
+
+        hr = CreateGeometryPointsFromAmplitude(Points, true);
+
+        // Draw the area with the peak values.
+        if (SUCCEEDED(hr) && _CurvePeakAreaStyle.IsEnabled())
+        {
+            hr = CreateCurve(Points, true, Curve.GetAddressOf());
+
+            if (SUCCEEDED(hr))
+                deviceContext->FillGeometry(Curve.Get(), _CurvePeakAreaStyle.Brush.Get());
+
+            Curve.Reset();
+        }
+
+        // Draw the line with the peak values.
+        if (SUCCEEDED(hr) && _CurvePeakLineStyle.IsEnabled())
+        {
+            hr = CreateCurve(Points, false, Curve.GetAddressOf());
+
+            if (SUCCEEDED(hr))
+                deviceContext->DrawGeometry(Curve.Get(), _CurvePeakLineStyle.Brush.Get(), _CurvePeakLineStyle._Thickness);
+
+            Curve.Reset();
+        }
+    }
+
+    if (_CurveAreaStyle.IsEnabled() || _CurveLineStyle.IsEnabled())
+    {
+        Points.Clear();
+
+        hr = CreateGeometryPointsFromAmplitude(Points, false);
+
+        // Draw the area with the current values.
+        if (SUCCEEDED(hr) && _CurveAreaStyle.IsEnabled())
+        {
+            hr = CreateCurve(Points, true, Curve.GetAddressOf());
+
+            if (SUCCEEDED(hr))
+                deviceContext->FillGeometry(Curve.Get(), _CurveAreaStyle.Brush.Get());
+
+            Curve.Reset();
+        }
+
+        // Draw the line with the current values.
+        if (SUCCEEDED(hr) && _CurveLineStyle.IsEnabled())
+        {
+            hr = CreateCurve(Points, false, Curve.GetAddressOf());
+
+            if (SUCCEEDED(hr))
+                deviceContext->DrawGeometry(Curve.Get(), _CurveLineStyle.Brush.Get(), _CurveLineStyle._Thickness);
+
+            Curve.Reset();
+        }
+    }
+}
+
+/// <summary>
+/// Creates the geometry points from the amplitudes of the spectrum.
+/// </summary>
+HRESULT spectrum_t::CreateGeometryPointsFromAmplitude(geometry_points_t & points, bool usePeak) const noexcept
+{
+    const auto BandCount = _Processor->FrequencyBands.size();
+
+    if (BandCount < 2)
+        return E_FAIL;
+
+    bool IsFlatLine = true;
+
+    const float BandWidth = _ClientSize.width / (float) BandCount;
+
+    points.p0.reserve(BandCount);
+
+    size_t i = 0;
+
+    // Create all the knots.
+    for (const auto & fb: _Processor->FrequencyBands)
+    {
+        double Value = 0.;
+
+        // Don't render anything above the Nyquist frequency.
+        if (!((fb.Low > _Processor->NyquistFrequency) && _State._SuppressMirrorImage))
+        {
+            Value = !usePeak ? fb.Value : fb.PeakValue;
+        }
+
+        const float x = ((float) i + 0.5f) * BandWidth;
+        const float y = std::clamp((float) (Value * _ClientSize.height), 0.f, _ClientSize.height);
+
+        points.p0.push_back(D2D1::Point2F(x, y));
+
+        if (y > 0.f)
+            IsFlatLine = false;
+
+        ++i;
+    }
+
+    // Create all the control points.
+    const size_t n = points.p0.size();
+
+    if (n > 1)
+    {
+        points.p1.reserve(n - 1);
+        points.p2.reserve(n - 1);
+
+        bezier_spline_t::GetControlPoints(points.p0, points.p1, points.p2);
+
+        // Make sure all y-coordinates are positive.
+        std::transform(points.p1.begin(), points.p1.end(), points.p1.begin(), [this](D2D1_POINT_2F & p)
+        {
+            p.y = std::clamp(p.y, 0.f, _ClientSize.height);
+
+            return p;
+        });
+
+        std::transform(points.p2.begin(), points.p2.end(), points.p2.begin(), [this](D2D1_POINT_2F & p)
+        {
+            p.y = std::clamp(p.y, 0.f, _ClientSize.height);
+
+            return p;
+        });
+    }
+
+    return !IsFlatLine ? S_OK : E_FAIL;
+}
+
+/// <summary>
+/// Creates a curve from the power values.
+/// </summary>
+HRESULT spectrum_t::CreateCurve(const geometry_points_t & gp, bool isFilled, ID2D1PathGeometry ** curve) const noexcept
+{
+    if (gp.p0.size() < 2)
+        return E_FAIL;
+
+    HRESULT hr = Direct2DFactory::Get()->CreatePathGeometry(curve);
+
+    if (FAILED(hr))
+        return hr;
+
+    ComPtr<ID2D1GeometrySink> Sink;
+
+    hr = (*curve)->Open(Sink.GetAddressOf());
+
+    if (FAILED(hr))
+        return hr;
+
+    Sink->SetFillMode(D2D1_FILL_MODE_WINDING);
+
+    if (isFilled)
+    {
+        Sink->BeginFigure(D2D1::Point2F(0.f, 0.f), D2D1_FIGURE_BEGIN_FILLED); // Start with a vertical line going up.
+        Sink->AddLine(D2D1::Point2F(0.f, gp.p0[0].y));
+    }
+    else
+        Sink->BeginFigure(D2D1::Point2F(0.f, gp.p0[0].y), D2D1_FIGURE_BEGIN_HOLLOW);
+
+    const size_t n = gp.p1.size();
+
+    for (size_t i = 0; i < n; ++i)
+        Sink->AddBezier(D2D1::BezierSegment(gp.p1[i], gp.p2[i], gp.p0[i + 1]));
+
+    if (isFilled)
+        Sink->AddLine(D2D1::Point2F(gp.p0[n].x, 0.f)); // End with a vertical line going down.
+
+    Sink->EndFigure(D2D1_FIGURE_END_OPEN);
+
+    hr = Sink->Close();
+
+    return hr;
+}
+
+/// <summary>
 /// Renders diagnostics information.
 /// </summary>
 void spectrum_t::RenderDiagnostics(ID2D1DeviceContext * deviceContext) const noexcept
@@ -799,14 +707,6 @@ void spectrum_t::RenderDiagnostics(ID2D1DeviceContext * deviceContext) const noe
 
         deviceContext->DrawLine(p1, p2, Brush, _WeighingFunctionStyle._Thickness);
     }
-}
-
-/// <summary>
-/// Resets this instance.
-/// </summary>
-void spectrum_t::Reset() noexcept
-{
-    DeleteDeviceSpecificResources();
 }
 
 /// <summary>
@@ -1147,340 +1047,6 @@ HRESULT spectrum_t::CreateOpacityMask(ID2D1DeviceContext * deviceContext) noexce
         return hr;
 
     hr = RenderTarget->GetBitmap(_OpacityMask.GetAddressOf());
-
-    return hr;
-}
-
-/// <summary>
-/// Creates the geometry points from the amplitudes of the spectrum.
-/// Note: Created in a top-left (0,0) coordinate system and later translated and flipped as necessary.
-/// </summary>
-HRESULT spectrum_t::CreateGeometryPointsFromAmplitude(geometry_points_t & points, bool usePeak) const noexcept
-{
-    const auto BandCount = _Processor->FrequencyBands.size();
-
-    if (BandCount < 2)
-        return E_FAIL;
-
-    bool IsFlatLine = true;
-
-    const float BandWidth = _ClientSize.width / (float) BandCount;
-
-    points.p0.reserve(BandCount);
-
-    size_t i = 0;
-
-    // Create all the knots.
-    for (const auto & fb: _Processor->FrequencyBands)
-    {
-        double Value = 0.;
-
-        // Don't render anything above the Nyquist frequency.
-        if (!((fb.Low > _Processor->NyquistFrequency) && _State._SuppressMirrorImage))
-        {
-            Value = !usePeak ? fb.Value : fb.PeakValue;
-        }
-
-        const float x = ((float) i + 0.5f) * BandWidth;
-        const float y = std::clamp((float) (Value * _ClientSize.height), 0.f, _ClientSize.height);
-
-        points.p0.push_back(D2D1::Point2F(x, y));
-
-        if (y > 0.f)
-            IsFlatLine = false;
-
-        ++i;
-    }
-
-    // Create all the control points.
-    const size_t n = points.p0.size();
-
-    if (n > 1)
-    {
-        points.p1.reserve(n - 1);
-        points.p2.reserve(n - 1);
-
-        bezier_spline_t::GetControlPoints(points.p0, points.p1, points.p2);
-
-        // Make sure all y-coordinates are positive.
-        std::transform(points.p1.begin(), points.p1.end(), points.p1.begin(), [this](D2D1_POINT_2F & p)
-        {
-            p.y = std::clamp(p.y, 0.f, _ClientSize.height);
-
-            return p;
-        });
-
-        std::transform(points.p2.begin(), points.p2.end(), points.p2.begin(), [this](D2D1_POINT_2F & p)
-        {
-            p.y = std::clamp(p.y, 0.f, _ClientSize.height);
-
-            return p;
-        });
-    }
-
-    return !IsFlatLine ? S_OK : E_FAIL;
-}
-
-/// <summary>
-/// Creates a curve from the power values.
-/// </summary>
-HRESULT spectrum_t::CreateCurve(const geometry_points_t & gp, bool isFilled, ID2D1PathGeometry ** curve) const noexcept
-{
-    if (gp.p0.size() < 2)
-        return E_FAIL;
-
-    HRESULT hr = Direct2DFactory::Get()->CreatePathGeometry(curve);
-
-    if (FAILED(hr))
-        return hr;
-
-    ComPtr<ID2D1GeometrySink> Sink;
-
-    hr = (*curve)->Open(Sink.GetAddressOf());
-
-    if (FAILED(hr))
-        return hr;
-
-    Sink->SetFillMode(D2D1_FILL_MODE_WINDING);
-
-    if (isFilled)
-    {
-        Sink->BeginFigure(D2D1::Point2F(0.f, 0.f), D2D1_FIGURE_BEGIN_FILLED); // Start with a vertical line going up.
-        Sink->AddLine(D2D1::Point2F(0.f, gp.p0[0].y));
-    }
-    else
-        Sink->BeginFigure(D2D1::Point2F(0.f, gp.p0[0].y), D2D1_FIGURE_BEGIN_HOLLOW);
-
-    const size_t n = gp.p1.size();
-
-    for (size_t i = 0; i < n; ++i)
-        Sink->AddBezier(D2D1::BezierSegment(gp.p1[i], gp.p2[i], gp.p0[i + 1]));
-
-    if (isFilled)
-        Sink->AddLine(D2D1::Point2F(gp.p0[n].x, 0.f)); // End with a vertical line going down.
-
-    Sink->EndFigure(D2D1_FIGURE_END_OPEN);
-
-    hr = Sink->Close();
-
-    return hr;
-}
-
-/// <summary>
-/// Creates the geometry points from the amplitudes of the spectrum.
-/// Note: Created in a top-left (0,0) coordinate system and later translated and flipped as necessary.
-/// </summary>
-HRESULT spectrum_t::CreateRadialGeometryPointsFromAmplitude(geometry_points_t & points, bool usePeak) const noexcept
-{
-    if (_Processor->FrequencyBands.size() < 2)
-        return E_FAIL;
-
-    bool IsFlatLine = true;
-
-    const FLOAT Side = std::min(_ClientSize.width / 2.f, _ClientSize.height / 2.f);
-    const FLOAT InnerRadius = Side * _State._InnerRadius;
-    const FLOAT OuterRadius = Side * _State._OuterRadius;
-
-    const FLOAT MaxHeight = OuterRadius - InnerRadius;
-
-    FLOAT a = (FLOAT) ::fmod(Pi2 + (_AnimationTimer.Elapsed() * -DegreesToRadians(_State._AngularVelocity)), TwoPi);
-
-    const FLOAT da = (FLOAT) TwoPi / (FLOAT) _Processor->FrequencyBands.size();
-
-    // Create all the knots.
-    for (const auto & fb: _Processor->FrequencyBands)
-    {
-        // Don't render anything above the Nyquist frequency.
-        if ((fb.Low > _Processor->NyquistFrequency) && _State._SuppressMirrorImage)
-            break;
-
-        const double Value = !usePeak ? fb.Value : fb.PeakValue;
-
-        const FLOAT r2 = InnerRadius + (MaxHeight * (FLOAT) Value);
-
-        FLOAT Sin, Cos;
-
-        ::D2D1SinCos(a, &Sin, &Cos);
-
-        FLOAT x = (FLOAT) (Cos * r2);
-        FLOAT y = (FLOAT) (Sin * r2);
-
-        points.p0.push_back(D2D1::Point2F(x, y));
-
-        if (y > 0.f)
-            IsFlatLine = false;
-
-        a -=da;
-    }
-
-    if (points.p0.empty())
-        return E_FAIL;
-
-    // Close the curve.
-    points.p0.push_back(points.p0[0]);
-
-    // Create all the control points.
-    const size_t n = points.p0.size();
-
-    if (n > 1)
-    {
-        points.p1.reserve(n - 1);
-        points.p2.reserve(n - 1);
-
-        bezier_spline_t::GetControlPoints(points.p0, points.p1, points.p2);
-
-        // Make sure all control points are on or above the inner circle.
-        std::transform(points.p1.begin(), points.p1.end(), points.p1.begin(), [InnerRadius](D2D1_POINT_2F & p)
-        {
-            const auto d = (FLOAT) std::sqrt(p.x * p.x + p.y * p.y);
-
-            if (d < InnerRadius)
-            {
-                const auto a = (FLOAT) std::atan2(p.y, p.x);
-
-                FLOAT Sin, Cos;
-
-                ::D2D1SinCos(a, &Sin, &Cos);
-
-                p.x = (FLOAT) (Cos * InnerRadius);
-                p.y = (FLOAT) (Sin * InnerRadius);
-            }
-
-            return p;
-        });
-
-        std::transform(points.p2.begin(), points.p2.end(), points.p2.begin(), [InnerRadius](D2D1_POINT_2F & p)
-        {
-            const auto d = (FLOAT) std::sqrt(p.x * p.x + p.y * p.y);
-
-            if (d < InnerRadius)
-            {
-                const auto a = (FLOAT) std::atan2(p.y, p.x);
-
-                FLOAT Sin, Cos;
-
-                ::D2D1SinCos(a, &Sin, &Cos);
-
-                p.x = (FLOAT) (Cos * InnerRadius);
-                p.y = (FLOAT) (Sin * InnerRadius);
-            }
-
-            return p;
-        });
-    }
-
-    return !IsFlatLine ? S_OK : E_FAIL;
-}
-
-/// <summary>
-/// Creates a radial curve from the power values.
-/// </summary>
-HRESULT spectrum_t::CreateRadialCurve(const geometry_points_t & gp, FLOAT innerRadius, bool isFilled, ID2D1PathGeometry ** curve) const noexcept
-{
-    if (gp.p0.size() < 2)
-        return E_FAIL;
-
-    HRESULT hr = Direct2DFactory::Get()->CreatePathGeometry(curve);
-
-    if (FAILED(hr))
-        return hr;
-
-    ComPtr<ID2D1GeometrySink> Sink;
-
-    hr = (*curve)->Open(Sink.GetAddressOf());
-
-    if (FAILED(hr))
-        return hr;
-
-    D2D1_FIGURE_BEGIN BeginMode = D2D1_FIGURE_BEGIN_HOLLOW;
-
-    if (isFilled)
-    {
-        BeginMode = D2D1_FIGURE_BEGIN_FILLED;
-
-        Sink->SetFillMode(D2D1_FILL_MODE_ALTERNATE); // Even-odd fill
-    }
-
-    // Add the curve.
-    {
-        Sink->BeginFigure(D2D1::Point2F(gp.p0[0].x, gp.p0[0].y), BeginMode);
-
-        const size_t n = gp.p1.size();
-
-        for (size_t i = 0; i < n; ++i)
-            Sink->AddBezier(D2D1::BezierSegment(gp.p1[i], gp.p2[i], gp.p0[i + 1]));
-
-        if (isFilled)
-            Sink->EndFigure(D2D1_FIGURE_END_CLOSED);
-        else
-            Sink->EndFigure(D2D1_FIGURE_END_OPEN);
-    }
-
-    // Add the inner circle.
-    {
-        Sink->BeginFigure(D2D1::Point2F(innerRadius, 0.f), BeginMode);
-
-        Sink->AddArc(D2D1::ArcSegment(D2D1::Point2F(-innerRadius, 0.f), D2D1::SizeF(innerRadius, innerRadius), 0.0f, D2D1_SWEEP_DIRECTION_CLOCKWISE, D2D1_ARC_SIZE_LARGE));
-        Sink->AddArc(D2D1::ArcSegment(D2D1::Point2F( innerRadius, 0.f), D2D1::SizeF(innerRadius, innerRadius), 0.0f, D2D1_SWEEP_DIRECTION_CLOCKWISE, D2D1_ARC_SIZE_LARGE));
-
-        Sink->EndFigure(D2D1_FIGURE_END_CLOSED);
-
-        hr = Sink->Close();
-    }
-
-    return hr;
-}
-
-/// <summary>
-/// Creates a segment for the radial bar.
-/// </summary>
-HRESULT spectrum_t::CreateSegment(FLOAT a1, FLOAT a2, FLOAT r1, FLOAT r2, ID2D1PathGeometry ** pathGeometry) const noexcept
-{
-    HRESULT hr = Direct2DFactory::Get()->CreatePathGeometry(pathGeometry);
-
-    if (FAILED(hr))
-        return hr;
-
-    ComPtr<ID2D1GeometrySink> Sink;
-
-    hr = (*pathGeometry)->Open(Sink.GetAddressOf());
-
-    if (FAILED(hr))
-        return hr;
-
-    FLOAT Sin, Cos;
-
-    // Inner arc
-    ::D2D1SinCos(a1, &Sin, &Cos);
-
-    auto x = (FLOAT) (Cos * r1);
-    auto y = (FLOAT) (Sin * r1);
-
-    Sink->BeginFigure(D2D1::Point2F(x, y), D2D1_FIGURE_BEGIN_FILLED);
-
-    // Vertical from inner to outer arc.
-    x = (FLOAT) (Cos * r2);
-    y = (FLOAT) (Sin * r2);
-
-    Sink->AddLine(D2D1::Point2F(x, y));
-
-    // Outer arc
-    ::D2D1SinCos(a2, &Sin, &Cos);
-
-    x = (FLOAT) (Cos * r2);
-    y = (FLOAT) (Sin * r2);
-
-    Sink->AddArc(D2D1::ArcSegment(D2D1::Point2F(x, y), D2D1::SizeF(r2, r2), 0.0f, D2D1_SWEEP_DIRECTION_COUNTER_CLOCKWISE, D2D1_ARC_SIZE_SMALL));      
-
-    // Vertical from outer to inner arc.
-    x = (FLOAT) (Cos * r1);
-    y = (FLOAT) (Sin * r1);
-
-    Sink->AddLine(D2D1::Point2F(x, y));
-
-    Sink->EndFigure(D2D1_FIGURE_END_CLOSED);
-
-    Sink->Close();
 
     return hr;
 }

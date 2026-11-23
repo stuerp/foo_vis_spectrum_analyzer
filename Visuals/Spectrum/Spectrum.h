@@ -64,8 +64,6 @@ private:
     void RenderBarSegment(ID2D1DeviceContext * deviceContext, D2D1_RECT_F & rect, const style_t & style) const noexcept;
 
     void RenderCurve(ID2D1DeviceContext * deviceContext) noexcept;
-    void RenderRadialBars(ID2D1DeviceContext * deviceContext) noexcept;
-    void RenderRadialCurve(ID2D1DeviceContext * deviceContext) noexcept;
 
     void RenderNyquistFrequencyMarker(ID2D1DeviceContext * deviceContext) const noexcept;
 
@@ -74,6 +72,9 @@ private:
     void RenderDiagnostics(ID2D1DeviceContext * deviceContext) const noexcept;
 
     HRESULT CreateOpacityMask(ID2D1DeviceContext * deviceContext) noexcept;
+
+    void RenderRadialBars(ID2D1DeviceContext * deviceContext) noexcept;
+    void RenderRadialCurve(ID2D1DeviceContext * deviceContext) noexcept;
 
     struct geometry_points_t
     {
@@ -94,8 +95,10 @@ private:
 
     HRESULT CreateSegment(FLOAT a1, FLOAT a2, FLOAT r1, FLOAT r2, ID2D1PathGeometry ** segment) const noexcept;
 
-    HRESULT CreateRadialGeometryPointsFromAmplitude(geometry_points_t & gp, bool usePeak) const noexcept;
-    HRESULT CreateRadialCurve(const geometry_points_t & gp, FLOAT innerRadius, bool isFilled, ID2D1PathGeometry ** curve) const noexcept;
+//  HRESULT CreateRadialGeometryPointsFromAmplitude(geometry_points_t & gp, bool usePeak) const noexcept;
+    HRESULT CreateRadialGeometryPointsFromAmplitude(geometry_points_t & points, bool usePeak, FLOAT width, FLOAT height, FLOAT & beginAngle, FLOAT & endAngle) const noexcept;
+//  HRESULT CreateRadialCurve(const geometry_points_t & gp, FLOAT innerRadius, ID2D1PathGeometry ** curve) const noexcept;
+    HRESULT CreateRadialCurve(const geometry_points_t & gp, FLOAT innerRadiusX, FLOAT innerRadiusY, FLOAT beginAngle, FLOAT endAngle, bool clockwise, ID2D1PathGeometry ** curve) const noexcept;
 
 private:
     processor_t * _Processor;
@@ -112,6 +115,8 @@ private:
     FLOAT _LEDSize;
 
     msc::chrono_t _AnimationTimer;
+
+    bool _Clockwise = true;
 
     // Device-dependent resources
     ComPtr<ID2D1SolidColorBrush> _DebugBrush;

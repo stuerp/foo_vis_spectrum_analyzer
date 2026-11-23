@@ -1,5 +1,5 @@
 
-/** $VER: State.cpp (2026.11.11) P. Stuer **/
+/** $VER: State.cpp (2026.11.23) P. Stuer **/
 
 #include "pch.h"
 
@@ -281,14 +281,16 @@ void state_t::Reset() noexcept
     _HorizontalGradient_Deprecated = false;
 
     _PeakMode                = PeakMode::Classic;
-    _HoldDuration                = .5; // s
+    _HoldDuration            = .5; // s
     _FallSpeed               = 20; // dB/s
     _ResetPeaksOnTrackChange = false;
 
     // Radial Bars
-    _InnerRadius = 0.2f;
-    _OuterRadius = 1.0f;
+    _InnerRadius     = 0.2f; // 20%
+    _OuterRadius     = 1.0f; // 100%
     _AngularVelocity = 60.f; // degrees / sec
+    _BeginAngle      = 90.f; // degrees
+    _EndAngle        = 90.f; // degrees
 
     // Curve
     _LineWidth_Deprecated = 2.f;
@@ -549,20 +551,22 @@ state_t & state_t::operator=(const state_t & other) noexcept
     _VisualizationType = other._VisualizationType;
 
     // Bars
-    _LEDMode = other._LEDMode;
-    _LEDLight = other._LEDLight;
-    _LEDGap = other._LEDGap;
-    _LEDIntegralSize = other._LEDIntegralSize;
+    _LEDMode                 = other._LEDMode;
+    _LEDLight                = other._LEDLight;
+    _LEDGap                  = other._LEDGap;
+    _LEDIntegralSize         = other._LEDIntegralSize;
 
     _PeakMode                = other._PeakMode;
-    _HoldDuration                = other._HoldDuration;
+    _HoldDuration            = other._HoldDuration;
     _FallSpeed               = other._FallSpeed;
     _ResetPeaksOnTrackChange = other._ResetPeaksOnTrackChange;
 
     // Radial Bars
-    _InnerRadius = other._InnerRadius;
-    _OuterRadius = other._OuterRadius;
-    _AngularVelocity = other._AngularVelocity;
+    _InnerRadius             = other._InnerRadius;
+    _OuterRadius             = other._OuterRadius;
+    _AngularVelocity         = other._AngularVelocity;
+    _BeginAngle              = other._BeginAngle;
+    _EndAngle                = other._EndAngle;
 
     // Curve
 
@@ -573,13 +577,13 @@ state_t & state_t::operator=(const state_t & other) noexcept
     _SpectrogramLegend       = other._SpectrogramLegend;
 
     // Peak Meter
-    _IsHorizontalPeakMeter = other._IsHorizontalPeakMeter;
-    _HasRMSPlus3 = other._HasRMSPlus3;
-    _RMSWindow = other._RMSWindow;
-    _BarGap = other._BarGap;
-    _HasCenterScale = other._HasCenterScale;
-    _HasScaleLines = other._HasScaleLines;
-    _MaxBarSize = other._MaxBarSize;
+    _IsHorizontalPeakMeter   = other._IsHorizontalPeakMeter;
+    _HasRMSPlus3             = other._HasRMSPlus3;
+    _RMSWindow               = other._RMSWindow;
+    _BarGap                  = other._BarGap;
+    _HasCenterScale          = other._HasCenterScale;
+    _HasScaleLines           = other._HasScaleLines;
+    _MaxBarSize              = other._MaxBarSize;
 
     // Level Meter
     _IsHorizontalLevelMeter = other._IsHorizontalLevelMeter;

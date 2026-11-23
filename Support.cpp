@@ -57,7 +57,7 @@ HRESULT GetDPI(HWND hWnd, UINT & dpi) noexcept
 
             // Define DEBUG_DPI to test rendering at other DPI settings without changing the system.
         #ifdef _DEBUG
-            #define DEBUG_DPI 192
+            #define DEBUG_DPI 96
 
             #ifdef DEBUG_DPI
             dpi = DEBUG_DPI;

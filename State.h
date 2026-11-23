@@ -1,5 +1,5 @@
 
-/** $VER: State.h (2026.11.10) P. Stuer **/
+/** $VER: State.h (2026.11.23) P. Stuer **/
 
 #pragma once
 
@@ -89,6 +89,8 @@ public:
 
         #pragma region Radial Bars
 
+            FLOAT _BeginAngle;                                          // degrees
+            FLOAT _EndAngle;                                            // degrees
             FLOAT _InnerRadius;                                         // Percentage of the smallest side of the graph area
             FLOAT _OuterRadius;                                         // Percentage of the smallest side of the graph area
             FLOAT _AngularVelocity;                                     // degrees / s

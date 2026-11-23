@@ -457,6 +457,7 @@
     <ClCompile Include="Visuals\EyeCandy\Effects\Trails\RibbonFlow.cpp" />
     <ClCompile Include="Visuals\EyeCandy\Effects\Trails\Spirograph.cpp" />
     <ClCompile Include="Visuals\RenderContext.cpp" />
+    <ClCompile Include="Visuals\Spectrum\SpectrumRadial.cpp" />
     <ClCompile Include="Visuals\Visualization.cpp" />
     <ClCompile Include="Visuals\BitMeter\BitMeter.cpp" />
     <ClCompile Include="Visuals\Test\D3DTester.cpp" />
